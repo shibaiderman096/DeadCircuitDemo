@@ -50,7 +50,7 @@ static partial class Checks
             Run($"v{version} seven-slot migration keeps layout inventory cargo and personal points and infers old solar as MV", () =>
             {
                 var legacy=LegacyFixture(version);var original=Dump(legacy);var oldCargo=JsonSerializer.Serialize(legacy.cargo,Json);var sim=new WorldSimulator(legacy);var restored=sim.State;
-                Require(restored.version==4 && restored.era==TechEra.MediumVoltage,"legacy solar did not infer MV in v4");Require(Dump(legacy)==original,"migration mutated caller-owned legacy data");
+                Require(restored.version==WorldSimulator.SaveVersion && restored.era==TechEra.MediumVoltage,"legacy solar did not infer MV in v4");Require(Dump(legacy)==original,"migration mutated caller-owned legacy data");
                 Require(restored.buildings.Count==legacy.buildings.Count,"migration dropped old buildings");
                 Require(restored.ground==legacy.ground,"migration changed old terrain");
                 foreach(var oldNode in legacy.nodes)
@@ -69,7 +69,7 @@ static partial class Checks
                 Require(JsonSerializer.Serialize(restored.cargo,Json)==oldCargo,"migration lost in-flight identity or timing");
                 var cargo=restored.cargo.Single();var sink=Building(sim,cargo.toId);int ammo=sink.items[(int)ItemKind.Ammo];var totals=ItemTotals(restored);
                 for(int tick=0;tick<6;tick++){sim.Step(WorldSimulator.FixedStep);Conserved(restored,totals);}Require(sink.items[(int)ItemKind.Ammo]==ammo+1,"migrated packet was not delivered exactly once");
-                var again=new WorldSimulator(Saved(restored));Require(again.State.version==4 && again.State.era==TechEra.MediumVoltage && again.State.players[0].items.SequenceEqual(p.items),"migrated v4 second restore lost research or inventory");
+                var again=new WorldSimulator(Saved(restored));Require(again.State.version==WorldSimulator.SaveVersion && again.State.era==TechEra.MediumVoltage && again.State.players[0].items.SequenceEqual(p.items),"migrated v4 second restore lost research or inventory");
             });
         }
         Run("v3 restore isolates production research thermal recipe setting and player state", () =>

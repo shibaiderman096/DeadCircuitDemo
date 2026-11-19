@@ -10,7 +10,7 @@ namespace DeadCircuit
         private static WorldState CopyAndValidate(WorldState source)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
-            SaveCheck(source.version >= 1 && source.version <= 4, "unsupported version");
+            SaveCheck(source.version >= 1 && source.version <= SaveVersion, "unsupported version");
             bool legacy=source.version<3;
             int itemCount=legacy ? 7 : source.version==3 ? 21 : DemoCatalog.ItemCount;
             if(!legacy)
@@ -43,7 +43,7 @@ namespace DeadCircuit
             SaveCheck(source.announcement != null && source.announcement.Length <= 512, "announcement");
             var s = new WorldState
             {
-                version = 4, era = legacy ? TechEra.Primitive : source.era, produced = legacy ? new int[DemoCatalog.ItemCount] : CopyItems(source.produced,int.MaxValue,"production counters",itemCount), seed = source.seed, width = source.width, height = source.height,
+                version = SaveVersion, era = legacy ? TechEra.Primitive : source.era, produced = legacy ? new int[DemoCatalog.ItemCount] : CopyItems(source.produced,int.MaxValue,"production counters",itemCount), seed = source.seed, width = source.width, height = source.height,
                 nextId = source.nextId, wave = source.wave, tick = source.tick, elapsed = source.elapsed,
                 nextWaveAt = source.nextWaveAt, dayLength = source.dayLength, ground = source.ground,
                 announcement = source.announcement, announcementUntil = source.announcementUntil,
@@ -159,7 +159,7 @@ namespace DeadCircuit
                     attackCooldown = p.attackCooldown, interactCooldown = p.interactCooldown, noticeUntil = p.noticeUntil, lastDamageAt = p.lastDamageAt,
                     items = CopyItems(p.items, InventoryLimit, "player inventory",itemCount), attributes = attributes, skills = skills
                 };
-                if(source.version==4) CopyEquipment(p,clone,entityIds,ref highestId);
+                if(source.version>=4) CopyEquipment(p,clone,entityIds,ref highestId);
                 Aim(clone, p.aimX, p.aimY); s.players.Add(clone);
             }
             foreach (ZombieState z in source.zombies)
@@ -179,8 +179,9 @@ namespace DeadCircuit
                 SaveRange(t.until, 0f, source.elapsed + 1f, "trace lifetime");
                 if (t.until > source.elapsed) s.traces.Add(new TraceState { x = t.x, y = t.y, endX = t.endX, endY = t.endY, until = t.until, hostile = t.hostile });
             }
+            CopyExploration(source, s, entityIds, ref highestId);
             SaveCheck(source.nextId > 0 && source.nextId < int.MaxValue - 1 && highestId < int.MaxValue - 2, "next entity id");
-            if(source.version==4) SaveCheck(source.nextId>highestId,"next entity id must exceed all equipment and world ids");
+            if(source.version>=4) SaveCheck(source.nextId>highestId,"next entity id must exceed all equipment and world ids");
             s.nextId = Math.Max(source.nextId, highestId + 1);
             if(legacy) EnsureMigratedResources(s);
             if(source.version<4) foreach(PlayerState p in s.players)

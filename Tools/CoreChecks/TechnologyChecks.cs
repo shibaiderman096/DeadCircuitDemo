@@ -36,7 +36,7 @@ static partial class Checks
         });
         Run("fresh primitive world has no free modern factory or research", () =>
         {
-            var sim=New(out var p);Require(sim.State.era==TechEra.Primitive && sim.State.version==4,"new world skipped progression");
+            var sim=New(out var p);Require(sim.State.era==TechEra.Primitive && sim.State.version==WorldSimulator.SaveVersion,"new world skipped progression");
             Require(sim.State.produced.Length==25 && sim.State.produced.All(n=>n==0),"new world fabricated production history");
             Require(sim.State.buildings.All(b=>TechCatalog.RequiredEra(b.kind)==TechEra.Primitive),"prebuilt modern factory");
             foreach(var kind in new[] { NodeKind.Ore,NodeKind.CopperOre,NodeKind.TinOre,NodeKind.UraniumOre })Require(sim.State.nodes.Any(n=>n.kind==kind && n.stock>0),$"new world lacks {kind}");

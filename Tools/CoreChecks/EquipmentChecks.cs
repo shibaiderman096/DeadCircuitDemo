@@ -66,7 +66,7 @@ static partial class Checks
         Run("equipment creates v4 worlds with 25 persistent material slots", () =>
         {
             var sim = New(out var p);
-            Require(sim.State.version == 4, "new world must use save version 4");
+            Require(sim.State.version == WorldSimulator.SaveVersion, "new world must use save version 4");
             Require(DemoCatalog.ItemCount == 25 && p.items.Length == 25 && sim.State.produced.Length == 25, "equipment ammunition requires 25 slots");
         });
         Run("equipment preserves old ammo and appends four caliber ordinals", () =>
@@ -200,7 +200,7 @@ static partial class Checks
                 Require(source.version == version && source.players.Single().items.Length == (version == 3 ? 21 : 7), "not a genuine legacy inventory fixture");
                 if (version == 3) Require(source.produced.Length == 21 && source.buildings.All(b => b.items.Length == 21), "v3 input was secretly v4");
                 string before = Dump(source); var restored = new WorldSimulator(source).State; var p = restored.players.Single();
-                Require(restored.version == 4 && p.items.Length == 25 && restored.produced.Length == 25, "legacy equipment migration did not reach v4");
+                Require(restored.version == WorldSimulator.SaveVersion && p.items.Length == 25 && restored.produced.Length == 25, "legacy equipment migration did not reach v4");
                 Require(p.items.Take(source.players[0].items.Length).SequenceEqual(source.players[0].items) && p.items.Skip(source.players[0].items.Length).All(n => n == 0), "migration invented or lost reserve ammunition/material");
                 if (version == 3) Require(restored.era == source.era && restored.produced.Take(21).SequenceEqual(source.produced) && restored.produced.Skip(21).All(n => n == 0), "v3 research/production was reset");
                 Require(p.gear.Count(g => g.kind == GearKind.Pistol) == 1 && p.gear.All(g => g.magazine == 0) && p.gear.All(g => g.kind <= GearKind.Pistol), "legacy basic gun missing, preloaded, or upgraded for free");

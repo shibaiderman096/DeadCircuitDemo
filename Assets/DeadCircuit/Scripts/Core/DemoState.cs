@@ -23,7 +23,11 @@ namespace DeadCircuit
 
     [Serializable] public sealed class WorldState
     {
-        public int version = 4, seed, width = 64, height = 64, nextId = 1, wave;
+        public int version = 5, seed, width = 64, height = 64, nextId = 1, wave;
+        public WorldGenerationSettings generation;
+        public int generatorVersion;
+        public string biomes = "";
+        public List<SiteState> sites = new List<SiteState>();
         public TechEra era = TechEra.Primitive;
         public int[] produced = new int[DemoCatalog.ItemCount];
         public long tick;

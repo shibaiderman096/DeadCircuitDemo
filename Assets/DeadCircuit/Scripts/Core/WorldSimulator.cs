@@ -12,6 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
+        public const int SaveVersion = 5;
         public const int MaxPlayers = 8, MaxNodes = 1400, MaxBuildings = 1024;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -35,6 +36,7 @@ namespace DeadCircuit
         }
 
         public WorldSimulator(int seed) : this(CreateWorld(seed)) { }
+        public WorldSimulator(WorldGenerationSettings settings) : this(WorldGeneration.Generate(settings)) { }
 
         public WorldSimulator(WorldState restored)
         {
