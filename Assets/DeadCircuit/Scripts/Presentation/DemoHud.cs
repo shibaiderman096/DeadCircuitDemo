@@ -37,7 +37,7 @@ namespace DeadCircuit
         {
             "从采集与手工开始。先造工作台和石炉，准备铁、铜与锡，积累水力研究所需材料。",
             "让水流驱动水车，经传动轴给机械破碎机供能。破碎、冶炼与青铜加工为蒸汽工业做准备。",
-            "锅炉将燃料转为蒸汽，蒸汽管连接蒸汽设备。建立稳定的采矿、冶炼与钢材产线。",
+            "组合燃烧室、锅炉、给水泵和烟囱，经蒸汽管驱动设备；蒸汽机可输出机械动力。",
             "低压电气化：建立低压发电与输电网络，制造电路，让采矿、冶炼与装配自动运行。",
             "中压工业：完善化工、聚合物与高级电路生产。用变压器向低一级电网供电。",
             "高压工业：扩大发电与精密装配规模。高压设备需要匹配的高压电网，逐级降压供应旧产线。",
@@ -388,6 +388,8 @@ namespace DeadCircuit
             RectTransform content = ScrollContent("Machine Scroll View", machinePanel, 10, 44, 284, 260, out machineScroll);
             // Safety stays at the top of the viewport, even when inventory needs scrolling.
             machineSafety = FlowLabel("Machine Safety", content, "", 260, 52, 14, Amber);
+            machineCluster = FlowLabel("Machine Steam Cluster", content, "", 260, 28, 13, Ink);
+            machineCluster.gameObject.SetActive(false);
             machineInfo = FlowLabel("Machine State", content, "", 260, 90, 13, Ink);
             machineRecipe = FlowLabel("Machine Recipe", content, "", 260, 28, 14, Accent);
             machineRecipeFlow = FlowLabel("Machine Recipe Flow", content, "", 260, 60, 13, Ink);
@@ -561,7 +563,7 @@ namespace DeadCircuit
                 "\n本机 IPv4：" + Clean(bridge.HostIP) + "  ·  UDP 7777");
             saveButton.button.interactable = bridge.IsHost;
             Set(saveButton.label, bridge.IsHost ? "保存 F5" : "仅房主可保存");
-            SetFlowText(gameStatus, Clean(bridge.Status));
+            SetFlowText(gameStatus, Clean(bridge.Status) + RoomLocation(world, bridge.LocalPlayer));
             gameStatus.color = StatusColor(bridge.Status);
             if (lastBridgeStatus != bridge.Status)
             {
@@ -646,7 +648,7 @@ namespace DeadCircuit
                 technologyBuildButtons[i].button.interactable = available && player.hp > 0f;
                 Set(technologyBuildButtons[i].label, DemoCatalog.BuildName(kind) + "\n" + (available ? "选择建造" : "需" + TechCatalog.EraName(TechCatalog.RequiredEra(kind))));
                 technologyBuildButtons[i].label.color = available ? Accent : Muted;
-                Set(technologyBuildCosts[i], MaterialText(costs[i], player.items, true) + "\n" +
+                Set(technologyBuildCosts[i], DemoCatalog.Width(kind) + "×" + DemoCatalog.Height(kind) + " 格 · " + MaterialText(costs[i], player.items, true) + "\n" +
                     EnergyName(TechCatalog.EnergyTier(kind)) + " · " + DemoCatalog.BuildDescriptions[i]);
                 float height = Mathf.Max(88, technologyBuildCosts[i].GetPreferredValues(technologyBuildCosts[i].text, 564, float.PositiveInfinity).y + 12);
                 technologyBuildCosts[i].rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height - 8);
@@ -673,11 +675,11 @@ namespace DeadCircuit
             }
             BuildingState building = null;
             foreach (BuildingState candidate in world.buildings)
-                if (DemoCatalog.Contains(candidate, inspectedX, inspectedY)) { building = candidate; break; }
+                if (candidate.hp > 0 && DemoCatalog.Contains(candidate, inspectedX, inspectedY)) { building = candidate; break; }
             NodeState node = null;
             if (building == null)
                 foreach (NodeState candidate in world.nodes)
-                    if (candidate.x == inspectedX && candidate.y == inspectedY) { node = candidate; break; }
+                    if (candidate.hp > 0 && candidate.stock > 0 && candidate.x == inspectedX && candidate.y == inspectedY) { node = candidate; break; }
             if (building == null && node == null) { HideInspector(); return; }
             int newId = building != null ? building.id : -1;
             if (inspectedId != newId) ResetScroll(machineScroll);
@@ -690,7 +692,7 @@ namespace DeadCircuit
             bool inRange = (new Vector2(player.x - inspectedX, player.y - inspectedY)).sqrMagnitude <= 2.4f * 2.4f && player.hp > 0f;
             interactButton.button.interactable = building != null && inRange;
             repairButton.button.interactable = building != null && inRange && building.hp < WorldSimulator.BuildingMaxHealth(building.kind) &&
-                Count(player.items, building.kind == BuildKind.Wall ? 0 : 3) > 0;
+                Count(player.items, building.kind == BuildKind.Wall || building.kind == BuildKind.Door ? 0 : 3) > 0;
             dismantleButton.button.interactable = building != null && inRange;
             if (building != null)
             {
@@ -704,14 +706,16 @@ namespace DeadCircuit
                         (needsPower ? " · 产能 " + (building.powerRatio * 100f).ToString("0") + "%" : "");
                 if (grid != null) power += "\n" + EnergyName(grid.tier) + "网 " + grid.id + " · " +
                     grid.generation.ToString("0.#") + " / " + grid.demand.ToString("0.#") + (grid.tier < 2 ? " 功率" : " kW");
-                Set(machineTitle, DemoCatalog.BuildName(building.kind) + "  (" + building.x + "," + building.y + ")");
+                Set(machineTitle, InspectedMachineName(building) + "  (" + building.x + "," + building.y + ")");
                 machineTitle.color = needsPower && building.powerRatio < .99f ? Amber : Accent;
                 SetFlowText(machineInfo, "耐久 " + Mathf.CeilToInt(building.hp) + " / " + WorldSimulator.BuildingMaxHealth(building.kind).ToString("0") +
                     " · " + DemoCatalog.Width(building) + "×" + DemoCatalog.Height(building) + "格\n" + power + "\n" + MachineFlow(building));
+                RefreshSteamCluster(world, building);
                 int moving = world.cargo == null ? 0 : world.cargo.FindAll(c => c.fromId == building.id || c.toId == building.id).Count;
                 SetFlowText(machineContents, InventoryText(building.items) + (moving > 0 ? "\n在途物料 " + moving + " 件" : ""));
                 SetFlowText(machineHint, (inRange ? "2.4 格内可操作，须视线畅通。" : "距离过远，靠近后可操作。") +
-                    "\n" + DemoCatalog.BuildDescriptions[(int)building.kind]);
+                    "\n" + InspectedMachineDescription(building));
+                Set(interactButton.label, building.kind == BuildKind.Door ? (building.setting == 1 ? "关门 E" : "开门 E") : "交互 E");
                 RecipeDefinition recipe = MachineRecipe(building);
                 machineRecipe.gameObject.SetActive(recipe != null || building.kind == BuildKind.Transformer);
                 machineRecipeFlow.gameObject.SetActive(recipe != null || building.kind == BuildKind.Reactor);
@@ -755,6 +759,7 @@ namespace DeadCircuit
             machineRecipe.gameObject.SetActive(false);
             machineRecipeFlow.gameObject.SetActive(false);
             machineSafety.gameObject.SetActive(false);
+            machineCluster.gameObject.SetActive(false);
             machineTitle.color = Accent;
             Set(machineTitle, Nodes[(int)node.kind] + "  (" + inspectedX + "," + inspectedY + ")");
             SetFlowText(machineInfo, "资源余量：" + node.stock);
@@ -1094,8 +1099,10 @@ namespace DeadCircuit
             switch (building.kind)
             {
                 case BuildKind.Generator: case BuildKind.DieselGenerator: case BuildKind.HighGenerator:
-                case BuildKind.Boiler: case BuildKind.StoneFurnace:
+                case BuildKind.CombustionChamber: case BuildKind.StoneFurnace:
                     return "余燃 " + building.fuel.ToString("0.0") + " 秒 · E 补燃料";
+                case BuildKind.Boiler: return building.modularBoiler ? "模块化锅炉 · 由集群供应热量、给水及排汽" :
+                    "旧式一体锅炉 · 余燃 " + building.fuel.ToString("0.0") + " 秒 · E 补燃料";
                 case BuildKind.Miner: return "相邻矿脉 → 对应原矿";
                 case BuildKind.SteamMiner: return "蒸汽驱动 · 铁矿脉 → 铁矿";
                 case BuildKind.Belt: return "物料 → 箭头方向的相邻设备";
@@ -1104,6 +1111,10 @@ namespace DeadCircuit
                 case BuildKind.PowerPole: case BuildKind.MediumPole: case BuildKind.HighPole: return "同电压连线 7 格 · 覆盖 4 格";
                 case BuildKind.SolarPanel: return building.powerGeneration > 0 ? "日照发电 · 夜间停机" : "夜间待机 · 无需燃料";
                 case BuildKind.Wall: return "阻挡敌人 · 修理消耗木材";
+                case BuildKind.Door: return building.setting == 1 ? "门已打开 · E 关门 · 可通行" : "门已关闭 · E 开门";
+                case BuildKind.Chimney: return "集群排汽 · 与锅炉模块接触连接";
+                case BuildKind.FeedwaterPump: return "集群给水 · 近水并与锅炉模块接触连接";
+                case BuildKind.SteamEngine: return "蒸汽输入 → 机械动力 · 沿朝向连接传动轴";
                 case BuildKind.Workbench: return "B 打开手工配方 · 靠近后制作";
                 case BuildKind.Waterwheel: return "近水驱动 · 接触传动轴输出动力";
                 case BuildKind.Shaft: return "接触传递机械动力";

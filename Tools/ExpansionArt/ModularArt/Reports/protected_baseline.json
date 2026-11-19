@@ -1,0 +1,9 @@
+{
+  "Assets/DeadCircuit/Resources/Art/Expansion/icons.png": "16bf80d4b170cccbce0a472b6448013315ea9146f0e89f1e2a49032815aad108",
+  "Assets/DeadCircuit/Resources/Art/Expansion/icons.json": "abc4238c2c5c868236a41962d2b7cdb0fe8c15a1905c5256ed24b8a9c9f89af6",
+  "Assets/DeadCircuit/Resources/Art/Expansion/world.png": "0a9b5a411489e6885eeb2bdca69fbaf00f5577b36972ab4885e77a453258eb5f",
+  "Assets/DeadCircuit/Resources/Art/Expansion/world.json": "e5715b29c1d30f91d8e608e3921468bbd1d218046ad98caaa86a8f1caee75b0e",
+  "Tools/ExpansionArt/SvgBatch/pixel_svg.py": "0b6469963a60a0957299232dce9a6747b679d4a941cd4a21d9c71592089cea10",
+  "Tools/ExpansionArt/SvgBatch/Sources/icons.svg": "68addb4764291e27e063f425b9be405bb68880089c434f67069c9feb4a58efb4",
+  "Tools/ExpansionArt/SvgBatch/Sources/world.svg": "73f197444d537c768b1500d1e2ed06f276f79ac476f26803f7fe3c92086a2105"
+}

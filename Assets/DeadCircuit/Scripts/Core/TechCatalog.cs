@@ -20,8 +20,9 @@ namespace DeadCircuit
         {
             switch (kind)
             {
-                case BuildKind.Wall: case BuildKind.Belt: case BuildKind.Chest: case BuildKind.Workbench: case BuildKind.StoneFurnace: return TechEra.Primitive;
+                case BuildKind.Door: case BuildKind.Wall: case BuildKind.Belt: case BuildKind.Chest: case BuildKind.Workbench: case BuildKind.StoneFurnace: return TechEra.Primitive;
                 case BuildKind.Waterwheel: case BuildKind.Shaft: case BuildKind.MechanicalCrusher: return TechEra.Water;
+                case BuildKind.CombustionChamber: case BuildKind.Chimney: case BuildKind.FeedwaterPump: case BuildKind.SteamEngine:
                 case BuildKind.Boiler: case BuildKind.SteamPipe: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return TechEra.Steam;
                 case BuildKind.Generator: case BuildKind.Miner: case BuildKind.Smelter: case BuildKind.Assembler: case BuildKind.Turret: case BuildKind.PowerPole: case BuildKind.SteamTurbine: case BuildKind.CircuitAssembler: return TechEra.LowVoltage;
                 case BuildKind.SolarPanel: case BuildKind.DieselGenerator: case BuildKind.ChemicalPlant: case BuildKind.MediumPole: case BuildKind.Transformer: case BuildKind.CoolingTower: return TechEra.MediumVoltage;
@@ -34,7 +35,7 @@ namespace DeadCircuit
         public static int EnergyTier(BuildingState b) => b==null ? -1 : b.kind==BuildKind.Transformer ? 2+b.setting : EnergyTier(b.kind);
         public static float LinkRange(BuildKind kind) => EnergyTier(kind) >= 2 ? DemoCatalog.LinkRange : 0f;
         public static float SupplyRadius(BuildKind kind) => EnergyTier(kind) >= 2 ? DemoCatalog.SupplyRadius : 0f;
-        public static bool RequiresWater(BuildKind kind) => kind==BuildKind.Waterwheel || kind==BuildKind.Boiler || kind==BuildKind.CoolingTower;
+        public static bool RequiresWater(BuildKind kind) => kind==BuildKind.Waterwheel || kind==BuildKind.FeedwaterPump || kind==BuildKind.CoolingTower;
         public static bool NearWater(WorldState s,BuildingState b)
         {
             if(s==null || b==null || s.ground==null || s.ground.Length!=s.width*s.height) return false;
@@ -45,6 +46,26 @@ namespace DeadCircuit
                 if((b.x>0 && s.ground[b.x-1+y*s.width]=='2') || (b.x+w<s.width && s.ground[b.x+w+y*s.width]=='2')) return true;
             for(int x=b.x;x<b.x+w;x++)
                 if((b.y>0 && s.ground[x+(b.y-1)*s.width]=='2') || (b.y+h<s.height && s.ground[x+(b.y+h)*s.width]=='2')) return true;
+            // A feedwater intake may penetrate exactly one intact exterior wall.
+            // This lets an enclosed dry factory use shoreline water without a hole in its shell.
+            if(b.kind==BuildKind.FeedwaterPump)
+            {
+                for(int y=b.y;y<b.y+h;y++)
+                    if(WaterIntake(s,b.x-1,y,-1,0) || WaterIntake(s,b.x+w,y,1,0)) return true;
+                for(int x=b.x;x<b.x+w;x++)
+                    if(WaterIntake(s,x,b.y-1,0,-1) || WaterIntake(s,x,b.y+h,0,1)) return true;
+            }
+            return false;
+        }
+        private static bool WaterIntake(WorldState s,int wallX,int wallY,int dx,int dy)
+        {
+            int waterX=wallX+dx,waterY=wallY+dy;
+            if(wallX<0 || wallY<0 || wallX>=s.width || wallY>=s.height || waterX<0 || waterY<0 || waterX>=s.width || waterY>=s.height ||
+                s.ground[waterX+waterY*s.width]!='2') return false;
+            foreach(var wall in s.nodes)
+                if(wall.kind==NodeKind.Wall && wall.hp>0 && wall.stock>0 && wall.x==wallX && wall.y==wallY) return true;
+            foreach(var wall in s.buildings)
+                if(wall.kind==BuildKind.Wall && wall.hp>0 && DemoCatalog.Contains(wall,wallX,wallY)) return true;
             return false;
         }
         // A converter's public tier is its OUTPUT. Its input is a separate port.
@@ -52,7 +73,7 @@ namespace DeadCircuit
         {
             switch (kind)
             {
-                case BuildKind.Waterwheel: case BuildKind.Shaft: case BuildKind.MechanicalCrusher: return 0;
+                case BuildKind.SteamEngine: case BuildKind.Waterwheel: case BuildKind.Shaft: case BuildKind.MechanicalCrusher: return 0;
                 case BuildKind.Boiler: case BuildKind.SteamPipe: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return 1;
                 case BuildKind.Generator: case BuildKind.Miner: case BuildKind.Smelter: case BuildKind.Assembler: case BuildKind.Turret: case BuildKind.PowerPole: case BuildKind.SteamTurbine: case BuildKind.CircuitAssembler: case BuildKind.Transformer: return 2;
                 case BuildKind.SolarPanel: case BuildKind.DieselGenerator: case BuildKind.ChemicalPlant: case BuildKind.MediumPole: case BuildKind.CoolingTower: return 3;
@@ -90,13 +111,13 @@ namespace DeadCircuit
         {
             switch (era)
             {
-                case TechEra.Water: return new[] { BuildKind.Waterwheel, BuildKind.Shaft, BuildKind.MechanicalCrusher, BuildKind.StoneFurnace, BuildKind.Workbench, BuildKind.Belt, BuildKind.Chest, BuildKind.Wall, BuildKind.Shaft, BuildKind.StoneFurnace };
-                case TechEra.Steam: return new[] { BuildKind.Boiler, BuildKind.SteamPipe, BuildKind.SteamMiner, BuildKind.SteamFurnace, BuildKind.MechanicalCrusher, BuildKind.Workbench, BuildKind.Belt, BuildKind.Chest, BuildKind.Wall, BuildKind.StoneFurnace };
+                case TechEra.Water: return new[] { BuildKind.Waterwheel, BuildKind.Shaft, BuildKind.MechanicalCrusher, BuildKind.StoneFurnace, BuildKind.Workbench, BuildKind.Belt, BuildKind.Chest, BuildKind.Wall, BuildKind.Door, BuildKind.StoneFurnace };
+                case TechEra.Steam: return new[] { BuildKind.CombustionChamber, BuildKind.Boiler, BuildKind.FeedwaterPump, BuildKind.Chimney, BuildKind.SteamPipe, BuildKind.SteamEngine, BuildKind.SteamMiner, BuildKind.SteamFurnace, BuildKind.Belt, BuildKind.Chest };
                 case TechEra.LowVoltage: return new[] { BuildKind.Generator, BuildKind.Miner, BuildKind.Smelter, BuildKind.Assembler, BuildKind.Turret, BuildKind.PowerPole, BuildKind.CircuitAssembler, BuildKind.SteamTurbine, BuildKind.Belt, BuildKind.Chest };
                 case TechEra.MediumVoltage: return new[] { BuildKind.DieselGenerator, BuildKind.SolarPanel, BuildKind.MediumPole, BuildKind.Transformer, BuildKind.ChemicalPlant, BuildKind.CoolingTower, BuildKind.CircuitAssembler, BuildKind.Belt, BuildKind.Chest, BuildKind.Turret };
                 case TechEra.HighVoltage: return new[] { BuildKind.HighGenerator, BuildKind.HighPole, BuildKind.PrecisionAssembler, BuildKind.Transformer, BuildKind.ChemicalPlant, BuildKind.CoolingTower, BuildKind.Belt, BuildKind.Chest, BuildKind.MediumPole, BuildKind.Turret };
                 case TechEra.Nuclear: return new[] { BuildKind.Reactor, BuildKind.NuclearProcessor, BuildKind.CoolingTower, BuildKind.HighPole, BuildKind.Transformer, BuildKind.PrecisionAssembler, BuildKind.ChemicalPlant, BuildKind.Belt, BuildKind.Chest, BuildKind.MediumPole };
-                default: return new[] { BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.Chest, BuildKind.Wall, BuildKind.Belt, BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.Chest, BuildKind.Wall, BuildKind.Belt };
+                default: return new[] { BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.Chest, BuildKind.Wall, BuildKind.Door, BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.Chest, BuildKind.Wall, BuildKind.Belt };
             }
         }
         private static RecipeDefinition R(int id, string name, TechEra era, BuildKind building, float duration, int[] inputs, int[] outputs) => new RecipeDefinition { id=id,name=name,era=era,building=building,duration=duration,inputs=inputs,outputs=outputs };
@@ -134,7 +155,7 @@ namespace DeadCircuit
         public static RecipeDefinition Recipe(int id) { foreach(var r in Recipes) if(r.id==id) return r; return null; }
         public static RecipeDefinition DefaultRecipe(BuildKind kind) { foreach(var r in Recipes) if(r.building==kind && kind!=BuildKind.Workbench) return r; return null; }
         public static RecipeDefinition SelectedRecipe(BuildingState b) => b.recipe == 0 ? DefaultRecipe(b.kind) : Recipe(b.recipe);
-        public static bool IsFuelBurner(BuildKind kind) => kind==BuildKind.Generator || kind==BuildKind.DieselGenerator || kind==BuildKind.HighGenerator || kind==BuildKind.Boiler || kind==BuildKind.StoneFurnace;
+        public static bool IsFuelBurner(BuildKind kind) => kind==BuildKind.CombustionChamber || kind==BuildKind.Generator || kind==BuildKind.DieselGenerator || kind==BuildKind.HighGenerator || kind==BuildKind.Boiler || kind==BuildKind.StoneFurnace;
         public static bool Stores(BuildKind kind,int item)
         {
             if(item<0 || item>=DemoCatalog.ItemCount) return false;

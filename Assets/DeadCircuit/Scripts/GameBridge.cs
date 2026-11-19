@@ -211,7 +211,7 @@ namespace DeadCircuit
                 using (var writer = new FastBufferWriter(4096, Allocator.Temp))
                 {
                     writer.WriteValueSafe(json);
-                    network.CustomMessagingManager.SendNamedMessage("dc.cmd.v6", NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableSequenced);
+                    network.CustomMessagingManager.SendNamedMessage("dc.cmd.v7", NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableSequenced);
                 }
             }
 #endif
@@ -382,8 +382,8 @@ namespace DeadCircuit
         }
         void RegisterMessages()
         {
-            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.cmd.v6", ReceiveCommand);
-            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.world.v6", ReceiveWorld);
+            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.cmd.v7", ReceiveCommand);
+            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.world.v7", ReceiveWorld);
         }
         void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
@@ -501,7 +501,7 @@ namespace DeadCircuit
                 writer.WriteBytesSafe(bytes);
                 foreach (ulong client in network.ConnectedClientsIds)
                     if (client != NetworkManager.ServerClientId)
-                        network.CustomMessagingManager.SendNamedMessage("dc.world.v6", client, writer, NetworkDelivery.ReliableFragmentedSequenced);
+                        network.CustomMessagingManager.SendNamedMessage("dc.world.v7", client, writer, NetworkDelivery.ReliableFragmentedSequenced);
             }
 #endif
         }

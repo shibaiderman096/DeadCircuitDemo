@@ -1,0 +1,28 @@
+{
+  "status": "pass",
+  "method": "Re-read the five door-affected local review PNGs at native and enlarged sizes after widening. The two footprint sheets remain byte-identical to their previously inspected versions. Static visual inspection only.",
+  "inspected": [
+    "Review/modules_contact_1x.png",
+    "Review/modules_contact_4x.png",
+    "Review/modules_native_light_dark.png",
+    "Review/module_footprints_native.png",
+    "Review/module_footprints_4x.png",
+    "Review/room_assembly_native.png",
+    "Review/room_assembly_3x.png"
+  ],
+  "observations": [
+    "Door revision: the measured continuous N/S opening is 20px at x=6..25, with 2.08px total clearance against the supplied 17.92px collision diameter.",
+    "Closed door fills the entire 20px gap; open door keeps pixel-identical jambs and a side-swung leaf behind the west jamb. Wall-edge interfaces remain unchanged.",
+    "Walls read as thin connected strips with metal caps and stone courses, separate from floor tiles.",
+    "Combustion chamber, flue stack, feedwater pump and steam cylinder/flywheel have distinct silhouettes.",
+    "The engine flywheel reads round after scaling the normalized source to its 3x2 footprint.",
+    "Room examples are composed from individual floor, wall and door frames; the interior remains visible and no whole-building runtime sprite is supplied.",
+    "Native and enlarged contacts show crisp pixel boundaries on checker, light and dark grounds.",
+    "Only machine_31 and door_open changed; the other 23 frame hashes and the atlas layout JSON are unchanged."
+  ],
+  "warnings": [],
+  "limits": [
+    "Unity import and live game rendering were not run.",
+    "Movement, collisions, interactive doors, rotations, module connections and roof hiding require main-agent integration verification."
+  ]
+}

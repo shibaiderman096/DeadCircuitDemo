@@ -7,7 +7,7 @@ namespace DeadCircuit
     {
         /* MAIN INTEGRATION (all methods except DamageCreature are private partial-class members):
          * WorldState.survival = new SurvivalWorldState(); PlayerState.needs = new SurvivalPlayerState();
-         * New gen1 generation ONLY: InitializeSurvivalWorld(world, true) after terrain/sites/IDs.
+         * New generation ONLY: InitializeSurvivalWorld(world, true) after terrain/sites/IDs.
          * CopyAndValidate: CopyNeeds(p, clone, source.version) per player, then
          * CopySurvival(source, target, entityIds, ref highestId) BEFORE final nextId validation.
          * Never initialize/reseed on restore or on v1-v5 migration.
@@ -23,7 +23,7 @@ namespace DeadCircuit
 
         private static void InitializeSurvivalWorld(WorldState world, bool newGeneratedWorld)
         {
-            if (world == null || !newGeneratedWorld || world.generatorVersion != 1) return;
+            if (world == null || !newGeneratedWorld || world.generatorVersion < 1 || world.generatorVersion > WorldGeneration.CurrentGeneratorVersion) return;
             if (world.survival != null && world.survival.initialized) return;
             var survival = new SurvivalWorldState { enabled = true, initialized = true };
             survival.weather.randomState = SurvivalSeed(world.seed, 0xA341316Cu);
@@ -222,11 +222,8 @@ namespace DeadCircuit
         private float SurvivalExposure(float x, float y)
         {
             int cx = RoundCell(x), cy = RoundCell(y);
-            if (!Inside(cx, cy) || State.ground[Cell(cx, cy)] != '4' || State.sites == null) return 1f;
-            foreach (var site in State.sites)
-                if (cx > site.x && cx < site.x + site.width - 1 && cy > site.y && cy < site.y + site.height - 1 &&
-                    (cx != site.doorX || cy != site.doorY)) return .1f;
-            return 1f;
+            // A real enclosure grants shelter; a floor tile or old location marker alone does not.
+            return Inside(cx,cy) && Interiors!=null && Interiors.At(cx,cy)!=null ? .1f : 1f;
         }
 
         private float SurvivalAmbientTemperature(float x, float y)

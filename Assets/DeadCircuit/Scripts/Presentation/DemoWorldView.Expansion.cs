@@ -20,7 +20,6 @@ namespace DeadCircuit
         }
         readonly Dictionary<int,Visual> wildlife = new Dictionary<int,Visual>();
         readonly Dictionary<int,Visual> farmPlots = new Dictionary<int,Visual>();
-        readonly Dictionary<int,Visual> siteSigns = new Dictionary<int,Visual>();
         readonly List<SpriteRenderer> weatherParticles = new List<SpriteRenderer>(96);
         Material expansionGroundMaterial;
         Image weatherVeil;
@@ -60,14 +59,6 @@ namespace DeadCircuit
 
         void DrawExpansion(WorldState world,PlayerState local)
         {
-            if (world.sites!=null) foreach (var site in world.sites)
-            {
-                if (!Visible(site.doorX,site.doorY)) continue;
-                var v=Get(siteSigns,site.id,new Vector2(site.doorX,site.doorY+.65f),1,1);
-                v.shadow.enabled=false; v.body.sprite=DemoArt.Get("site_"+(int)site.kind);
-                v.body.color=new Color(1,1,1,.9f); v.body.transform.localScale=Vector3.one*.62f;
-                v.body.sortingOrder+=2;
-            }
             if (world.survival!=null && world.survival.enabled)
             {
                 foreach (var plot in world.survival.plots)
@@ -109,7 +100,7 @@ namespace DeadCircuit
                     v.previous=Vector2.Lerp(v.previous,new Vector2(creature.x,creature.y),1-Mathf.Exp(-8*Time.unscaledDeltaTime));
                 }
             }
-            Sweep(siteSigns); Sweep(farmPlots); Sweep(wildlife);
+            Sweep(farmPlots); Sweep(wildlife);
             DrawEffectCues(world);
             DrawWeather(world);
         }
@@ -270,7 +261,6 @@ namespace DeadCircuit
         {
             foreach (var v in wildlife.Values) Release(v); wildlife.Clear();
             foreach (var v in farmPlots.Values) Release(v); farmPlots.Clear();
-            foreach (var v in siteSigns.Values) Release(v); siteSigns.Clear();
             foreach (var p in weatherParticles) if (p!=null) p.enabled=false;
             if (weatherVeil!=null) weatherVeil.gameObject.SetActive(false);
             observedEffects.Clear(); expiredEffects.Clear(); effectTick=-1; effectElapsed=0;

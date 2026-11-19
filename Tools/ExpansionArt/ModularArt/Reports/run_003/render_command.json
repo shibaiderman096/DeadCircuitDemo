@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+    "render",
+    "--svg",
+    "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\ModularArt\\Sources\\modules.svg",
+    "--output-dir",
+    "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\ModularArt\\Renders\\run_003",
+    "--crisp",
+    "--zoom",
+    "4",
+    "--strict-qc"
+  ],
+  "exitCode": 0,
+  "stdout": "{\"output\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\ModularArt\\\\Renders\\\\run_003\", \"metadata\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\ModularArt\\\\Renders\\\\run_003\\\\codeart-meta.json\", \"qa\": \"pass\", \"mode\": \"crisp\", \"variants\": [\"base\"], \"files\": 3, \"renderer\": \"resvg-py 0.5.0\", \"failed_checks\": []}\n",
+  "stderr": ""
+}

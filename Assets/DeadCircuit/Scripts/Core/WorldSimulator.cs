@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 6;
+        public const int SaveVersion = 7;
         public const int MaxPlayers = 8, MaxNodes = 1400, MaxBuildings = 1024;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -227,7 +227,7 @@ namespace DeadCircuit
             if (cmd.arg < 0 || cmd.arg >= DemoCatalog.BuildNames.Length || cmd.rotation < 0 || cmd.rotation > 3) return;
             BuildKind kind = (BuildKind)cmd.arg;
             if (!TechCatalog.IsUnlocked(State, kind)) { Notice(p, "需要科技：" + TechCatalog.EraName(TechCatalog.RequiredEra(kind))); return; }
-            var b = new BuildingState { x = cmd.x, y = cmd.y, rotation = cmd.rotation, kind = kind, footprintVersion = 1 };
+            var b = new BuildingState { x = cmd.x, y = cmd.y, rotation = cmd.rotation, kind = kind, footprintVersion = 1, modularBoiler = kind == BuildKind.Boiler };
             if (State.buildings.Count >= MaxBuildings) { Notice(p, "设备数量已达上限。"); return; }
             for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
             {
@@ -238,7 +238,7 @@ namespace DeadCircuit
             }
             if ((kind == BuildKind.Miner || kind == BuildKind.SteamMiner) && NearbyOre(b) == null)
             { Notice(p, "采矿机需紧邻未耗尽矿脉（含斜邻格）。"); return; }
-            if ((kind == BuildKind.Waterwheel || kind == BuildKind.Boiler || kind == BuildKind.CoolingTower) && !NearWater(b))
+            if (TechCatalog.RequiresWater(kind) && !NearWater(b))
             { Notice(p, "必须建在紧邻水面的岸上干地。"); return; }
             int[] cost = DemoCatalog.BuildCost(kind);
             if (!CanPay(p.items, cost)) { Notice(p, "建材不足：" + DemoCatalog.CostText(kind)); return; }
@@ -254,7 +254,7 @@ namespace DeadCircuit
         {
             BuildingState b = BuildingAt(x, y);
             if (b == null || b.hp >= BuildingMaxHealth(b.kind)) return;
-            int material = b.kind == BuildKind.Wall ? (int)ItemKind.Wood : (int)ItemKind.Scrap;
+            int material = b.kind == BuildKind.Wall || b.kind == BuildKind.Door ? (int)ItemKind.Wood : (int)ItemKind.Scrap;
             if (p.items[material] < 1) { Notice(p, "修理需要 1 " + DemoCatalog.ItemNames[material]); return; }
             p.items[material]--;
             GearState wrench=EquippedWrench(p);
@@ -328,6 +328,11 @@ namespace DeadCircuit
         {
             BuildingState b=BuildingAt(x,y);
             if(b==null || !TechCatalog.IsUnlocked(State,b.kind)) return;
+            if(b.kind==BuildKind.Door)
+            {
+                if(arg==0 || arg==1) SetDoor(p,b,arg);
+                return;
+            }
             if(b.kind==BuildKind.Transformer)
             {
                 if(arg<0 || arg>1 || (arg==1 && State.era<TechEra.HighVoltage)) return;
@@ -390,6 +395,7 @@ namespace DeadCircuit
         {
             switch (kind)
             {
+                case BuildKind.Door: return 220f;
                 case BuildKind.Wall: return 240f; case BuildKind.Generator: return 160f;
                 case BuildKind.Miner: return 140f; case BuildKind.Belt: return 60f;
                 case BuildKind.Smelter: return 180f; case BuildKind.Assembler: return 160f;

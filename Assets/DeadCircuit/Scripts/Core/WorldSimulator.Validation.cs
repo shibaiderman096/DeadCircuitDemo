@@ -66,13 +66,13 @@ namespace DeadCircuit
             {
                 SaveCheck(b != null, "null building"); CheckEntityId(b.id, entityIds, ref highestId);
                 CheckCell(b.x, b.y);
-                SaveCheck((int)b.kind >= 0 && (int)b.kind < (legacy ? 10 : DemoCatalog.BuildNames.Length) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
+                SaveCheck((int)b.kind >= 0 && (int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : DemoCatalog.BuildNames.Length) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
                 SaveCheck(b.footprintVersion == 0 || b.footprintVersion == 1, "footprint version");
                 for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
                 {
                     CheckCell(x, y); int cell = x + y * 64;
                     SaveCheck(occupied.Add(cell) && source.ground[cell] != '2', "overlapping/water building");
-                    if (b.kind != BuildKind.Belt) solid.Add(cell);
+                    if (!DemoCatalog.Walkable(b)) solid.Add(cell);
                 }
                 SaveRange(b.hp, 0.001f, BuildingMaxHealth(b.kind), "building hp");
                 SaveRange(b.progress,0f,4f,"machine progress");
@@ -80,7 +80,8 @@ namespace DeadCircuit
                 SaveCheck(TechCatalog.IsFuelBurner(b.kind) || b.kind==BuildKind.Reactor || b.fuel==0f,"fuel in non-burner");
                 if(!legacy)
                 {
-                    SaveCheck(b.setting>=0 && b.setting<=(b.kind==BuildKind.Transformer ? 1 : 0),"machine setting");
+                    SaveCheck(b.setting>=0 && b.setting<=(b.kind==BuildKind.Transformer || b.kind==BuildKind.Door ? 1 : 0),"machine setting");
+                    SaveCheck(source.version<7 || !b.modularBoiler || (b.kind==BuildKind.Boiler && b.fuel==0f),"modular boiler mode");
                     SaveCheck(b.kind!=BuildKind.Transformer || b.setting==0 || source.era>=TechEra.HighVoltage,"unresearched transformer setting");
                     SaveRange(b.temperature,20f,1200f,"machine temperature");
                     SaveCheck(b.kind==BuildKind.Reactor || (!b.tripped && b.temperature==20f),"reactor-only state");
@@ -93,7 +94,7 @@ namespace DeadCircuit
                 int[] items=CopyItems(b.items,BufferLimit,"machine inventory",itemCount);
                 SaveCheck(b.kind!=BuildKind.Belt || TotalItems(items)<=2,"belt capacity");
                 for(int i=0;i<DemoCatalog.ItemCount;i++) if(items[i]!=0) SaveCheck(TechCatalog.Stores(b.kind,i),"incompatible machine inventory");
-                s.buildings.Add(new BuildingState { id=b.id,x=b.x,y=b.y,kind=b.kind,rotation=b.rotation,footprintVersion=b.footprintVersion,hp=b.hp,progress=b.progress,fuel=b.fuel,items=items,recipe=legacy ? 0 : b.recipe,setting=legacy ? 0 : b.setting,temperature=legacy ? 20f : b.temperature,tripped=!legacy && b.tripped });
+                s.buildings.Add(new BuildingState { id=b.id,x=b.x,y=b.y,kind=b.kind,rotation=b.rotation,footprintVersion=b.footprintVersion,hp=b.hp,progress=b.progress,fuel=b.fuel,items=items,recipe=legacy ? 0 : b.recipe,setting=legacy ? 0 : b.setting,temperature=legacy ? 20f : b.temperature,tripped=!legacy && b.tripped,modularBoiler=source.version>=7 && b.modularBoiler });
                 if(legacy)
                 {
                     if(b.kind==BuildKind.SolarPanel) s.era=TechEra.MediumVoltage;

@@ -55,12 +55,13 @@ namespace DeadCircuit
             foreach (BuildingState b in State.buildings)
                 for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
                     if (Inside(x, y)) buildingGrid[Cell(x, y)] = b;
+            RefreshInteriors();
         }
         private bool BlockedAt(int x, int y)
         {
             if (!Inside(x, y) || State.ground[Cell(x, y)] == '2') return true;
             NodeState n = nodeGrid[Cell(x, y)]; if (n != null && n.hp > 0f && n.stock > 0) return true;
-            BuildingState b = buildingGrid[Cell(x, y)]; return b != null && b.hp > 0f && b.kind != BuildKind.Belt;
+            BuildingState b = buildingGrid[Cell(x, y)]; return b != null && b.hp > 0f && !DemoCatalog.Walkable(b);
         }
         private bool CircleBlocked(float x, float y, float radius)
         {

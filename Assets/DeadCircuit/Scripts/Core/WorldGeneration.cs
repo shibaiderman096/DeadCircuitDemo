@@ -105,7 +105,7 @@ namespace DeadCircuit
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 1;
+        public const int CurrentGeneratorVersion = 2;
         private const int Size = 64;
 
         public static WorldState Generate(WorldGenerationSettings settings)
@@ -292,6 +292,7 @@ namespace DeadCircuit
                     if ((x == sx || y == sy || x == sx + width - 1 || y == sy + height - 1) && !(x == site.doorX && y == site.doorY))
                         AddNode(state, occupied, x, y, NodeKind.Wall, 14);
                 }
+                AddStarter(state, occupied, BuildKind.Door, site.doorX, site.doorY);
                 for (int k = 0; k < definition.containers; k++)
                 {
                     int cx = k == 1 ? sx + width - 2 : sx + 1;

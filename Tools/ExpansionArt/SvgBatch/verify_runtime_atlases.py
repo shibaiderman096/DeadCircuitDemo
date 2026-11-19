@@ -79,8 +79,17 @@ def verify():
         for i, name in enumerate(entries):
             assert labels[f"{prefix}_{i}"].split()[0] == name, (enum, i, name)
         contracts[enum] = len(entries)
-    for i, name in enumerate(enum_names(core, "BuildKind")):
+    # The original 31 machine frames remain byte-for-byte in the 241-frame batch.
+    # Later modular buildings live in an independently verified SVG atlas.
+    buildings = enum_names(core, "BuildKind")
+    for i, name in enumerate(buildings[:31]):
         assert labels[f"machine_{i}"].split(" / ")[-1] == name
+    modules = json.loads((RUNTIME / "modules.json").read_text(encoding="utf-8"))
+    module_names = {entry["name"] for entry in modules["sprites"]}
+    assert not names.intersection(module_names), "duplicate keys across runtime atlases"
+    for i in range(31, len(buildings)):
+        assert f"machine_{i}" in module_names, ("missing modular machine art", buildings[i])
+    contracts["BuildKind"] = len(buildings)
     for i, name in enumerate(enum_names(survival, "CropKind")):
         for stage in range(2):
             assert labels[f"crop_{i}_{stage}"].split()[0] == name

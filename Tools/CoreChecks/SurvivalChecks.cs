@@ -148,12 +148,14 @@ static partial class Checks
                 for (int y = 20; y < 25; y++) for (int x = 20; x < 25; x++) floor[x + y * 64] = '4';
                 s.ground = new string(floor);
                 s.sites.Add(new SiteState { id = s.nextId++, x = 20, y = 20, width = 5, height = 5, doorX = 22, doorY = 20 });
+                for (int y = 20; y < 25; y++) for (int x = 20; x < 25; x++)
+                    if (x == 20 || x == 24 || y == 20 || y == 24) Add(s, BuildKind.Wall, x, y);
             });
             var indoors = sim.AddPlayer("shelter", "Shelter"); indoors.x = indoors.y = 22;
             outdoors.needs.thirst = indoors.needs.thirst = 10;
             Advance(sim, 10);
             Require(outdoors.needs.thirst > 14 && outdoors.needs.wetness > 90, "storm did not actually replenish/wet the player");
-            Require(indoors.needs.wetness < 20 && indoors.needs.wetness < outdoors.needs.wetness * .2f, "site floor/boundary did not shelter");
+            Require(indoors.needs.wetness < 20 && indoors.needs.wetness < outdoors.needs.wetness * .2f, "physical enclosure did not shelter");
             Require(sim.State.survival.plots[0].moisture > 20, "rain did not irrigate farm soil");
             Require(outdoors.needs.waterClean == 0, "rain created clean bottled water");
         });
@@ -258,10 +260,10 @@ static partial class Checks
             p.needs.thirst = 0; float hp = p.hp; Advance(sim, 2);
             Require(p.hp == hp && p.needs.thirst == 0, "disabled survival damaged an industrial fixture");
         });
-        Run("survival new gen1 enables bounded wildlife while restore never repopulates", () =>
+        Run("survival new generation enables bounded wildlife while restore never repopulates", () =>
         {
             var sim = new WorldSimulator(73149);
-            Require(sim.State.version == 6 && sim.State.generatorVersion == 1 && sim.State.survival.enabled, "new gen1 survival initialization missing");
+            Require(sim.State.version == WorldSimulator.SaveVersion && sim.State.generatorVersion == WorldGeneration.CurrentGeneratorVersion && sim.State.survival.enabled, "new generation survival initialization missing");
             Require(sim.State.survival.creatures.Count > 0 && sim.State.survival.creatures.Count <= 32, "new world wildlife cap/initialization");
             Require(sim.State.survival.creatures.Select(c => c.kind).Distinct().Count() >= 6, "biome seeding collapsed to one species");
             foreach (var c in sim.State.survival.creatures)

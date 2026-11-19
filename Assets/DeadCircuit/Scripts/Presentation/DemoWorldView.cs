@@ -414,6 +414,7 @@ namespace DeadCircuit
             viewMin = center - new Vector2(halfWidth, halfHeight);
             viewMax = center + new Vector2(halfWidth, halfHeight);
             UpdateAmbient(world, local);
+            DrawRooms(world);
             DrawNodes(world, local);
             DrawBuildings(world);
             DrawActors(world, local);
@@ -636,7 +637,7 @@ namespace DeadCircuit
                     case NodeKind.Crate: art = "node_crate"; break;
                     default: art = "node_wall"; break;
                 }
-                Sprite nodeArt=DemoArt.Get("node_"+(int)state.kind);
+                Sprite nodeArt=state.kind == NodeKind.Wall ? ConnectedWall(state.x, state.y) : DemoArt.Get("node_"+(int)state.kind);
                 v.body.sprite = nodeArt ?? Art(art);
                 if (nodeArt!=null)
                 {
@@ -651,6 +652,7 @@ namespace DeadCircuit
                 v.shadow.transform.localScale = state.kind == NodeKind.Tree ? new Vector3(1.4f,.9f,1) : Vector3.one;
                 float sway = state.kind == NodeKind.Tree ? Mathf.Sin(Time.unscaledTime*.9f+state.id)*.8f : 0;
                 v.body.transform.localRotation = Quaternion.Euler(0,0,sway);
+                if (state.kind == NodeKind.Wall) ConfigureWall(v, world, state.x, state.y);
                 Health(v,state.hp,Time.unscaledTime-v.damageAt < 2f,new Vector2(0,.95f));
             }
         }
@@ -667,7 +669,7 @@ namespace DeadCircuit
                 for (int y = state.y; y < state.y + h; y++) for (int x = state.x; x < state.x + w; x++)
                 {
                     occupied.Add(x + y * width);
-                    if (state.kind != BuildKind.Belt) solidBuildings.Add(x + y * width);
+                    if (!DemoCatalog.Walkable(state)) solidBuildings.Add(x + y * width);
                 }
                 buildingStates[state.id] = state;
                 if (DemoCatalog.IsPowerNode(state.kind)) powerNodes.Add(state);
@@ -681,6 +683,8 @@ namespace DeadCircuit
                 int rotation = ((state.rotation % 4) + 4) % 4;
                 ConfigureMachine(v.body, state);
                 v.body.color = DamageColor(v, Color.white);
+                if (state.kind == BuildKind.Wall || state.kind == BuildKind.Door)
+                    ConfigureWall(v, world, state.x, state.y);
                 v.shadow.transform.localPosition = new Vector3(0, -.20f * h, 0);
                 v.shadow.transform.localScale = new Vector3(w * .94f, h * .72f, 1);
                 bool needsPower = DemoCatalog.Demand(state.kind) > 0;
@@ -701,7 +705,7 @@ namespace DeadCircuit
                 v.arrow.transform.localRotation = Quaternion.Euler(0, 0, rotation * 90);
                 v.arrow.color = active ? Amber : new Color(.61f,.58f,.43f);
                 v.detail.enabled = state.kind == BuildKind.Generator || state.kind == BuildKind.Miner || state.kind == BuildKind.Turret ||
-                    state.kind == BuildKind.Waterwheel || state.kind == BuildKind.MechanicalCrusher || state.kind == BuildKind.SteamTurbine;
+                    state.kind == BuildKind.Waterwheel || state.kind == BuildKind.MechanicalCrusher || state.kind == BuildKind.SteamTurbine || state.kind == BuildKind.SteamEngine;
                 v.detail.transform.localPosition = Vector3.zero;
                 v.detail.transform.localScale = Vector3.one * (.65f * Mathf.Min(w,h));
                 v.detail.transform.localRotation = Quaternion.identity;
@@ -728,7 +732,7 @@ namespace DeadCircuit
                 int stock = -1;
                 if (state.items != null) for (int i = 0; i < Mathf.Min(ItemColors.Length,state.items.Length); i++)
                     if (state.items[i] > 0) { stock = i; break; }
-                v.cargo.enabled = stock >= 0 && state.kind != BuildKind.Wall;
+                v.cargo.enabled = stock >= 0 && state.kind != BuildKind.Wall && state.kind != BuildKind.Door;
                 if (stock >= 0)
                 {
                     v.cargo.sprite = Art("pixel"); v.cargo.color = ItemColors[stock];
@@ -751,23 +755,26 @@ namespace DeadCircuit
 
         static Vector2 BuildingCenter(BuildingState b) { return new Vector2(DemoCatalog.CenterX(b), DemoCatalog.CenterY(b)); }
         static bool HasOutput(BuildKind kind)
-        { return kind != BuildKind.Wall && kind != BuildKind.Workbench &&
+        { return kind != BuildKind.Wall && kind != BuildKind.Door && kind != BuildKind.Workbench &&
+            kind != BuildKind.CombustionChamber && kind != BuildKind.Chimney && kind != BuildKind.FeedwaterPump &&
             (!DemoCatalog.IsPowerNode(kind) || kind == BuildKind.Reactor) && kind != BuildKind.Turret; }
 
         void ConfigureMachine(SpriteRenderer renderer, BuildingState b)
         {
             int rotation = ((b.rotation % 4) + 4) % 4;
             float w = DemoCatalog.Width(b), h = DemoCatalog.Height(b);
-            Sprite svg = DemoArt.Get("machine_" + (int)b.kind);
-            renderer.sprite = svg ?? Machine(b.kind, rotation);
+            Sprite svg = b.kind == BuildKind.Wall ? ConnectedWall(b.x, b.y) :
+                b.kind == BuildKind.Door && b.setting == 1 ? DemoArt.Get("door_open") : DemoArt.Get("machine_" + (int)b.kind);
+            // A missing open-door SVG must never fall back to a solid machine.
+            renderer.sprite = svg != null || b.kind == BuildKind.Door ? svg : Machine(b.kind, rotation);
             renderer.transform.localPosition = Vector3.zero;
             renderer.transform.localRotation = Quaternion.identity;
             renderer.transform.localScale = new Vector3(w,h,1);
             if (svg != null)
             {
                 // SVG frames are all one world unit; rotate the unrotated footprint.
-                renderer.transform.localRotation = Quaternion.Euler(0,0,rotation * 90);
-                renderer.transform.localScale = (rotation & 1) == 0 ? new Vector3(w,h,1) : new Vector3(h,w,1);
+                renderer.transform.localRotation = Quaternion.Euler(0,0,b.kind == BuildKind.Wall ? 0 : rotation * 90);
+                renderer.transform.localScale = b.kind == BuildKind.Wall || (rotation & 1) == 0 ? new Vector3(w,h,1) : new Vector3(h,w,1);
             }
             else if (b.kind == BuildKind.SolarPanel)
             {
@@ -940,6 +947,7 @@ namespace DeadCircuit
 
         void ResetEntities()
         {
+            ResetRooms();
             ResetExpansion();
             foreach (var v in nodes.Values) Release(v); nodes.Clear();
             foreach (var v in buildings.Values) Release(v); buildings.Clear();
@@ -1441,6 +1449,7 @@ namespace DeadCircuit
 
         void OnDestroy()
         {
+            DisposeRooms();
             foreach (var mesh in meshes) if (mesh!=null) Destroy(mesh);
             foreach (var sprite in sprites.Values) if (sprite!=null) Destroy(sprite);
             if (spriteMaterial!=null) Destroy(spriteMaterial);

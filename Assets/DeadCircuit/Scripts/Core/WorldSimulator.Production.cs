@@ -53,13 +53,14 @@ namespace DeadCircuit
                 return;
             }
             int moved = 0;
+            if(b.kind==BuildKind.Door) { SetDoor(p,b,1-b.setting); return; }
             if (b.kind != BuildKind.Chest && b.kind != BuildKind.Belt && b.kind != BuildKind.Wall && b.kind != BuildKind.Turret)
             {
                 RecipeDefinition recipe=TechCatalog.SelectedRecipe(b);
                 // Reconfiguration never deletes old buffers: unload all possible outputs first.
                 for(int i=0;i<DemoCatalog.ItemCount;i++) if(IsOutput(b.kind,i))
                     moved += Transfer(b.items,p.items,i,BufferLimit,InventoryLimit);
-                if(TechCatalog.IsFuelBurner(b.kind)) moved += TransferIntoBuilding(p.items,b,(int)ItemKind.Fuel,8);
+                if(TechCatalog.IsFuelBurner(b.kind) && !(b.kind==BuildKind.Boiler && b.modularBoiler)) moved += TransferIntoBuilding(p.items,b,(int)ItemKind.Fuel,8);
                 if(b.kind==BuildKind.Reactor)
                 {
                     moved += TransferIntoBuilding(p.items,b,(int)ItemKind.NuclearFuel,4);
@@ -137,6 +138,7 @@ namespace DeadCircuit
             if(changed) RebuildPowerLayout();
             State.powerNetworks.Clear();
             foreach(var n in powerComponents) { n.generation=n.demand=n.ratio=0f; State.powerNetworks.Add(n); }
+            RefreshSteamClusters(consume);
             float sunlight=(float)Math.Max(0.0,Math.Cos((State.elapsed%State.dayLength)/State.dayLength*Math.PI*2.0));
             if(sunlight<.000001f) sunlight=0f;
             foreach(var l in powerLayout)
@@ -150,7 +152,9 @@ namespace DeadCircuit
                     case BuildKind.HighGenerator: b.powerGeneration=BurnFuel(b,consume,600f,10f); break;
                     case BuildKind.SolarPanel: b.powerGeneration=40f*sunlight; break;
                     case BuildKind.Waterwheel: b.powerGeneration=NearWater(b) ? 40f : 0f; break;
-                    case BuildKind.Boiler: b.powerGeneration=NearWater(b) ? BurnFuel(b,consume,120f,20f) : 0f; break;
+                    case BuildKind.Boiler:
+                        if(!b.modularBoiler) b.powerGeneration=NearWater(b) ? BurnFuel(b,consume,120f,20f) : 0f;
+                        break;
                     case BuildKind.Reactor: b.powerGeneration=ReactorOutput(b,consume); break;
                 }
                 if(l.network!=null)
@@ -161,7 +165,9 @@ namespace DeadCircuit
                 if(l.inputNetwork!=null) l.inputNetwork.demand+=b.powerDemand;
             }
             // Only downward conversions; input demand is included before output allocation.
-            ResolveTier(0); ResolveTier(1);
+            ResolveTier(1);
+            foreach(var l in powerLayout) if(l.kind==BuildKind.SteamEngine) ConvertPower(l,.8f);
+            ResolveTier(0);
             foreach(var l in powerLayout) if(l.kind==BuildKind.SteamTurbine) ConvertPower(l,.8f);
             ResolveTier(4);
             foreach(var l in powerLayout) if(l.kind==BuildKind.Transformer && l.setting==1) ConvertPower(l,.9f);
@@ -179,7 +185,7 @@ namespace DeadCircuit
         {
             foreach(var n in powerComponents) if(n.tier==tier) n.ratio=n.demand>0f ? Clamp(n.generation/n.demand,0f,1f) : n.generation>0f ? 1f : 0f;
         }
-        private static bool Converter(BuildKind kind) => kind==BuildKind.Transformer || kind==BuildKind.SteamTurbine;
+        private static bool Converter(BuildKind kind) => kind==BuildKind.Transformer || kind==BuildKind.SteamTurbine || kind==BuildKind.SteamEngine;
         private static void ConvertPower(PowerLayout l,float efficiency)
         {
             l.building.powerGeneration=l.inputNetwork==null ? 0f : l.building.powerDemand*l.inputNetwork.ratio*efficiency;
@@ -257,7 +263,7 @@ namespace DeadCircuit
             {
                 if(Converter(l.kind))
                 {
-                    int tier=l.kind==BuildKind.SteamTurbine ? 1 : l.tier+1;
+                    int tier=l.kind==BuildKind.SteamTurbine || l.kind==BuildKind.SteamEngine ? 1 : l.tier+1;
                     l.inputNetwork=NearestNetwork(l,nodes,tier);
                     if(l.inputNetwork!=null) l.inputNetwork.consumers++;
                 }
@@ -491,6 +497,7 @@ namespace DeadCircuit
         }
         private static bool Accepts(BuildingState b,int item)
         {
+            if(b.kind==BuildKind.Boiler && b.modularBoiler) return false;
             if(b.kind==BuildKind.Chest || b.kind==BuildKind.Belt) return true;
             if(TechCatalog.IsFuelBurner(b.kind) && item==(int)ItemKind.Fuel) return true;
             if(b.kind==BuildKind.Turret) return item==(int)ItemKind.Ammo;

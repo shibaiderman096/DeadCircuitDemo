@@ -1,0 +1,10 @@
+{
+  "art_source": "code",
+  "placeholder": false,
+  "disclosure": "code-drawn, no image model",
+  "source": "Sources/modules.svg",
+  "sourceSHA256": "0cd59e6c129dc339ae158d1af2c93551b2380cde5a40ba4cf9c3fcff5bb0856a",
+  "rendererMetadata": "Renders\\run_004\\codeart-meta.json",
+  "verification": "Reports/latest_verify.json",
+  "limits": "Static SVG/PNG/contact-sheet review only; no Unity, Play, game executable or build."
+}

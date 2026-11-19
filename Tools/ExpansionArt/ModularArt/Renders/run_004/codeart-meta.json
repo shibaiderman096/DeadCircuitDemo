@@ -1,0 +1,165 @@
+{
+  "schema": "codeart2d.codeart_meta.v1",
+  "art_source": "code",
+  "placeholder": false,
+  "disclosure": "code-drawn, no image model",
+  "generator": "svg_render.py",
+  "spec_sha256": "0cd59e6c129dc339ae158d1af2c93551b2380cde5a40ba4cf9c3fcff5bb0856a",
+  "renderer": {
+    "backend": "resvg_py",
+    "name": "resvg-py",
+    "version": "0.5.0",
+    "engine": "resvg 0.48.1",
+    "zoom": 1,
+    "size": [
+      288,
+      144
+    ]
+  },
+  "palette": {
+    "colors": {
+      "0": "#192829",
+      "1": "#253b3b",
+      "2": "#344a43",
+      "3": "#536a68",
+      "4": "#8ba39a",
+      "5": "#ddd5ac",
+      "6": "#eee9d3",
+      "7": "#503e32",
+      "8": "#76533b",
+      "9": "#aa8054",
+      "10": "#c4ab75",
+      "11": "#9b5338",
+      "12": "#e59a50",
+      "13": "#edc566",
+      "14": "#b75446",
+      "15": "#d68169",
+      "16": "#527445",
+      "17": "#739650",
+      "18": "#81824a",
+      "19": "#80d8bc",
+      "20": "#4c9e9b",
+      "21": "#aed5d2",
+      "22": "#497b86",
+      "23": "#796175"
+    },
+    "variants": {}
+  },
+  "outputs": [
+    {
+      "path": "base/modules.svg",
+      "sha256": "f4f808ddaa52e9559573e5c474b0855697cfd312d4275621718660a0337ad663",
+      "bytes": 133325
+    },
+    {
+      "path": "base/modules.png",
+      "sha256": "50e936c4853cbec3281eed096b84d103edf125c44ed6e0cd90efc000bf7bfb43",
+      "bytes": 3208
+    },
+    {
+      "path": "base/modules@4x.png",
+      "sha256": "d0a692a5ead735b9a6ccd062f26ea0c0b56b0aac71281b71fab8d6422312f359",
+      "bytes": 7522
+    }
+  ],
+  "qa": {
+    "status": "pass",
+    "method": "svg_render.py render: every variant's compiled SVG passed codeart_core.lint_portable_svg (pixel profile) before rasterizing; every 1x PNG was read back and measured with codeart_core.qa_pixels (alpha census, exact palette lookup), and the @Nx copies are integer nearest upscales of it",
+    "notProven": [
+      "Appearance, readability and appeal; look at the PNGs at game size.",
+      "Agreement with other renderers on this machine; run svg_render.py doctor (renders are bit-exact only for the recorded renderer version).",
+      "That the art matches the brief and the intent of the SVG."
+    ],
+    "checks": [
+      {
+        "id": "lint",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0,
+        "profile": "pixel"
+      },
+      {
+        "id": "partial_alpha",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0
+      },
+      {
+        "id": "off_palette",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0
+      }
+    ],
+    "inputs": [
+      {
+        "path": "../../Sources/modules.svg",
+        "sha256": "0cd59e6c129dc339ae158d1af2c93551b2380cde5a40ba4cf9c3fcff5bb0856a",
+        "bytes": 133379
+      }
+    ],
+    "outputs": [
+      {
+        "path": "base/modules.svg",
+        "sha256": "f4f808ddaa52e9559573e5c474b0855697cfd312d4275621718660a0337ad663",
+        "bytes": 133325
+      },
+      {
+        "path": "base/modules.png",
+        "sha256": "50e936c4853cbec3281eed096b84d103edf125c44ed6e0cd90efc000bf7bfb43",
+        "bytes": 3208
+      },
+      {
+        "path": "base/modules@4x.png",
+        "sha256": "d0a692a5ead735b9a6ccd062f26ea0c0b56b0aac71281b71fab8d6422312f359",
+        "bytes": 7522
+      }
+    ],
+    "tool": {
+      "name": "svg_render.py render",
+      "version": "0.4.0"
+    }
+  },
+  "svg": {
+    "mode": "crisp",
+    "profile": "pixel",
+    "zoom": 4,
+    "canvas": [
+      288,
+      144
+    ],
+    "anchor_px": null,
+    "palette_source": "svg-colours",
+    "variants": {
+      "base": "base"
+    },
+    "images": [
+      {
+        "variant": "base",
+        "file": "base/modules.png",
+        "scale": 1,
+        "size": [
+          288,
+          144
+        ],
+        "anchor_px": null,
+        "visible": 10084,
+        "partial_alpha": 0,
+        "off_palette": 0,
+        "colors": 17
+      },
+      {
+        "variant": "base",
+        "file": "base/modules@4x.png",
+        "scale": 4,
+        "size": [
+          1152,
+          576
+        ],
+        "anchor_px": null,
+        "from": "base/modules.png",
+        "method": "integer nearest"
+      }
+    ]
+  }
+}

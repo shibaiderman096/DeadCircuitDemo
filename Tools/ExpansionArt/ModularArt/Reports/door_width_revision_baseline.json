@@ -1,0 +1,201 @@
+{
+  "previousVerify": {
+    "status": "pass",
+    "sprites": 25,
+    "uniqueKeys": 25,
+    "uniqueFrames": 25,
+    "size": [
+      288,
+      144
+    ],
+    "logicalPixels": 32,
+    "pitch": 36,
+    "gutter": 2,
+    "sourceRectangles": 2204,
+    "integerGrid": true,
+    "paletteColors": 24,
+    "usedColors": 17,
+    "sourcePixelEquality": true,
+    "sourcePixelMismatches": 0,
+    "partialAlphaPixels": 0,
+    "offPalettePixels": 0,
+    "gutterOpaquePixels": 0,
+    "unusedSlots": 7,
+    "unusedSlotOpaquePixels": 0,
+    "wallMasks": 16,
+    "wallCoverageMinMax": [
+      100,
+      540
+    ],
+    "wallAdjacentEdgePairs": 128,
+    "wallEdgePixelsCompared": 4096,
+    "wallSeamMismatches": 0,
+    "doorOpenClearPassageWidth": 14,
+    "doorJambsAndClosedBarrier": true,
+    "doorWallJoinPairs": 32,
+    "footprints": {
+      "machine_32": [
+        2,
+        2
+      ],
+      "machine_34": [
+        1,
+        2
+      ],
+      "machine_35": [
+        3,
+        2
+      ]
+    },
+    "legacySpriteCount": 241,
+    "legacyKeyCollisions": 0,
+    "protectedFilesChecked": 7,
+    "pngSHA256": "3d2e9386bc1d37c3be6cb060c74103c11ce5ac045a992a57cc9109825a17f10b",
+    "svgSHA256": "920a62bf8b5e69edecaca21ce0139a2fd4eae7bb02c2ae394c6bc7f3c8582827",
+    "frames": [
+      {
+        "key": "machine_31",
+        "opaquePixels": 360,
+        "sha256": "be524af26e7aab0ec13ebfed28bd46ee358249f73c0a488091770ad66719c289"
+      },
+      {
+        "key": "door_open",
+        "opaquePixels": 241,
+        "sha256": "82ff10f7984858b7513f64f42c1ba0fb76576c4044c77987d0ab66cd8e377ef1"
+      },
+      {
+        "key": "machine_32",
+        "opaquePixels": 640,
+        "sha256": "e40209381e25e9cf950eb2fc10f717480f81e0167fa3ff8a6fb8e0ce6059ab79"
+      },
+      {
+        "key": "machine_33",
+        "opaquePixels": 498,
+        "sha256": "612978b0ca806e2c62c77d32353b8a8c7a2f622b60405b717c638e249f227464"
+      },
+      {
+        "key": "machine_34",
+        "opaquePixels": 504,
+        "sha256": "52698cb054e476ac7e0335fead68af96d9161e17a7eddda13a904198482ac100"
+      },
+      {
+        "key": "machine_35",
+        "opaquePixels": 546,
+        "sha256": "977ccfe3ce0e3ec91dae62398321b7c2a0b78e3d64948cea9b72db67587d3262"
+      },
+      {
+        "key": "wall_0",
+        "opaquePixels": 100,
+        "sha256": "f9c9e5f3951d80e9118071f7437e42e650c78e770b5478afef43fa85e5d6e402"
+      },
+      {
+        "key": "wall_1",
+        "opaquePixels": 210,
+        "sha256": "81a74beb6acae9b49414cfd8b2d6e17402d2fc05cb0666e54f66d5248a67592e"
+      },
+      {
+        "key": "wall_2",
+        "opaquePixels": 210,
+        "sha256": "036a4e50d35a4512aee04d02782c2735407d22523de81f5850fbfee9bf9b4aa8"
+      },
+      {
+        "key": "wall_3",
+        "opaquePixels": 320,
+        "sha256": "ebf840a163f533040acc0e3bb34859cc7b9c47f449a3a3ce23f522b18f336e09"
+      },
+      {
+        "key": "wall_4",
+        "opaquePixels": 210,
+        "sha256": "9c82d328302c5fc63f7f94e9c70b3cef380ee75447ae207876ac53619bc48d29"
+      },
+      {
+        "key": "wall_5",
+        "opaquePixels": 320,
+        "sha256": "046470de4b885d017d115cf53865d8007aced0df69b6b07542c04206cb25a83c"
+      },
+      {
+        "key": "wall_6",
+        "opaquePixels": 320,
+        "sha256": "3f3d71aa2ab4a6fa05502a595d5e31c39e6b1f0df656b23e4eb10068f00d9f4d"
+      },
+      {
+        "key": "wall_7",
+        "opaquePixels": 430,
+        "sha256": "a9cda47877bea2651e1a3aa4d77dfbfb7e6292251ebce7ce54d64a9e29bef313"
+      },
+      {
+        "key": "wall_8",
+        "opaquePixels": 210,
+        "sha256": "aa5baa291d15db9f05bab4b9d3c815f060d4ee00e3e70f3023dfde06ff9bda42"
+      },
+      {
+        "key": "wall_9",
+        "opaquePixels": 320,
+        "sha256": "d64abbdaba663e3a529c375c69327e40063a5e88151286bc3a9473462e26d225"
+      },
+      {
+        "key": "wall_10",
+        "opaquePixels": 320,
+        "sha256": "ad3547d8146b4ca52970ef39d7a8ed5d710cbb9dbbd23edb48e4273d02539fc0"
+      },
+      {
+        "key": "wall_11",
+        "opaquePixels": 430,
+        "sha256": "a5a750de17f21fac76e48b5e25cf41813ecb1dd7afa969cec7c78044e1fa3f27"
+      },
+      {
+        "key": "wall_12",
+        "opaquePixels": 320,
+        "sha256": "dd799e510d494dd786d74b9a3a798d0b16974f82d78dd7dda7ea2fd8d00312fc"
+      },
+      {
+        "key": "wall_13",
+        "opaquePixels": 430,
+        "sha256": "42cb901f2d5f70bf4e7a727cbfc8a946611abf772e61c77b105c21343449375c"
+      },
+      {
+        "key": "wall_14",
+        "opaquePixels": 430,
+        "sha256": "723b7156fc3833e8ecbb8480a25ee8ce6aed1157ae8ec760c200a6f72f611dfb"
+      },
+      {
+        "key": "wall_15",
+        "opaquePixels": 540,
+        "sha256": "3c0be730db6671a8ea4837079c22a9ed2437fe259af7dcfe1bae7f6a44766c36"
+      },
+      {
+        "key": "floor_room",
+        "opaquePixels": 1024,
+        "sha256": "060db8a3b81409f1552fbf909323572ae86722a51cbbfd576d83ba904a22af57"
+      },
+      {
+        "key": "roof_tile",
+        "opaquePixels": 1024,
+        "sha256": "894784d9282e5b4869174d32eb91f1a4da7da6eef6479a9aaec5fa03c71543e5"
+      },
+      {
+        "key": "cluster_link",
+        "opaquePixels": 192,
+        "sha256": "04e2763a7c152e7f7f32cd00d764e08cfc88248634211538581719e1579dab49"
+      }
+    ],
+    "repeatSourceGenerationIdentical": true,
+    "renderMetadata": "Renders\\run_002\\codeart-meta.json",
+    "art_source": "code",
+    "disclosure": "code-drawn, no image model",
+    "reviewSheets": [
+      "Review\\module_footprints_4x.png",
+      "Review\\module_footprints_native.png",
+      "Review\\modules_contact_1x.png",
+      "Review\\modules_contact_4x.png",
+      "Review\\modules_native_light_dark.png",
+      "Review\\room_assembly_3x.png",
+      "Review\\room_assembly_native.png"
+    ]
+  },
+  "layoutSHA256": "5dad568dd2675fca8c3b4a723e22863a48e9270ebb7affe49d1afc29175d3a0f",
+  "unchangedReviewHashes": {
+    "module_footprints_native.png": "4d0d740fc806ec3196f046a948e7e380aa8580b02647655a6c407ad6a99a546c",
+    "module_footprints_4x.png": "2af0122045a00ed277c3ecba29e6b693d5b9087b4ef842a2ec9dea5318be4f34"
+  }
+}

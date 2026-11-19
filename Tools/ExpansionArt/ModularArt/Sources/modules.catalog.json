@@ -1,0 +1,352 @@
+[
+  {
+    "name": "machine_31",
+    "label": "Closed doorway / Door",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "door",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "door_open",
+    "label": "Open doorway / side-hinged leaf",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "door",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_32",
+    "label": "Refractory combustion chamber / CombustionChamber",
+    "footprint": [
+      2,
+      2
+    ],
+    "role": "module",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_33",
+    "label": "Independent flue stack / Chimney",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "module",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_34",
+    "label": "Feedwater pump / FeedwaterPump",
+    "footprint": [
+      1,
+      2
+    ],
+    "role": "module",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_35",
+    "label": "Horizontal steam engine and flywheel / SteamEngine",
+    "footprint": [
+      3,
+      2
+    ],
+    "role": "module",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_0",
+    "label": "Brick wall / E1 N2 W4 S8 mask 0",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_1",
+    "label": "Brick wall / E1 N2 W4 S8 mask 1",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_2",
+    "label": "Brick wall / E1 N2 W4 S8 mask 2",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_3",
+    "label": "Brick wall / E1 N2 W4 S8 mask 3",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_4",
+    "label": "Brick wall / E1 N2 W4 S8 mask 4",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_5",
+    "label": "Brick wall / E1 N2 W4 S8 mask 5",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_6",
+    "label": "Brick wall / E1 N2 W4 S8 mask 6",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_7",
+    "label": "Brick wall / E1 N2 W4 S8 mask 7",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_8",
+    "label": "Brick wall / E1 N2 W4 S8 mask 8",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_9",
+    "label": "Brick wall / E1 N2 W4 S8 mask 9",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_10",
+    "label": "Brick wall / E1 N2 W4 S8 mask 10",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_11",
+    "label": "Brick wall / E1 N2 W4 S8 mask 11",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_12",
+    "label": "Brick wall / E1 N2 W4 S8 mask 12",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_13",
+    "label": "Brick wall / E1 N2 W4 S8 mask 13",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_14",
+    "label": "Brick wall / E1 N2 W4 S8 mask 14",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "wall_15",
+    "label": "Brick wall / E1 N2 W4 S8 mask 15",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "floor_room",
+    "label": "Interior concrete floor / one tile",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "floor",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "roof_tile",
+    "label": "Rusted roof tiles / one tile, no building facade",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "roof",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "cluster_link",
+    "label": "Cluster connection / separate overlay marker",
+    "footprint": [
+      1,
+      1
+    ],
+    "role": "marker",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  }
+]

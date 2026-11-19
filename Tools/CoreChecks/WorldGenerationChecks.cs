@@ -3,14 +3,13 @@ using DeadCircuit;
 static partial class Checks
 {
     // Main must invoke this alongside the existing suites in Program.cs.
-    // First tracer: executable against v4 through the existing public constructor;
-    // expected to fail until generation and the v5 validation/copy seam are connected.
     static void WorldGenerationChecks()
     {
-        Run("world generation public seed constructor produces version five", () =>
+        Run("world generation public seed constructor produces current save and generator versions", () =>
         {
             var sim = new WorldSimulator(73149);
             Require(sim.State.version == WorldSimulator.SaveVersion, "seed constructor did not create a current world");
+            Require(sim.State.generatorVersion == WorldGeneration.CurrentGeneratorVersion, "seed constructor used an obsolete generator");
             Require(sim.State.generation != null && sim.State.generation.seed == 73149 && sim.State.sites.Count > 0, "seed constructor bypassed the generator");
         });
         Run("world generation seed text has stable numeric and literal answers", () =>
@@ -95,7 +94,7 @@ static partial class Checks
         {
             var source = WorldGeneration.Generate(new WorldGenerationSettings { seedText = "废土一号", preset = WorldPreset.Urban, cityDensity = 2 });
             var sim = new WorldSimulator(source);
-            Require(sim.State.generatorVersion == 1 && sim.State.biomes == source.biomes && sim.State.sites.Count == source.sites.Count, "restore dropped generation metadata");
+            Require(sim.State.generatorVersion == WorldGeneration.CurrentGeneratorVersion && sim.State.biomes == source.biomes && sim.State.sites.Count == source.sites.Count, "restore dropped generation metadata");
             Require(!ReferenceEquals(source.generation, sim.State.generation) && !ReferenceEquals(source.sites, sim.State.sites), "restore aliases mutable metadata");
             for (int i = 0; i < source.sites.Count; i++)
             {
@@ -124,6 +123,31 @@ static partial class Checks
             var current = WorldGeneration.Generate(null); string currentBefore = Dump(current); WorldGeneration.LegacyMetadata(current);
             Require(Dump(current) == currentBefore, "metadata helper overwrote current generator state");
         });
+        Run("world generation generator one saves retain their existing open entrances", () =>
+        {
+            var legacy = WorldGeneration.Generate(new WorldGenerationSettings { seed = -991 });
+            legacy.version = 6; legacy.generatorVersion = 1;
+            legacy.buildings.RemoveAll(b => b.kind == BuildKind.Door);
+            string before = Dump(legacy);
+            WorldGeneration.Validate(legacy); WorldGeneration.LegacyMetadata(legacy);
+            Require(Dump(legacy) == before, "legacy metadata/validation changed generator-one entities");
+            var sim = new WorldSimulator(Saved(legacy));
+            Require(Dump(legacy) == before, "restore mutated generator-one input");
+            Require(sim.State.generatorVersion == 1 && sim.State.ground == legacy.ground && sim.State.biomes == legacy.biomes && sim.State.nextId == legacy.nextId, "restore regenerated generator-one terrain or IDs");
+            Require(sim.State.nodes.Count == legacy.nodes.Count && sim.State.buildings.Count == legacy.buildings.Count && sim.State.sites.Count == legacy.sites.Count && !sim.State.buildings.Any(b => b.kind == BuildKind.Door), "restore added doors or replaced legacy entities");
+            for (int i = 0; i < legacy.nodes.Count; i++)
+            {
+                var a = legacy.nodes[i]; var b = sim.State.nodes[i];
+                Require(a.id == b.id && a.kind == b.kind && a.x == b.x && a.y == b.y && a.hp == b.hp && a.stock == b.stock, "legacy node changed on restore");
+            }
+            for (int i = 0; i < legacy.buildings.Count; i++)
+            {
+                var a = legacy.buildings[i]; var b = sim.State.buildings[i];
+                Require(a.id == b.id && a.kind == b.kind && a.x == b.x && a.y == b.y && a.rotation == b.rotation && a.hp == b.hp && a.footprintVersion == b.footprintVersion && a.items.SequenceEqual(b.items), "legacy machine changed on restore");
+            }
+            foreach (var site in sim.State.sites)
+                Require(RoomLayout.Build(sim.State).At(site.x + 1, site.y + 1) == null, "legacy open entrance acquired an implicit roof");
+        });
         Run("world generation malformed settings and metadata are rejected", () =>
         {
             foreach (int density in new[] { -1, 3, int.MinValue, int.MaxValue })
@@ -138,7 +162,7 @@ static partial class Checks
             {
                 s => s.generation = null, s => s.generation.seed++, s => s.generation.seedText = "different seed",
                 s => s.biomes = null, s => s.biomes = "0", s => s.biomes = new string('6', 4096),
-                s => s.generatorVersion = -1, s => s.generatorVersion = 2, s => s.generatorVersion = 0,
+                s => s.generatorVersion = -1, s => s.generatorVersion = WorldGeneration.CurrentGeneratorVersion + 1, s => s.generatorVersion = 0,
                 s => s.sites = null, s => s.sites.Add(null), s => s.sites.Add(s.sites[0]),
                 s => s.sites[0].kind = (SiteKind)12, s => s.sites[0].district = (DistrictKind)4,
                 s => s.sites[0].width = int.MaxValue, s => s.sites[0].x = int.MaxValue,
@@ -152,15 +176,16 @@ static partial class Checks
                 GenerationRejects(() => WorldGeneration.Validate(state), "corrupt generation metadata");
             }
             var played = WorldGeneration.Generate(null); played.nodes.RemoveAll(n => n.kind == NodeKind.Wall || n.kind == NodeKind.Crate);
+            played.buildings.RemoveAll(b => b.kind == BuildKind.Door);
             WorldGeneration.Validate(played); // Legal salvage/destruction must remain saveable.
             var restored = new WorldSimulator(Saved(played));
-            Require(restored.State.sites.Count == played.sites.Count && restored.State.nodes.All(n => n.kind != NodeKind.Wall && n.kind != NodeKind.Crate), "save restore requires demolished walls or searched containers");
+            Require(restored.State.sites.Count == played.sites.Count && restored.State.nodes.All(n => n.kind != NodeKind.Wall && n.kind != NodeKind.Crate) && !restored.State.buildings.Any(b => b.kind == BuildKind.Door), "save restore requires demolished walls/doors or searched containers");
         });
     }
 
     static void GenerationMapContract(WorldState state)
     {
-        Require(state.version == WorldSimulator.SaveVersion && state.generatorVersion == 1 && state.width == 64 && state.height == 64, "generation version/dimensions");
+        Require(state.version == WorldSimulator.SaveVersion && state.generatorVersion == WorldGeneration.CurrentGeneratorVersion && state.width == 64 && state.height == 64, "generation version/dimensions");
         Require(state.generation != null && state.generation.seed == state.seed, "missing/resolved seed metadata");
         Require(state.ground.Length == 4096 && state.ground.All(c => c >= '0' && c <= '4'), "invalid terrain");
         Require(state.biomes.Length == 4096 && state.biomes.All(c => c >= '0' && c <= '5') && state.biomes.Distinct().Count() == 6, "missing or invalid biome layer");
@@ -177,11 +202,18 @@ static partial class Checks
             for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
                 Require(x >= 0 && x < 64 && y >= 0 && y < 64 && state.ground[x + y * 64] != '2' && occupied.Add(x + y * 64), "machine overlaps node/water/bounds");
         }
-        var reachable = GenerationFlood(state, occupied);
+        // Structural access assumes each reachable real door can be opened. Doors
+        // remain occupied for overlap checks above and for actual closed-door play.
+        var passageBlocked = new HashSet<int>(occupied);
+        foreach (var door in state.buildings.Where(b => b.kind == BuildKind.Door))
+            passageBlocked.Remove(door.x + door.y * 64);
+        var reachable = GenerationFlood(state, passageBlocked);
         Require(reachable.Count > 1000, "spawn is confined to a pocket");
         for (int i = 0; i < 64; i++) foreach (int cell in new[] { i, i + 63 * 64, i * 64, 63 + i * 64 })
             Require(state.ground[cell] != '2' && reachable.Contains(cell), "dry world boundary is unreachable");
         var lots = new HashSet<int>();
+        var interiors = RoomLayout.Build(state);
+        Require(interiors.rooms.Count == state.sites.Count, "fresh sites are not individual enclosed rooms");
         foreach (var site in state.sites)
         {
             Require(ids.Add(site.id) && site.id > 0, "duplicate site ID");
@@ -191,6 +223,9 @@ static partial class Checks
             bool doorVertical = (site.doorX == site.x || site.doorX == site.x + site.width - 1) && site.doorY > site.y && site.doorY < site.y + site.height - 1;
             Require(doorHorizontal || doorVertical, "door is not a noncorner wall opening");
             Require(reachable.Contains(site.doorX + site.doorY * 64), "POI entrance unreachable from spawn");
+            var interior = interiors.At(site.x + 1, site.y + 1);
+            var entrance = state.buildings.Single(b => b.kind == BuildKind.Door && b.x == site.doorX && b.y == site.doorY);
+            Require(interior != null && interior.cells.Length == (site.width - 2) * (site.height - 2) && interior.doorIds.SequenceEqual(new[] { entrance.id }), "site walls and real door do not enclose all interior floor");
             bool hasCrate = false;
             for (int y = site.y; y < site.y + site.height; y++) for (int x = site.x; x < site.x + site.width; x++)
             {
@@ -199,7 +234,11 @@ static partial class Checks
                 Require(state.ground[cell] == '4', "POI lacks floor");
                 var node = state.nodes.SingleOrDefault(n => n.x == x && n.y == y);
                 bool wall = x == site.x || y == site.y || x == site.x + site.width - 1 || y == site.y + site.height - 1;
-                if (x == site.doorX && y == site.doorY) Require(node == null, "door blocked");
+                if (x == site.doorX && y == site.doorY)
+                {
+                    var door = state.buildings.SingleOrDefault(b => b.x == x && b.y == y);
+                    Require(node == null && door != null && door.kind == BuildKind.Door && door.hp == 220f && door.setting == 0 && door.footprintVersion == 1, "POI entrance lacks its real closed door");
+                }
                 else if (wall) Require(node != null && node.kind == NodeKind.Wall && node.hp > 0 && node.stock > 0, "missing destructible wall");
                 else if (node != null)
                 {
@@ -257,7 +296,8 @@ static partial class Checks
 
     static void GenerationTutorialContract(WorldState state)
     {
-        Require(state.era == TechEra.Primitive && state.buildings.Count == 3, "primitive starter devices changed");
+        Require(state.era == TechEra.Primitive && state.buildings.Count(b => b.kind != BuildKind.Door) == 3, "primitive starter devices changed");
+        Require(state.buildings.Count(b => b.kind == BuildKind.Door) == state.sites.Count, "generated door count differs from site count");
         foreach (var expected in new[] { (BuildKind.Workbench, 29, 35), (BuildKind.StoneFurnace, 28, 37), (BuildKind.Chest, 30, 37) })
             Require(state.buildings.Any(b => b.kind == expected.Item1 && b.x == expected.Item2 && b.y == expected.Item3), "tutorial device moved");
         Require(state.buildings.Single(b => b.kind == BuildKind.Chest).items[(int)ItemKind.Wood] == 12, "tutorial wood supply changed");
@@ -269,7 +309,7 @@ static partial class Checks
         var reachable = GenerationFlood(state, occupied);
         foreach (var n in state.nodes.Where(n => n.x >= 22 && n.x <= 42 && n.y >= 23 && n.y <= 41))
             Require(GenerationHasReachableNeighbor(reachable, n.x, n.y), "tutorial supply cannot be gathered");
-        foreach (var b in state.buildings) Require(GenerationHasReachableNeighbor(reachable, b.x, b.y), "starter machine cannot be used");
+        foreach (var b in state.buildings.Where(b => b.kind != BuildKind.Door)) Require(GenerationHasReachableNeighbor(reachable, b.x, b.y), "starter machine cannot be used");
         for (int y = 24; y <= 29; y++) for (int x = 23; x <= 24; x++) Require(state.ground[x + y * 64] == '2', "tutorial river removed");
         for (int y = 25; y <= 26; y++) for (int x = 25; x <= 26; x++)
             Require(state.ground[x + y * 64] != '2' && !occupied.Contains(x + y * 64) && reachable.Contains(x + y * 64), "waterwheel footprint blocked");

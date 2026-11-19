@@ -96,6 +96,8 @@ static partial class Checks
     static int Main(string[] args)
     {
         filters = args;
+        DoorSystemChecks();
+        InteriorChecks(); SteamClusterChecks();
         CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); CargoChecks(); SaveAndCombatChecks();
         TechnologyChecks(); EraEnergyChecks(); EraProductionChecks(); VersionThreeSaveChecks(); EquipmentChecks(); WorldGenerationChecks(); WorldArchiveChecks(); SurvivalChecks(); EnemyChecks(); ExpansionIntegrationChecks(); ForagingChecks();
         if (selected == 0) { Console.Error.WriteLine("No check names matched the supplied filters."); return 2; }
@@ -241,7 +243,7 @@ static partial class Checks
         });
         Run("invalid build commands leave inventories and structures unchanged", () =>
         {
-            foreach (var (x,y,kind,rotation) in new[] { (10,10,-1,0), (10,10,31,0), (10,10,0,-1), (10,10,0,4), (int.MaxValue,-999,1,0), (50,50,0,0) })
+            foreach (var (x,y,kind,rotation) in new[] { (10,10,-1,0), (10,10,DemoCatalog.BuildNames.Length,0), (10,10,0,-1), (10,10,0,4), (int.MaxValue,-999,1,0), (50,50,0,0) })
             {
                 var sim = new WorldSimulator(Flat()); var p = sim.AddPlayer("p", "P"); p.x = 8; p.y = 10;
                 int[] before = (int[])p.items.Clone(); sim.Apply(Command(p, "build", x, y, kind, rotation)); Require(sim.State.buildings.Count == 0 && p.items.SequenceEqual(before), "invalid build accepted/charged");

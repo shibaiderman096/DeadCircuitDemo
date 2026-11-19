@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+    "doctor",
+    "--backend",
+    "resvg_py",
+    "--report",
+    "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\ModularArt\\Reports\\run_001\\renderer_doctor.json"
+  ],
+  "exitCode": 0,
+  "stdout": "{\"status\": \"pass\", \"primary\": \"resvg_py\", \"backends\": {\"resvg_py\": \"pass\"}, \"failed\": [], \"report\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\ModularArt\\\\Reports\\\\run_001\\\\renderer_doctor.json\"}\n",
+  "stderr": ""
+}

@@ -1,0 +1,28 @@
+{
+  "colors": {
+    "ink": "#192829",
+    "dark": "#253b3b",
+    "shadow": "#344a43",
+    "steel": "#536a68",
+    "light": "#8ba39a",
+    "cream": "#ddd5ac",
+    "white": "#eee9d3",
+    "soil": "#503e32",
+    "brown": "#76533b",
+    "tan": "#aa8054",
+    "sand": "#c4ab75",
+    "rust": "#9b5338",
+    "amber": "#e59a50",
+    "gold": "#edc566",
+    "red": "#b75446",
+    "rose": "#d68169",
+    "leaf": "#527445",
+    "green": "#739650",
+    "olive": "#81824a",
+    "teal": "#80d8bc",
+    "cyan": "#4c9e9b",
+    "ice": "#aed5d2",
+    "blue": "#497b86",
+    "purple": "#796175"
+  }
+}
