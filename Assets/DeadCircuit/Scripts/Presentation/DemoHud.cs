@@ -173,6 +173,7 @@ namespace DeadCircuit
             buildDetails.gameObject.SetActive(false);
             machinePanel.gameObject.SetActive(false);
             death.gameObject.SetActive(false);
+            ApplyIndustrialUiTheme(root);
             initialized = true;
             RefreshAll();
         }
@@ -1449,6 +1450,8 @@ namespace DeadCircuit
             button.navigation = new UnityEngine.UI.Navigation { mode = UnityEngine.UI.Navigation.Mode.Automatic };
             var widget = new UiButton { button = button, image = rect.GetComponent<UnityEngine.UI.Image>(), label = label };
             Tint(widget, widget.image.color);
+            if (menuPages == null || menuPages.Length == 0 || !rect.IsChildOf(menuPages[0]))
+                AddButtonFrame(button);
             return widget;
         }
 
