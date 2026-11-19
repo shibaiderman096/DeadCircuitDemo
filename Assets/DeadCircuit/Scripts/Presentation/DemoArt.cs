@@ -25,6 +25,16 @@ namespace DeadCircuit
             sprites.Clear(); loaded = false;
         }
 
+        /// <summary>Inventory art can change independently of worn armor and mounted parts.</summary>
+        public static Sprite GetIcon(string key)
+        {
+            if (!loaded) Load();
+            Sprite icon;
+            if (key != null && (key.StartsWith("gear_", StringComparison.Ordinal) || key.StartsWith("part_", StringComparison.Ordinal)) &&
+                sprites.TryGetValue("equipment_icon_" + key, out icon)) return icon;
+            return Get(key);
+        }
+
         public static Sprite Get(string key)
         {
             if (!loaded) Load();

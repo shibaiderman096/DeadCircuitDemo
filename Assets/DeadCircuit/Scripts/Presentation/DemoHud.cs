@@ -1468,7 +1468,7 @@ namespace DeadCircuit
 
         static void SetHudArt(UnityEngine.UI.Image icon, string key)
         {
-            Sprite sprite = string.IsNullOrEmpty(key) ? null : DemoArt.Get(key);
+            Sprite sprite = string.IsNullOrEmpty(key) ? null : DemoArt.GetIcon(key);
             if (icon.sprite != sprite) icon.sprite = sprite;
             icon.enabled = sprite != null;
         }

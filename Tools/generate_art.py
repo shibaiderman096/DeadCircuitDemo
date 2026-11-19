@@ -3,6 +3,7 @@
 The playable survivor's four-direction walk cycle is authored in Tools/protagonist.svg
 and rasterized into Tools/protagonist-sheet.png for the atlas builder. Terrain and
 environment props are authored in Tools/scene-art/*.svg; remaining art uses Pillow.
+Weapon and equipment icon SVGs live in Tools/weapon-art and Tools/equipment-art.
 
 Run: python Tools/generate_art.py
 Outputs only Assets/DeadCircuit/Resources/Art. Atlas rectangles use PNG top-left
@@ -471,11 +472,15 @@ def environment_overrides():
             for index, name in enumerate(names)}
 
 
-def main(weapons_only=False):
+def main(weapons_only=False, equipment_only=False):
     from generate_weapon_art import generate as generate_weapons
+    from generate_equipment_art import generate as generate_equipment
 
     if weapons_only:
         generate_weapons()
+        return
+    if equipment_only:
+        generate_equipment()
         return
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -533,13 +538,17 @@ def main(weapons_only=False):
                           files={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in
                                  (OUT/'sprites.png', OUT/'terrain.png', OUT/'atlas.json')}), ensure_ascii=False))
     generate_weapons()
+    generate_equipment()
 
 
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--weapons-only', action='store_true', help='Generate only the dedicated weapon atlas')
-    main(weapons_only=parser.parse_args().weapons_only)
+    scope = parser.add_mutually_exclusive_group()
+    scope.add_argument('--weapons-only', action='store_true', help='Generate only the dedicated weapon atlas')
+    scope.add_argument('--equipment-only', action='store_true', help='Generate only the equipment icon atlas')
+    args = parser.parse_args()
+    main(weapons_only=args.weapons_only, equipment_only=args.equipment_only)
 
 
