@@ -13,8 +13,8 @@ namespace DeadCircuit
         sealed class GroundChunkVisual
         {
             public Transform root;
-            public readonly Mesh[] meshes = new Mesh[4];
-            public readonly MeshRenderer[] renderers = new MeshRenderer[4];
+            public readonly Mesh[] meshes = new Mesh[5];
+            public readonly MeshRenderer[] renderers = new MeshRenderer[5];
         }
 
         sealed class GroundMeshData
@@ -35,6 +35,7 @@ namespace DeadCircuit
         readonly GroundMeshData biomeMesh = new GroundMeshData();
         readonly GroundMeshData detailMesh = new GroundMeshData();
         readonly GroundMeshData specialBiomeMesh = new GroundMeshData();
+        readonly GroundMeshData specialBiomeEdgeMesh = new GroundMeshData();
         Material specialBiomeGroundMaterial;
         WorldState groundWorld;
         int groundRevision = -1, groundGeneratorVersion, groundCenterX, groundCenterY;
@@ -142,7 +143,7 @@ namespace DeadCircuit
                 chunk = new GroundChunkVisual { root = NewRoot("Chunk " + chunkX + "," + chunkY, terrainRoot) };
                 groundChunks.Add(key, chunk);
             }
-            groundMesh.Clear(); biomeMesh.Clear(); detailMesh.Clear(); specialBiomeMesh.Clear();
+            groundMesh.Clear(); biomeMesh.Clear(); detailMesh.Clear(); specialBiomeMesh.Clear(); specialBiomeEdgeMesh.Clear();
             int cx = chunkX * ChunkSize, cy = chunkY * ChunkSize;
             for (int y = cy; y < cy + ChunkSize; y++)
             for (int x = cx; x < cx + ChunkSize; x++)
@@ -181,8 +182,12 @@ namespace DeadCircuit
                     int ny = y + (side == 1 ? 1 : side == 3 ? -1 : 0);
                     int other = Ground(nx, ny);
                     bool edge = other < 0 || (other != kind && (kind == 2 || (other != 2 && kind > other)));
-                    if (edge) AddQuad(groundMesh.vertices, groundMesh.uv, groundMesh.triangles, groundMesh.colors,
-                        x - .5f, y - .5f, 1, 1, TerrainUV(40 + kind * 4 + side), Color.white);
+                    if (edge)
+                    {
+                        GroundMeshData edgeMesh = kind <= 1 && biome >= (int)BiomeKind.Swamp ? specialBiomeEdgeMesh : groundMesh;
+                        AddQuad(edgeMesh.vertices, edgeMesh.uv, edgeMesh.triangles, edgeMesh.colors,
+                            x - .5f, y - .5f, 1, 1, TerrainUV(40 + kind * 4 + side), Color.white);
+                    }
                 }
                 string prop = kind == 0 && (h % (biome == (int)BiomeKind.SakuraGrove ? 11 : 19)) == 0 ? "tuft" :
                     (kind == 1 || kind == 4 || biome == (int)BiomeKind.Swamp || biome == (int)BiomeKind.RiverValley) && h % 41 == 0 ? "rubble" : null;
@@ -196,6 +201,8 @@ namespace DeadCircuit
                 UpdateGroundMesh(chunk, 2, "Scattered details", detailMesh, SpriteMeshMaterial(), -19000);
             if (specialBiomeMesh.vertices.Count > 0 || chunk.meshes[3] != null)
                 UpdateGroundMesh(chunk, 3, "Dedicated natural biomes", specialBiomeMesh, SpecialBiomeGroundMaterial(), -19998);
+            if (specialBiomeEdgeMesh.vertices.Count > 0 || chunk.meshes[4] != null)
+                UpdateGroundMesh(chunk, 4, "Natural biome shore edges", specialBiomeEdgeMesh, terrainMaterial, -19997);
         }
 
         void UpdateGroundMesh(GroundChunkVisual chunk, int layer, string name, GroundMeshData data, Material material, int order)
