@@ -39,8 +39,11 @@ namespace DeadCircuit
 
         sealed class TraceVisual
         {
-            public LineRenderer line;
+            public LineRenderer line, core;
             public SpriteRenderer impact;
+            public float until = -1, x, y, endX, endY;
+            public Vector2 shotFrom, shotTo;
+            public bool shotImpact;
         }
 
         sealed class CargoVisual
@@ -901,7 +904,7 @@ namespace DeadCircuit
             foreach (var v in buildings.Values) Release(v); buildings.Clear();
             foreach (var v in zombies.Values) Release(v); zombies.Clear();
             foreach (var v in players.Values) Release(v); players.Clear();
-            foreach (var t in traces) { t.line.enabled=false; t.impact.enabled=false; }
+            foreach (var t in traces) { t.line.enabled=t.core.enabled=t.impact.enabled=false; t.until=-1; }
             foreach (var r in ranges) r.enabled=false;
             foreach (var line in wires) line.enabled=false;
             foreach (var line in previewWires) line.enabled=false;
@@ -913,6 +916,7 @@ namespace DeadCircuit
             observedWorld=null; observedTick=-1; observedElapsed=-1; observedAt=0; visualTime=0;
             ghost.enabled=ghostArrow.enabled=footprint.enabled=ghostRange.enabled=ghostLinkRange.enabled=hoverFootprint.enabled=hoverRing.enabled=false;
             foreach (var p in particles) p.sprite.enabled=false;
+            ResetWeaponEffects();
             foreach (var line in weaponReticle) if (line != null) line.enabled=false;
             damagePulse=0;
         }
@@ -1090,23 +1094,66 @@ namespace DeadCircuit
             int count=0;
             if (world.traces!=null) foreach (var t in world.traces)
             {
-                if (t.until<world.elapsed || count>=64) continue;
+                if (t.until<visualTime || count>=64 || t.effect==2) continue;
                 if (!Visible(t.x,t.y) && !Visible(t.endX,t.endY)) continue;
                 TraceVisual v;
                 if (count==traces.Count)
                 {
-                    v=new TraceVisual { line=NewLine("Weapon trace",9500,.035f,false), impact=NewSprite("Impact spark",effectsRoot,9501) };
-                    v.line.positionCount=2; v.impact.sprite=Art("hit"); v.impact.transform.localScale=Vector3.one*.12f; traces.Add(v);
+                    v=new TraceVisual { line=NewLine("Weapon trace",9500,.035f,false),
+                        core=NewLine("Tracer bright core",9501,.01f,false), impact=NewSprite("Impact spark",effectsRoot,9502) };
+                    v.line.positionCount=v.core.positionCount=2;
+                    v.impact.sharedMaterial=effectMaterial; traces.Add(v);
                 }
                 else v=traces[count];
-                float alpha=Mathf.Clamp01((t.until-world.elapsed)/.12f);
+                float alpha=Mathf.Clamp01((t.until-visualTime)/.12f);
                 Color color=t.effect==3 || t.effect==5 ? new Color(.65f,.90f,.3f) : t.effect==6 ? new Color(.55f,.84f,1) : t.effect==8 ? new Color(.79f,.56f,.93f) : t.hostile ? Danger : new Color(1f,.88f,.53f); color.a=alpha;
-                v.line.enabled=t.effect<4 || t.effect==6; v.line.startColor=color; v.line.endColor=new Color(color.r,color.g,color.b,alpha*.35f);
-                v.line.SetPosition(0,new Vector3(t.x,t.y,0)); v.line.SetPosition(1,new Vector3(t.endX,t.endY,0));
-                v.impact.enabled=t.effect<4 || t.effect==6; v.impact.color=color; v.impact.transform.position=new Vector3(t.endX,t.endY,0);
+                bool shot=t.effect==1 && !t.hostile;
+                if (shot && (v.until!=t.until || v.x!=t.x || v.y!=t.y || v.endX!=t.endX || v.endY!=t.endY))
+                {
+                    v.until=t.until; v.x=t.x; v.y=t.y; v.endX=t.endX; v.endY=t.endY;
+                    RegisterShotTrace(world,t,v);
+                }
+                Vector2 from=shot ? v.shotFrom : new Vector2(t.x,t.y);
+                Vector2 to=shot ? v.shotTo : new Vector2(t.endX,t.endY);
+                bool drawLine=(t.effect<4 || t.effect==6) && (!shot || Vector2.Dot(to-from,new Vector2(t.endX-t.x,t.endY-t.y))>0);
+                v.line.enabled=drawLine; v.line.startWidth=v.line.endWidth=shot ? .027f : .035f;
+                v.line.startColor=color; v.line.endColor=new Color(color.r,color.g,color.b,alpha*.35f);
+                v.line.SetPosition(0,from); v.line.SetPosition(1,to);
+                v.core.enabled=shot && drawLine;
+                if (v.core.enabled)
+                {
+                    v.core.startColor=new Color(1f,1f,.88f,alpha); v.core.endColor=new Color(1f,.94f,.68f,alpha*.45f);
+                    v.core.SetPosition(0,from); v.core.SetPosition(1,to);
+                }
+                v.impact.enabled=shot ? v.shotImpact : t.effect<4 || t.effect==6;
+                int frame=Mathf.Clamp(Mathf.FloorToInt((.15f-(t.until-visualTime))/.05f),0,2);
+                v.impact.sprite=shot ? DemoArt.Get("fx_weapon_impact_"+frame) ?? Art("hit") : Art("hit");
+                v.impact.transform.localScale=Vector3.one*(shot ? .48f : .12f);
+                v.impact.color=shot ? new Color(1f,1f,1f,alpha) : color; v.impact.transform.position=to;
                 count++;
             }
-            for (int i=count;i<traces.Count;i++) { traces[i].line.enabled=false; traces[i].impact.enabled=false; }
+            for (int i=count;i<traces.Count;i++) { traces[i].line.enabled=traces[i].core.enabled=traces[i].impact.enabled=false; traces[i].until=-1; }
+        }
+
+        void RegisterShotTrace(WorldState world,TraceState trace,TraceVisual visual)
+        {
+            Vector2 from=new Vector2(trace.x,trace.y), end=new Vector2(trace.endX,trace.endY);
+            visual.shotFrom=from+Vector2.up*.35f; visual.shotTo=end+Vector2.up*.35f;
+            float range=8.5f, nearest=.64f; // Unmatched friendly shots belong to turrets.
+            foreach (var player in world.players)
+            {
+                float distance=(new Vector2(player.x,player.y)-from).sqrMagnitude;
+                if (distance>nearest) continue;
+                var gear=EquipmentCatalog.Equipped(player);
+                Visual actor;
+                if (gear==null || !EquipmentCatalog.IsGun(gear.kind) || !players.TryGetValue(player.id,out actor) ||
+                    actor.equipment==null || !actor.equipment.primed || actor.equipment.gearId!=gear.id) continue;
+                nearest=distance; range=EquipmentCatalog.Stats(gear).range+player.attributes[3]*.35f;
+                visual.shotFrom=actor.equipment.muzzleWorld;
+            }
+            // The authority clips a ray at a wall or its final target. A full-range
+            // miss has no surface to spark against; do not invent an impact there.
+            visual.shotImpact=Vector2.Distance(from,end)<range-.06f;
         }
 
         void DrawPreview(WorldState world,PlayerState local)
@@ -1321,6 +1368,7 @@ namespace DeadCircuit
                 p.sprite.transform.localScale=Vector3.one*p.scale*(1+age*.3f);
                 var c=p.tint; c.a*=1-age; p.sprite.color=c;
             }
+            DrawWeaponEffects();
         }
 
         Sprite Machine(BuildKind kind,int rotation)

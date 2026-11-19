@@ -471,7 +471,13 @@ def environment_overrides():
             for index, name in enumerate(names)}
 
 
-def main():
+def main(weapons_only=False):
+    from generate_weapon_art import generate as generate_weapons
+
+    if weapons_only:
+        generate_weapons()
+        return
+
     OUT.mkdir(parents=True, exist_ok=True)
     assets = []
     svg_overrides = environment_overrides()
@@ -526,9 +532,14 @@ def main():
                           atlas_size=atlas.size, terrain_tiles=40, edge_tiles=20,
                           files={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in
                                  (OUT/'sprites.png', OUT/'terrain.png', OUT/'atlas.json')}), ensure_ascii=False))
+    generate_weapons()
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--weapons-only', action='store_true', help='Generate only the dedicated weapon atlas')
+    main(weapons_only=parser.parse_args().weapons_only)
 
 

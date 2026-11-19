@@ -9,13 +9,21 @@ namespace DeadCircuit
         sealed class ActorEquipment
         {
             public SpriteRenderer weapon, hat, vest, trousers, boots, optic, muzzle, flash;
-            public int gearId, magazine;
+            public Vector2 muzzleWorld, samplePosition;
+            public string playerId;
+            public int gearId, magazine, durability;
+            public GearKind gearKind;
             public bool primed;
-            public float flashUntil, previousCooldown, armorImpactAt=-100;
+            public long sampleTick=-1;
+            public float sampleElapsed, sampledAt, lastTraceUntil=-1, previousCooldown, attackAt=-100, armorImpactAt=-100;
             public void SetVisible(bool value)
             {
                 weapon.enabled=hat.enabled=vest.enabled=trousers.enabled=boots.enabled=optic.enabled=muzzle.enabled=flash.enabled=value;
-                if (!value) { primed=false; flashUntil=0; }
+                if (!value)
+                {
+                    primed=false; playerId=null; sampleTick=-1; lastTraceUntil=-1; attackAt=armorImpactAt=-100;
+                    muzzleWorld=Vector2.zero;
+                }
             }
         }
         readonly Dictionary<int,Visual> wildlife = new Dictionary<int,Visual>();
@@ -139,39 +147,8 @@ namespace DeadCircuit
             GearState gear=EquipmentCatalog.Equipped(player);
             bool holding=gear!=null && player.hp>0; look.weapon.enabled=holding;
             look.optic.enabled=look.muzzle.enabled=look.flash.enabled=false;
-            if (!holding) { look.primed=false; return; }
-            Vector2 aim=new Vector2(player.aimX,player.aimY).normalized;
-            float angle=Mathf.Atan2(aim.y,aim.x)*Mathf.Rad2Deg;
-            bool gun=EquipmentCatalog.IsGun(gear.kind);
-            bool fired=look.primed && look.gearId==gear.id && gun && gear.magazine<look.magazine;
-            bool swung=look.primed && !gun && player.attackCooldown>look.previousCooldown+.05f;
-            if (fired) look.flashUntil=Time.unscaledTime+.075f;
-            if (swung) Spawn("fx_wave",visual.position+aim*.55f,Amber,.16f,.45f,aim*.7f);
-            look.gearId=gear.id; look.magazine=gear.magazine; look.previousCooldown=player.attackCooldown; look.primed=true;
-            look.weapon.sprite=DemoArt.Get("gear_"+(int)gear.kind);
-            look.weapon.sortingOrder=order+6; look.weapon.color=gear.durability>0 ? Color.white : new Color(.45f,.43f,.4f);
-            look.weapon.transform.localPosition=(Vector3)(aim*.35f)+new Vector3(0,.40f,0);
-            look.weapon.transform.localScale=Vector3.one*(gun && gear.kind!=GearKind.Pistol ? .78f : .54f);
-            float swing=!gun ? Mathf.Sin(Mathf.Clamp01(player.attackCooldown/.6f)*Mathf.PI)*-38 : 0;
-            look.weapon.transform.localRotation=Quaternion.Euler(0,0,angle+swing);
-            if (gun)
-            {
-                DrawWeaponPart(look.optic,gear.attachments[0],visual,aim*.32f+Vector2.up*.52f,angle,order+8);
-                DrawWeaponPart(look.muzzle,gear.attachments[1],visual,aim*.69f+Vector2.up*.40f,angle,order+8);
-                look.flash.enabled=Time.unscaledTime<look.flashUntil;
-                if (look.flash.enabled)
-                {
-                    bool suppressed=gear.attachments[1]==(int)PartKind.Suppressor;
-                    string flashKey=gear.kind==GearKind.Shotgun ? "fx_muzzle_shotgun" : gear.kind==GearKind.AssaultRifle ? "fx_muzzle_rifle" :
-                        gear.kind==GearKind.PrecisionRifle ? "fx_muzzle_sniper" : "fx_muzzle";
-                    look.flash.sprite=DemoArt.Get(flashKey) ?? Art("hit"); look.flash.sortingOrder=order+10;
-                    look.flash.transform.localPosition=(Vector3)(aim*.83f)+new Vector3(0,.40f,0);
-                    look.flash.transform.localRotation=Quaternion.Euler(0,0,angle);
-                    look.flash.transform.localScale=Vector3.one*(suppressed ? .18f : .5f);
-                    look.flash.color=new Color(1,.86f,.48f,suppressed ? .5f : 1);
-                }
-                if (fired) Spawn("fx_spark",visual.position+Vector2.up*.4f+aim*.25f,Amber,.28f,.16f,-aim*.5f+Vector2.up*.4f);
-            }
+            if (!holding) { look.primed=false; look.attackAt=-100; look.muzzleWorld=visual.position; return; }
+            DrawEquippedWeapon(visual,player,gear);
         }
 
         void DrawArmorLayer(SpriteRenderer renderer,PlayerState player,int slot,Vector2 position,float scale,int order)
@@ -183,12 +160,15 @@ namespace DeadCircuit
             renderer.transform.localPosition=position; renderer.transform.localScale=Vector3.one*scale;
             renderer.transform.localRotation=Quaternion.identity; renderer.sortingOrder=order;
         }
-        void DrawWeaponPart(SpriteRenderer renderer,int part,Visual visual,Vector2 position,float angle,int order)
+        void DrawWeaponPart(SpriteRenderer renderer,int part,Vector2 position,float angle,bool flipY,float scale,int order)
         {
-            renderer.enabled=part>=0; if (!renderer.enabled) return;
-            renderer.sprite=DemoArt.Get("part_"+part); renderer.color=Color.white;
-            renderer.transform.localPosition=position; renderer.transform.localScale=Vector3.one*.20f;
+            renderer.enabled=part>=0 && part<EquipmentCatalog.PartNames.Length; if (!renderer.enabled) return;
+            renderer.sprite=DemoArt.Get("part_"+part) ?? Art("pixel"); renderer.color=Color.white;
+            renderer.flipX=false; renderer.flipY=flipY; renderer.transform.localScale=Vector3.one*scale;
             renderer.transform.localRotation=Quaternion.Euler(0,0,angle); renderer.sortingOrder=order;
+            // Legacy part art is centred: mount the muzzle's rear or the optic's foot, not its centre.
+            Vector2 anchor=part==(int)PartKind.Suppressor || part==(int)PartKind.MuzzleBrake ? new Vector2(3,16) : new Vector2(16,26);
+            renderer.transform.position=(Vector3)position-renderer.transform.localRotation*(Vector3)(WeaponSpritePoint(renderer.sprite,anchor,32,32,flipY)*scale);
         }
         void DrawEnemyAura(Visual v,ZombieState enemy)
         {

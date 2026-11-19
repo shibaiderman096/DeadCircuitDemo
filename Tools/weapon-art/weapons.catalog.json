@@ -1,0 +1,550 @@
+{
+  "width": 544,
+  "height": 340,
+  "art_source": "existing",
+  "route": "SVG-authored/code-rendered",
+  "reference": "Tools/ExpansionArt/SvgBatch/Sources/icons.svg",
+  "referenceSha256": "68addb4764291e27e063f425b9be405bb68880089c434f67069c9feb4a58efb4",
+  "referenceKeys": [
+    "gear_5",
+    "gear_6",
+    "gear_7",
+    "gear_8",
+    "gear_9"
+  ],
+  "palette": {
+    "ink": "#192829",
+    "dark": "#253b3b",
+    "shadow": "#344a43",
+    "steel": "#536a68",
+    "light": "#8ba39a",
+    "cream": "#ddd5ac",
+    "white": "#eee9d3",
+    "soil": "#503e32",
+    "brown": "#76533b",
+    "tan": "#aa8054",
+    "sand": "#c4ab75",
+    "rust": "#9b5338",
+    "amber": "#e59a50",
+    "gold": "#edc566",
+    "red": "#b75446",
+    "rose": "#d68169",
+    "leaf": "#527445",
+    "green": "#739650",
+    "olive": "#81824a",
+    "teal": "#80d8bc",
+    "cyan": "#4c9e9b",
+    "ice": "#aed5d2",
+    "blue": "#497b86",
+    "purple": "#796175"
+  },
+  "sprites": [
+    {
+      "name": "weapon_icon_5",
+      "label": "KA-BAR 1217 inventory",
+      "w": 32,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 2,
+      "y": 2
+    },
+    {
+      "name": "weapon_icon_6",
+      "label": "GLOCK 17 inventory",
+      "w": 32,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 70,
+      "y": 2
+    },
+    {
+      "name": "weapon_icon_7",
+      "label": "Mossberg 590 inventory",
+      "w": 32,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 138,
+      "y": 2
+    },
+    {
+      "name": "weapon_icon_8",
+      "label": "M4A1 inventory",
+      "w": 32,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 206,
+      "y": 2
+    },
+    {
+      "name": "weapon_icon_9",
+      "label": "M24 inventory",
+      "w": 32,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 274,
+      "y": 2
+    },
+    {
+      "name": "weapon_5",
+      "label": "KA-BAR 1217 held",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.3125,
+      "pivotY": 0.375,
+      "muzzleSource": [
+        58,
+        16
+      ],
+      "gripSource": [
+        20,
+        20
+      ],
+      "x": 342,
+      "y": 2
+    },
+    {
+      "name": "weapon_6",
+      "label": "GLOCK 17 held",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.3125,
+      "pivotY": 0.375,
+      "muzzleSource": [
+        45,
+        14
+      ],
+      "gripSource": [
+        20,
+        20
+      ],
+      "x": 410,
+      "y": 2
+    },
+    {
+      "name": "weapon_7",
+      "label": "Mossberg 590 held",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.3125,
+      "pivotY": 0.375,
+      "muzzleSource": [
+        61,
+        14
+      ],
+      "gripSource": [
+        20,
+        20
+      ],
+      "x": 478,
+      "y": 2
+    },
+    {
+      "name": "weapon_8",
+      "label": "M4A1 held",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.3125,
+      "pivotY": 0.375,
+      "muzzleSource": [
+        60,
+        14
+      ],
+      "gripSource": [
+        20,
+        20
+      ],
+      "x": 2,
+      "y": 70
+    },
+    {
+      "name": "weapon_9",
+      "label": "M24 held",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.3125,
+      "pivotY": 0.375,
+      "muzzleSource": [
+        62,
+        14
+      ],
+      "gripSource": [
+        20,
+        20
+      ],
+      "x": 70,
+      "y": 70
+    },
+    {
+      "name": "fx_weapon_muzzle_6_0",
+      "label": "6 muzzle frame 0",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 138,
+      "y": 70
+    },
+    {
+      "name": "fx_weapon_muzzle_6_1",
+      "label": "6 muzzle frame 1",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 206,
+      "y": 70
+    },
+    {
+      "name": "fx_weapon_muzzle_6_2",
+      "label": "6 muzzle frame 2",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 274,
+      "y": 70
+    },
+    {
+      "name": "fx_weapon_muzzle_7_0",
+      "label": "7 muzzle frame 0",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 342,
+      "y": 70
+    },
+    {
+      "name": "fx_weapon_muzzle_7_1",
+      "label": "7 muzzle frame 1",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 410,
+      "y": 70
+    },
+    {
+      "name": "fx_weapon_muzzle_7_2",
+      "label": "7 muzzle frame 2",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 478,
+      "y": 70
+    },
+    {
+      "name": "fx_weapon_muzzle_8_0",
+      "label": "8 muzzle frame 0",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 2,
+      "y": 138
+    },
+    {
+      "name": "fx_weapon_muzzle_8_1",
+      "label": "8 muzzle frame 1",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 70,
+      "y": 138
+    },
+    {
+      "name": "fx_weapon_muzzle_8_2",
+      "label": "8 muzzle frame 2",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 138,
+      "y": 138
+    },
+    {
+      "name": "fx_weapon_muzzle_9_0",
+      "label": "9 muzzle frame 0",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 206,
+      "y": 138
+    },
+    {
+      "name": "fx_weapon_muzzle_9_1",
+      "label": "9 muzzle frame 1",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 274,
+      "y": 138
+    },
+    {
+      "name": "fx_weapon_muzzle_9_2",
+      "label": "9 muzzle frame 2",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 342,
+      "y": 138
+    },
+    {
+      "name": "fx_weapon_suppressed_0",
+      "label": "Suppressed muzzle frame 0",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 410,
+      "y": 138
+    },
+    {
+      "name": "fx_weapon_suppressed_1",
+      "label": "Suppressed muzzle frame 1",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 478,
+      "y": 138
+    },
+    {
+      "name": "fx_weapon_suppressed_2",
+      "label": "Suppressed muzzle frame 2",
+      "w": 64,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.0625,
+      "pivotY": 0.5,
+      "emissionSource": [
+        4,
+        16
+      ],
+      "x": 2,
+      "y": 206
+    },
+    {
+      "name": "fx_weapon_smoke_0",
+      "label": "Smoke expansion frame 0",
+      "w": 64,
+      "h": 64,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 70,
+      "y": 206
+    },
+    {
+      "name": "fx_weapon_smoke_1",
+      "label": "Smoke expansion frame 1",
+      "w": 64,
+      "h": 64,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 138,
+      "y": 206
+    },
+    {
+      "name": "fx_weapon_smoke_2",
+      "label": "Smoke expansion frame 2",
+      "w": 64,
+      "h": 64,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 206,
+      "y": 206
+    },
+    {
+      "name": "fx_weapon_casing",
+      "label": "Brass cartridge casing",
+      "w": 16,
+      "h": 16,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 274,
+      "y": 206
+    },
+    {
+      "name": "fx_weapon_shell",
+      "label": "Spent shotgun shell",
+      "w": 16,
+      "h": 16,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 342,
+      "y": 206
+    },
+    {
+      "name": "fx_weapon_slash_0",
+      "label": "Knife crescent windup",
+      "w": 64,
+      "h": 64,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 410,
+      "y": 206
+    },
+    {
+      "name": "fx_weapon_slash_1",
+      "label": "Knife crescent full sweep",
+      "w": 64,
+      "h": 64,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 478,
+      "y": 206
+    },
+    {
+      "name": "fx_weapon_slash_2",
+      "label": "Knife crescent follow through",
+      "w": 64,
+      "h": 64,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 2,
+      "y": 274
+    },
+    {
+      "name": "fx_weapon_impact_0",
+      "label": "Impact sparks frame 0",
+      "w": 32,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 70,
+      "y": 274
+    },
+    {
+      "name": "fx_weapon_impact_1",
+      "label": "Impact sparks frame 1",
+      "w": 32,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 138,
+      "y": 274
+    },
+    {
+      "name": "fx_weapon_impact_2",
+      "label": "Impact sparks frame 2",
+      "w": 32,
+      "h": 32,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 206,
+      "y": 274
+    },
+    {
+      "name": "fx_weapon_glow",
+      "label": "Warm stepped pixel light",
+      "w": 64,
+      "h": 64,
+      "pixelsPerUnit": 32,
+      "pivotX": 0.5,
+      "pivotY": 0.5,
+      "x": 274,
+      "y": 274
+    }
+  ]
+}
