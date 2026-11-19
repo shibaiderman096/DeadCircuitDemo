@@ -25,6 +25,7 @@ namespace DeadCircuit
         readonly UiButton[] densityButtons = new UiButton[3];
         readonly RectTransform[] menuPages = new RectTransform[4];
         RectTransform menuFrame, worldListContent, settingsPanel, toolsTray, buildTray;
+        CanvasGroup menuInteraction;
         UnityEngine.UI.ScrollRect worldListScroll;
         UnityEngine.UI.Slider volumeSlider, effectsSlider, scaleSlider;
         TMP_InputField worldNameField;
@@ -48,12 +49,16 @@ namespace DeadCircuit
         void MakeMenu(RectTransform root)
         {
             menu = Backdrop("Main Menu", root, Recessed);
+            menuInteraction = menu.gameObject.AddComponent<CanvasGroup>();
+            MakeTitlePanorama(menu);
+            menuPages[0] = NewRect("Start Page", menu);
+            Stretch(menuPages[0]);
             menuFrame = NewRect("World Menu Frame", menu);
             Center(menuFrame, 1120, 640);
-            for (int i = 0; i < menuPages.Length; i++)
+            string[] names = { "Create World Page", "Load World Page", "LAN Page" };
+            for (int i = 1; i < menuPages.Length; i++)
             {
-                string[] names = { "Start Page", "Create World Page", "Load World Page", "LAN Page" };
-                menuPages[i] = Box(names[i], menuFrame, 0, 0, 1120, 560, Panel, true);
+                menuPages[i] = Box(names[i - 1], menuFrame, 0, 0, 1120, 560, Panel, true);
                 PanelRule(menuPages[i], 1120, 66);
             }
             MakeStartPage(menuPages[0]);
@@ -64,22 +69,6 @@ namespace DeadCircuit
             menuStatus.alignment = TextAlignmentOptions.TopLeft;
             MakeSettings(root);
             ShowMenuPage(MenuPage.Home, false);
-        }
-
-        void MakeStartPage(RectTransform page)
-        {
-            Label("Edition", page, "DEAD CIRCUIT / 废土回路", 28, 18, 800, 30, 17, Accent);
-            Label("Title", page, "废土回路", 44, 126, 540, 94, 64, Ink, FontStyles.Bold);
-            Label("Tagline", page, "从一处落脚点，接通下一段回路。", 48, 240, 510, 40, 23, Ink);
-            Label("Premise", page, "探索、采集、建造与工业生产。\n独自建立世界，或在局域网中协作。", 48, 300, 510, 76, 18, Muted);
-            Label("Menu Footnote", page, "世界配置与存档选择各自独立。", 48, 482, 510, 30, 15, Muted);
-            RectTransform actions = Box("Start Actions", page, 646, 104, 426, 404, Recessed);
-            Label("Start Actions Heading", actions, "开始旅程", 24, 16, 378, 32, 23, Ink, FontStyles.Bold);
-            Button("New Game", actions, "新建世界", 24, 66, 378, 52, StartNew, true);
-            loadButton = Button("Load Game", actions, "读取世界", 24, 132, 378, 48, Load);
-            Button("Open LAN", actions, "局域网", 24, 194, 378, 48, () => ShowMenuPage(MenuPage.Lan));
-            Button("Open Settings", actions, "设置", 24, 256, 378, 48, OpenSettings);
-            menuSave = Label("Save Availability", actions, "", 24, 320, 378, 66, 14, Muted);
         }
 
         void MakeCreatePage(RectTransform page)
@@ -168,6 +157,8 @@ namespace DeadCircuit
         {
             menuPage = page;
             for (int i = 0; i < menuPages.Length; i++) menuPages[i].gameObject.SetActive(i == (int)page);
+            menuStatus.alignment = page == MenuPage.Home ? TextAlignmentOptions.Center : TextAlignmentOptions.TopLeft;
+            menuInteraction.interactable = !settingsPanel.gameObject.activeSelf;
             if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
             guardThroughFrame = Time.frameCount + 1;
             if (page == MenuPage.Create) RefreshCreationSummary();
@@ -337,7 +328,7 @@ namespace DeadCircuit
             Center(card, 720, 540);
             PanelRule(card, 720, 68);
             Label("Settings Heading", card, "设置", 28, 16, 500, 38, 28, Ink, FontStyles.Bold);
-            Button("Close Settings", card, "返回", 574, 20, 118, 34, CloseSettings);
+            settingsCloseButton = Button("Close Settings", card, "返回", 574, 20, 118, 34, CloseSettings).button;
             Label("Master Volume Label", card, "主音量", 28, 96, 450, 30, 19, Ink);
             volumeValue = Label("Master Volume Value", card, "", 580, 96, 112, 30, 18, Accent);
             volumeSlider = PreferenceSlider("Master Volume", card, 28, 140, 664, 0f, 1f,
@@ -411,6 +402,8 @@ namespace DeadCircuit
             else if (!settingsPanel.gameObject.activeSelf)
             {
                 settingsPanel.gameObject.SetActive(true);
+                menuInteraction.interactable = false;
+                if (eventSystem != null) eventSystem.SetSelectedGameObject(settingsCloseButton.gameObject);
                 DemoAudio.UiOpen();
             }
             settingsPanel.SetAsLastSibling();
@@ -422,8 +415,10 @@ namespace DeadCircuit
             PlayerPrefs.Save();
             bool wasOpen = settingsPanel.gameObject.activeSelf;
             settingsPanel.gameObject.SetActive(false);
+            menuInteraction.interactable = true;
             if (wasOpen) DemoAudio.UiClose();
             if (bridge.IsRunning) SetPanel(session, true);
+            else if (eventSystem != null) eventSystem.SetSelectedGameObject(titleSettingsButton.gameObject);
         }
 
         void PanelRule(RectTransform parent, float width, float top)
