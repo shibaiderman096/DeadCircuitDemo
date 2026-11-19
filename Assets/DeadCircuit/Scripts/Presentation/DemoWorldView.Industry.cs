@@ -159,7 +159,7 @@ namespace DeadCircuit
             for (int item = 7; item < itemSprites.Length; item++,tile++)
             {
                 int bx=tile%columns*size,by=tile/columns*size;
-                Color32 color = ItemColors[item];
+                Color32 color = item < ItemColors.Length ? (Color32)ItemColors[item] : metal;
                 bool circuit = item==(int)ItemKind.Circuit || item==(int)ItemKind.AdvancedCircuit;
                 bool canister = item==(int)ItemKind.Coolant || item==(int)ItemKind.NuclearWaste;
                 for (int y=14;y<50;y++) for(int x=12;x<52;x++)
