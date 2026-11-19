@@ -27,6 +27,52 @@ namespace DeadCircuit
             return ecology.Length == 0 ? settlement : settlement + " · " + ecology;
         }
 
+        static string BiomeResourceHint(WorldState world, int x, int y)
+        {
+            if (world == null || world.generatorVersion < 7 || FloorWorld.IsInterior(world, x, y)) return "";
+            char ground = WorldTiles.Ground(world, x, y);
+            if (ground == '?' || ground == '4') return "";
+            var resources = BiomeResourceCatalog.Get((BiomeKind)(WorldTiles.Biome(world, x, y) - '0'));
+            return resources?.hint ?? "";
+        }
+
+        static string ResourceToolText(NodeKind kind)
+        {
+            switch (kind)
+            {
+                case NodeKind.Tree: return "斧（提高采集效率）";
+                case NodeKind.Stone: case NodeKind.Clay:
+                case NodeKind.Ore: case NodeKind.CopperOre: case NodeKind.TinOre: case NodeKind.UraniumOre:
+                    return "镐（提高采集效率）";
+                case NodeKind.Scrap: case NodeKind.Wall: return "扳手（提高采集效率）";
+                default: return "手工即可";
+            }
+        }
+
+        static string ResourceCollectionHint(WorldState world, PlayerState player, NodeState node)
+        {
+            string hint = "靠近并瞄准后按 E；空手也可采集。";
+            if (node.kind == NodeKind.Ore || node.kind == NodeKind.CopperOre ||
+                node.kind == NodeKind.TinOre || node.kind == NodeKind.UraniumOre)
+                hint += "\n采矿机需紧邻矿脉并供能；蒸汽矿机仅采铁。";
+            if (node.kind == NodeKind.Tree && world.generatorVersion >= 1 &&
+                world.generatorVersion <= WorldGeneration.CurrentGeneratorVersion &&
+                world.survival != null && world.survival.enabled && player?.needs != null && player.needs.initialized)
+            {
+                string forage = "";
+                switch (WorldTiles.Biome(world, node.x, node.y) - '0')
+                {
+                    case 0: case 1: forage = "苹果、浆果"; break;
+                    case 2: case 4: case 5: forage = "蘑菇、浆果"; break;
+                    case 3: forage = "少量浆果"; break;
+                }
+                if (forage.Length > 0) hint += "\n按 E 采尽树木可附带：" + forage + "。";
+            }
+            string resources = BiomeResourceHint(world, node.x, node.y);
+            if (resources.Length > 0) hint += "\n本群系资源方向：" + resources;
+            return hint + "\n资源有限，采尽后需继续探索。";
+        }
+
         string RoomLocation(WorldState world, PlayerState player)
         {
             if (world == null || player == null) return "";
@@ -48,7 +94,10 @@ namespace DeadCircuit
             if (room == null)
             {
                 string region = OutdoorRegionText(world, x, y);
-                return "\n位置：" + siteLocation + "户外" + (region.Length == 0 ? "" : " · " + region);
+                string resources = BiomeResourceHint(world, x, y).Replace('\n', ' ').Replace('\r', ' ');
+                if (resources.Length > 30) resources = resources.Substring(0, 29) + "…";
+                return "\n位置：" + siteLocation + "户外" + (region.Length == 0 ? "" : " · " + region) +
+                    (resources.Length == 0 ? "" : "\n资源方向：" + resources);
             }
             string ground = FloorWorld.LevelName(0) + " · ";
             if (site != null) ground += "(" + (x - site.x) + "," + (y - site.y) + ") · ";

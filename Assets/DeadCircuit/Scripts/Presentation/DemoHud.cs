@@ -775,9 +775,12 @@ namespace DeadCircuit
             machineCluster.gameObject.SetActive(false);
             machineTitle.color = Accent;
             Set(machineTitle, Nodes[(int)node.kind] + "  " + CellLocationText(world, inspectedX, inspectedY));
-            SetFlowText(machineInfo, "资源余量：" + node.stock);
-            SetFlowText(machineContents, "资源耐久：" + Mathf.CeilToInt(node.hp));
-            SetFlowText(machineHint, "靠近后按 E 采集 / 交互。\n采矿机需紧邻未耗尽的矿脉。");
+            int resourceBiome = WorldTiles.Biome(world, node.x, node.y) - '0';
+            string biomeName = resourceBiome >= 0 && resourceBiome < WorldGenerationCatalog.Biomes.Count
+                ? WorldGenerationCatalog.Biomes[resourceBiome].name : "未知";
+            SetFlowText(machineInfo, "所在群系：" + biomeName + "\n资源余量：" + node.stock);
+            SetFlowText(machineContents, "资源耐久：" + Mathf.CeilToInt(node.hp) + "\n合适工具：" + ResourceToolText(node.kind));
+            SetFlowText(machineHint, ResourceCollectionHint(world, player, node));
         }
 
         void HideInspector()

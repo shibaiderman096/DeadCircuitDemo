@@ -21,6 +21,17 @@ static partial class Checks
 
     static void ForagingChecks()
     {
+        Run("foraging gathering notice reports actual node biome food and capped receipt", () =>
+        {
+            var sim = ForagingFixture(out var p, biome: (int)BiomeKind.Wetland);
+            var map = sim.State.biomes.ToCharArray(); map[8 + 10 * 64] = '0'; sim.State.biomes = new string(map);
+            p.needs.foods[(int)FoodKind.Berries] = SurvivalCatalog.StackLimit;
+            p.needs.foods[(int)FoodKind.Mushroom] = SurvivalCatalog.StackLimit - 1;
+            sim.Apply(Command(p, "interact", 10, 10));
+            Require(p.notice.Contains("野蘑菇 +1"), "actual capped biome forage absent from notice: " + p.notice);
+            Require(!p.notice.Contains("浆果") && !p.notice.Contains("苹果"), "notice promised overflow or player-cell biome loot");
+            Require(p.needs.foods[(int)FoodKind.Mushroom] == SurvivalCatalog.StackLimit && p.needs.foods[(int)FoodKind.Apple] == 0, "node biome or cap was ignored");
+        });
         Run("foraging depleted broadleaf tree gives actual apples and berries", () =>
         {
             var sim = ForagingFixture(out var p); int wood = p.items[(int)ItemKind.Wood];

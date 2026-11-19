@@ -135,7 +135,7 @@ namespace DeadCircuit
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 6;
+        public const int CurrentGeneratorVersion = 7;
         public const int LegacySiteCount = 12;
         private const int Size = 64;
 
@@ -356,6 +356,8 @@ namespace DeadCircuit
 
         private static void GenerateResources(WorldState state, char[] ground, bool[] reserved, HashSet<int> occupied)
         {
+            if (state.generatorVersion >= 7)
+            { GenerateBiomeResources(state, ground, reserved, occupied); return; }
             var random = new StableRandom(state.seed, 0x2e50ac01u);
             for (int y = 3; y <= 60; y++) for (int x = 3; x <= 60; x++)
             {
@@ -380,6 +382,53 @@ namespace DeadCircuit
                 }
                 AddNode(state, occupied, x, y, kind, stock);
             }
+        }
+
+        private static void GenerateBiomeResources(WorldState state, char[] ground, bool[] reserved, HashSet<int> occupied)
+        {
+            var blocked = new bool[ground.Length];
+            foreach (int cell in occupied) blocked[cell] = true;
+            // Real doors remain occupied but can be opened when checking access.
+            foreach (var building in state.buildings)
+                if (building.kind == BuildKind.Door) blocked[building.x + building.y * Size] = false;
+            for (int y = 3; y <= 60; y++) for (int x = 3; x <= 60; x++)
+            {
+                int cell = x + y * Size;
+                if (state.nodes.Count >= WorldSimulator.MaxNodes || reserved[cell] || occupied.Contains(cell) ||
+                    ground[cell] == '2' || ground[cell] == '3' || ground[cell] == '4') continue;
+                bool shoreline = ground[cell - 1] == '2' || ground[cell + 1] == '2' ||
+                    ground[cell - Size] == '2' || ground[cell + Size] == '2';
+                if (!ChunkTerrain.SampleResource(state.seed, x, y, (BiomeKind)(state.biomes[cell] - '0'),
+                    state.generation, shoreline, out NodeKind kind, out int stock)) continue;
+                int[] parents = ResourcePaths(ground, blocked);
+                if (parents[cell] < 0) continue;
+                AddNode(state, occupied, x, y, kind, stock);
+                blocked[cell] = true;
+                // Preserve an actual gathering approach, as sparse chunks do.
+                for (int path = parents[cell]; path >= 0; path = parents[path]) reserved[path] = true;
+            }
+        }
+
+        private static int[] ResourcePaths(char[] ground, bool[] blocked)
+        {
+            var parents = new int[ground.Length]; var queue = new int[ground.Length];
+            for (int i = 0; i < parents.Length; i++) parents[i] = -2;
+            int head = 0, tail = 0, spawn = 32 + 35 * Size;
+            parents[spawn] = -1; queue[tail++] = spawn;
+            while (head < tail)
+            {
+                int cell = queue[head++], x = cell % Size, y = cell / Size;
+                for (int direction = 0; direction < 4; direction++)
+                {
+                    int nx = x + (direction == 0 ? 1 : direction == 1 ? -1 : 0);
+                    int ny = y + (direction == 2 ? 1 : direction == 3 ? -1 : 0);
+                    if (nx < 0 || ny < 0 || nx >= Size || ny >= Size) continue;
+                    int next = nx + ny * Size;
+                    if (parents[next] != -2 || blocked[next] || ground[next] == '2') continue;
+                    parents[next] = cell; queue[tail++] = next;
+                }
+            }
+            return parents;
         }
 
         public static WorldGenerationSettings CloneSettings(WorldGenerationSettings settings)

@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace DeadCircuit
 {
@@ -6,7 +7,7 @@ namespace DeadCircuit
     {
         // Interact calls once after depletion and immediately removes the finite source.
         // Destruction, mining machines and partial harvesting do not award forage.
-        private void AwardForageLoot(PlayerState p, NodeState n)
+        private string AwardForageLoot(PlayerState p, NodeState n)
         {
             if (State.generatorVersion < 1 || State.generatorVersion > WorldGeneration.CurrentGeneratorVersion ||
                 State.survival == null || !State.survival.enabled ||
@@ -14,9 +15,12 @@ namespace DeadCircuit
                 n == null || n.stock != 0 || (n.kind != NodeKind.Tree && n.kind != NodeKind.Crate) ||
                 !WorldTiles.Inside(State, n.x, n.y) || !State.nodes.Contains(n) || p.needs.foods == null ||
                 p.needs.foods.Length != SurvivalCatalog.FoodCount || p.needs.seeds == null ||
-                p.needs.seeds.Length != SurvivalCatalog.CropCount) return;
+                p.needs.seeds.Length != SurvivalCatalog.CropCount) return "";
             int biome = WorldTiles.Biome(State, n.x, n.y) - '0';
-            if (biome < 0 || biome > 5) return;
+            if (biome < 0 || biome > 5) return "";
+            var foodsBefore = (int[])p.needs.foods.Clone();
+            var seedsBefore = (int[])p.needs.seeds.Clone();
+            int waterBefore = p.needs.waterClean;
             // Streamed entity IDs follow discovery order; world coordinates do not.
             // Keep non-chunk gen1's node-ID hash unchanged for legacy exact yields.
             uint loot = ChunkStreaming.Enabled(State)
@@ -44,6 +48,18 @@ namespace DeadCircuit
             }
             // Capacity overflow is discarded when the source is exhausted, never banked for replay.
             // No node stock or weather/wildlife PRNG is changed.
+            var receipt = new StringBuilder();
+            for (int i = 0; i < foodsBefore.Length; i++)
+                AppendForageReceipt(receipt, SurvivalCatalog.Foods[i].name, p.needs.foods[i] - foodsBefore[i]);
+            for (int i = 0; i < seedsBefore.Length; i++)
+                AppendForageReceipt(receipt, SurvivalCatalog.Crops[i].name + "种子", p.needs.seeds[i] - seedsBefore[i]);
+            AppendForageReceipt(receipt, "净水", p.needs.waterClean - waterBefore);
+            return receipt.ToString();
+        }
+
+        private static void AppendForageReceipt(StringBuilder receipt, string name, int amount)
+        {
+            if (amount > 0) receipt.Append("；").Append(name).Append(" +").Append(amount);
         }
 
         // Profiles belong only to immutable version-one plans. Legacy crates,

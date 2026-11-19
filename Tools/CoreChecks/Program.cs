@@ -105,6 +105,7 @@ static partial class Checks
         FloorIntegrationChecks();
         ChunkChecks();
         ChunkTerrainChecks();
+        BiomeResourceChecks();
         InfiniteRoomChecks();
         SeasonChecks();
         InfiniteSurvivalChecks();
