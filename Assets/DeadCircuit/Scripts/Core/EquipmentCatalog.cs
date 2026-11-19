@@ -184,7 +184,7 @@ namespace DeadCircuit
             return true;
         }
         public static bool CanCraft(WorldState world, PlayerState player, GearKind kind) =>
-            (int)kind>=0 && (int)kind<GearNames.Length && ValidCrafter(world,player) && player.gear.Count<MaxGear && CanPay(player.items,Gear(kind).cost) && world.era>=Gear(kind).era;
+            (int)kind>=0 && (int)kind<GearNames.Length && ValidCrafter(world,player) && player.gear.Count<MaxGear && CanPay(player.items,Gear(kind).cost) && world.era>=Gear(kind).era && PrimitiveCatalog.IsGearUnlocked(world,kind);
         public static bool CanCraftPart(WorldState world, PlayerState player, PartKind kind) =>
             (int)kind>=0 && (int)kind<PartNames.Length && ValidCrafter(world,player) && player.parts!=null && player.parts.Length==PartNames.Length && player.parts[(int)kind]<WorldSimulator.InventoryLimit && CanPay(player.items,Part(kind).cost) && world.era>=Part(kind).era;
         private static bool CanPay(int[] items,int[] cost)

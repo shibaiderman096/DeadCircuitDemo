@@ -12,13 +12,14 @@ static partial class Checks
         var sim=new WorldSimulator(state);Builder(sim);return AsVersionThree(Saved(sim.State));
     }
     // Actual pre-equipment JSON: 21 slots and no v4 equipment fields, never a v4
-    // graph relabeled as v3 with 25-slot inventories. Preserve the caller graph.
+    // graph relabeled as v3 with current inventories. Preserve the caller graph.
     static WorldState AsVersionThree(WorldState source)
     {
         var state=Saved(source);state.version=3;state.produced=state.produced.Take(21).ToArray();
         foreach(var b in state.buildings)b.items=b.items.Take(21).ToArray();
         foreach(var p in state.players)p.items=p.items.Take(21).ToArray();
         var root=JsonNode.Parse(Dump(state)).AsObject();
+        root.Remove("primitiveVersion");root.Remove("primitiveResearch");
         foreach(var p in root["players"].AsArray())
             foreach(string field in new[] { "gear","parts","weaponId","toolId","activeSlot","armorIds","selectedAmmo","reloadRemaining","reloadingGearId","recoil","aiming","moving" })p.AsObject().Remove(field);
         return JsonSerializer.Deserialize<WorldState>(root.ToJsonString(),Json);
@@ -34,6 +35,7 @@ static partial class Checks
         state.players.Add(new PlayerState { id="legacy",name="Legacy",seat=0,x=32,y=35,level=3,xp=10,attributePoints=4,skillPoints=2,attributes=new[] { 2,0,0,0,0 },skills=new[] { 1,0,0 },items=new[] { 11,12,13,14,15,16,17 } });
         state.cargo.Add(new CargoState { id=state.nextId++,fromId=belt.id,toId=chest.id,item=(int)ItemKind.Ammo,fromX=14,fromY=10,toX=15,toY=10,progress=.5f,duration=.4f });
         var root=JsonNode.Parse(Dump(state)).AsObject();root.Remove("era");root.Remove("produced");root.Remove("powerNetworks");
+        root.Remove("primitiveVersion");root.Remove("primitiveResearch");
         foreach(var p in root["players"].AsArray())
             foreach(string field in new[] { "gear","parts","weaponId","toolId","activeSlot","armorIds","selectedAmmo","reloadRemaining","reloadingGearId","recoil","aiming","moving" })p.AsObject().Remove(field);
         foreach(var node in root["buildings"].AsArray())
@@ -61,10 +63,10 @@ static partial class Checks
                 {
                     var old=legacy.buildings[i];var current=restored.buildings.Single(b=>b.id==old.id);
                     Require(current.kind==old.kind && current.x==old.x && current.y==old.y && current.rotation==old.rotation && current.footprintVersion==old.footprintVersion,"legacy layout changed");
-                    Require(current.items.Length==25 && current.items.Take(7).SequenceEqual(old.items) && current.items.Skip(7).All(n=>n==0),"legacy building inventory lost or invented items");
+                    Require(current.items.Length==29 && current.items.Take(7).SequenceEqual(old.items) && current.items.Skip(7).All(n=>n==0),"legacy building inventory lost or invented items");
                 }
                 var p=restored.players.Single();var source=legacy.players.Single();
-                Require(p.items.Length==25 && p.items.Take(7).SequenceEqual(source.items) && p.items.Skip(7).All(n=>n==0),"legacy player inventory migration");
+                Require(p.items.Length==29 && p.items.Take(7).SequenceEqual(source.items) && p.items.Skip(7).All(n=>n==0),"legacy player inventory migration");
                 Require(p.level==source.level && p.xp==source.xp && p.attributePoints==4 && p.skillPoints==2 && p.attributes.SequenceEqual(source.attributes) && p.skills.SequenceEqual(source.skills),"migration changed personal progression");
                 Require(JsonSerializer.Serialize(restored.cargo,Json)==oldCargo,"migration lost in-flight identity or timing");
                 var cargo=restored.cargo.Single();var sink=Building(sim,cargo.toId);int ammo=sink.items[(int)ItemKind.Ammo];var totals=ItemTotals(restored);
@@ -76,6 +78,8 @@ static partial class Checks
         {
             var saved=VersionThreeFixture();var restored=new WorldSimulator(saved);string before=Dump(restored.State);var oldReactor=saved.buildings.Single(b=>b.kind==BuildKind.Reactor);var newReactor=restored.State.buildings.Single(b=>b.kind==BuildKind.Reactor);
             Require(!ReferenceEquals(saved.produced,restored.State.produced) && !ReferenceEquals(saved.buildings,restored.State.buildings),"v3 restore aliases research/production collections");
+            Require(restored.State.produced.Length==29 && restored.State.produced.Take(21).SequenceEqual(saved.produced) && restored.State.produced.Skip(21).All(n=>n==0),"v3 production counters were lost or invented during expansion");
+            Require(restored.State.players.All(p=>p.items.Length==29) && restored.State.buildings.All(b=>b.items.Length==29),"v3 inventories did not expand to the current length");
             Require(newReactor.temperature==440 && newReactor.progress==.4f && newReactor.fuel==3 && !newReactor.tripped,"restore changed reactor operating reserves");
             Require(restored.State.buildings.Single(b=>b.kind==BuildKind.NuclearProcessor).recipe==90 && restored.State.buildings.Single(b=>b.kind==BuildKind.Transformer).setting==1,"restore lost recipe/converter configuration");
             saved.era=TechEra.Primitive;saved.produced[17]=999;oldReactor.temperature=1199;oldReactor.tripped=true;oldReactor.items[15]=99;saved.buildings.Single(b=>b.kind==BuildKind.NuclearProcessor).recipe=int.MaxValue;saved.buildings.Single(b=>b.kind==BuildKind.Transformer).setting=0;saved.players[0].items[20]=999;saved.players[0].attributes[0]=9;saved.players[0].skillPoints=0;
@@ -89,7 +93,7 @@ static partial class Checks
         });
         Run("v3 validation rejects corrupted research eras and production arrays", () =>
         {
-            foreach(var corrupt in new Action<WorldState>[] { s=>s.era=(TechEra)(-1),s=>s.era=(TechEra)7,s=>s.produced=null,s=>s.produced=new int[7],s=>s.produced=new int[20],s=>s.produced=new int[22],s=>s.produced[20]=-1 })
+            foreach(var corrupt in new Action<WorldState>[] { s=>s.era=(TechEra)(-1),s=>s.era=(TechEra)7,s=>s.produced=null,s=>s.produced=new int[7],s=>s.produced=new int[20],s=>s.produced=new int[22],s=>s.produced=new int[25],s=>s.produced=new int[29],s=>s.produced[20]=-1 })
             {
                 var invalid=VersionThreeFixture();corrupt(invalid);Reject(invalid,"corrupted research/production state accepted");
             }
@@ -108,7 +112,7 @@ static partial class Checks
         });
         Run("v3 validation rejects malformed old-length inventory arrays without silently migrating them", () =>
         {
-            foreach(int length in new[] { 0,7,20,22 })
+            foreach(int length in new[] { 0,7,20,22,25,29 })
             {
                 var player=VersionThreeFixture();player.players[0].items=new int[length];Reject(player,$"v3 player inventory length {length} accepted");var machine=VersionThreeFixture();machine.buildings[0].items=new int[length];Reject(machine,$"v3 machine inventory length {length} accepted");
             }

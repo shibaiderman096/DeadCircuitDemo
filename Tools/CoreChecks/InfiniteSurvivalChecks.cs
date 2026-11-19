@@ -105,6 +105,8 @@ static partial class Checks
         {
             var sim = InfiniteSurvivalFixture(out var p); var world = sim.State;
             p.x = -18; p.y = -18; var bench = Add(world, BuildKind.Workbench, -16, -18);
+            sim.Apply(Command(p,"primitive",arg:(int)PrimitiveTech.Tools)); Ready(p);
+            Require(PrimitiveCatalog.HasResearch(world,PrimitiveTech.Tools),"negative workbench could not research tools");
             Require(EquipmentCatalog.HasWorkbench(world, p), "legacy bounds hid reachable negative workbench");
             int count = p.gear.Count; sim.Apply(Command(p, "gearcraft", arg: (int)GearKind.StoneAxe));
             Require(p.gear.Count == count + 1 && p.gear.Last().kind == GearKind.StoneAxe, "negative workbench cannot craft");

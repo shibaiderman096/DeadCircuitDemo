@@ -172,7 +172,6 @@ static partial class Checks
     {
         var world = WorldGeneration.Generate(new WorldGenerationSettings { seed = 73149, chunked = true });
         world.generatorVersion = gen;
-        if (gen < 5) world.version = 9;
         var plan = SiteBlueprintCatalog.Get(SiteKind.Apartment);
         var site = new SiteState { id = world.nextId++, kind = SiteKind.Apartment, district = DistrictKind.Urban,
             x = 162, y = 162, rotation = rotation, layoutVersion = 1, width = SiteBlueprintCatalog.Width(plan, rotation), height = SiteBlueprintCatalog.Height(plan, rotation) };
@@ -182,6 +181,7 @@ static partial class Checks
         world.sites.Add(site);
         world.chunks.records.Add(new WorldChunkState { x = 10, y = 10, ground = new string('4', 256), biomes = new string('2', 256) });
         world.chunks.revision++;
+        PrepareLegacySaveFixture(world, gen < 5 ? 9 : 10, gen);
         var sim = new WorldSimulator(world); root = sim.State.sites.Single(s => s.id == site.id);
         player = sim.AddPlayer("floor-a", "A"); return sim;
     }

@@ -21,6 +21,7 @@ static partial class Checks
         }
         else p.activeSlot = 2;
         state.players.Add(p); arrange?.Invoke(state, p);
+        state.generation.seed = state.seed;
         var sim = new WorldSimulator(state); player = sim.State.players.Single(candidate => candidate.id == "equipment"); return sim;
     }
     static string EquipmentEconomy(PlayerState p) => JsonSerializer.Serialize(new
@@ -67,7 +68,7 @@ static partial class Checks
         {
             var sim = New(out var p);
             Require(sim.State.version == WorldSimulator.SaveVersion, "new world must use save version 4");
-            Require(DemoCatalog.ItemCount == 25 && p.items.Length == 25 && sim.State.produced.Length == 25, "equipment ammunition requires 25 slots");
+            Require(DemoCatalog.ItemCount == 29 && p.items.Length == DemoCatalog.ItemCount && sim.State.produced.Length == DemoCatalog.ItemCount, "equipment ammunition requires 25 slots");
         });
         Run("equipment preserves old ammo and appends four caliber ordinals", () =>
         {
@@ -108,14 +109,14 @@ static partial class Checks
             foreach (var kind in gears)
             {
                 var d = EquipmentCatalog.Gear(kind);
-                Require(d.kind == kind && !string.IsNullOrWhiteSpace(d.name) && d.cost.Length == 25 && d.cost.Any(n => n > 0) && d.cost.All(n => n >= 0), "incomplete gear catalog: " + kind);
+                Require(d.kind == kind && !string.IsNullOrWhiteSpace(d.name) && d.cost.Length == DemoCatalog.ItemCount && d.cost.Any(n => n > 0) && d.cost.All(n => n >= 0), "incomplete gear catalog: " + kind);
                 d.cost[0] = -1; Require(EquipmentCatalog.Gear(kind).cost[0] >= 0, "gear catalog leaked its cost array");
             }
         });
-        Run("equipment fresh players have primitive tools and no free modern guns", () =>
+        Run("equipment fresh players research tools before receiving equipment", () =>
         {
             var sim = New(out var p);
-            Require(p.gear.Any(g => g.kind == GearKind.StoneAxe) && p.gear.Any(g => g.kind == GearKind.StonePickaxe) && p.gear.Any(g => g.kind == GearKind.Knife), "starter missing basic tools or knife");
+            Require(PrimitiveCatalog.Enabled(sim.State) && p.gear.Count == 0, "fresh world bypassed primitive tool research");
             Require(p.gear.All(g => g.kind < GearKind.Pistol && g.magazine == 0), "fresh player received a free modern gun");
             Require(p.gear.Select(g => g.id).Distinct().Count() == p.gear.Count && p.gear.All(g => g.id > 0), "starter gear identity");
         });
@@ -145,7 +146,7 @@ static partial class Checks
             Run($"equipment partcraft {kind} charges materials and rejects locked or missing inputs", () =>
             {
                 var sim = EquipmentFixture(out var p); var d = EquipmentCatalog.Part(kind); var before = Copy(p.items);
-                Require(d.cost.Length == 25 && d.cost.Any(n => n > 0) && d.cost.All(n => n >= 0), "part has no material cost");
+                Require(d.cost.Length == DemoCatalog.ItemCount && d.cost.Any(n => n > 0) && d.cost.All(n => n >= 0), "part has no material cost");
                 CraftPart(sim, p, kind); Paid(p.items, before, d.cost, "part crafting cost");
                 int missing = Array.FindIndex(d.cost, n => n > 0);
                 foreach (bool shortMaterials in new[] { true, false })
@@ -200,7 +201,7 @@ static partial class Checks
                 Require(source.version == version && source.players.Single().items.Length == (version == 3 ? 21 : 7), "not a genuine legacy inventory fixture");
                 if (version == 3) Require(source.produced.Length == 21 && source.buildings.All(b => b.items.Length == 21), "v3 input was secretly v4");
                 string before = Dump(source); var restored = new WorldSimulator(source).State; var p = restored.players.Single();
-                Require(restored.version == WorldSimulator.SaveVersion && p.items.Length == 25 && restored.produced.Length == 25, "legacy equipment migration did not reach v4");
+                Require(restored.version == WorldSimulator.SaveVersion && p.items.Length == DemoCatalog.ItemCount && restored.produced.Length == DemoCatalog.ItemCount, "legacy equipment migration did not reach v4");
                 Require(p.items.Take(source.players[0].items.Length).SequenceEqual(source.players[0].items) && p.items.Skip(source.players[0].items.Length).All(n => n == 0), "migration invented or lost reserve ammunition/material");
                 if (version == 3) Require(restored.era == source.era && restored.produced.Take(21).SequenceEqual(source.produced) && restored.produced.Skip(21).All(n => n == 0), "v3 research/production was reset");
                 Require(p.gear.Count(g => g.kind == GearKind.Pistol) == 1 && p.gear.All(g => g.magazine == 0) && p.gear.All(g => g.kind <= GearKind.Pistol), "legacy basic gun missing, preloaded, or upgraded for free");

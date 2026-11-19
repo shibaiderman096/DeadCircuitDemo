@@ -15,6 +15,7 @@ static partial class Checks
         world.version = 6; world.ground = new string('0', 4096); world.biomes = new string('0', 4096);
         world.survival = new SurvivalWorldState { enabled = true, initialized = true };
         arrange?.Invoke(world);
+        PrepareLegacySaveFixture(world, 6);
         var sim = new WorldSimulator(world);
         player = sim.AddPlayer("survival-check", "Survival");
         player.x = 8; player.y = 10;
@@ -253,6 +254,7 @@ static partial class Checks
         Run("survival legacy migration and disabled fixtures cannot invent supplies or animals", () =>
         {
             var world = Flat(); WorldGeneration.LegacyMetadata(world); world.version = 5;
+            PrepareLegacySaveFixture(world, 5);
             var sim = new WorldSimulator(world); var p = sim.AddPlayer("legacy-survival", "Legacy");
             Advance(sim, 2);
             Require(!sim.State.survival.enabled && sim.State.survival.creatures.Count == 0 && p.needs.foods.All(v => v == 0) &&

@@ -31,7 +31,8 @@ static partial class Checks
     // Legacy spatial/logistics fixtures explicitly opt into LV. A seeded new world must stay Primitive.
     static WorldState Flat(float elapsed = 0, TechEra era = TechEra.LowVoltage) => new()
     {
-        version = 4, era = era, seed = 73149, ground = new string('4', 4096), elapsed = elapsed,
+        version = WorldSimulator.SaveVersion, era = era, seed = 73149, ground = new string('4', 4096), elapsed = elapsed,
+        generation = new WorldGenerationSettings { seed = 73149, chunked = false }, biomes = new string('0', 4096),
         tick = (long)Math.Round(elapsed / WorldSimulator.FixedStep), nextWaveAt = elapsed + 180f
     };
     static PlayerState Builder(WorldSimulator sim, string id = "p", string name = "P")
@@ -109,6 +110,8 @@ static partial class Checks
         InfiniteSurvivalChecks();
         DoorSystemChecks();
         InteriorChecks(); SteamClusterChecks();
+        PrimitiveChecks();
+        PrimitiveSaveChecks();
         CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); CargoChecks(); SaveAndCombatChecks();
         TechnologyChecks(); EraEnergyChecks(); EraProductionChecks(); VersionThreeSaveChecks(); EquipmentChecks(); WorldGenerationChecks(); WorldArchiveChecks(); SurvivalChecks(); EnemyChecks(); ExpansionIntegrationChecks(); ForagingChecks();
         if (selected == 0) { Console.Error.WriteLine("No check names matched the supplied filters."); return 2; }
@@ -539,7 +542,7 @@ static partial class Checks
         Run("save validation rejects corrupt flight timing, item and duplicate id", () =>
         {
             var state = Flat(); var a = Add(state,BuildKind.Belt,10,10); a.items[(int)ItemKind.Ore] = 1; var b = Add(state,BuildKind.Chest,11,10); var sim = new WorldSimulator(state); AwaitCargo(sim,a.id,b.id);
-            foreach (var corrupt in new Action<CargoState>[] { c => c.duration = 0, c => c.duration = float.NaN, c => c.progress = -.01f, c => c.progress = 1.01f, c => c.fromX = float.PositiveInfinity, c => c.item = 25 })
+            foreach (var corrupt in new Action<CargoState>[] { c => c.duration = 0, c => c.duration = float.NaN, c => c.progress = -.01f, c => c.progress = 1.01f, c => c.fromX = float.PositiveInfinity, c => c.item = DemoCatalog.ItemCount })
             { var invalid = Saved(sim.State); corrupt(invalid.cargo[0]); Reject(invalid,"corrupt cargo accepted"); }
             var duplicate = Saved(sim.State); duplicate.cargo.Add(Saved(sim.State).cargo[0]); Reject(duplicate,"duplicate cargo id accepted");
         });

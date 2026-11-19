@@ -356,6 +356,7 @@ static partial class Checks
             var legacy = Add(state, BuildKind.Boiler, 10, 10);
             legacy.items[(int)ItemKind.Fuel] = 2;
             Water(state, 11, 9);
+            PrepareLegacySaveFixture(state, 6);
             var sim = new WorldSimulator(state);
             var boiler = Building(sim, legacy.id);
             Require(!boiler.modularBoiler && boiler.clusterId == 0, "legacy boiler became modular");

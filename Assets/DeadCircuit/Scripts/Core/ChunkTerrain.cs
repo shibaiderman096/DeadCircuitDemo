@@ -189,6 +189,16 @@ namespace DeadCircuit
             var biome = (BiomeKind)(r.biomes[cell] - '0');
             double roll = Unit(seed, x, y, 0x2e51u), vein = Noise(seed, x, y, 8, 0x0ae1u);
             kind = NodeKind.Tree; stock = 12 + (int)(Hash(seed, x, y, 0x570cu) % 13);
+            if (r.world.generatorVersion >= 6)
+            {
+                double primitive = Unit(seed, x, y, 0x6a51u);
+                if (primitive < .05 || (biome == BiomeKind.Wetland && primitive < .09))
+                {
+                    kind = primitive < .025 ? NodeKind.Stone : NodeKind.Clay;
+                    stock = 60 + (int)(Hash(seed, x, y, 0x6a52u) % 101);
+                    return true;
+                }
+            }
             if (vein > .63 && roll < .5)
             {
                 uint metal = Hash(seed, WorldTiles.FloorDiv(x, 12), WorldTiles.FloorDiv(y, 12), 0x0ae2u) % 100;

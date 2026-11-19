@@ -25,7 +25,22 @@ namespace DeadCircuit
         {
             if (!loaded) Load();
             Sprite sprite;
-            return key != null && sprites.TryGetValue(key, out sprite) ? sprite : null;
+            if (key == null) return null;
+            if (sprites.TryGetValue(key, out sprite)) return sprite;
+            // Reuse known atlas cells until dedicated primitive art is supplied.
+            // Names and presentation tints keep resources and kilns distinct.
+            string fallback;
+            switch (key)
+            {
+                case "node_8": case "node_9": fallback = "node_1"; break;
+                case "machine_36": case "machine_37": fallback = "machine_11"; break;
+                case "item_25": fallback = "item_1"; break;
+                case "item_26": fallback = "item_7"; break;
+                case "item_27": fallback = "item_4"; break;
+                case "item_28": fallback = "item_3"; break;
+                default: return null;
+            }
+            return sprites.TryGetValue(fallback, out sprite) ? sprite : null;
         }
 
         static void Load()

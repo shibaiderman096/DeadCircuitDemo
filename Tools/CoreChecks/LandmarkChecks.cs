@@ -76,13 +76,15 @@ static partial class Checks
         Run("landmarks v8 generator3 worlds keep old chunks and future legacy layouts", () =>
         {
             var old = WorldGeneration.Generate(new WorldGenerationSettings { seed=11,chunked=true });
-            old.version = 8; old.generatorVersion = 3;
+            PrepareLegacySaveFixture(old, 8, 3);
             var source = Saved(old); string before = Dump(source);
             var restored = new WorldSimulator(source).State;
             Require(restored.version == WorldSimulator.SaveVersion && restored.generatorVersion == 3 && Dump(source) == before, "v8 migration changed generation or caller");
             for(int x=-8;x<8;x++) { ChunkTerrain.Generate(old,x,-5); ChunkTerrain.Generate(restored,x,-5); }
             Require(restored.sites.Any(s=>s.y<0) && restored.sites.All(s=>s.layoutVersion==0 && (int)s.kind<12), "legacy world received new plans");
-            Require(TerrainEntityDump(old)==TerrainEntityDump(restored) && TerrainMapDump(old)==TerrainMapDump(restored), "legacy future generation changed after version migration");
+            var expected = Saved(old);
+            foreach (var building in expected.buildings) building.items = ExpandedLegacyFixtureInventory(building.items);
+            Require(TerrainEntityDump(expected)==TerrainEntityDump(restored) && TerrainMapDump(old)==TerrainMapDump(restored), "legacy future generation changed after version migration");
         });
         Run("landmarks typed containers pay once on depletion and survive partial saves", () =>
         {
@@ -126,7 +128,7 @@ static partial class Checks
                 if(mode=="size") s.width++;
                 if(mode=="kind") s.kind=(SiteKind)32;
                 if(mode=="door") { s.doorX=s.x;s.doorY=s.y; }
-                if(mode=="oldVersion") bad.version=8;
+                if(mode=="oldVersion") PrepareLegacySaveFixture(bad,8,3);
                 Reject(bad,"invalid plan metadata accepted: "+mode);
             }
             var snapshot=WorldSnapshot.ForPlayer(copy,player.id);

@@ -27,7 +27,7 @@ namespace DeadCircuit
         static readonly Color Amber = new Color32(242, 187, 98, 255);
         static readonly Color Danger = new Color32(244, 128, 113, 255);
         static readonly string[] Directions = { "东 →", "北 ↑", "西 ←", "南 ↓" };
-        static readonly string[] Nodes = { "树木", "铁矿脉", "废料堆", "补给箱", "障碍墙", "铜矿脉", "锡矿脉", "铀矿脉" };
+        static readonly string[] Nodes = { "树木", "铁矿脉", "废料堆", "补给箱", "障碍墙", "铜矿脉", "锡矿脉", "铀矿脉", "石料堆", "黏土矿床" };
         static readonly string[] AttributeHelp =
         {
             "强化近战与采集能力", "每点生命上限 +15", "每点体力上限 +8、移速 +0.09",
@@ -35,7 +35,7 @@ namespace DeadCircuit
         };
         static readonly string[] EraDescriptions =
         {
-            "从采集与手工开始。先造工作台和石炉，准备铁、铜与锡，积累水力研究所需材料。",
+            "按 T 从原始工艺起步：采集木材、石料和黏土，研究工具、烧炭与陶器，再验证冶金和建造生产。完成前置后研究水力。",
             "让水流驱动水车，经传动轴给机械破碎机供能。破碎、冶炼与青铜加工为蒸汽工业做准备。",
             "组合燃烧室、锅炉、给水泵和烟囱，经蒸汽管驱动设备；蒸汽机可输出机械动力。",
             "低压电气化：建立低压发电与输电网络，制造电路，让采矿、冶炼与装配自动运行。",
@@ -313,6 +313,7 @@ namespace DeadCircuit
             FlowLabel("Research Materials Heading", content, "研究材料 · 持有 / 需求", 768, 28, 17, Accent);
             researchMaterials = FlowLabel("Research Materials", content, "", 768, 52, 15, Ink);
             researchRequirement = FlowLabel("Research Requirement", content, "", 768, 48, 15, Muted);
+            MakePrimitiveTechnology(content);
             FlowLabel("Era Buildings Heading", content, "本阶段设备 · 点击已解锁设备进入建造", 768, 28, 17, Accent);
             for (int i = 0; i < technologyBuildButtons.Length; i++)
             {
@@ -365,7 +366,7 @@ namespace DeadCircuit
                 "WASD 移动 · Shift 冲刺 · 滚轮缩放 · E 交互 / 采集\n左键攻击 / 放置 · 右键瞄准（建造时取消）\nR 装填（建造时旋转）· Q 切换武器 / 工具\n1–0 建造快捷栏 · T 科技 / 全设备 · X 拆除 · G 修理\nF 吃食 · C 燃料 · Ctrl+C 弹药 · B 背包 / 装备 / 制作\nTab 成长 · J 生存 · H 帮助 · Esc 关闭 / 会话 · F5 保存", 816, 172, 18, Ink);
             FlowLabel("Tutorial Title", content, "从原始到核工业", 816, 30, 20, Accent);
             FlowLabel("Production Tutorial", content,
-                "采集木材、矿石与废料；建造工作台和石炉，按 T 查看研究材料。\n原始 → 水力 → 蒸汽 → 低压 → 中压 → 高压 → 核工业，按顺序研究。\n传动轴传机械动力，管道传蒸汽；设备需要匹配动力和电压。\n变压器逐级降压；核反应堆需冷却并监测温度。", 816, 124, 18, Ink);
+                "新世界先按 T → 原始工艺，采集木材、石料、黏土并研究工具、烧炭和陶器。\n炭窑将木材烧成木炭；陶窑用黏土与木炭烧砖，再逐步验证冶金工艺。\n原始 → 水力 → 蒸汽 → 低压 → 中压 → 高压 → 核工业，按顺序研究。\n传动轴传机械动力，管道传蒸汽；电网匹配电压，核反应堆需冷却。", 816, 124, 18, Ink);
             helpProgress = FlowLabel("Tutorial Progress", content, "", 816, 76, 16, Muted);
             FlowLabel("HUD Expansion Help", content, "底部展开建造栏；右下工具菜单打开详细面板。设备检查可在工具菜单按需开启。", 816, 62, 17, Ink);
             FlowLabel("Panel Hint", content, "打开面板时世界继续运行。Esc 优先关闭面板，其次取消建造，再打开会话。", 816, 56, 16, Amber);
@@ -536,12 +537,12 @@ namespace DeadCircuit
             if (observedEra != era)
             {
                 observedEra = era;
-                selectedEra = Mathf.Min(era + 1, eraButtons.Length - 1);
+                selectedEra = DefaultTechnologyEra(world);
                 ResetScroll(technologyScroll);
             }
             string goal = NextEraGoal(world, player);
             Set(eraText, "科技：" + TechCatalog.EraName(world.era) + "  ·  T 查看 / 建造");
-            SetFlowText(objectives, (era < 6 ? "下一时代 · " + TechCatalog.EraName((TechEra)(era + 1)) : "核工业运行") + "\n" + goal);
+            SetFlowText(objectives, (PrimitiveCatalog.Enabled(world) && era == 0 ? "原始工艺 · T 查看研究与生产前置" : era < 6 ? "下一时代 · " + TechCatalog.EraName((TechEra)(era + 1)) : "核工业运行") + "\n" + goal);
             SetFlowText(helpProgress, "当前：" + TechCatalog.EraName(world.era) + "  ·  " + goal + "\n击杀 " + world.kills + "  ·  制造 " + world.manufactured);
         }
 
@@ -581,9 +582,9 @@ namespace DeadCircuit
             {
                 bool valid = i < hotbar.Length && (int)hotbar[i] >= 0 && (int)hotbar[i] < costs.Length;
                 int kind = valid ? (int)hotbar[i] : -1;
-                bool unlocked = valid && TechCatalog.IsUnlocked(world, hotbar[i]);
+                bool unlocked = valid && PrimitiveCatalog.IsBuildUnlocked(world, hotbar[i]);
                 bool affordable = valid && CanAfford(player.items, costs[kind]);
-                Set(slots[i].label, ((i + 1) % 10) + "\n" + (valid ? DemoCatalog.BuildName(hotbar[i]) : "空"));
+                Set(slots[i].label, ((i + 1) % 10) + "\n" + (valid ? DemoCatalog.BuildName(hotbar[i]) + (unlocked ? "" : "\n" + PrimitiveCatalog.BuildRequirement(world, hotbar[i])) : "空"));
                 Tint(slots[i], valid && selected == kind ? Selected : Raised);
                 slots[i].label.color = valid && selected == kind ? Accent : unlocked && affordable ? Ink : Muted;
                 slots[i].button.interactable = unlocked && player.hp > 0f && !AnyPanelOpen();
@@ -629,27 +630,32 @@ namespace DeadCircuit
             Set(technologyTitle, TechCatalog.EraName(target) + (selectedEra == current ? " · 当前时代" : selectedEra < current ? " · 已解锁" : " · 待解锁"));
             SetFlowText(technologyDescription, EraDescriptions[selectedEra], 56);
             bool unlocked = selectedEra <= current;
-            SetFlowText(researchMaterials, selectedEra == 0 ? "初始时代，无需研究。" : MaterialText(TechCatalog.ResearchCost(target), player.items, true), 28);
+            bool primitive = selectedEra == 0 && PrimitiveCatalog.Enabled(world);
+            SetFlowText(researchMaterials, selectedEra == 0 ? primitive ? "下列各工艺分别研究；材料在研究时扣除，生产验证由世界累计产出判定。" : "旧世界：原始工艺旁路，无需补研究。" : MaterialText(TechCatalog.ResearchCost(target), player.items, true), 28);
             string requirement = unlocked ? "已解锁：可直接选择下列设备建造。" :
                 selectedEra != current + 1 ? "前置：先完成" + TechCatalog.EraName((TechEra)(selectedEra - 1)) + "研究，不可越级。" :
-                TechCatalog.ResearchRequirement(world, target);
+                EraResearchRequirement(world, target);
+            if (primitive) requirement = "依次查看每个节点的前置、持有材料及生产验证；完成条件后点击对应研究按钮。";
             SetFlowText(researchRequirement, string.IsNullOrEmpty(requirement) ? "工序前置已满足。" : requirement, 30);
             researchRequirement.color = unlocked ? Accent : string.IsNullOrEmpty(requirement) ? Accent : Amber;
-            bool canResearch = selectedEra == current + 1 && player.hp > 0f && player.interactCooldown <= 0f && TechCatalog.CanResearch(world, player, target);
+            bool canResearch = selectedEra == current + 1 && player.connected && player.hp > 0f && player.interactCooldown <= 0f &&
+                string.IsNullOrEmpty(EraResearchRequirement(world, target)) && TechCatalog.CanResearch(world, player, target);
             researchButton.button.interactable = canResearch;
-            Set(researchButton.label, unlocked ? "该时代已解锁" : selectedEra != current + 1 ? "请先完成前一时代" : canResearch ? "研究" + TechCatalog.EraName(target) : "研究条件未满足");
+            Set(researchButton.label, primitive ? "在节点中研究原始工艺" : unlocked ? "该时代已解锁" : selectedEra != current + 1 ? "请先完成前一时代" : canResearch ? "研究" + TechCatalog.EraName(target) : "研究条件未满足");
+            RefreshPrimitiveTechnology(world, player);
             for (int i = 0; i < technologyBuildRows.Length; i++)
             {
                 BuildKind kind = (BuildKind)i;
                 bool visible = (int)TechCatalog.RequiredEra(kind) == selectedEra;
                 if (technologyBuildRows[i].gameObject.activeSelf != visible) technologyBuildRows[i].gameObject.SetActive(visible);
                 if (!visible) continue;
-                bool available = TechCatalog.IsUnlocked(world, kind);
+                bool available = PrimitiveCatalog.IsBuildUnlocked(world, kind);
                 technologyBuildButtons[i].button.interactable = available && player.hp > 0f;
-                Set(technologyBuildButtons[i].label, DemoCatalog.BuildName(kind) + "\n" + (available ? "选择建造" : "需" + TechCatalog.EraName(TechCatalog.RequiredEra(kind))));
+                string buildRequirement = available ? "选择建造" : PrimitiveCatalog.BuildRequirement(world, kind);
+                Set(technologyBuildButtons[i].label, DemoCatalog.BuildName(kind) + "\n" + (available ? "选择建造" : "工艺未解锁"));
                 technologyBuildButtons[i].label.color = available ? Accent : Muted;
                 Set(technologyBuildCosts[i], DemoCatalog.Width(kind) + "×" + DemoCatalog.Height(kind) + " 格 · " + MaterialText(costs[i], player.items, true) + "\n" +
-                    EnergyName(TechCatalog.EnergyTier(kind)) + " · " + DemoCatalog.BuildDescriptions[i]);
+                    EnergyName(TechCatalog.EnergyTier(kind)) + " · " + DemoCatalog.BuildDescriptions[i] + (available ? "" : "\n" + buildRequirement));
                 float height = Mathf.Max(88, technologyBuildCosts[i].GetPreferredValues(technologyBuildCosts[i].text, 564, float.PositiveInfinity).y + 12);
                 technologyBuildCosts[i].rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height - 8);
                 technologyBuildRows[i].GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = height;
@@ -717,8 +723,9 @@ namespace DeadCircuit
                     "\n" + InspectedMachineDescription(building));
                 Set(interactButton.label, building.kind == BuildKind.Door ? (building.setting == 1 ? "关门 E" : "开门 E") : "交互 E");
                 RecipeDefinition recipe = MachineRecipe(building);
-                machineRecipe.gameObject.SetActive(recipe != null || building.kind == BuildKind.Transformer);
-                machineRecipeFlow.gameObject.SetActive(recipe != null || building.kind == BuildKind.Reactor);
+                RecipeDefinition configured = building.kind == BuildKind.Workbench ? null : TechCatalog.SelectedRecipe(building);
+                machineRecipe.gameObject.SetActive(configured != null || building.kind == BuildKind.Transformer);
+                machineRecipeFlow.gameObject.SetActive(configured != null || building.kind == BuildKind.Reactor);
                 machineSafety.gameObject.SetActive(building.kind == BuildKind.Reactor || building.kind == BuildKind.Transformer || building.kind == BuildKind.SteamTurbine);
                 if (recipe != null)
                 {
@@ -726,10 +733,16 @@ namespace DeadCircuit
                     SetFlowText(machineRecipeFlow, "输入：" + MaterialText(recipe.inputs, building.items, true) + "\n产出：" + MaterialText(recipe.outputs) +
                         "\n进度 " + building.progress.ToString("0.0") + " / " + recipe.duration.ToString("0.0") + " 秒");
                 }
-                int recipes = MachineRecipeCount(building.kind, world.era);
+                else if (configured != null)
+                {
+                    SetFlowText(machineRecipe, "当前配方：" + configured.name + " · 工艺未解锁", 28);
+                    SetFlowText(machineRecipeFlow, PrimitiveCatalog.RecipeRequirement(world, configured));
+                }
+                int recipes = MachineRecipeCount(building.kind, world);
+                bool chooseRecipe = recipes > 1 || recipes == 1 && recipe == null;
                 bool transformer = building.kind == BuildKind.Transformer;
-                recipeButton.button.gameObject.SetActive(recipes > 1 || transformer);
-                recipeButton.button.interactable = inRange && (transformer ? world.era >= TechEra.HighVoltage : recipes > 1);
+                recipeButton.button.gameObject.SetActive(chooseRecipe || transformer);
+                recipeButton.button.interactable = inRange && (transformer ? world.era >= TechEra.HighVoltage : chooseRecipe);
                 Set(recipeButton.label, transformer ? (building.setting == 0 ? "切换：高压 → 中压" : "切换：中压 → 低压") : "切换配方（" + recipes + " 种）");
                 if (transformer)
                 {
@@ -902,7 +915,7 @@ namespace DeadCircuit
         void SelectBuild(int index)
         {
             if (!bridge.IsRunning || AnyPanelOpen() || bridge.LocalPlayer == null || bridge.LocalPlayer.hp <= 0f) return;
-            if (index < 0 || index >= costs.Length || !TechCatalog.IsUnlocked(bridge.World, (BuildKind)index)) return;
+            if (index < 0 || index >= costs.Length || !PrimitiveCatalog.IsBuildUnlocked(bridge.World, (BuildKind)index)) return;
             bridge.BuildSelection = (BuildKind)index;
             guardThroughFrame = Time.frameCount + 1;
             RefreshAll();
@@ -917,7 +930,7 @@ namespace DeadCircuit
 
         void SelectTechnologyBuild(int kind)
         {
-            if (!technology.gameObject.activeSelf || !TechCatalog.IsUnlocked(bridge.World, (BuildKind)kind)) return;
+            if (!technology.gameObject.activeSelf || !PrimitiveCatalog.IsBuildUnlocked(bridge.World, (BuildKind)kind)) return;
             SetPanel(technology, false);
             SelectBuild(kind);
         }
@@ -933,6 +946,7 @@ namespace DeadCircuit
         {
             if (!technology.gameObject.activeSelf || bridge.World == null || bridge.LocalPlayer == null ||
                 selectedEra != (int)bridge.World.era + 1 || bridge.LocalPlayer.interactCooldown > 0f ||
+                !string.IsNullOrEmpty(EraResearchRequirement(bridge.World, (TechEra)selectedEra)) ||
                 !TechCatalog.CanResearch(bridge.World, bridge.LocalPlayer, (TechEra)selectedEra)) return;
             Send("research", selectedEra);
         }
@@ -942,7 +956,7 @@ namespace DeadCircuit
             if (!inventory.gameObject.activeSelf || bridge.World == null || bridge.LocalPlayer == null) return;
             RecipeRow row = manualRecipes.Find(r => r.recipe.id == id);
             PlayerState player = bridge.LocalPlayer;
-            if (row == null || (int)row.recipe.era > (int)bridge.World.era || player.interactCooldown > 0f ||
+            if (row == null || !PrimitiveCatalog.IsRecipeUnlocked(bridge.World, row.recipe) || player.interactCooldown > 0f ||
                 !CanAfford(player.items, row.recipe.inputs) || !HasRecipeSpace(player.items, row.recipe)) return;
             if (id > 1 && !NearWorkbench(bridge.World, player)) { Notify("请靠近工作台 2.4 格内并保持视线畅通。", true); return; }
             Send("craft", id);
@@ -959,9 +973,10 @@ namespace DeadCircuit
             }
             var options = new List<RecipeDefinition>();
             foreach (RecipeDefinition recipe in TechCatalog.Recipes)
-                if (recipe.building == building.kind && recipe.building != BuildKind.Workbench && recipe.era <= bridge.World.era) options.Add(recipe);
-            if (options.Count <= 1) return;
+                if (recipe.building == building.kind && recipe.building != BuildKind.Workbench && PrimitiveCatalog.IsRecipeUnlocked(bridge.World, recipe)) options.Add(recipe);
+            if (options.Count == 0) return;
             RecipeDefinition current = MachineRecipe(building);
+            if (options.Count == 1 && current != null && current.id == options[0].id) return;
             int index = current == null ? -1 : options.FindIndex(r => r.id == current.id);
             SendInspected("recipe", options[(index + 1) % options.Count].id);
         }
@@ -1007,7 +1022,7 @@ namespace DeadCircuit
                 buildTrayOpen = false;
                 if (panel == technology)
                 {
-                    selectedEra = Mathf.Min((int)bridge.World.era + 1, eraButtons.Length - 1);
+                    selectedEra = DefaultTechnologyEra(bridge.World);
                     ResetScroll(technologyScroll);
                 }
                 panel.gameObject.SetActive(true);
@@ -1133,6 +1148,8 @@ namespace DeadCircuit
                 case BuildKind.FeedwaterPump: return "集群给水 · 近水并与锅炉模块接触连接";
                 case BuildKind.SteamEngine: return "蒸汽输入 → 机械动力 · 沿朝向连接传动轴";
                 case BuildKind.Workbench: return "B 打开手工配方 · 靠近后制作";
+                case BuildKind.CharcoalKiln: return "炭窑 · 木材 4 → 木炭 2 · E 投入木材 / 取炭";
+                case BuildKind.ClayKiln: return "陶窑 · 黏土 4 + 木炭 1 → 砖 4 · E 投料 / 取砖";
                 case BuildKind.Waterwheel: return "近水驱动 · 接触传动轴输出动力";
                 case BuildKind.Shaft: return "接触传递机械动力";
                 case BuildKind.SteamPipe: return "接触传递蒸汽动力";
@@ -1144,24 +1161,18 @@ namespace DeadCircuit
         static string EnergyName(int tier) => tier == 0 ? "机械动力" : tier == 1 ? "蒸汽动力" :
             tier == 2 ? "低压电力" : tier == 3 ? "中压电力" : tier == 4 ? "高压电力" : "无需动力";
 
-        static RecipeDefinition MachineRecipe(BuildingState building)
+        RecipeDefinition MachineRecipe(BuildingState building)
         {
             if (building.kind == BuildKind.Workbench) return null;
-            RecipeDefinition first = null;
-            foreach (RecipeDefinition recipe in TechCatalog.Recipes)
-            {
-                if (recipe.building != building.kind) continue;
-                if (first == null) first = recipe;
-                if (recipe.id == building.recipe) return recipe;
-            }
-            return building.recipe == 0 ? first : null;
+            RecipeDefinition recipe = TechCatalog.SelectedRecipe(building);
+            return recipe != null && recipe.building == building.kind && PrimitiveCatalog.IsRecipeUnlocked(bridge.World, recipe) ? recipe : null;
         }
 
-        static int MachineRecipeCount(BuildKind kind, TechEra era)
+        static int MachineRecipeCount(BuildKind kind, WorldState world)
         {
             if (kind == BuildKind.Workbench) return 0;
             int count = 0;
-            foreach (RecipeDefinition recipe in TechCatalog.Recipes) if (recipe.building == kind && recipe.era <= era) count++;
+            foreach (RecipeDefinition recipe in TechCatalog.Recipes) if (recipe.building == kind && PrimitiveCatalog.IsRecipeUnlocked(world, recipe)) count++;
             return count;
         }
 
@@ -1205,6 +1216,11 @@ namespace DeadCircuit
         {
             if (world.era == TechEra.Primitive)
             {
+                if (PrimitiveCatalog.Enabled(world))
+                {
+                    string primitive = PrimitiveGoal(world, player);
+                    if (!string.IsNullOrEmpty(primitive)) return primitive;
+                }
                 if (!HasBuilding(world, BuildKind.Workbench)) return "采集木材，建造工作台";
                 if (!HasBuilding(world, BuildKind.StoneFurnace)) return "建石炉，加燃料冶炼铁矿";
             }
@@ -1231,7 +1247,7 @@ namespace DeadCircuit
                 if (i == (int)ItemKind.Steel) return "蒸汽炉以铁锭和燃料炼钢";
                 return "准备研究材料：" + DemoCatalog.ItemNames[i] + " " + Count(player.items, i) + "/" + cost[i];
             }
-            string missing = TechCatalog.ResearchRequirement(world, next);
+            string missing = EraResearchRequirement(world, next);
             return string.IsNullOrEmpty(missing) ? "材料已齐，按 T 研究下一时代" : missing;
         }
 

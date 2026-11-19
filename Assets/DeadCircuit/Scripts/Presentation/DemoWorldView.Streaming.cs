@@ -259,6 +259,8 @@ namespace DeadCircuit
             }
             if (world.nodes != null) foreach (var n in world.nodes)
                 if (n.hp > 0 && n.stock > 0) Plot(n.x, n.y, n.kind == NodeKind.Tree ? new Color32(37, 61, 39, 255) :
+                    n.kind == NodeKind.Stone ? new Color32(182, 194, 182, 255) :
+                    n.kind == NodeKind.Clay ? new Color32(228, 130, 78, 255) :
                     n.kind == NodeKind.Ore ? new Color32(136, 164, 154, 255) : new Color32(154, 113, 70, 255));
             if (world.buildings != null) foreach (var b in world.buildings)
             {
@@ -268,7 +270,9 @@ namespace DeadCircuit
                 int right = Mathf.Min(b.x + DemoCatalog.Width(b), mapOriginX + LocalMapSize);
                 int top = Mathf.Min(b.y + DemoCatalog.Height(b), mapOriginY + LocalMapSize);
                 if (right <= mapOriginX || top <= mapOriginY || b.x >= mapOriginX + LocalMapSize || b.y >= mapOriginY + LocalMapSize) continue;
-                Color32 color = b.networkId > 0 ? NetworkEnergized(b.networkId) ? NetworkColor(b.networkId) : new Color(.54f, .33f, .22f) : Amber;
+                Color32 color = b.kind == BuildKind.CharcoalKiln ? new Color(.38f,.49f,.44f) :
+                    b.kind == BuildKind.ClayKiln ? new Color(.97f,.45f,.27f) :
+                    b.networkId > 0 ? NetworkEnergized(b.networkId) ? NetworkColor(b.networkId) : new Color(.54f, .33f, .22f) : Amber;
                 for (int y = Mathf.Max(b.y, mapOriginY); y < top; y++)
                 for (int x = Mathf.Max(b.x, mapOriginX); x < right; x++) Plot(x, y, color, true);
             }

@@ -356,6 +356,7 @@ namespace DeadCircuit
             Set(filterInventory.label, "分类：" + InventoryFilterName());
             bool bench = EquipmentCatalog.HasWorkbench(world, player);
             Set(workbenchHint, bench ? "工作台就绪 · 制作、维修、装配与回收均由主机验证时代、材料和库存空间。" :
+                PrimitiveCatalog.Enabled(world) ? "按 T 研究原始工艺；制作 / 维修 / 装配 / 回收需工作台 2.4 格内且视线畅通。" :
                 "制作 / 维修 / 装配 / 回收需工作台 2.4 格内且视线畅通；燃料 / 普通弹药可随身制作。");
             workbenchHint.color = bench ? Accent : Muted;
             RefreshInventoryCells(player);
@@ -376,6 +377,10 @@ namespace DeadCircuit
                 Set(cell.widget.label, cell.title + "\n× " + cell.quantity + "\n<size=11>" + MaterialCategoryName(cell.category) + "</size>");
                 cell.widget.label.color = cell.quantity > 0 ? Ink : Muted;
                 SetButtonArt(cell.widget, "item_" + cell.id);
+                cell.widget.icon.color = cell.id == (int)ItemKind.Stone ? new Color(.75f,.79f,.75f) :
+                    cell.id == (int)ItemKind.Clay ? new Color(1f,.55f,.32f) :
+                    cell.id == (int)ItemKind.Charcoal ? new Color(.38f,.42f,.39f) :
+                    cell.id == (int)ItemKind.Brick ? new Color(1f,.48f,.30f) : Color.white;
             }
             if (player.gear != null) foreach (GearState gear in player.gear)
             {
@@ -562,9 +567,9 @@ namespace DeadCircuit
                 if (!visible) continue;
                 count++;
                 RecipeDefinition recipe = row.recipe;
-                bool era = recipe.era <= world.era, needsBench = recipe.id > 1;
+                bool era = PrimitiveCatalog.IsRecipeUnlocked(world, recipe), needsBench = recipe.id > 1;
                 bool materials = CanAfford(player.items, recipe.inputs), space = HasRecipeSpace(player.items, recipe);
-                string state = !era ? "需" + TechCatalog.EraName(recipe.era) : needsBench && !bench ? "需工作台 / 视线" : !materials ? "缺少材料" : !space ? "背包已满" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
+                string state = !era ? PrimitiveCatalog.RecipeRequirement(world, recipe) : needsBench && !bench ? "需工作台 / 视线" : !materials ? "缺少材料" : !space ? "背包已满" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
                 row.craft.button.interactable = player.hp > 0f && player.connected && era && (!needsBench || bench) && materials && space && player.interactCooldown <= 0f;
                 Set(row.craft.label, recipe.name + "\n" + state);
                 SetRecipeText(row.details, "输入：" + MaterialText(recipe.inputs, player.items, true) + "\n产出：" + MaterialText(recipe.outputs) +
@@ -581,8 +586,11 @@ namespace DeadCircuit
                 string name = row.part ? part.name : gear.name;
                 TechEra era = row.part ? part.era : gear.era;
                 int[] cost = row.part ? part.cost : gear.cost;
-                bool canCraft = row.part ? EquipmentCatalog.CanCraftPart(world, player, (PartKind)row.kind) : EquipmentCatalog.CanCraft(world, player, (GearKind)row.kind);
-                string reason = world.era < era ? "需" + TechCatalog.EraName(era) : !bench ? "需工作台 / 视线" : !CanAfford(player.items, cost) ? "缺少材料" : !canCraft ? "背包容量 / 状态受限" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
+                bool primitive = row.part || PrimitiveCatalog.IsGearUnlocked(world, (GearKind)row.kind);
+                bool canCraft = primitive && (row.part ? EquipmentCatalog.CanCraftPart(world, player, (PartKind)row.kind) : EquipmentCatalog.CanCraft(world, player, (GearKind)row.kind));
+                string reason = world.era < era ? "需" + TechCatalog.EraName(era) : !primitive ? "需原始工艺：" +
+                    PrimitiveCatalog.Definition(gear.kind == GearKind.Knife ? PrimitiveTech.Bloomery : PrimitiveTech.Tools).name :
+                    !bench ? "需工作台 / 视线" : !CanAfford(player.items, cost) ? "缺少材料" : !canCraft ? "背包容量 / 状态受限" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
                 row.craft.button.interactable = canCraft && player.interactCooldown <= 0f;
                 Set(row.craft.label, name + "\n" + reason);
                 SetRecipeText(row.details, "成本：" + MaterialText(cost, player.items, true) + "\n" + TechCatalog.EraName(era) + " · 工作台 · " + reason +
@@ -603,6 +611,7 @@ namespace DeadCircuit
         {
             if (bridge.World == null || bridge.LocalPlayer == null || inventoryTab != 3) return;
             bool allowed = part ? EquipmentCatalog.CanCraftPart(bridge.World, bridge.LocalPlayer, (PartKind)kind) : EquipmentCatalog.CanCraft(bridge.World, bridge.LocalPlayer, (GearKind)kind);
+            if (!part) allowed &= PrimitiveCatalog.IsGearUnlocked(bridge.World, (GearKind)kind);
             if (allowed && bridge.LocalPlayer.interactCooldown <= 0f) InventoryCommand(part ? "partcraft" : "gearcraft", kind);
         }
 
@@ -648,8 +657,8 @@ namespace DeadCircuit
         static int MaterialCategory(int item)
         {
             if (EquipmentCatalog.IsAmmo((ItemKind)item)) return 3;
-            if (item == (int)ItemKind.Food || item == (int)ItemKind.Fuel || item >= (int)ItemKind.NuclearFuel && item <= (int)ItemKind.NuclearWaste) return 4;
-            if (item == (int)ItemKind.Wood || item == (int)ItemKind.Ore || item == (int)ItemKind.CopperOre || item == (int)ItemKind.UraniumOre || item == (int)ItemKind.TinOre) return 1;
+            if (item == (int)ItemKind.Food || item == (int)ItemKind.Fuel || item == (int)ItemKind.Charcoal || item >= (int)ItemKind.NuclearFuel && item <= (int)ItemKind.NuclearWaste) return 4;
+            if (item == (int)ItemKind.Wood || item == (int)ItemKind.Ore || item == (int)ItemKind.CopperOre || item == (int)ItemKind.UraniumOre || item == (int)ItemKind.TinOre || item == (int)ItemKind.Stone || item == (int)ItemKind.Clay) return 1;
             return 2;
         }
 
@@ -680,6 +689,10 @@ namespace DeadCircuit
             }
             if (kind == ItemKind.Food) return "食物补充饱食度；点击下方「吃食 F」或关闭面板后按 F。";
             if (kind == ItemKind.Fuel) return "供燃料发电、锅炉与石炉使用；也用于炼钢和化工。";
+            if (kind == ItemKind.Stone) return "原始石料。采集石料堆获得，用于工具、窑炉及建造工艺；按 T 查看研究成本。";
+            if (kind == ItemKind.Clay) return "黏土。采集黏土矿床获得；陶窑投入黏土 4、木炭 1，产出砖 4。";
+            if (kind == ItemKind.Charcoal) return "木炭。炭窑投入木材 4，产出木炭 2；用于陶窑烧砖与原始冶金。";
+            if (kind == ItemKind.Brick) return "砖。陶窑以黏土和木炭烧制，用于建筑及工艺研究；生产验证以实际产出计数。";
             if (kind == ItemKind.NuclearWaste) return "反应堆产物。及时取出并妥善储存，避免设备库存阻塞。";
             var uses = new List<string>();
             foreach (RecipeDefinition recipe in TechCatalog.Recipes) if (Count(recipe.inputs, item) > 0 && !uses.Contains(recipe.name)) uses.Add(recipe.name);

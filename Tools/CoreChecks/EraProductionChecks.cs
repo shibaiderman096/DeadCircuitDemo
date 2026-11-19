@@ -7,7 +7,7 @@ static partial class Checks
         // Fixed independent cases keep coverage from silently shrinking if a recipe is removed.
         foreach(var (id,era) in new[]
         {
-            (2,TechEra.Water),(3,TechEra.Primitive),(10,TechEra.Primitive),(11,TechEra.Primitive),(12,TechEra.Primitive),
+            (2,TechEra.Primitive),(3,TechEra.Primitive),(10,TechEra.Primitive),(11,TechEra.Primitive),(12,TechEra.Primitive),
             (13,TechEra.Water),(20,TechEra.Water),(30,TechEra.Steam),(31,TechEra.Steam),(32,TechEra.Steam),(33,TechEra.Steam),
             (40,TechEra.LowVoltage),(41,TechEra.LowVoltage),(42,TechEra.LowVoltage),(43,TechEra.LowVoltage),(50,TechEra.LowVoltage),(60,TechEra.LowVoltage),
             (70,TechEra.MediumVoltage),(71,TechEra.MediumVoltage),(80,TechEra.HighVoltage),(90,TechEra.Nuclear),(91,TechEra.MediumVoltage),
@@ -113,6 +113,7 @@ static partial class Checks
     static void AddRecipePower(WorldState state, BuildingState machine)
     {
         int tier=TechCatalog.EnergyTier(machine.kind);
+        if(tier<0) return; // Self-heated kilns need recipe inputs, not a power network.
         var kind=tier==0?BuildKind.Waterwheel:tier==1?BuildKind.Boiler:tier==2?BuildKind.Generator:tier==3?BuildKind.DieselGenerator:BuildKind.HighGenerator;
         var source=Add(state,kind,tier==4?6:7,10);
         if(tier<=1){Water(state,7,12);Add(state,tier==0?BuildKind.Shaft:BuildKind.SteamPipe,9,10);}

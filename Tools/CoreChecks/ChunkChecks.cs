@@ -160,7 +160,7 @@ static partial class Checks
         });
         Run("old v7 save retains original cells and acquires no distant world", () =>
         {
-            var original=new WorldSimulator(55);original.AddPlayer("p","P");var old=Saved(original.State);old.version=7;old.generatorVersion=2;
+            var original=new WorldSimulator(55);original.AddPlayer("p","P");var old=Saved(original.State);PrepareLegacySaveFixture(old,7,2);
             string ground=old.ground;int next=old.nextId;var sim=new WorldSimulator(old);
             Require(sim.State.width==64 && sim.State.ground==ground && sim.State.nextId==next && !ChunkStreaming.Enabled(sim.State),"legacy world regenerated");
             sim.Step(.05f);Require(sim.IsBlocked(64,30),"legacy map silently expanded");

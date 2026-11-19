@@ -6,6 +6,7 @@ namespace DeadCircuit
     {
         private static void GiveStartingGear(WorldState world, PlayerState p, bool migrated)
         {
+            if (!migrated && PrimitiveCatalog.Enabled(world)) return;
             GearKind[] kinds = migrated ? new[] { GearKind.StoneAxe, GearKind.StonePickaxe, GearKind.Knife, GearKind.Pistol } :
                 new[] { GearKind.StoneAxe, GearKind.StonePickaxe, GearKind.Knife };
             SaveCheck(world.nextId > 0 && world.nextId < int.MaxValue - kinds.Length - 2, "starter gear id space");
@@ -206,7 +207,7 @@ namespace DeadCircuit
         {
             if(g==null || g.durability<=0) return 0;
             if(node==NodeKind.Tree) return g.kind==GearKind.StoneAxe ? 2 : g.kind==GearKind.SteelAxe ? 5 : 0;
-            if(node==NodeKind.Ore || node==NodeKind.CopperOre || node==NodeKind.TinOre || node==NodeKind.UraniumOre)
+            if(node==NodeKind.Stone || node==NodeKind.Clay || node==NodeKind.Ore || node==NodeKind.CopperOre || node==NodeKind.TinOre || node==NodeKind.UraniumOre)
                 return g.kind==GearKind.StonePickaxe ? 2 : g.kind==GearKind.SteelPickaxe ? 5 : 0;
             return g.kind==GearKind.Wrench && (node==NodeKind.Scrap || node==NodeKind.Wall) ? 3 : 0;
         }

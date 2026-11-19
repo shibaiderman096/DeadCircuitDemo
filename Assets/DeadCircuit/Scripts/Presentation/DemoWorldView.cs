@@ -89,7 +89,9 @@ namespace DeadCircuit
             new Color(.32f,.80f,.92f), new Color(.70f,.66f,.25f), new Color(.64f,.62f,.55f),
             new Color(.57f,.67f,.73f), new Color(.79f,.85f,.84f),
             new Color(.88f,.72f,.36f), new Color(.80f,.30f,.24f),
-            new Color(.65f,.83f,.92f), new Color(.64f,.80f,.40f)
+            new Color(.65f,.83f,.92f), new Color(.64f,.80f,.40f),
+            new Color(.70f,.72f,.68f), new Color(.85f,.53f,.34f),
+            new Color(.28f,.30f,.29f), new Color(.78f,.36f,.23f)
         };
         static readonly Color32[] MapColors =
         {
@@ -566,7 +568,8 @@ namespace DeadCircuit
                 switch (state.kind)
                 {
                     case NodeKind.Tree: art = "tree_" + state.id % 3; break;
-                    case NodeKind.Ore: case NodeKind.CopperOre: case NodeKind.TinOre: case NodeKind.UraniumOre: art = "node_ore"; break;
+                    case NodeKind.Ore: case NodeKind.CopperOre: case NodeKind.TinOre: case NodeKind.UraniumOre:
+                    case NodeKind.Stone: case NodeKind.Clay: art = "node_ore"; break;
                     case NodeKind.Scrap: art = state.id % 5 == 0 ? "car" : "node_scrap"; break;
                     case NodeKind.Crate: art = "node_crate"; break;
                     default: art = "node_wall"; break;
@@ -581,7 +584,11 @@ namespace DeadCircuit
                 float canopy = state.kind == NodeKind.Tree && local != null && Mathf.Abs(local.x-state.x)<.8f && local.y > state.y && local.y < state.y+1.8f ? .52f : 1f;
                 Color mineral = state.kind == NodeKind.CopperOre ? new Color(1f,.62f,.35f) :
                     state.kind == NodeKind.TinOre ? new Color(.68f,.84f,1f) :
-                    state.kind == NodeKind.UraniumOre ? new Color(.72f,1f,.35f) : Color.white;
+                    state.kind == NodeKind.UraniumOre ? new Color(.72f,1f,.35f) :
+                    state.kind == NodeKind.Stone ? new Color(.75f,.79f,.75f) :
+                    state.kind == NodeKind.Clay ? new Color(1f,.55f,.32f) : Color.white;
+                if (state.kind == NodeKind.Stone || state.kind == NodeKind.Clay)
+                    v.root.name = state.kind == NodeKind.Stone ? "石料堆 / Stone" : "黏土矿床 / Clay";
                 v.body.color = DamageColor(v,mineral); v.body.color = new Color(v.body.color.r,v.body.color.g,v.body.color.b,canopy);
                 v.shadow.transform.localScale = state.kind == NodeKind.Tree ? new Vector3(1.4f,.9f,1) : Vector3.one;
                 float sway = state.kind == NodeKind.Tree ? Mathf.Sin(Time.unscaledTime*.9f+state.id)*.8f : 0;
@@ -617,7 +624,11 @@ namespace DeadCircuit
                 SetOrder(v, state.y);
                 int rotation = ((state.rotation % 4) + 4) % 4;
                 ConfigureMachine(v.body, state);
-                v.body.color = DamageColor(v, Color.white);
+                Color primitiveTint = state.kind == BuildKind.CharcoalKiln ? new Color(.48f,.55f,.52f) :
+                    state.kind == BuildKind.ClayKiln ? new Color(1f,.57f,.36f) : Color.white;
+                v.body.color = DamageColor(v, primitiveTint);
+                if (state.kind == BuildKind.CharcoalKiln || state.kind == BuildKind.ClayKiln)
+                    v.root.name = DemoCatalog.BuildName(state.kind);
                 if (state.kind == BuildKind.Wall || state.kind == BuildKind.Door)
                     ConfigureWall(v, world, state.x, state.y);
                 v.shadow.transform.localPosition = new Vector3(0, -.20f * h, 0);
@@ -675,6 +686,7 @@ namespace DeadCircuit
                     v.cargo.transform.localScale = new Vector3(.065f,.065f,1);
                 }
                 if ((active && (state.kind == BuildKind.Smelter || state.kind == BuildKind.StoneFurnace ||
+                    state.kind == BuildKind.CharcoalKiln || state.kind == BuildKind.ClayKiln ||
                     state.kind == BuildKind.SteamFurnace || state.kind == BuildKind.Boiler)) || state.kind == BuildKind.Reactor)
                 {
                     v.detail.enabled = true; v.detail.sprite = Art("glow"); v.detail.transform.localScale = Vector3.one * (.8f * Mathf.Min(w,h));
@@ -1218,7 +1230,7 @@ namespace DeadCircuit
 
         bool CanPreview(WorldState world,PlayerState player,BuildingState b)
         {
-            if (!TechCatalog.IsUnlocked(world,b.kind)) return false;
+            if (!PrimitiveCatalog.IsBuildUnlocked(world,b.kind)) return false;
             if (TechCatalog.RequiresWater(b.kind) && !TechCatalog.NearWater(world,b)) return false;
             if (world.buildings != null && world.buildings.Count >= 1024) return false;
             int w = DemoCatalog.Width(b), h = DemoCatalog.Height(b);
@@ -1313,6 +1325,7 @@ namespace DeadCircuit
         Sprite Machine(BuildKind kind,int rotation)
         {
             Sprite svg=DemoArt.Get("machine_"+(int)kind); if (svg!=null) return svg;
+            if (kind == BuildKind.CharcoalKiln || kind == BuildKind.ClayKiln) return Art("industry_" + (int)BuildKind.StoneFurnace);
             if (kind==BuildKind.PowerPole) return Art("runtime_powerpole");
             if (kind==BuildKind.SolarPanel) return Art("runtime_solarpanel");
             if ((int)kind >= (int)BuildKind.Workbench) return Art("industry_" + (int)kind);

@@ -10,6 +10,7 @@ static partial class Checks
             p.needs.initialized=true;
             if (EquipmentCatalog.IsGun(weapon)) p.gear[0].magazine=1;
             arrange(s,p);
+            PrepareLegacySaveFixture(s, 6);
         });
     static CreatureState HuntingAnimal(WorldState s,float x=34,float y=35)
     {

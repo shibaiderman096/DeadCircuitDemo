@@ -114,6 +114,7 @@ namespace DeadCircuit
 
         private void BoilSurvivalWater(PlayerState p, PlayerCommand cmd)
         {
+            if (!PrimitiveCatalog.IsCookingUnlocked(State)) { Notice(p,"需要研究：烹饪净水"); return; }
             var n = p.needs;
             if (cmd.arg != 0 || n.waterRaw < 1 || n.waterClean >= SurvivalCatalog.StackLimit ||
                 p.items[(int)ItemKind.Fuel] < 1 || !SurvivalStation(p, cmd.x, cmd.y, BuildKind.StoneFurnace)) return;
@@ -123,6 +124,7 @@ namespace DeadCircuit
 
         private void CookSurvivalFood(PlayerState p, PlayerCommand cmd)
         {
+            if (!PrimitiveCatalog.IsCookingUnlocked(State)) { Notice(p,"需要研究：烹饪净水"); return; }
             var recipe = SurvivalCatalog.Recipe(cmd.arg); var n = p.needs;
             if (recipe == null || !SurvivalStation(p, cmd.x, cmd.y, recipe.station) ||
                 n.waterClean < recipe.cleanWater || p.items[(int)ItemKind.Fuel] < recipe.fuel) return;

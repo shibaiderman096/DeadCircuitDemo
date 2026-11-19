@@ -13,7 +13,7 @@ namespace DeadCircuit
                 return;
             }
             var chunks=source.chunks;
-            SaveCheck(source.generatorVersion==3 || source.generatorVersion==4 && source.version>=9 || source.generatorVersion==5 && source.version>=10,"chunk generator");
+            SaveCheck(source.generatorVersion==3 || source.generatorVersion==4 && source.version>=9 || source.generatorVersion==5 && source.version>=10 || source.generatorVersion==6 && source.version>=11,"chunk generator");
             SaveCheck(chunks.records!=null && chunks.records.Count>=16 && chunks.records.Count<=65536 && chunks.revision>=0 && string.IsNullOrEmpty(chunks.generated),"chunk metadata");
             var keys=new HashSet<long>();var result=new ChunkWorldState {enabled=true,revision=chunks.revision};
             foreach(var chunk in chunks.records)

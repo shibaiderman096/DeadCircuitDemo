@@ -69,7 +69,7 @@ static partial class Checks
                 var sim = ForagingFixture(out var p, NodeKind.Crate, generator: mode == "generator-zero" ? 0 : 1, enabled: mode != "disabled");
                 if (mode == "legacy")
                 {
-                    var old = Saved(sim.State); old.version = 5; sim = new WorldSimulator(old); p = sim.State.players.Single();
+                    var old = Saved(sim.State); PrepareLegacySaveFixture(old, 5); sim = new WorldSimulator(old); p = sim.State.players.Single();
                 }
                 if (mode == "uninitialized") p.needs.initialized = false;
                 int ration = p.items[(int)ItemKind.Food]; sim.Apply(Command(p, "interact", 10, 10));

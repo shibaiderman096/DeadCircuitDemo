@@ -12,7 +12,7 @@ namespace DeadCircuit
             if (source == null) throw new ArgumentNullException(nameof(source));
             SaveCheck(source.version >= 1 && source.version <= SaveVersion, "unsupported version");
             bool legacy=source.version<3;
-            int itemCount=legacy ? 7 : source.version==3 ? 21 : DemoCatalog.ItemCount;
+            int itemCount=legacy ? 7 : source.version==3 ? 21 : source.version<11 ? 25 : DemoCatalog.ItemCount;
             if(!legacy)
             {
                 SaveCheck((int)source.era>=0 && (int)source.era<=6, "technology era");
@@ -50,6 +50,7 @@ namespace DeadCircuit
                 announcement = source.announcement, announcementUntil = source.announcementUntil,
                 kills = source.kills, manufactured = source.manufactured, gathered = source.gathered
             };
+            CopyPrimitiveProgression(source, s);
             var entityIds = new HashSet<int>();
             CopyChunks(source,s);
             var occupied = new HashSet<long>();
@@ -59,7 +60,7 @@ namespace DeadCircuit
             {
                 SaveCheck(n != null, "null node"); CheckEntityId(n.id, entityIds, ref highestId);
                 CheckCell(n.x, n.y,source); long cell = WorldTiles.Key(n.x,n.y);
-                SaveCheck((int)n.kind >= 0 && (int)n.kind <= (legacy ? 4 : 7), "node kind");
+                SaveCheck((int)n.kind >= 0 && (int)n.kind <= (legacy ? 4 : source.version<11 ? 7 : 9), "node kind");
                 char terrain=WorldTiles.Ground(source,n.x,n.y);
                 SaveCheck(occupied.Add(cell) && terrain != '2' && terrain!='?', "overlapping/water node"); solid.Add(cell);
                 SaveCheck(n.stock > 0 && n.stock <= 100000, "node stock"); SaveRange(n.hp, 0.001f, 10000f, "node hp");
@@ -69,7 +70,7 @@ namespace DeadCircuit
             {
                 SaveCheck(b != null, "null building"); CheckEntityId(b.id, entityIds, ref highestId);
                 CheckCell(b.x, b.y,source);
-                SaveCheck((int)b.kind >= 0 && (int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : DemoCatalog.BuildNames.Length) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
+                SaveCheck((int)b.kind >= 0 && (int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : source.version<11 ? 36 : DemoCatalog.BuildNames.Length) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
                 SaveCheck(b.footprintVersion == 0 || b.footprintVersion == 1, "footprint version");
                 for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
                 {

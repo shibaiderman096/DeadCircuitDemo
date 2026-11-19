@@ -135,7 +135,7 @@ namespace DeadCircuit
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 5;
+        public const int CurrentGeneratorVersion = 6;
         public const int LegacySiteCount = 12;
         private const int Size = 64;
 
@@ -147,7 +147,7 @@ namespace DeadCircuit
             options.seedText = options.seedText.Trim();
             if (options.seedText.Length > 0) options.seed = WorldSeed.Resolve(options.seedText);
             if (options.chunked) return ChunkStreaming.Create(options);
-            var state = new WorldState { seed = options.seed, generation = options, generatorVersion = CurrentGeneratorVersion };
+            var state = new WorldState { seed = options.seed, generation = options, generatorVersion = CurrentGeneratorVersion, primitiveVersion = 1 };
             state.biomes = GenerateBiomes(options.seed);
             var ground = new char[Size * Size];
             var reserved = new bool[ground.Length];
@@ -167,7 +167,7 @@ namespace DeadCircuit
             for (int i = 0; i < initialX.Length; i++)
                 state.zombies.Add(new ZombieState { id = state.nextId++, x = initialX[i], y = initialY[i],
                     variant = i == 5 ? 1 : 0, hp = i == 5 ? 32f : 45f });
-            state.announcement = "原始时代：工作台(29,35)、石炉(28,37)。采铁铜锡，手制燃料后石炉冶炼；研究水力，岸位(25,25)可建水车。科技全队共享，个人加点独立。";
+            state.announcement = "原始时代：工作台(29,35)、石炉(28,37)，附近有石材与黏土。按T研究：工具→烧炭→制陶→铜锡→青铜→块炼铁；满足实际产量后进入水力。科技全队共享。";
             state.announcementUntil = 28f;
             WorldSimulator.PrepareGeneratedWorld(state);
             return state;
@@ -270,6 +270,11 @@ namespace DeadCircuit
             AddNode(state, occupied, 25, 34, NodeKind.Tree, 30);
             AddNode(state, occupied, 25, 35, NodeKind.Tree, 30);
             AddNode(state, occupied, 26, 36, NodeKind.Tree, 30);
+            if (state.generatorVersion >= 6)
+            {
+                AddNode(state, occupied, 27, 34, NodeKind.Stone, 600);
+                AddNode(state, occupied, 27, 36, NodeKind.Clay, 600);
+            }
             AddNode(state, occupied, 36, 34, NodeKind.Scrap, 60);
             AddNode(state, occupied, 35, 35, NodeKind.Crate, 16);
             AddNode(state, occupied, 36, 37, NodeKind.Crate, 16);
@@ -363,6 +368,8 @@ namespace DeadCircuit
                 else if (roll < 50) { kind = NodeKind.TinOre; stock = random.Next(60, 120); }
                 else if (roll < 55) { kind = NodeKind.UraniumOre; stock = random.Next(40, 80); }
                 else if (roll < 75) { kind = NodeKind.Scrap; stock = random.Next(10, 24); }
+                else if (state.generatorVersion >= 6 && roll < 95) { kind = NodeKind.Stone; stock = random.Next(80, 160); }
+                else if (state.generatorVersion >= 6 && roll < 110) { kind = NodeKind.Clay; stock = random.Next(60, 120); }
                 else
                 {
                     int trees = WorldGenerationCatalog.Biomes[state.biomes[c] - '0'].treePermille;

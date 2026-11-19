@@ -20,6 +20,7 @@ namespace DeadCircuit
         {
             switch (kind)
             {
+                case BuildKind.CharcoalKiln: case BuildKind.ClayKiln:
                 case BuildKind.Door: case BuildKind.Wall: case BuildKind.Belt: case BuildKind.Chest: case BuildKind.Workbench: case BuildKind.StoneFurnace: return TechEra.Primitive;
                 case BuildKind.Waterwheel: case BuildKind.Shaft: case BuildKind.MechanicalCrusher: return TechEra.Water;
                 case BuildKind.CombustionChamber: case BuildKind.Chimney: case BuildKind.FeedwaterPump: case BuildKind.SteamEngine:
@@ -31,7 +32,7 @@ namespace DeadCircuit
                 default: return TechEra.Nuclear;
             }
         }
-        public static bool IsUnlocked(WorldState s, BuildKind kind) => s != null && (int)kind >= 0 && (int)kind < DemoCatalog.BuildNames.Length && s.era >= RequiredEra(kind);
+        public static bool IsUnlocked(WorldState s, BuildKind kind) => s != null && (int)kind >= 0 && (int)kind < DemoCatalog.BuildNames.Length && s.era >= RequiredEra(kind) && PrimitiveCatalog.IsBuildUnlocked(s,kind);
         public static int EnergyTier(BuildingState b) => b==null ? -1 : b.kind==BuildKind.Transformer ? 2+b.setting : EnergyTier(b.kind);
         public static float LinkRange(BuildKind kind) => EnergyTier(kind) >= 2 ? DemoCatalog.LinkRange : 0f;
         public static float SupplyRadius(BuildKind kind) => EnergyTier(kind) >= 2 ? DemoCatalog.SupplyRadius : 0f;
@@ -101,6 +102,11 @@ namespace DeadCircuit
         public static string ResearchRequirement(WorldState s, TechEra target)
         {
             if (s == null || (int)target < 1 || (int)target > 6 || (int)target != (int)s.era + 1) return "只能研究下一阶段";
+            if (target == TechEra.Water)
+            {
+                string primitive = PrimitiveCatalog.WaterRequirement(s);
+                if (primitive.Length > 0) return primitive;
+            }
             BuildKind required = target == TechEra.Water ? BuildKind.Workbench : target == TechEra.Steam ? BuildKind.MechanicalCrusher : target == TechEra.LowVoltage ? BuildKind.SteamFurnace : target == TechEra.MediumVoltage ? BuildKind.CircuitAssembler : target == TechEra.HighVoltage ? BuildKind.ChemicalPlant : BuildKind.PrecisionAssembler;
             return s.buildings.Exists(b => b != null && b.kind == required && b.hp > 0f) ? "" : "需要已建设备：" + DemoCatalog.BuildName(required);
         }
@@ -121,13 +127,15 @@ namespace DeadCircuit
                 case TechEra.MediumVoltage: return new[] { BuildKind.DieselGenerator, BuildKind.SolarPanel, BuildKind.MediumPole, BuildKind.Transformer, BuildKind.ChemicalPlant, BuildKind.CoolingTower, BuildKind.CircuitAssembler, BuildKind.Belt, BuildKind.Chest, BuildKind.Turret };
                 case TechEra.HighVoltage: return new[] { BuildKind.HighGenerator, BuildKind.HighPole, BuildKind.PrecisionAssembler, BuildKind.Transformer, BuildKind.ChemicalPlant, BuildKind.CoolingTower, BuildKind.Belt, BuildKind.Chest, BuildKind.MediumPole, BuildKind.Turret };
                 case TechEra.Nuclear: return new[] { BuildKind.Reactor, BuildKind.NuclearProcessor, BuildKind.CoolingTower, BuildKind.HighPole, BuildKind.Transformer, BuildKind.PrecisionAssembler, BuildKind.ChemicalPlant, BuildKind.Belt, BuildKind.Chest, BuildKind.MediumPole };
-                default: return new[] { BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.Chest, BuildKind.Wall, BuildKind.Door, BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.Chest, BuildKind.Wall, BuildKind.Belt };
+                default: return new[] { BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.CharcoalKiln, BuildKind.ClayKiln, BuildKind.Chest, BuildKind.Wall, BuildKind.Door, BuildKind.Belt, BuildKind.Workbench, BuildKind.StoneFurnace };
             }
         }
         private static RecipeDefinition R(int id, string name, TechEra era, BuildKind building, float duration, int[] inputs, int[] outputs) => new RecipeDefinition { id=id,name=name,era=era,building=building,duration=duration,inputs=inputs,outputs=outputs };
         public static readonly RecipeDefinition[] Recipes =
         {
-            R(2,"青铜合金",TechEra.Water,BuildKind.Workbench,.5f,DemoCatalog.Materials(ItemKind.Copper,3,ItemKind.Tin,1),DemoCatalog.Materials(ItemKind.Bronze,4)),
+            R(100,"木炭烧制",TechEra.Primitive,BuildKind.CharcoalKiln,4f,DemoCatalog.Materials(ItemKind.Wood,4),DemoCatalog.Materials(ItemKind.Charcoal,2)),
+            R(101,"陶砖烧制",TechEra.Primitive,BuildKind.ClayKiln,4f,DemoCatalog.Materials(ItemKind.Clay,4,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Brick,4)),
+            R(2,"青铜合金",TechEra.Primitive,BuildKind.Workbench,.5f,DemoCatalog.Materials(ItemKind.Copper,3,ItemKind.Tin,1),DemoCatalog.Materials(ItemKind.Bronze,4)),
             R(3,"铁锭加工废料",TechEra.Primitive,BuildKind.Workbench,.5f,DemoCatalog.Materials(ItemKind.Iron,1),DemoCatalog.Materials(ItemKind.Scrap,3)),
             R(10,"石炉炼铁",TechEra.Primitive,BuildKind.StoneFurnace,3f,DemoCatalog.Materials(ItemKind.Ore,1),DemoCatalog.Materials(ItemKind.Iron,1)),
             R(11,"石炉炼铜",TechEra.Primitive,BuildKind.StoneFurnace,3f,DemoCatalog.Materials(ItemKind.CopperOre,1),DemoCatalog.Materials(ItemKind.Copper,1)),
@@ -165,6 +173,7 @@ namespace DeadCircuit
             if(item<0 || item>=DemoCatalog.ItemCount) return false;
             if(kind==BuildKind.Chest || kind==BuildKind.Belt) return true;
             if(IsFuelBurner(kind) && item==(int)ItemKind.Fuel) return true;
+            if(kind==BuildKind.StoneFurnace && item==(int)ItemKind.Charcoal) return true;
             if(kind==BuildKind.Miner) return item==(int)ItemKind.Ore || item==(int)ItemKind.CopperOre || item==(int)ItemKind.TinOre || item==(int)ItemKind.UraniumOre;
             if(kind==BuildKind.SteamMiner) return item==(int)ItemKind.Ore;
             if(kind==BuildKind.Turret) return item==(int)ItemKind.Ammo;

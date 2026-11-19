@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 10;
+        public const int SaveVersion = 11;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -70,7 +70,7 @@ namespace DeadCircuit
             inputs.Add(id, new HeldInput { protectionUntil = State.elapsed + 4f });
             InitializeSurvivalPlayer(p, true);
             MapExploration.Reveal(State,p);
-            Notice(p, "原始开局：采矿、3木材制2燃料，石炉炼铁铜锡。水车保底岸位(25,25)，科技全队共享。");
+            Notice(p, PrimitiveCatalog.Enabled(State) ? "原始开局：采集石材与木材，靠近工作台按T研究工具，再烧炭、制陶、炼铜锡与青铜。科技全队共享。" : "原始开局：采矿、3木材制2燃料，石炉炼铁铜锡。水车保底岸位(25,25)，科技全队共享。");
             flowRevision = -1;
             return p;
         }
@@ -145,6 +145,7 @@ namespace DeadCircuit
                     return;
                 case "craft": Craft(p, cmd.arg); return;
                 case "research": Research(p, cmd.arg); return;
+                case "primitive": ResearchPrimitive(p, cmd.arg); return;
                 case "interact": case "build": case "repair": case "dismantle": case "recipe": case "configure":
                     if (p.interactCooldown > 0f || !Inside(cmd.x, cmd.y) ||
                         DistSq(p.x, p.y, cmd.x, cmd.y) > Reach * Reach ||
@@ -225,7 +226,7 @@ namespace DeadCircuit
         {
             if (cmd.arg < 0 || cmd.arg >= DemoCatalog.BuildNames.Length || cmd.rotation < 0 || cmd.rotation > 3) return;
             BuildKind kind = (BuildKind)cmd.arg;
-            if (!TechCatalog.IsUnlocked(State, kind)) { Notice(p, "需要科技：" + TechCatalog.EraName(TechCatalog.RequiredEra(kind))); return; }
+            if (!TechCatalog.IsUnlocked(State, kind)) { Notice(p, PrimitiveCatalog.BuildRequirement(State,kind)); return; }
             var b = new BuildingState { x = cmd.x, y = cmd.y, rotation = cmd.rotation, kind = kind, footprintVersion = 1, modularBoiler = kind == BuildKind.Boiler };
             if (State.buildings.Count >= MaxBuildings) { Notice(p, "设备数量已达上限。"); return; }
             for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
@@ -294,6 +295,7 @@ namespace DeadCircuit
             {
                 RecipeDefinition r = TechCatalog.Recipe(arg);
                 if (r == null || r.building != BuildKind.Workbench || State.era < r.era) return;
+                if (!PrimitiveCatalog.IsRecipeUnlocked(State,r)) { Notice(p,PrimitiveCatalog.RecipeRequirement(State,r)); return; }
                 bool bench = EquipmentCatalog.HasWorkbench(State,p);
                 if (!bench) { Notice(p, "请靠近工作台。"); return; }
                 if (!CanRunRecipe(p.items,r,InventoryLimit,null)) { Notice(p, "配方材料不足或背包已满。"); return; }
@@ -340,6 +342,7 @@ namespace DeadCircuit
             }
             RecipeDefinition r=TechCatalog.Recipe(arg);
             if(r==null || r.building!=b.kind || b.kind==BuildKind.Workbench || r.era>State.era) return;
+            if(!PrimitiveCatalog.IsRecipeUnlocked(State,r)) { Notice(p,PrimitiveCatalog.RecipeRequirement(State,r)); return; }
             if(b.recipe!=arg) { b.recipe=arg; b.progress=0f; }
             Notice(p,"配方："+r.name);
         }

@@ -481,6 +481,8 @@ namespace DeadCircuit
             else if (n == null || !n.initialized) reason = "等待主机同步生存状态";
             else if (p.interactCooldown > 0 || Time.unscaledTime < survivalSendAt) reason = "交互冷却中";
             if (reason.Length > 0) return false;
+            if ((action == "cook" || action == "boilwater") && !PrimitiveCatalog.IsCookingUnlocked(w))
+            { reason = "需原始工艺：" + PrimitiveCatalog.Definition(7).name + "（按 T 研究）"; return false; }
             bool cellAction = action == "collectwater" || action == "boilwater" || action == "cook" ||
                 action == "till" || action == "sow" || action == "watercrop" || action == "harvest";
             if (cellAction && !SurvivalInReach(w, p, x, y)) { reason = "超出 2.4 格或视线受阻"; return false; }
@@ -502,13 +504,15 @@ namespace DeadCircuit
                     else if (n.waterRaw >= SurvivalCatalog.StackLimit) reason = "原水库存已满";
                     break;
                 case "boilwater":
-                    if (!SurvivalStationAt(w, p, x, y, BuildKind.StoneFurnace)) reason = "需要附近合法石炉";
+                    if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需原始工艺：" + PrimitiveCatalog.Definition(7).name + "（按 T 研究）";
+                    else if (!SurvivalStationAt(w, p, x, y, BuildKind.StoneFurnace)) reason = "需要附近合法石炉";
                     else if (arg != 0 || n.waterRaw < 1 || Count(p.items, (int)ItemKind.Fuel) < 1) reason = "需要原水 1、燃料 1";
                     else if (n.waterClean >= SurvivalCatalog.StackLimit) reason = "净水库存已满";
                     break;
                 case "cook":
                     var recipe = SurvivalCatalog.Recipe(arg);
-                    if (recipe == null) reason = "配方不存在";
+                    if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需原始工艺：" + PrimitiveCatalog.Definition(7).name + "（按 T 研究）";
+                    else if (recipe == null) reason = "配方不存在";
                     else if (!SurvivalStationAt(w, p, x, y, recipe.station)) reason = "需要附近合法工作站";
                     else if (n.waterClean < recipe.cleanWater || Count(p.items, (int)ItemKind.Fuel) < recipe.fuel) reason = "净水或燃料不足";
                     else for (int i = 0; i < recipe.foods.Length; i++)
@@ -560,8 +564,8 @@ namespace DeadCircuit
             return reason.Length == 0;
         }
 
-        static bool SurvivalInside(WorldState w, int x, int y) => w != null && x >= 0 && y >= 0 && x < w.width && y < w.height;
-        static char SurvivalGround(WorldState w, int x, int y) => SurvivalInside(w, x, y) && w.ground != null && x + y * w.width < w.ground.Length ? w.ground[x + y * w.width] : '?';
+        static bool SurvivalInside(WorldState w, int x, int y) => SurvivalGround(w, x, y) != '?';
+        static char SurvivalGround(WorldState w, int x, int y) => WorldTiles.Ground(w, x, y);
         static string SurvivalGroundName(char g) => g == '0' ? "草地" : g == '1' ? "泥土" : g == '2' ? "水域" : g == '3' ? "道路" : g == '4' ? "地板" : "未知地形";
         static FarmPlotState FindSurvivalPlot(WorldState w, int x, int y) => w?.survival?.plots?.Find(p => p.x == x && p.y == y);
         static FarmPlotState FindSurvivalPlotById(WorldState w, int id) => w?.survival?.plots?.Find(p => p.id == id);
@@ -601,13 +605,13 @@ namespace DeadCircuit
         {
             if (!SurvivalInReach(w, p, x, y)) return false;
             var b = SurvivalBuilding(w, x, y);
-            return b != null && b.hp > 0 && b.kind == kind && TechCatalog.IsUnlocked(w, kind);
+            return b != null && b.hp > 0 && b.kind == kind && PrimitiveCatalog.IsBuildUnlocked(w, kind);
         }
 
         static bool FindSurvivalStation(WorldState w, PlayerState p, BuildKind kind, out int x, out int y)
         {
             x = y = -1;
-            if (w == null || p == null || !TechCatalog.IsUnlocked(w, kind)) return false;
+            if (w == null || p == null || !PrimitiveCatalog.IsBuildUnlocked(w, kind)) return false;
             foreach (var b in w.buildings)
             {
                 if (b.kind != kind || b.hp <= 0) continue;

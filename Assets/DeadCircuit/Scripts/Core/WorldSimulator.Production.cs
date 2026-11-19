@@ -61,7 +61,7 @@ namespace DeadCircuit
                 // Reconfiguration never deletes old buffers: unload all possible outputs first.
                 for(int i=0;i<DemoCatalog.ItemCount;i++) if(IsOutput(b.kind,i))
                     moved += Transfer(b.items,p.items,i,BufferLimit,InventoryLimit);
-                if(TechCatalog.IsFuelBurner(b.kind) && !(b.kind==BuildKind.Boiler && b.modularBoiler)) moved += TransferIntoBuilding(p.items,b,(int)ItemKind.Fuel,8);
+                if(TechCatalog.IsFuelBurner(b.kind) && !(b.kind==BuildKind.Boiler && b.modularBoiler)) moved += TransferIntoBuilding(p.items,b,FuelItem(b),8);
                 if(b.kind==BuildKind.Reactor)
                 {
                     moved += TransferIntoBuilding(p.items,b,(int)ItemKind.NuclearFuel,4);
@@ -192,13 +192,15 @@ namespace DeadCircuit
             l.building.powerGeneration=l.inputNetwork==null ? 0f : l.building.powerDemand*l.inputNetwork.ratio*efficiency;
             if(l.network!=null) l.network.generation+=l.building.powerGeneration;
         }
+        private int FuelItem(BuildingState b) => b.kind==BuildKind.StoneFurnace && PrimitiveCatalog.Enabled(State) ? (int)ItemKind.Charcoal : (int)ItemKind.Fuel;
         private float BurnFuel(BuildingState b,bool consume,float output,float duration)
         {
             const float tolerance=.0001f;
+            int fuelItem=FuelItem(b);
             float seconds=b.fuel<tolerance ? 0f : b.fuel;
-            if(seconds+tolerance<FixedStep && b.items[(int)ItemKind.Fuel]>0)
+            if(seconds+tolerance<FixedStep && b.items[fuelItem]>0)
             {
-                if(consume) b.items[(int)ItemKind.Fuel]--;
+                if(consume) b.items[fuelItem]--;
                 seconds+=duration;
             }
             float generation=output*(seconds+tolerance>=FixedStep ? 1f : Clamp(seconds/FixedStep,0f,1f));
@@ -337,6 +339,7 @@ namespace DeadCircuit
                 }
                 RecipeDefinition r=TechCatalog.SelectedRecipe(b);
                 if(r==null || r.building!=b.kind || b.kind==BuildKind.Workbench || r.era>State.era) continue;
+                if(!PrimitiveCatalog.IsBuildUnlocked(State,b.kind) || !PrimitiveCatalog.IsRecipeUnlocked(State,r)) continue;
                 if((b.kind==BuildKind.CoolingTower || r.id==71) && !NearWater(b)) continue;
                 if(!CanRunRecipe(b.items,r,BufferLimit,Incoming(b.id))) continue;
                 float ratio=b.powerRatio;
@@ -389,6 +392,8 @@ namespace DeadCircuit
                 case NodeKind.CopperOre: return (int)ItemKind.CopperOre;
                 case NodeKind.TinOre: return (int)ItemKind.TinOre;
                 case NodeKind.UraniumOre: return (int)ItemKind.UraniumOre;
+                case NodeKind.Stone: return (int)ItemKind.Stone;
+                case NodeKind.Clay: return (int)ItemKind.Clay;
                 case NodeKind.Crate: return (int)ItemKind.Food;
                 default: return (int)ItemKind.Scrap;
             }
@@ -466,7 +471,7 @@ namespace DeadCircuit
             }
         }
 
-        private static int CargoExportItem(BuildingState from,BuildingState to)
+        private int CargoExportItem(BuildingState from,BuildingState to)
         {
             for(int i=0;i<DemoCatalog.ItemCount;i++)
                 if(from.items[i]>0 && (from.kind==BuildKind.Chest || from.kind==BuildKind.Belt || CanExportOutput(from,i)) && Accepts(to,i)) return i;
@@ -496,11 +501,11 @@ namespace DeadCircuit
             if (b.items[item] + (reserved == null ? 0 : reserved[item]) >= BufferLimit) return false;
             return b.kind != BuildKind.Belt || TotalItems(b.items) + (reserved == null ? 0 : TotalItems(reserved)) < 2;
         }
-        private static bool Accepts(BuildingState b,int item)
+        private bool Accepts(BuildingState b,int item)
         {
             if(b.kind==BuildKind.Boiler && b.modularBoiler) return false;
             if(b.kind==BuildKind.Chest || b.kind==BuildKind.Belt) return true;
-            if(TechCatalog.IsFuelBurner(b.kind) && item==(int)ItemKind.Fuel) return true;
+            if(TechCatalog.IsFuelBurner(b.kind) && item==FuelItem(b)) return true;
             if(b.kind==BuildKind.Turret) return item==(int)ItemKind.Ammo;
             if(b.kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearFuel || item==(int)ItemKind.Coolant;
             RecipeDefinition r=TechCatalog.SelectedRecipe(b);
@@ -510,6 +515,7 @@ namespace DeadCircuit
         {
             if(kind==BuildKind.Chest || kind==BuildKind.Belt) return true;
             if(TechCatalog.IsFuelBurner(kind) && item==(int)ItemKind.Fuel) return true;
+            if(kind==BuildKind.StoneFurnace && item==(int)ItemKind.Charcoal) return true;
             if(kind==BuildKind.Turret) return item==(int)ItemKind.Ammo;
             if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearFuel || item==(int)ItemKind.Coolant;
             foreach(var r in TechCatalog.Recipes) if(r.building==kind && kind!=BuildKind.Workbench && r.inputs[item]>0) return true;

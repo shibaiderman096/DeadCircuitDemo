@@ -109,6 +109,7 @@ static partial class Checks
             var legacy = Flat(); legacy.seed = -991;
             legacy.nodes.Add(new NodeState { id = legacy.nextId++, x = 4, y = 5, stock = 63, kind = NodeKind.Tree });
             var machine = Add(legacy, BuildKind.Chest, 8, 9); machine.items[(int)ItemKind.Wood] = 17;
+            PrepareLegacySaveFixture(legacy, 4, 0); legacy.generation = null; legacy.biomes = "";
             var nodes = legacy.nodes; var machines = legacy.buildings; var sites = legacy.sites; var inventory = machine.items;
             string before = Dump(legacy);
             WorldGeneration.LegacyMetadata(legacy);
@@ -126,8 +127,8 @@ static partial class Checks
         Run("world generation generator one saves retain their existing open entrances", () =>
         {
             var legacy = WorldGeneration.Generate(new WorldGenerationSettings { seed = -991 });
-            legacy.version = 6; legacy.generatorVersion = 1;
             legacy.buildings.RemoveAll(b => b.kind == BuildKind.Door);
+            PrepareLegacySaveFixture(legacy, 6, 1);
             string before = Dump(legacy);
             WorldGeneration.Validate(legacy); WorldGeneration.LegacyMetadata(legacy);
             Require(Dump(legacy) == before, "legacy metadata/validation changed generator-one entities");
@@ -143,7 +144,7 @@ static partial class Checks
             for (int i = 0; i < legacy.buildings.Count; i++)
             {
                 var a = legacy.buildings[i]; var b = sim.State.buildings[i];
-                Require(a.id == b.id && a.kind == b.kind && a.x == b.x && a.y == b.y && a.rotation == b.rotation && a.hp == b.hp && a.footprintVersion == b.footprintVersion && a.items.SequenceEqual(b.items), "legacy machine changed on restore");
+                Require(a.id == b.id && a.kind == b.kind && a.x == b.x && a.y == b.y && a.rotation == b.rotation && a.hp == b.hp && a.footprintVersion == b.footprintVersion && ExpandedLegacyFixtureInventory(a.items).SequenceEqual(b.items), "legacy machine changed on restore");
             }
             foreach (var site in sim.State.sites)
                 Require(RoomLayout.Build(sim.State).At(site.x + 1, site.y + 1) == null, "legacy open entrance acquired an implicit roof");
