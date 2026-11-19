@@ -50,7 +50,7 @@ namespace DeadCircuit
 
         private void RefreshSpatial()
         {
-            Array.Clear(nodeGrid, 0, nodeGrid.Length); Array.Clear(buildingGrid, 0, buildingGrid.Length);
+            nodeGrid.Clear(); buildingGrid.Clear();
             foreach (NodeState n in State.nodes) if (Inside(n.x, n.y)) nodeGrid[Cell(n.x, n.y)] = n;
             foreach (BuildingState b in State.buildings)
                 for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
@@ -59,7 +59,8 @@ namespace DeadCircuit
         }
         private bool BlockedAt(int x, int y)
         {
-            if (!Inside(x, y) || State.ground[Cell(x, y)] == '2') return true;
+            char ground=WorldTiles.Ground(State,x,y);
+            if (!Inside(x, y) || ground == '2' || ground == '?') return true;
             NodeState n = nodeGrid[Cell(x, y)]; if (n != null && n.hp > 0f && n.stock > 0) return true;
             BuildingState b = buildingGrid[Cell(x, y)]; return b != null && b.hp > 0f && !DemoCatalog.Walkable(b);
         }

@@ -7,6 +7,7 @@ namespace DeadCircuit
         public RoomLayout Interiors { get; private set; }
         private string interiorGround;
         private ulong interiorSignature;
+        private int interiorChunkRevision=-1;
 
         // Room membership depends on physical barriers, never site labels or machine graphics.
         // Open doors retain the room/roof boundary while allowing actors and shots through.
@@ -18,17 +19,18 @@ namespace DeadCircuit
                 foreach(var n in State.nodes) if(n.kind==NodeKind.Wall && n.hp>0 && n.stock>0)
                 {
                     signature=(signature^(uint)n.id)*1099511628211UL;
-                    signature=(signature^(uint)(n.x+n.y*State.width))*1099511628211UL;
+                    signature=(signature^(ulong)WorldTiles.Key(n.x,n.y))*1099511628211UL;
                 }
                 foreach(var b in State.buildings) if(b.hp>0 && (b.kind==BuildKind.Wall || b.kind==BuildKind.Door))
                 {
                     signature=(signature^(uint)b.id)*1099511628211UL;
-                    signature=(signature^(uint)(b.x+b.y*State.width))*1099511628211UL;
+                    signature=(signature^(ulong)WorldTiles.Key(b.x,b.y))*1099511628211UL;
                     signature=(signature^(uint)((int)b.kind+DemoCatalog.Width(b)*256+DemoCatalog.Height(b)*4096))*1099511628211UL;
                 }
             }
-            if(Interiors!=null && interiorGround==State.ground && signature==interiorSignature) return;
-            Interiors=RoomLayout.Build(State); interiorGround=State.ground; interiorSignature=signature;
+            int revision=ChunkStreaming.Enabled(State) ? State.chunks.revision : 0;
+            if(Interiors!=null && interiorGround==State.ground && signature==interiorSignature && interiorChunkRevision==revision) return;
+            Interiors=RoomLayout.Build(State); interiorGround=State.ground; interiorSignature=signature;interiorChunkRevision=revision;
         }
 
         private void SetDoor(PlayerState player,BuildingState door,int setting)

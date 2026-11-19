@@ -76,7 +76,7 @@ namespace DeadCircuit
                 case "eatfood": ConsumeSurvivalFood(p, cmd.arg); break;
                 case "drink": DrinkSurvivalWater(p, cmd.arg); break;
                 case "collectwater":
-                    if (cmd.arg == 0 && SurvivalReach(p, cmd.x, cmd.y) && State.ground[Cell(cmd.x, cmd.y)] == '2' && p.needs.waterRaw < SurvivalCatalog.StackLimit)
+                    if (cmd.arg == 0 && SurvivalReach(p, cmd.x, cmd.y) && WorldTiles.Ground(State, cmd.x, cmd.y) == '2' && p.needs.waterRaw < SurvivalCatalog.StackLimit)
                     { p.needs.waterRaw++; SurvivalActionDone(p, "收集一份原水；饮用前请煮沸。"); }
                     break;
                 case "boilwater": BoilSurvivalWater(p, cmd); break;
@@ -183,16 +183,26 @@ namespace DeadCircuit
             w.humidity = SurvivalBlend(w.fromHumidity, w.targetHumidity, t); w.rainfall = SurvivalBlend(w.fromRainfall, w.targetRainfall, t);
         }
 
-        private static void BeginSurvivalWeatherPhase(SurvivalWeatherState w)
+        // Rows follow SeasonKind; columns follow the stable WeatherKind save ordinals.
+        // Each row totals 100. These weights are consulted only when the saved phase expires.
+        private static readonly int[,] SeasonalWeatherWeights =
+        {
+            { 24, 16, 18, 16, 8, 10, 0, 5, 2, 1 },  // spring: mild, wet
+            { 27, 8, 5, 12, 22, 3, 18, 0, 0, 5 },  // summer: heat and thunderstorms; no snow/cold snap
+            { 20, 20, 12, 15, 5, 12, 0, 8, 5, 3 },  // autumn: overcast, fog, cooling
+            { 14, 18, 2, 4, 1, 8, 0, 25, 27, 1 }   // winter: snow/cold snaps; no heatwave
+        };
+
+        private void BeginSurvivalWeatherPhase(SurvivalWeatherState w)
         {
             w.previousKind = w.kind;
             int pick = (int)(SurvivalRandom(ref w.randomState) % 100);
-            // Neighbouring phases favour related conditions, while every kind remains reachable.
-            if (pick < 45 && (w.kind == WeatherKind.Drizzle || w.kind == WeatherKind.Rain || w.kind == WeatherKind.Thunderstorm))
-                w.kind = pick < 15 ? WeatherKind.Overcast : pick < 30 ? WeatherKind.Rain : WeatherKind.Drizzle;
-            else if (pick < 45 && (w.kind == WeatherKind.ColdSnap || w.kind == WeatherKind.Snow))
-                w.kind = pick < 25 ? WeatherKind.Snow : WeatherKind.Overcast;
-            else w.kind = (WeatherKind)(SurvivalRandom(ref w.randomState) % SurvivalCatalog.WeatherCount);
+            int season = (int)SeasonCalendar.Sample(State).season;
+            for (int kind = 0; kind < SurvivalCatalog.WeatherCount; kind++)
+            {
+                pick -= SeasonalWeatherWeights[season, kind];
+                if (pick < 0) { w.kind = (WeatherKind)kind; break; }
+            }
             w.fromIntensity = w.intensity; w.fromWindX = w.windX; w.fromWindY = w.windY;
             w.fromTemperature = w.temperature; w.fromHumidity = w.humidity; w.fromRainfall = w.rainfall;
             w.phaseTick = 0; w.transitionTicks = 400 + (int)(SurvivalRandom(ref w.randomState) % 201);
@@ -228,11 +238,12 @@ namespace DeadCircuit
 
         private float SurvivalAmbientTemperature(float x, float y)
         {
-            int cell = Cell(RoundCell(x), RoundCell(y));
-            int biome = State.biomes != null && cell >= 0 && cell < State.biomes.Length ? State.biomes[cell] - '0' : 0;
+            int biome = WorldTiles.Biome(State, RoundCell(x), RoundCell(y)) - '0';
             float offset = biome == 3 ? 8 : biome == 5 ? -13 : biome == 2 ? -4 : biome == 4 ? -1 : 0;
             float cycle = (float)Math.Sin(State.tick * .05 * (Math.PI * 2) / State.dayLength) * 3;
-            return State.survival.weather.temperature + offset + cycle;
+            // Keep saved weather endpoints/interpolation intact. This derived climate offset reaches
+            // both player exposure and crops (temperature gates, frost/heat damage, evaporation).
+            return State.survival.weather.temperature + offset + cycle + SeasonCalendar.Sample(State).temperatureOffset;
         }
 
         private FarmPlotState SurvivalPlotAt(int x, int y)
@@ -255,7 +266,7 @@ namespace DeadCircuit
             var plot = SurvivalPlotAt(cmd.x, cmd.y); var n = p.needs;
             if (cmd.action == "till")
             {
-                char terrain = State.ground[Cell(cmd.x, cmd.y)];
+                char terrain = WorldTiles.Ground(State, cmd.x, cmd.y);
                 if (cmd.arg != 0 || plot != null || State.survival.plots.Count >= SurvivalCatalog.MaxPlots ||
                     (terrain != '0' && terrain != '1') || NodeAt(cmd.x, cmd.y) != null || BuildingAt(cmd.x, cmd.y) != null ||
                     NearSpawn(cmd.x, cmd.y) || OccupiedByActor(cmd.x, cmd.y) || SurvivalOccupiesCell(cmd.x, cmd.y) ||
@@ -316,7 +327,9 @@ namespace DeadCircuit
 
         private static bool SurvivalWorldCellFree(WorldState world, int x, int y, bool allowBelts = false)
         {
-            if (x < 0 || x >= world.width || y < 0 || y >= world.height || world.ground[x + y * world.width] == '2') return false;
+            if (!WorldTiles.Inside(world, x, y)) return false;
+            char ground = WorldTiles.Ground(world, x, y);
+            if (ground == '2' || ground == '?') return false;
             foreach (var node in world.nodes) if (node.x == x && node.y == y) return false;
             foreach (var building in world.buildings) if ((!allowBelts || building.kind != BuildKind.Belt) && DemoCatalog.Contains(building, x, y)) return false;
             return true;
@@ -344,11 +357,10 @@ namespace DeadCircuit
                 {
                     int x = 2 + (int)(SurvivalRandom(ref s.creatureRandomState) % 60);
                     int y = 2 + (int)(SurvivalRandom(ref s.creatureRandomState) % 60);
-                    int cell = x + y * world.width;
-                    int biome = world.biomes != null && world.biomes.Length == world.width * world.height ? world.biomes[cell] - '0' : 0;
-                    char ground = world.ground[cell];
+                    int biome = WorldTiles.Biome(world, x, y) - '0';
+                    char ground = WorldTiles.Ground(world, x, y);
                     if (biome < 0 || biome > 5 || (definition.biomeMask & (1 << biome)) == 0 || (ground != '0' && ground != '1') ||
-                        !SurvivalWorldCellFree(world, x, y) || DistSq(x, y, world.width / 2, world.height / 2 + 3) < 144) continue;
+                        !SurvivalWorldCellFree(world, x, y) || DistSq(x, y, 32, 35) < 144) continue;
                     bool occupied = false;
                     foreach (var c in s.creatures) if (DistSq(c.x, c.y, x, y) < 2.25f) { occupied = true; break; }
                     foreach (var p in world.players) if (p.hp > 0 && DistSq(p.x, p.y, x, y) < 144) { occupied = true; break; }
@@ -517,12 +529,12 @@ namespace DeadCircuit
             SaveCheck(s.plots.Count <= SurvivalCatalog.MaxPlots && s.creatures.Count <= SurvivalCatalog.MaxCreatures, "survival entity limits");
             var copy = new SurvivalWorldState { enabled = s.enabled, initialized = s.initialized,
                 creatureRandomState = s.creatureRandomState, weather = CopySurvivalWeather(s.weather) };
-            var cells = new HashSet<int>();
+            var cells = new HashSet<long>();
             foreach (var plot in s.plots)
             {
                 SaveCheck(plot != null, "null farm plot");
-                CheckEntityId(plot.id, ids, ref highest); CheckCell(plot.x, plot.y);
-                int cell = plot.x + plot.y * source.width; char ground = source.ground[cell];
+                CheckEntityId(plot.id, ids, ref highest); CheckCell(plot.x, plot.y, source);
+                long cell = WorldTiles.Key(plot.x, plot.y); char ground = WorldTiles.Ground(source, plot.x, plot.y);
                 SaveCheck(cells.Add(cell) && (ground == '0' || ground == '1') && SurvivalWorldCellFree(source, plot.x, plot.y), "farm terrain/occupancy");
                 SaveCheck(plot.crop >= -1 && plot.crop < SurvivalCatalog.CropCount, "farm crop kind");
                 SaveRange(plot.moisture, 0, 100, "farm moisture"); SaveRange(plot.growth, 0, 1, "farm growth"); SaveRange(plot.health, 0, 100, "farm health");
@@ -534,7 +546,7 @@ namespace DeadCircuit
             {
                 SaveCheck(c != null, "null wildlife"); CheckEntityId(c.id, ids, ref highest);
                 var definition = SurvivalCatalog.Creature((int)c.kind); SaveCheck(definition != null, "wildlife species");
-                CheckPosition(c.x, c.y); SaveCheck(SurvivalCreaturePositionFree(source, c.x, c.y), "wildlife in obstruction");
+                CheckPosition(c.x, c.y, source); SaveCheck(SurvivalCreaturePositionFree(source, c.x, c.y), "wildlife in obstruction");
                 SaveRange(c.hp, 0, definition.health, "wildlife hp");
                 SaveRange(c.wanderX, -1, 1, "wildlife heading x"); SaveRange(c.wanderY, -1, 1, "wildlife heading y");
                 SaveCheck(c.wanderX * c.wanderX + c.wanderY * c.wanderY <= 1.001f, "wildlife heading length");

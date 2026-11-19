@@ -23,7 +23,9 @@ namespace DeadCircuit
 
     [Serializable] public sealed class WorldState
     {
-        public int version = 7, seed, width = 64, height = 64, nextId = 1, wave;
+        internal WorldState SnapshotCopy() => (WorldState)MemberwiseClone();
+        public int version = 8, seed, width = 64, height = 64, nextId = 1, wave;
+        public ChunkWorldState chunks = new ChunkWorldState();
         public WorldGenerationSettings generation;
         public int generatorVersion;
         public string biomes = "";
@@ -49,6 +51,7 @@ namespace DeadCircuit
 
     [Serializable] public sealed class PlayerState
     {
+        internal PlayerState SnapshotCopy() => (PlayerState)MemberwiseClone();
         public string id = "", name = "幸存者", notice = "";
         public int seat, level = 1, xp, attributePoints = 2, skillPoints = 1, deaths;
         public bool connected = true;
@@ -64,6 +67,9 @@ namespace DeadCircuit
         public int reloadingGearId;
         public bool aiming, moving;
         public SurvivalPlayerState needs = new SurvivalPlayerState();
+        // Four exploration bits per lower-case hex character. Empty on pre-v8 saves.
+        public string explored = "";
+        public List<ExploredChunkState> exploredChunks = new List<ExploredChunkState>();
     }
 
     [Serializable] public sealed class NodeState

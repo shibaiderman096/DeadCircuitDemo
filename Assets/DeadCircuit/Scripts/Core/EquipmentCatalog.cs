@@ -197,7 +197,7 @@ namespace DeadCircuit
 
         public static bool HasWorkbench(WorldState world, PlayerState player)
         {
-            if(world==null || player==null || world.buildings==null || world.nodes==null || world.ground==null || world.ground.Length!=world.width*world.height) return false;
+            if(world==null || player==null || world.buildings==null || world.nodes==null) return false;
             foreach(var bench in world.buildings)
             {
                 if(bench==null || bench.kind!=BuildKind.Workbench || bench.hp<=0f) continue;
@@ -208,7 +208,8 @@ namespace DeadCircuit
                 {
                     int x=(int)Math.Floor(player.x+dx*n/steps+.5f), y=(int)Math.Floor(player.y+dy*n/steps+.5f);
                     if(DemoCatalog.Contains(bench,x,y)) continue;
-                    if(x<0 || y<0 || x>=world.width || y>=world.height || world.ground[x+y*world.width]=='2') { blocked=true; break; }
+                    char ground=WorldTiles.Ground(world,x,y);
+                    if(!WorldTiles.Inside(world,x,y) || ground=='2' || ground=='?') { blocked=true; break; }
                     foreach(var node in world.nodes) if(node!=null && node.hp>0f && node.stock>0 && node.x==x && node.y==y) { blocked=true; break; }
                     if(!blocked) foreach(var b in world.buildings) if(b!=null && b!=bench && b.hp>0f && b.kind!=BuildKind.Belt && DemoCatalog.Contains(b,x,y)) { blocked=true; break; }
                 }

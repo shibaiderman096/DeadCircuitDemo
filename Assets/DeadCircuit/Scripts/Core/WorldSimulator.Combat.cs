@@ -200,24 +200,27 @@ namespace DeadCircuit
 
         private void RebuildFlow()
         {
-            for (int i = 0; i < flow.Length; i++) flow[i] = int.MaxValue;
-            int head = 0, tail = 0;
+            flow.Clear(); flowQueue.Clear();
             foreach (PlayerState p in State.players) if (p.connected && p.hp > 0f)
             {
                 int x = RoundCell(p.x), y = RoundCell(p.y);
                 if (!Inside(x, y) || flow[Cell(x, y)] == 0) continue;
-                flow[Cell(x, y)] = 0; flowQueue[tail++] = Cell(x, y);
+                flow[Cell(x, y)] = 0; flowQueue.Enqueue(Cell(x, y));
             }
-            while (head < tail)
+            while (flowQueue.Count>0)
             {
-                int cell = flowQueue[head++], x = cell % State.width, y = cell / State.width;
+                long cell=flowQueue.Dequeue(); int x=WorldTiles.X(cell), y=WorldTiles.Y(cell);
+                // Distant explored land does not expand every enemy search. The
+                // local horde uses a 64-cell field around each living survivor.
+                if(ChunkStreaming.Enabled(State) && flow[cell]>=64) continue;
                 for (int d = 0; d < 4; d++)
                 {
                     int nx = x + DirectionX[d], ny = y + DirectionY[d];
-                    if (!Inside(nx, ny) || State.ground[Cell(nx, ny)] == '2' || flow[Cell(nx, ny)] != int.MaxValue) continue;
+                    char ground=WorldTiles.Ground(State,nx,ny);
+                    if (!Inside(nx, ny) || ground == '2' || ground == '?' || flow[Cell(nx, ny)] != int.MaxValue) continue;
                     // Destructible obstructions remain in the flow graph: zombies break a closed wall
                     // instead of losing their target when a player completely encloses the base.
-                    flow[Cell(nx, ny)] = flow[cell] + 1; flowQueue[tail++] = Cell(nx, ny);
+                    flow[Cell(nx, ny)] = flow[cell] + 1; flowQueue.Enqueue(Cell(nx, ny));
                 }
             }
             flowRevision = 0;
@@ -319,6 +322,15 @@ namespace DeadCircuit
                 int position = 2 + (int)(hash % (uint)(State.width - 4));
                 int x = side == 0 ? 2 : side == 2 ? State.width - 3 : position;
                 int y = side == 1 ? 2 : side == 3 ? State.height - 3 : position;
+                if(ChunkStreaming.Enabled(State))
+                {
+                    var living=State.players.FindAll(p=>p.connected && p.hp>0);
+                    if(living.Count==0) return false;
+                    var target=living[(int)(hash%(uint)living.Count)];
+                    int edge=(int)(hash%49)-24;
+                    x=RoundCell(target.x)+(side==0 ? -24 : side==2 ? 24 : edge);
+                    y=RoundCell(target.y)+(side==1 ? -24 : side==3 ? 24 : edge);
+                }
                 if (CircleBlocked(x, y, 0.3f) || OccupiedByActor(x, y)) continue;
                 bool safe = true;
                 foreach (PlayerState p in State.players) if (p.connected && p.hp > 0f && DistSq(x, y, p.x, p.y) < 225f) { safe = false; break; }

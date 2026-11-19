@@ -38,14 +38,18 @@ namespace DeadCircuit
         public static bool RequiresWater(BuildKind kind) => kind==BuildKind.Waterwheel || kind==BuildKind.FeedwaterPump || kind==BuildKind.CoolingTower;
         public static bool NearWater(WorldState s,BuildingState b)
         {
-            if(s==null || b==null || s.ground==null || s.ground.Length!=s.width*s.height) return false;
+            if(s==null || b==null || !WorldTiles.Inside(s,b.x,b.y)) return false;
             int w=DemoCatalog.Width(b),h=DemoCatalog.Height(b);
+            if(!WorldTiles.Inside(s,b.x+w-1,b.y+h-1)) return false;
             for(int y=b.y;y<b.y+h;y++) for(int x=b.x;x<b.x+w;x++)
-                if(x<0 || y<0 || x>=s.width || y>=s.height || s.ground[x+y*s.width]=='2') return false;
+            {
+                char ground=WorldTiles.Ground(s,x,y);
+                if(ground=='2' || ground=='?') return false;
+            }
             for(int y=b.y;y<b.y+h;y++)
-                if((b.x>0 && s.ground[b.x-1+y*s.width]=='2') || (b.x+w<s.width && s.ground[b.x+w+y*s.width]=='2')) return true;
+                if(WorldTiles.Ground(s,b.x-1,y)=='2' || WorldTiles.Ground(s,b.x+w,y)=='2') return true;
             for(int x=b.x;x<b.x+w;x++)
-                if((b.y>0 && s.ground[x+(b.y-1)*s.width]=='2') || (b.y+h<s.height && s.ground[x+(b.y+h)*s.width]=='2')) return true;
+                if(WorldTiles.Ground(s,x,b.y-1)=='2' || WorldTiles.Ground(s,x,b.y+h)=='2') return true;
             // A feedwater intake may penetrate exactly one intact exterior wall.
             // This lets an enclosed dry factory use shoreline water without a hole in its shell.
             if(b.kind==BuildKind.FeedwaterPump)
@@ -60,8 +64,8 @@ namespace DeadCircuit
         private static bool WaterIntake(WorldState s,int wallX,int wallY,int dx,int dy)
         {
             int waterX=wallX+dx,waterY=wallY+dy;
-            if(wallX<0 || wallY<0 || wallX>=s.width || wallY>=s.height || waterX<0 || waterY<0 || waterX>=s.width || waterY>=s.height ||
-                s.ground[waterX+waterY*s.width]!='2') return false;
+            if(!WorldTiles.Inside(s,wallX,wallY) || !WorldTiles.Inside(s,waterX,waterY) ||
+                WorldTiles.Ground(s,waterX,waterY)!='2') return false;
             foreach(var wall in s.nodes)
                 if(wall.kind==NodeKind.Wall && wall.hp>0 && wall.stock>0 && wall.x==wallX && wall.y==wallY) return true;
             foreach(var wall in s.buildings)

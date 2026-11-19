@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 namespace DeadCircuit
 {
+    public enum SeasonKind { Spring, Summer, Autumn, Winter }
+
     // Ordinals are v6 save/network contracts. Do not reorder. Industrial ItemKind stays unchanged.
     public enum WeatherKind { Clear, Overcast, Drizzle, Rain, Thunderstorm, Fog, Heatwave, ColdSnap, Snow, DustStorm }
     public enum FoodKind

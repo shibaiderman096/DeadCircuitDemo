@@ -6,12 +6,13 @@ namespace DeadCircuit
 {
     public sealed partial class DemoWorldView
     {
-        readonly HashSet<int> roomBoundaryCells = new HashSet<int>();
-        readonly HashSet<int> roomFloorCells = new HashSet<int>();
+        readonly HashSet<long> roomBoundaryCells = new HashSet<long>();
+        readonly HashSet<long> roomFloorCells = new HashSet<long>();
         RoomLayout roomLayout, drawnRoomLayout;
         ulong roomTopology;
         string roomGround;
         int roomWidth, roomHeight;
+        int drawnRoomChunkX = int.MinValue, drawnRoomChunkY = int.MinValue;
         Mesh roomFloorMesh;
         Material roomFloorMaterial;
         MeshRenderer roomFloorRenderer;
@@ -55,6 +56,9 @@ namespace DeadCircuit
                 ulong hash = 14695981039346656037UL;
                 hash = (hash ^ (uint)world.width) * 1099511628211UL;
                 hash = (hash ^ (uint)world.height) * 1099511628211UL;
+                bool chunked = world.chunks != null && world.chunks.enabled;
+                hash = (hash ^ (chunked ? 1u : 0u)) * 1099511628211UL;
+                if (chunked) hash = (hash ^ (uint)world.chunks.revision) * 1099511628211UL;
                 if (world.nodes != null) foreach (var node in world.nodes)
                 {
                     if (node == null || node.kind != NodeKind.Wall || node.hp <= 0 || node.stock <= 0) continue;
@@ -79,11 +83,10 @@ namespace DeadCircuit
         void AddRoomBoundary(int x, int y, int w, int h)
         {
             for (int iy = y; iy < y + h; iy++) for (int ix = x; ix < x + w; ix++)
-                if (ix >= 0 && iy >= 0 && ix < roomWidth && iy < roomHeight) roomBoundaryCells.Add(ix + iy * roomWidth);
+                roomBoundaryCells.Add(WorldTiles.Key(ix, iy));
         }
 
-        bool HasRoomBoundary(int x, int y) => x >= 0 && y >= 0 && x < roomWidth && y < roomHeight &&
-            roomBoundaryCells.Contains(x + y * roomWidth);
+        bool HasRoomBoundary(int x, int y) => roomBoundaryCells.Contains(WorldTiles.Key(x, y));
 
         Sprite ConnectedWall(int x, int y)
         {
@@ -95,25 +98,33 @@ namespace DeadCircuit
         void DrawRooms(WorldState world)
         {
             var layout = EnsureRoomLayout(world);
-            if (ReferenceEquals(drawnRoomLayout, layout)) return;
+            if (ReferenceEquals(drawnRoomLayout, layout) && drawnRoomChunkX == groundCenterX && drawnRoomChunkY == groundCenterY) return;
             Sprite floor = DemoArt.Get("floor_room");
             if (floor == null) return; // Retry if the SVG atlas has not been loaded yet.
             drawnRoomLayout = layout;
+            drawnRoomChunkX = groundCenterX; drawnRoomChunkY = groundCenterY;
             roomFloorCells.Clear();
             var doorIds = new HashSet<int>();
             foreach (var room in layout.rooms)
             {
-                if (room.cells != null) foreach (int cell in room.cells) roomFloorCells.Add(cell);
+                if (room.cellKeys != null && room.cellKeys.Length > 0)
+                {
+                    foreach (long cell in room.cellKeys) AddRoomFloor(WorldTiles.X(cell), WorldTiles.Y(cell));
+                }
+                else if (room.cells != null)
+                {
+                    foreach (int cell in room.cells) AddRoomFloor(cell % world.width, cell / world.width);
+                }
                 if (room.doorIds != null) foreach (int door in room.doorIds) doorIds.Add(door);
             }
             if (world.buildings != null) foreach (var door in world.buildings)
                 if (door != null && door.hp > 0 && door.kind == BuildKind.Door && doorIds.Contains(door.id))
-                    roomFloorCells.Add(door.x + door.y * world.width);
+                    AddRoomFloor(door.x, door.y);
             if (roomFloorRenderer == null)
             {
                 var root = new GameObject("Room floor tiles / cutaway interior", typeof(MeshFilter), typeof(MeshRenderer));
                 root.transform.SetParent(worldRoot, false);
-                roomFloorMesh = new Mesh { name = "DeadCircuit tiled room floors" };
+                roomFloorMesh = new Mesh { name = "DeadCircuit tiled room floors", indexFormat = IndexFormat.UInt32 };
                 root.GetComponent<MeshFilter>().sharedMesh = roomFloorMesh;
                 roomFloorRenderer = root.GetComponent<MeshRenderer>();
                 roomFloorMaterial = new Material(terrainMaterial) { name = "DeadCircuit SVG room floors" };
@@ -129,10 +140,9 @@ namespace DeadCircuit
             var r = floor.rect;
             var tex = new Rect(r.x / floor.texture.width, r.y / floor.texture.height,
                 r.width / floor.texture.width, r.height / floor.texture.height);
-            foreach (int cell in roomFloorCells)
+            foreach (long cell in roomFloorCells)
             {
-                if (cell < 0 || cell >= world.width * world.height) continue;
-                int x = cell % world.width, y = cell / world.width;
+                int x = WorldTiles.X(cell), y = WorldTiles.Y(cell);
                 AddQuad(vertices, uv, triangles, colors, x - .5f, y - .5f, 1, 1, tex, Color.white);
             }
             roomFloorMesh.SetVertices(vertices); roomFloorMesh.SetUVs(0, uv);
@@ -141,6 +151,13 @@ namespace DeadCircuit
             // Roofs stay cut away by default, including above open doors. RoomLayout
             // still treats the live door as an enclosing boundary; no opaque roof
             // sprite can hide movement, combat or the doorway below it.
+        }
+
+        void AddRoomFloor(int x, int y)
+        {
+            // Floors share the local terrain window, including at negative chunks.
+            int cx = WorldTiles.FloorDiv(x, ChunkSize), cy = WorldTiles.FloorDiv(y, ChunkSize);
+            if (wantedGroundChunks.Contains(WorldTiles.Key(cx, cy))) roomFloorCells.Add(WorldTiles.Key(x, y));
         }
 
         static bool BehindWall(float actorX, float actorY, int x, int y) =>
@@ -169,6 +186,7 @@ namespace DeadCircuit
         void ResetRooms()
         {
             roomLayout = drawnRoomLayout = null; roomTopology = 0; roomGround = null;
+            drawnRoomChunkX = drawnRoomChunkY = int.MinValue;
             roomBoundaryCells.Clear(); roomFloorCells.Clear();
             if (roomFloorRenderer != null) roomFloorRenderer.enabled = false;
         }

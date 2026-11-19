@@ -14,7 +14,7 @@ namespace DeadCircuit
     // Serialization stays at the boundary: Unity uses JsonUtility, core checks use System.Text.Json.
     public sealed class WorldArchive
     {
-        public const int MaxBytes = 4 * 1024 * 1024, MaxWorlds = 64;
+        public const int MaxBytes = 128 * 1024 * 1024, MaxWorlds = 64;
         readonly string root;
         readonly Func<WorldState, string> encode;
         readonly Func<string, WorldState> decode;
@@ -36,7 +36,7 @@ namespace DeadCircuit
         {
             // ReadPath is also used for the one explicitly named legacy save by the bridge.
             var file = new FileInfo(path);
-            if (!file.Exists || file.Length <= 0 || file.Length > MaxBytes) throw new InvalidDataException("存档不存在、为空或超过4MB。");
+            if (!file.Exists || file.Length <= 0 || file.Length > MaxBytes) throw new InvalidDataException("存档不存在、为空或超过128MB。");
             WorldState state;
             try { state = decode(File.ReadAllText(path, Encoding.UTF8)); }
             catch (Exception e) { throw new InvalidDataException("存档格式无效。", e); }
@@ -50,7 +50,7 @@ namespace DeadCircuit
             // Reject a corrupt state before touching the previous good save.
             var checkedState = new WorldSimulator(state).State;
             byte[] bytes = new UTF8Encoding(false).GetBytes(encode(checkedState));
-            if (bytes.Length == 0 || bytes.Length > MaxBytes) throw new InvalidDataException("存档超过4MB。");
+            if (bytes.Length == 0 || bytes.Length > MaxBytes) throw new InvalidDataException("存档超过128MB。");
             Directory.CreateDirectory(root);
             string pending = path + ".tmp";
             using (var stream = new FileStream(pending, FileMode.Create, FileAccess.Write, FileShare.None))

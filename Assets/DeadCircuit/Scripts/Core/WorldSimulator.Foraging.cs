@@ -8,16 +8,20 @@ namespace DeadCircuit
         // Destruction, mining machines and partial harvesting do not award forage.
         private void AwardForageLoot(PlayerState p, NodeState n)
         {
-            if (State.generatorVersion != 1 || State.survival == null || !State.survival.enabled ||
+            if (State.generatorVersion < 1 || State.generatorVersion > WorldGeneration.CurrentGeneratorVersion ||
+                State.survival == null || !State.survival.enabled ||
                 p == null || !p.connected || p.hp <= 0 || FindPlayer(p.id) != p || p.needs == null || !p.needs.initialized ||
                 n == null || n.stock != 0 || (n.kind != NodeKind.Tree && n.kind != NodeKind.Crate) ||
-                !Inside(n.x, n.y) || !State.nodes.Contains(n) || State.biomes == null ||
-                State.biomes.Length != State.width * State.height || p.needs.foods == null ||
+                !WorldTiles.Inside(State, n.x, n.y) || !State.nodes.Contains(n) || p.needs.foods == null ||
                 p.needs.foods.Length != SurvivalCatalog.FoodCount || p.needs.seeds == null ||
                 p.needs.seeds.Length != SurvivalCatalog.CropCount) return;
-            int biome = State.biomes[Cell(n.x, n.y)] - '0';
+            int biome = WorldTiles.Biome(State, n.x, n.y) - '0';
             if (biome < 0 || biome > 5) return;
-            uint loot = ForageHash(State.seed, n.id, biome);
+            // Streamed entity IDs follow discovery order; world coordinates do not.
+            // Keep non-chunk gen1's node-ID hash unchanged for legacy exact yields.
+            uint loot = ChunkStreaming.Enabled(State)
+                ? ForageHash(unchecked((int)ForageHash(State.seed, n.x, biome)), n.y, biome)
+                : ForageHash(State.seed, n.id, biome);
             if (n.kind == NodeKind.Tree)
             {
                 // Depleting a tree includes gathering its undergrowth. No new/free forage action.

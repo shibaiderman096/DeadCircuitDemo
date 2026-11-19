@@ -22,6 +22,7 @@ namespace DeadCircuit
         public string seedText = "";
         public WorldPreset preset = WorldPreset.Balanced;
         public int cityDensity = 1;
+        public bool chunked;
     }
 
     [Serializable] public sealed class SiteState
@@ -105,7 +106,7 @@ namespace DeadCircuit
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 2;
+        public const int CurrentGeneratorVersion = 3;
         private const int Size = 64;
 
         public static WorldState Generate(WorldGenerationSettings settings)
@@ -115,6 +116,7 @@ namespace DeadCircuit
             options.worldName = options.worldName.Trim();
             options.seedText = options.seedText.Trim();
             if (options.seedText.Length > 0) options.seed = WorldSeed.Resolve(options.seedText);
+            if (options.chunked) return ChunkStreaming.Create(options);
             var state = new WorldState { seed = options.seed, generation = options, generatorVersion = CurrentGeneratorVersion };
             state.biomes = GenerateBiomes(options.seed);
             var ground = new char[Size * Size];
@@ -347,7 +349,7 @@ namespace DeadCircuit
         {
             if (settings == null) return new WorldGenerationSettings();
             return new WorldGenerationSettings { worldName = settings.worldName, seed = settings.seed,
-                seedText = settings.seedText, preset = settings.preset, cityDensity = settings.cityDensity };
+                seedText = settings.seedText, preset = settings.preset, cityDensity = settings.cityDensity, chunked = settings.chunked };
         }
 
         public static void Validate(WorldGenerationSettings settings)
@@ -368,6 +370,7 @@ namespace DeadCircuit
         public static void Validate(WorldState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
+            if(ChunkStreaming.Enabled(state)) { _ = new WorldSimulator(state); return; }
             if (state.width != Size || state.height != Size || state.generatorVersion < 0 || state.generatorVersion > CurrentGeneratorVersion)
                 throw new ArgumentException("Invalid generation version or map dimensions.", nameof(state));
             Validate(state.generation);

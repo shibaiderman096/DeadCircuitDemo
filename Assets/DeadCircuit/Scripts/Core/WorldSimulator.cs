@@ -12,16 +12,17 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 7;
-        public const int MaxPlayers = 8, MaxNodes = 1400, MaxBuildings = 1024;
+        public const int SaveVersion = 8;
+        public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
         private const float Reach = 2.4f;
         private const int MaxLevel = 30;
         private readonly Dictionary<string, HeldInput> inputs = new Dictionary<string, HeldInput>(StringComparer.Ordinal);
-        private readonly NodeState[] nodeGrid;
-        private readonly BuildingState[] buildingGrid;
-        private readonly int[] flow, flowQueue;
+        private readonly SparseGrid<NodeState> nodeGrid = new SparseGrid<NodeState>();
+        private readonly SparseGrid<BuildingState> buildingGrid = new SparseGrid<BuildingState>();
+        private readonly FlowGrid flow = new FlowGrid();
+        private readonly Queue<long> flowQueue = new Queue<long>();
         private double accumulator, clock;
         private float engineeringRate = 1f, turretBonus = 1f;
         private int flowRevision = -1;
@@ -42,11 +43,6 @@ namespace DeadCircuit
         {
             State = CopyAndValidate(restored);
             clock = State.elapsed;
-            int size = State.width * State.height;
-            nodeGrid = new NodeState[size];
-            buildingGrid = new BuildingState[size];
-            flow = new int[size];
-            flowQueue = new int[size];
             foreach (PlayerState p in State.players) inputs.Add(p.id, new HeldInput());
             RefreshSpatial();
             RefreshBonuses();
@@ -73,6 +69,7 @@ namespace DeadCircuit
             State.players.Add(p);
             inputs.Add(id, new HeldInput { protectionUntil = State.elapsed + 4f });
             InitializeSurvivalPlayer(p, true);
+            MapExploration.Reveal(State,p);
             Notice(p, "原始开局：采矿、3木材制2燃料，石炉炼铁铜锡。水车保底岸位(25,25)，科技全队共享。");
             flowRevision = -1;
             return p;
@@ -181,9 +178,11 @@ namespace DeadCircuit
         {
             if (State.tick >= long.MaxValue - 1) return;
             State.tick++; clock += 0.05; State.elapsed = (float)clock;
+            if (ChunkStreaming.Step(State)) flowRevision = -1;
             RefreshSpatial();
             RefreshBonuses();
             foreach (PlayerState p in State.players) UpdatePlayer(p);
+            if (State.tick % 5 == 0) foreach (PlayerState p in State.players) MapExploration.Reveal(State,p);
             UpdateSurvival();
             RefreshPower(true);
             UpdateProduction();
@@ -405,8 +404,8 @@ namespace DeadCircuit
 
         private PlayerState FindPlayer(string id) { if (id == null) return null; return State.players.Find(p => p.id == id); }
         private void Notice(PlayerState p, string text) { p.notice = text; p.noticeUntil = State.elapsed + 6f; }
-        private bool Inside(int x, int y) { return x >= 0 && y >= 0 && x < State.width && y < State.height; }
-        private int Cell(int x, int y) { return x + y * State.width; }
+        private bool Inside(int x, int y) { return WorldTiles.Inside(State,x,y); }
+        private long Cell(int x, int y) { return WorldTiles.Key(x,y); }
         private BuildingState BuildingAt(int x, int y) { return Inside(x, y) ? buildingGrid[Cell(x, y)] : null; }
         private NodeState NodeAt(int x, int y) { return Inside(x, y) ? nodeGrid[Cell(x, y)] : null; }
         private static bool Finite(float v) { return !float.IsNaN(v) && !float.IsInfinity(v); }

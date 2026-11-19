@@ -25,8 +25,9 @@ namespace DeadCircuit
                     SaveRange(n.generation,0f,2000000f,"network generation"); SaveRange(n.demand,0f,2000000f,"network demand"); SaveRange(n.ratio,0f,1f,"network ratio");
                 }
             }
-            SaveCheck(source.width == 64 && source.height == 64, "map must be 64 x 64");
-            SaveCheck(source.ground != null && source.ground.Length == 4096, "ground length");
+            bool chunked=source.version>=8 && ChunkStreaming.Enabled(source);
+            SaveCheck(source.width == 64 && source.height == 64, "map dimensions");
+            SaveCheck(source.ground != null && source.ground.Length == source.width*source.height, "ground length");
             foreach (char tile in source.ground) SaveCheck(tile >= '0' && tile <= '4', "ground kind");
             SaveCheck(source.tick >= 0 && source.tick < long.MaxValue - 1, "tick");
             SaveRange(source.elapsed, 0f, 10000000f, "elapsed");
@@ -50,28 +51,30 @@ namespace DeadCircuit
                 kills = source.kills, manufactured = source.manufactured, gathered = source.gathered
             };
             var entityIds = new HashSet<int>();
-            var occupied = new HashSet<int>();
-            var solid = new HashSet<int>();
+            CopyChunks(source,s);
+            var occupied = new HashSet<long>();
+            var solid = new HashSet<long>();
             int highestId = 0;
             foreach (NodeState n in source.nodes)
             {
                 SaveCheck(n != null, "null node"); CheckEntityId(n.id, entityIds, ref highestId);
-                CheckCell(n.x, n.y); int cell = n.x + n.y * 64;
+                CheckCell(n.x, n.y,source); long cell = WorldTiles.Key(n.x,n.y);
                 SaveCheck((int)n.kind >= 0 && (int)n.kind <= (legacy ? 4 : 7), "node kind");
-                SaveCheck(occupied.Add(cell) && source.ground[cell] != '2', "overlapping/water node"); solid.Add(cell);
+                char terrain=WorldTiles.Ground(source,n.x,n.y);
+                SaveCheck(occupied.Add(cell) && terrain != '2' && terrain!='?', "overlapping/water node"); solid.Add(cell);
                 SaveCheck(n.stock > 0 && n.stock <= 100000, "node stock"); SaveRange(n.hp, 0.001f, 10000f, "node hp");
                 s.nodes.Add(new NodeState { id = n.id, x = n.x, y = n.y, kind = n.kind, stock = n.stock, hp = n.hp });
             }
             foreach (BuildingState b in source.buildings)
             {
                 SaveCheck(b != null, "null building"); CheckEntityId(b.id, entityIds, ref highestId);
-                CheckCell(b.x, b.y);
+                CheckCell(b.x, b.y,source);
                 SaveCheck((int)b.kind >= 0 && (int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : DemoCatalog.BuildNames.Length) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
                 SaveCheck(b.footprintVersion == 0 || b.footprintVersion == 1, "footprint version");
                 for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
                 {
-                    CheckCell(x, y); int cell = x + y * 64;
-                    SaveCheck(occupied.Add(cell) && source.ground[cell] != '2', "overlapping/water building");
+                    CheckCell(x, y,source); long cell = WorldTiles.Key(x,y);char terrain=WorldTiles.Ground(source,x,y);
+                    SaveCheck(occupied.Add(cell) && terrain != '2' && terrain!='?', "overlapping/water building");
                     if (!DemoCatalog.Walkable(b)) solid.Add(cell);
                 }
                 SaveRange(b.hp, 0.001f, BuildingMaxHealth(b.kind), "building hp");
@@ -142,7 +145,7 @@ namespace DeadCircuit
                     (long)TotalItems(skills) + p.skillPoints <= p.level, "independent point budgets");
                 foreach (int rank in skills) SaveCheck(rank == 0 || p.level >= 1 + (rank - 1) * 2, "skill prerequisite");
                 SaveCheck(p.xp >= 0 && p.xp < XpToNextLevel(p.level), "xp");
-                CheckPosition(p.x, p.y);
+                CheckPosition(p.x, p.y,source);
                 SaveRange(p.hp, 0f, 100f + attributes[1] * 15f, "player hp");
                 SaveRange(p.hunger, 0f, 100f, "hunger");
                 SaveRange(p.stamina, 0f, 100f + attributes[2] * 8f + skills[2] * 10f, "stamina");
@@ -150,8 +153,8 @@ namespace DeadCircuit
                 SaveRange(p.attackCooldown, 0f, 5f, "attack cooldown"); SaveRange(p.interactCooldown, 0f, 5f, "interact cooldown");
                 SaveRange(p.noticeUntil, 0f, source.elapsed + 120f, "noticeUntil");
                 SaveRange(p.lastDamageAt, 0f, source.elapsed, "lastDamageAt");
-                int cell = RoundCell(p.x) + RoundCell(p.y) * 64;
-                SaveCheck(p.hp <= 0f || (source.ground[cell] != '2' && !solid.Contains(cell)), "living player in solid cell");
+                int px=RoundCell(p.x),py=RoundCell(p.y); long cell = WorldTiles.Key(px,py);char playerTerrain=WorldTiles.Ground(source,px,py);
+                SaveCheck(p.hp <= 0f || (playerTerrain != '2' && playerTerrain!='?' && !solid.Contains(cell)), "living player in solid cell");
                 var clone = new PlayerState
                 {
                     id = p.id, name = CleanName(p.name), notice = p.notice, seat = p.seat, level = p.level, xp = p.xp,
@@ -162,23 +165,26 @@ namespace DeadCircuit
                 };
                 if(source.version>=4) CopyEquipment(p,clone,entityIds,ref highestId);
                 CopyNeeds(p, clone, source.version);
+                clone.explored=CopyExplored(source,p);
+                clone.exploredChunks=CopyExploredChunks(source,p);
                 Aim(clone, p.aimX, p.aimY); s.players.Add(clone);
             }
             foreach (ZombieState z in source.zombies)
             {
                 SaveCheck(z != null, "null zombie"); CheckEntityId(z.id, entityIds, ref highestId);
-                CheckPosition(z.x, z.y); SaveRange(z.hp, 0.001f, 1000f, "zombie hp"); SaveRange(z.attackCooldown, 0f, 5f, "zombie cooldown");
+                CheckPosition(z.x, z.y,source); SaveRange(z.hp, 0.001f, 1000f, "zombie hp"); SaveRange(z.attackCooldown, 0f, 5f, "zombie cooldown");
                 SaveCheck(z.variant >= 0 && z.variant <= (source.version >= 6 ? 11 : 2), "zombie variant");
                 if (source.version >= 6) SaveRange(z.alertedUntil, 0f, source.elapsed + 8.1f, "enemy alert duration");
-                int cell = RoundCell(z.x) + RoundCell(z.y) * 64;
-                SaveCheck(source.ground[cell] != '2' && !solid.Contains(cell), "zombie in solid cell");
+                int zx=RoundCell(z.x),zy=RoundCell(z.y);long cell = WorldTiles.Key(zx,zy);char zombieTerrain=WorldTiles.Ground(source,zx,zy);
+                SaveCheck(zombieTerrain != '2' && zombieTerrain!='?' && !solid.Contains(cell), "zombie in solid cell");
                 s.zombies.Add(new ZombieState { id = z.id, x = z.x, y = z.y, hp = z.hp, variant = z.variant, attackCooldown = z.attackCooldown, alertedUntil = source.version >= 6 ? z.alertedUntil : 0f });
             }
             foreach (TraceState t in source.traces)
             {
                 SaveCheck(t != null, "null trace");
-                SaveRange(t.x, -16f, 80f, "trace x"); SaveRange(t.y, -16f, 80f, "trace y");
-                SaveRange(t.endX, -16f, 80f, "trace endX"); SaveRange(t.endY, -16f, 80f, "trace endY");
+                float traceMin=chunked ? -1048592f : -16f,traceMax=chunked ? 1048592f : 80f;
+                SaveRange(t.x, traceMin, traceMax, "trace x"); SaveRange(t.y, traceMin, traceMax, "trace y");
+                SaveRange(t.endX, traceMin, traceMax, "trace endX"); SaveRange(t.endY, traceMin, traceMax, "trace endY");
                 SaveRange(t.until, 0f, source.elapsed + 1f, "trace lifetime");
                 SaveCheck(source.version < 6 || (t.effect >= 0 && t.effect <= 8), "trace effect");
                 if (t.until > source.elapsed) s.traces.Add(new TraceState { x = t.x, y = t.y, endX = t.endX, endY = t.endY, until = t.until, hostile = t.hostile, effect = source.version >= 6 ? t.effect : 0 });
@@ -200,8 +206,19 @@ namespace DeadCircuit
 
         private static void SaveCheck(bool ok, string message) { if (!ok) throw new ArgumentException("Invalid save: " + message, "restored"); }
         private static void SaveRange(float value, float minimum, float maximum, string message) { SaveCheck(Finite(value) && value >= minimum && value <= maximum, message); }
-        private static void CheckCell(int x, int y) { SaveCheck(x >= 0 && x < 64 && y >= 0 && y < 64, "entity cell"); }
-        private static void CheckPosition(float x, float y) { SaveRange(x, -0.49f, 63.49f, "entity x"); SaveRange(y, -0.49f, 63.49f, "entity y"); }
+        private static void CheckCell(int x, int y,WorldState world=null) { SaveCheck(world==null ? x>=0 && x<64 && y>=0 && y<64 : WorldTiles.Inside(world,x,y),"entity cell"); }
+        private static void CheckPosition(float x, float y,WorldState world=null)
+        {
+            if(ChunkStreaming.Enabled(world))
+            {
+                SaveRange(x,-WorldTiles.CoordinateLimit-.5f,WorldTiles.CoordinateLimit-.5f,"entity x");
+                SaveRange(y,-WorldTiles.CoordinateLimit-.5f,WorldTiles.CoordinateLimit-.5f,"entity y");
+                SaveCheck(WorldTiles.Inside(world,RoundCell(x),RoundCell(y)),"entity rounded cell");
+                return;
+            }
+            SaveRange(x,-.49f,63.49f,"entity x");
+            SaveRange(y,-.49f,63.49f,"entity y");
+        }
         private static void CheckEntityId(int id, HashSet<int> ids, ref int highest) { SaveCheck(id > 0 && id < int.MaxValue - 2 && ids.Add(id), "duplicate/invalid entity id"); highest = Math.Max(highest, id); }
         private static int[] CopyItems(int[] items,int maximum,string label,int itemCount)
         {

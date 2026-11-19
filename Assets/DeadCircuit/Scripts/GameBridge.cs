@@ -44,7 +44,7 @@ namespace DeadCircuit
         }
 
         const float StepSeconds = .05f;
-        const int MaxPayload = 512 * 1024;
+        const int MaxPayload = 1024 * 1024;
         const ushort Port = 7777;
         string profileId;
         WorldSimulator simulator;
@@ -130,7 +130,7 @@ namespace DeadCircuit
                 if (load)
                 {
                     if (!File.Exists(SavePath)) { Status = "还没有存档，请先创建世界。"; return; }
-                    if (new FileInfo(SavePath).Length > 4 * 1024 * 1024) throw new InvalidDataException("存档过大");
+                    if (new FileInfo(SavePath).Length > WorldArchive.MaxBytes) throw new InvalidDataException("存档过大");
                     simulator = new WorldSimulator(JsonUtility.FromJson<WorldState>(File.ReadAllText(SavePath, Encoding.UTF8)));
                 }
                 else
@@ -211,7 +211,7 @@ namespace DeadCircuit
                 using (var writer = new FastBufferWriter(4096, Allocator.Temp))
                 {
                     writer.WriteValueSafe(json);
-                    network.CustomMessagingManager.SendNamedMessage("dc.cmd.v7", NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableSequenced);
+                    network.CustomMessagingManager.SendNamedMessage("dc.cmd.v8", NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableSequenced);
                 }
             }
 #endif
@@ -382,8 +382,8 @@ namespace DeadCircuit
         }
         void RegisterMessages()
         {
-            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.cmd.v7", ReceiveCommand);
-            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.world.v7", ReceiveWorld);
+            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.cmd.v8", ReceiveCommand);
+            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.world.v8", ReceiveWorld);
         }
         void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
@@ -469,11 +469,14 @@ namespace DeadCircuit
                     int read;
                     while ((read = zip.Read(buffer, 0, buffer.Length)) > 0)
                     {
-                        if (output.Length + read > 4 * 1024 * 1024) throw new InvalidDataException("snapshot too large");
+                        if (output.Length + read > 8 * 1024 * 1024) throw new InvalidDataException("snapshot too large");
                         output.Write(buffer, 0, read);
                     }
                     var next = JsonUtility.FromJson<WorldState>(Encoding.UTF8.GetString(output.ToArray()));
-                    if (next == null || next.version != WorldSimulator.SaveVersion || next.tick < lastSnapshotTick || next.width != 64 || next.height != 64 || next.ground?.Length != 4096) return;
+                    if (next == null || next.version != WorldSimulator.SaveVersion || next.tick < lastSnapshotTick) return;
+                    int extent=64;
+                    if(next.width!=extent || next.height!=extent || next.ground?.Length!=extent*extent || next.biomes?.Length!=extent*extent ||
+                        (ChunkStreaming.Enabled(next) && (next.chunks.records==null || next.chunks.records.Count>81))) return;
                     lastSnapshotTick = next.tick;
                     World = next;
                     if (!IsRunning) { IsRunning = true; connecting = false; ResetClocks(); }
@@ -487,21 +490,24 @@ namespace DeadCircuit
         {
 #if DEADCIRCUIT_NETCODE
             if (network == null || !network.IsServer || network.ConnectedClientsIds.Count <= 1) return;
-            byte[] raw = Encoding.UTF8.GetBytes(JsonUtility.ToJson(World));
-            byte[] bytes;
-            using (var output = new MemoryStream())
+            foreach (ulong client in network.ConnectedClientsIds)
             {
-                using (var zip = new DeflateStream(output, System.IO.Compression.CompressionLevel.Fastest, true)) zip.Write(raw, 0, raw.Length);
-                bytes = output.ToArray();
-            }
-            if (bytes.Length > MaxPayload) { Debug.LogError("World exceeds snapshot budget"); return; }
-            using (var writer = new FastBufferWriter(bytes.Length + 4, Allocator.Temp))
-            {
-                writer.WriteValueSafe(bytes.Length);
-                writer.WriteBytesSafe(bytes);
-                foreach (ulong client in network.ConnectedClientsIds)
-                    if (client != NetworkManager.ServerClientId)
-                        network.CustomMessagingManager.SendNamedMessage("dc.world.v7", client, writer, NetworkDelivery.ReliableFragmentedSequenced);
+                if (client == NetworkManager.ServerClientId || !peers.TryGetValue(client, out var playerId)) continue;
+                byte[] raw = Encoding.UTF8.GetBytes(JsonUtility.ToJson(WorldSnapshot.ForPlayer(World, playerId)));
+                if (raw.Length > 8 * 1024 * 1024) { Debug.LogError("Local world snapshot exceeds raw budget"); continue; }
+                byte[] bytes;
+                using (var output = new MemoryStream())
+                {
+                    using (var zip = new DeflateStream(output, System.IO.Compression.CompressionLevel.Fastest, true)) zip.Write(raw, 0, raw.Length);
+                    bytes = output.ToArray();
+                }
+                if (bytes.Length > MaxPayload) { Debug.LogError("World exceeds snapshot budget"); continue; }
+                using (var writer = new FastBufferWriter(bytes.Length + 4, Allocator.Temp))
+                {
+                    writer.WriteValueSafe(bytes.Length);
+                    writer.WriteBytesSafe(bytes);
+                    network.CustomMessagingManager.SendNamedMessage("dc.world.v8", client, writer, NetworkDelivery.ReliableFragmentedSequenced);
+                }
             }
 #endif
         }

@@ -23,7 +23,9 @@ namespace DeadCircuit
                     roomWorldView.RoomAt(world, x, y + 1) ?? roomWorldView.RoomAt(world, x, y - 1);
                 break;
             }
-            return room == null ? "\n位置：户外" : "\n位置：室内 " + (room.cells?.Length ?? 0) + " 格 · 出入口 " + (room.doorIds?.Length ?? 0);
+            return room == null ? "\n位置：户外" : "\n位置：室内 " +
+                (room.cellKeys != null && room.cellKeys.Length > 0 ? room.cellKeys.Length : room.cells?.Length ?? 0) +
+                " 格 · 出入口 " + (room.doorIds?.Length ?? 0);
         }
 
         static string InspectedMachineName(BuildingState building) =>

@@ -7,12 +7,13 @@ namespace DeadCircuit
     {
         public int id;
         public int[] cells;
+        public long[] cellKeys = Array.Empty<long>();
         public int[] doorIds;
     }
 
     // Derived topology only: doors remain boundaries even while open. Movement and
     // machine occupancy must not change which cells share a room or a roof.
-    public sealed class RoomLayout
+    public sealed partial class RoomLayout
     {
         public List<RoomState> rooms = new List<RoomState>();
         public int width, height;
@@ -20,6 +21,11 @@ namespace DeadCircuit
 
         public RoomState At(int x, int y)
         {
+            if (sparseRoomByCell != null)
+            {
+                sparseRoomByCell.TryGetValue(WorldTiles.Key(x, y), out var room);
+                return room;
+            }
             if ((uint)x >= (uint)width || (uint)y >= (uint)height || roomByCell == null) return null;
             return roomByCell[x + y * width];
         }
@@ -27,6 +33,7 @@ namespace DeadCircuit
         public static RoomLayout Build(WorldState world)
         {
             if (world == null) throw new ArgumentNullException(nameof(world));
+            if (ChunkStreaming.Enabled(world)) return BuildSparse(world);
             if (world.width <= 0 || world.height <= 0) throw new ArgumentException("Room map dimensions must be positive.", nameof(world));
             int size = checked(world.width * world.height);
             var result = new RoomLayout { width = world.width, height = world.height, roomByCell = new RoomState[size] };
@@ -62,7 +69,7 @@ namespace DeadCircuit
                 while (head < tail)
                 {
                     int cell = queue[head++], x = cell % world.width, y = cell / world.width;
-                    if (x == 0 || y == 0 || x == world.width - 1 || y == world.height - 1 || world.ground[cell] == (char)('0' + (int)GroundKind.Water)) outside = true;
+                    if (x == 0 || y == 0 || x == world.width - 1 || y == world.height - 1 || world.ground[cell] == '?' || world.ground[cell] == (char)('0' + (int)GroundKind.Water)) outside = true;
                     for (int direction = 0; direction < 4; direction++)
                     {
                         int nx = x, ny = y;

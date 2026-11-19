@@ -42,8 +42,8 @@ namespace DeadCircuit
         };
         static int BiomeAt(WorldState world,int x,int y)
         {
-            int index=x+y*world.width;
-            return world.biomes != null && index>=0 && index<world.biomes.Length ? Mathf.Clamp(world.biomes[index]-'0',0,5) : 0;
+            char biome = WorldTiles.Biome(world, x, y);
+            return biome >= '0' && biome <= '5' ? biome - '0' : 0;
         }
         static Color BiomeTint(WorldState world,int x,int y) => world.generatorVersion>0 ? BiomeTints[BiomeAt(world,x,y)] : Color.white;
         Material ExpansionGroundMaterial()

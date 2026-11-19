@@ -5,7 +5,7 @@
 这是一个 Unity 6.6 的 2D 像素风生存与自动化建造合作演示项目。当前构建场景是 `Assets/DeadCircuit/Scenes/DeadCircuitDemo.unity`。项目使用 URP、uGUI、TextMesh Pro、新输入系统和 Netcode for GameObjects。
 
 - `Assets/DeadCircuit/Scripts/Core/DemoState.cs` 定义世界、幸存者、设备、物品、丧尸及玩家指令等状态类型。
-- `Assets/DeadCircuit/Scripts/Core/WorldSimulator*.cs` 是不依赖 Unity 的模拟核心，采用 64×64 地图和 50 毫秒固定 tick，涵盖战斗、建造、供电、生产、物流和存档校验。
+- `Assets/DeadCircuit/Scripts/Core/WorldSimulator*.cs` 是不依赖 Unity 的模拟核心，采用 50 毫秒固定 tick。新建世界使用可向正负坐标扩展的稀疏区块；旧世界保留 64×64。涵盖战斗、建造、供电、生产、物流和存档校验。
 - `Assets/DeadCircuit/Scripts/GameBridge.cs` 连接 Unity、模拟器、存档与联机传输，是游戏指令进入模拟器的入口。联机代码以 `DEADCIRCUIT_NETCODE` 条件编译，改动时检查 Standalone scripting define 和 Package Manager 配置。
 - `Assets/DeadCircuit/Scripts/Presentation/DemoWorldView.cs` 绘制世界和小地图；`DemoHud.cs` 创建 HUD、菜单及输入界面。
 - `Assets/DeadCircuit/Resources/Art/` 保存图集和地形素材；`Tools/generate_art.py` 是这些素材的确定性 Pillow 生成源。
@@ -17,8 +17,8 @@
 
 1. 世界状态以 `WorldSimulator` 为唯一权威。玩家操作通过 `GameBridge.Send` 和模拟器指令处理；HUD 与世界视图读取状态并呈现，通过桥接请求改变世界。
 2. 保持模拟核心的 Unity 无关性；纯规则、状态和算法优先落在 `Core/`，UI 与 Unity API 留在桥接或表现层。
-3. `BuildKind`、`ItemKind` 等枚举整数值会进入检查或存档契约；增加成员时保留旧序号，不随意重排。存档恢复兼容 v1 和 v2，并须通过校验和深拷贝。
-4. 保持 64×64 世界、整数格坐标与固定 50 毫秒 tick 的约定。设备占地、旋转、供电覆盖及物品运输均须覆盖边界和守恒行为。
+3. `BuildKind`、`ItemKind` 等枚举整数值会进入检查或存档契约；增加成员时保留旧序号，不随意重排。当前 v8 存档恢复兼容 v1–v7，并须通过校验和深拷贝。
+4. 保持整数全局格坐标与固定 50 毫秒 tick。新世界每区块16×16，使用 WorldTiles 查询地形/生态、64位全局键与负坐标向下取整；width/height=64仅代表原教程元数据，不能作为区块世界边界。旧世界维持64×64。设备占地、旋转、供电覆盖及物流须覆盖跨区块、负坐标和守恒行为；详见 SEASONS_CHUNKS.md。
 5. 需要重生成图集时运行 `python Tools/generate_art.py`；脚本会写入 `Assets/DeadCircuit/Resources/Art/`。编辑生成素材时同步维护生成脚本。
 6. 默认使用 PowerShell 7 处理 Windows 命令；任务开始时重新核验编辑器、命令行、Git 和运行时状态。Unity Editor 命令需明确指定目标项目。
 7. 检查当前目录的 Git 状态后再改文件；提交时仅包含本次任务修改，保留其他未提交工作，绝不从此项目推送到远程。
@@ -37,7 +37,7 @@
 - 在线 Editor 命令按需覆盖资产导入、场景、GameObject、组件、脚本、运行／Play Mode、控制台、视图截图、测试和构建；通过 `unity command --tags --project-path 'D:/unity/DeadCircuitDemo' --caller plugin --skill unity-cli` 发现当前连接暴露的完整分类。实际命令名、包和连接状态随环境变化。
 - 构建配置：构建场景登记于 `ProjectSettings/EditorBuildSettings.asset`；保留原有目标、场景和网络 define。
 
-环境会变化。2026-11-19 确认 Unity CLI 1.0.1 报告为最新版本，本机 Unity Editor 为 6000.6.8f1，Unity CLI 能连接该项目。本机没有 .NET SDK 8 或 .NET 8 runtime，但已安装 .NET 10；`Tools/CoreChecks/bin/Release/net8.0/CoreChecks.dll` 可使用上述 roll-forward 命令启动。仅当源码和检查程序集的时间核验确认它未过期时，才把已有二进制结果作为当前验证；该结果不代表从源码重建成功。
+环境会变化。2026-11-19 确认 Unity CLI 1.0.1 报告为最新版本，本机 Unity Editor 为 6000.6.8f1，Unity CLI 能连接该项目。Unity 随附的 `D:/unity/6000.6.8f1/Editor/Data/DotNetSdk/dotnet.exe` 提供 .NET SDK 8.0.318；可用它从源码运行 `run --project Tools/CoreChecks/CoreChecks.csproj -c Release`。优先从源码重建，避免把过期二进制的检查结果误当作当前验证。
 
 ## Skills 路由
 

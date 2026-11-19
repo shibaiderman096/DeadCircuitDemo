@@ -186,7 +186,8 @@ namespace DeadCircuit
             string preset = worldPreset == WorldPreset.Wilderness ? "荒野" : worldPreset == WorldPreset.Urban ? "城市" : "均衡";
             string density = cityDensity == 0 ? "稀疏" : cityDensity == 2 ? "密集" : "适中";
             SetFlowText(creationSummary, "世界：" + Clean(name.Length == 0 ? "新的世界" : name) +
-                "\n\n种子：" + seed + "\n\n地貌：" + preset + "\n城市密度：" + density, 230);
+                "\n\n种子：" + seed + "\n\n地貌：" + preset + "\n城市密度：" + density +
+                "\n\n地图：近似无限（16×16格/区块）\n探索：随移动逐块生成\n季节：7天一季\n小地图：探索迷雾", 230);
             WorldPreset[] values = { WorldPreset.Balanced, WorldPreset.Wilderness, WorldPreset.Urban };
             for (int i = 0; i < 3; i++)
             {
@@ -217,7 +218,8 @@ namespace DeadCircuit
                     seedText = seedText,
                     seed = seedText.Length == 0 ? WorldSeed.Random() : WorldSeed.Resolve(seedText),
                     preset = worldPreset,
-                    cityDensity = cityDensity
+                    cityDensity = cityDensity,
+                    chunked = true
                 };
                 bridge.PlayerName = ReadName();
                 CallBridge(() => bridge.CreateWorld(settings));

@@ -96,6 +96,11 @@ static partial class Checks
     static int Main(string[] args)
     {
         filters = args;
+        ChunkChecks();
+        ChunkTerrainChecks();
+        InfiniteRoomChecks();
+        SeasonChecks();
+        InfiniteSurvivalChecks();
         DoorSystemChecks();
         InteriorChecks(); SteamClusterChecks();
         CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); CargoChecks(); SaveAndCombatChecks();

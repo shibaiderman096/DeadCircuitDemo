@@ -292,29 +292,31 @@ namespace DeadCircuit
             bool enabled = world.survival != null && world.survival.enabled;
             var needs = player.needs;
             bool ready = enabled && needs != null && needs.initialized;
+            string calendar = SurvivalSeasonText(world);
             if (ready)
             {
                 Set(survivalHudWater, "水分 " + needs.thirst.ToString("0") + " / 100");
                 survivalWaterFill.anchorMax = new Vector2(Mathf.Clamp01(needs.thirst / 100), 1);
                 survivalWaterFill.GetComponent<UnityEngine.UI.Image>().color = needs.thirst < 15 ? Amber : Accent;
-                Set(survivalHudStatus, SurvivalWeatherText(world) + "\n体温 " + needs.bodyTemperature.ToString("0.0") + "℃ · 感染 " + needs.infection.ToString("0") +
-                    " · 营养 " + needs.nutrition.ToString("0") + "\n" + SurvivalRisk(needs));
-                survivalHudStatus.color = SurvivalRisk(needs) == "状态平稳" ? Muted : Amber;
+                string risk = SurvivalRisk(needs);
+                Set(survivalHudStatus, calendar + "\n" + SurvivalWeatherText(world, true) +
+                    " · 体温 " + needs.bodyTemperature.ToString("0.0") + "℃\n" + risk);
+                survivalHudStatus.color = risk == "状态平稳" ? Muted : Amber;
             }
             else
             {
                 Set(survivalHudWater, "生存 " + (enabled ? "同步中" : "未启用"));
                 survivalWaterFill.anchorMax = new Vector2(0, 1);
-                Set(survivalHudStatus, enabled ? "等待主机同步生存状态" : "旧世界：不消耗生存数值\n不补发水、食物或种子");
+                Set(survivalHudStatus, calendar + "\n" + (enabled ? "等待主机同步生存状态" : "旧世界：不消耗生存数值\n不补发水、食物或种子"));
                 survivalHudStatus.color = Muted;
             }
             if (!survivalPanel.gameObject.activeSelf) return;
-            Set(survivalStatus, !enabled ? "此存档未启用生存：不消耗新增生存数值，也不补发物资。原有生命 / 饱食 / 体力规则保留；本页仅供查阅。" :
+            Set(survivalStatus, calendar + "\n" + (!enabled ? "此存档未启用生存：不消耗新增生存数值，也不补发物资。原有生命 / 饱食 / 体力规则保留；本页仅供查阅。" :
                 !ready ? "正在等待主机同步生存状态，操作暂不可用。" :
                 SurvivalWeatherText(world) + " · 水分 " + needs.thirst.ToString("0") + " · 体温 " + needs.bodyTemperature.ToString("0.0") + "℃" +
                 " · 感染 " + needs.infection.ToString("0") + " · 营养 " + needs.nutrition.ToString("0") +
                 "\n湿润 " + needs.wetness.ToString("0") + " · 干燥 " + needs.dryness.ToString("0") + " · 移速 ×" + needs.movementMultiplier.ToString("0.00") +
-                " · 饱食消耗 ×" + needs.hungerMultiplier.ToString("0.00") + " · " + SurvivalRisk(needs));
+                " · 饱食消耗 ×" + needs.hungerMultiplier.ToString("0.00") + " · " + SurvivalRisk(needs)));
             for (int i = 0; i < survivalPages.Length; i++)
             {
                 survivalScrolls[i].gameObject.SetActive(i == survivalTab);
@@ -611,13 +613,20 @@ namespace DeadCircuit
         }
 
         static string Signed(float v) => v.ToString("+0.##;-0.##;0");
-        static string SurvivalWeatherText(WorldState w)
+        static string SurvivalSeasonText(WorldState world)
+        {
+            var sample = SeasonCalendar.Sample(world);
+            return "第" + sample.year + "年 " + SeasonCalendar.Name(sample.season) + " " +
+                sample.dayOfSeason + " / " + sample.daysPerSeason + "天";
+        }
+
+        static string SurvivalWeatherText(WorldState w, bool compact = false)
         {
             var weather = w.survival?.weather;
             if (weather == null) return "天气未同步";
             int kind = (int)weather.kind;
             return (kind >= 0 && kind < SurvivalCatalog.WeatherNames.Count ? SurvivalCatalog.WeatherNames[kind] : "未知天气") +
-                " · 天气基温 " + weather.temperature.ToString("0.0") + "℃";
+                (compact ? " " : " · 天气基温 ") + weather.temperature.ToString("0.0") + "℃";
         }
 
         static string SurvivalRisk(SurvivalPlayerState n)

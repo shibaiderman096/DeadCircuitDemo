@@ -68,7 +68,7 @@ namespace DeadCircuit
 
         // Fixed chunk geometry, pooled visible entities, and a 5 Hz minimap avoid
         // creating thousands of terrain GameObjects or rebuilding on every snapshot.
-        const int ChunkSize = 16;
+        const int ChunkSize = ChunkStreaming.ChunkSize;
         const int MaxParticles = 64;
         static readonly Color Amber = new Color(1f, .70f, .33f);
         static readonly Color Mint = new Color(.46f, .94f, .77f);
@@ -105,7 +105,7 @@ namespace DeadCircuit
         RawImage minimapImage;
         Image hurtOverlay;
         Texture2D spriteTexture, terrainTexture, mapTexture, powerTexture, industryTexture;
-        Color32[] mapBase, mapPixels;
+        Color32[] mapPixels;
         Material spriteMaterial, terrainMaterial, effectMaterial;
         Volume volume;
         VolumeProfile volumeProfile;
@@ -118,7 +118,6 @@ namespace DeadCircuit
         readonly Stack<Visual> pool = new Stack<Visual>();
         readonly List<int> removeIds = new List<int>();
         readonly List<string> removePlayers = new List<string>();
-        readonly List<Mesh> meshes = new List<Mesh>();
         readonly List<TraceVisual> traces = new List<TraceVisual>();
         readonly List<LineRenderer> ranges = new List<LineRenderer>();
         readonly List<LineRenderer> wires = new List<LineRenderer>();
@@ -133,9 +132,9 @@ namespace DeadCircuit
         readonly Stack<CargoVisual> cargoPool = new Stack<CargoVisual>();
         readonly HashSet<int> liveCargoIds = new HashSet<int>();
         readonly List<Particle> particles = new List<Particle>();
-        readonly HashSet<int> occupied = new HashSet<int>();
-        readonly HashSet<int> blockedNodes = new HashSet<int>();
-        readonly HashSet<int> solidBuildings = new HashSet<int>();
+        readonly HashSet<long> occupied = new HashSet<long>();
+        readonly HashSet<long> blockedNodes = new HashSet<long>();
+        readonly HashSet<long> solidBuildings = new HashSet<long>();
         readonly Vector3[] circleVertices = new Vector3[96];
         readonly Vector3[] footprintVertices = new Vector3[5];
         readonly Vector3[] wireVertices = new Vector3[9];
@@ -397,14 +396,13 @@ namespace DeadCircuit
                 MinimapRect.gameObject.SetActive(running);
                 hurtOverlay.gameObject.SetActive(running);
                 cameraPlaced = false;
-                if (!running) ResetEntities();
+                if (!running) { ResetEntities(); ResetGroundStreaming(); }
                 wasRunning = running;
             }
             if (!running) return;
             AttachMinimapToHud();
             ObserveWorld(world);
-            if (groundCache != world.ground || width != world.width || height != world.height || seed != world.seed)
-                RebuildGround(world);
+            RebuildGround(world);
             stamp++;
             var local = bridge.LocalPlayer;
             FollowCamera(local);
@@ -440,9 +438,8 @@ namespace DeadCircuit
         {
             bool snapshot = !ReferenceEquals(observedWorld, world);
             bool reset = observedElapsed < 0 || world.elapsed < observedElapsed || world.tick < observedTick ||
-                (observedWorld != null && (seed != world.seed || width != world.width || height != world.height || groundCache != world.ground)) ||
-                (snapshot && observedWorld != null && bridge.IsHost);
-            if (reset) { ResetEntities(); cameraPlaced = false; nextMapAt = 0; }
+                (observedWorld != null && (seed != world.seed || width != world.width || height != world.height));
+            if (reset) { ResetEntities(); ResetGroundStreaming(); cameraPlaced = false; nextMapAt = 0; }
             // A LAN snapshot replaces WorldState too. Rebase its clock without treating
             // every ordinary snapshot as a new game or discarding in-flight visuals.
             if (reset || snapshot || observedElapsed != world.elapsed)
@@ -472,10 +469,13 @@ namespace DeadCircuit
         {
             Vector2 target = local != null ? new Vector2(local.x, local.y) : new Vector2((width-1)*.5f, (height-1)*.5f);
             if (local != null) target += new Vector2(local.aimX, local.aimY) * .55f;
-            float halfY = WorldCamera.orthographicSize;
-            float halfX = halfY * WorldCamera.aspect;
-            target.x = ClampCamera(target.x, width, halfX);
-            target.y = ClampCamera(target.y, height, halfY);
+            if (!groundChunked)
+            {
+                float halfY = WorldCamera.orthographicSize;
+                float halfX = halfY * WorldCamera.aspect;
+                target.x = ClampCamera(target.x, width, halfX);
+                target.y = ClampCamera(target.y, height, halfY);
+            }
             var position = new Vector3(target.x, target.y, -10f);
             if (!cameraPlaced || Vector2.Distance(WorldCamera.transform.position, target) > 12f)
             { WorldCamera.transform.position = position; cameraVelocity = Vector3.zero; cameraPlaced = true; }
@@ -494,12 +494,14 @@ namespace DeadCircuit
             // Starts at readable morning; night never blacks out the survival space.
             float night = Mathf.SmoothStep(0, 1, Mathf.Clamp01((Mathf.Cos((cycle + .5f) * Mathf.PI * 2f) + .12f) * 1.5f));
             Color ambient = Color.Lerp(Color.white, new Color(.50f, .65f, .76f), night);
+            ambient *= UpdateSeasonTint(world);
             if (world.survival != null && world.survival.enabled)
                 ambient = Color.Lerp(ambient, ambient * new Color(.78f, .84f, .88f), world.survival.weather.intensity * .35f);
             spriteMaterial.SetColor("_Color", ambient);
             terrainMaterial.SetColor("_Color", ambient);
             if (spriteMeshMaterial!=null) spriteMeshMaterial.SetColor("_Color",ambient);
             if (expansionGroundMaterial != null) expansionGroundMaterial.SetColor("_Color", ambient);
+            if (roomFloorMaterial != null) roomFloorMaterial.SetColor("_Color", ambient);
             lantern.enabled = local != null && local.hp > 0 && night > .03f;
             if (local != null) lantern.transform.position = new Vector3(local.x, local.y + .25f, 0);
             lantern.color = new Color(1f, .87f, .56f, night * .20f);
@@ -507,68 +509,10 @@ namespace DeadCircuit
             hurtOverlay.color = new Color(.72f, .16f, .08f, damagePulse * .16f);
         }
 
-        void RebuildGround(WorldState world)
-        {
-            width = world.width; height = world.height; seed = world.seed; groundCache = world.ground;
-            foreach (var mesh in meshes) if (mesh != null) Destroy(mesh);
-            meshes.Clear();
-            for (int i = terrainRoot.childCount - 1; i >= 0; i--) Destroy(terrainRoot.GetChild(i).gameObject);
-            for (int cy = 0; cy < height; cy += ChunkSize)
-            for (int cx = 0; cx < width; cx += ChunkSize)
-            {
-                var verts = new List<Vector3>(); var uv = new List<Vector2>(); var tris = new List<int>(); var colors = new List<Color32>();
-                var dv = new List<Vector3>(); var du = new List<Vector2>(); var dt = new List<int>(); var dc = new List<Color32>();
-                var ev = new List<Vector3>(); var eu = new List<Vector2>(); var et = new List<int>(); var ec = new List<Color32>();
-                for (int y = cy; y < Mathf.Min(cy + ChunkSize, height); y++)
-                for (int x = cx; x < Mathf.Min(cx + ChunkSize, width); x++)
-                {
-                    int kind = Ground(x, y);
-                    uint h = Hash(x, y, seed);
-                    float tint = .96f + (h % 9) * .01f;
-                    var color = (kind <= 1 ? BiomeTint(world, x, y) : Color.white) * new Color(tint, tint, tint, 1);
-                    AddQuad(verts, uv, tris, colors, x-.5f, y-.5f, 1, 1, TerrainUV(kind*8 + (int)(h % 8)), color);
-                    if (kind == 0)
-                    {
-                        Sprite tile = DemoArt.Get("terrain_" + BiomeAt(world, x, y));
-                        if (tile != null) AddSpriteQuad(ev, eu, et, ec, tile, new Vector2(x,y), 1, new Color(tint,tint,tint,1));
-                        if (world.generatorVersion > 0 && h % 43 == 0)
-                            AddSpriteQuad(ev, eu, et, ec, DemoArt.Get("biome_" + BiomeAt(world,x,y)), new Vector2(x,y), .68f, Color.white);
-                    }
-                    for (int side = 0; side < 4; side++)
-                    {
-                        int nx = x + (side == 0 ? -1 : side == 2 ? 1 : 0);
-                        int ny = y + (side == 1 ? 1 : side == 3 ? -1 : 0);
-                        int other = Ground(nx, ny);
-                        bool edge = nx < 0 || ny < 0 || nx >= width || ny >= height ||
-                            (other != kind && (kind == 2 || (other != 2 && kind > other)));
-                        if (edge) AddQuad(verts, uv, tris, colors, x-.5f, y-.5f, 1, 1, TerrainUV(40 + kind*4 + side), Color.white);
-                    }
-                    string prop = kind == 0 && h % 19 == 0 ? "tuft" : (kind == 1 || kind == 4) && h % 41 == 0 ? "rubble" : null;
-                    if (prop != null) AddSpriteQuad(dv, du, dt, dc, Art(prop), new Vector2(x + ((h >> 8) % 9 - 4f)*.03f, y), .7f, Color.white);
-                }
-                MakeChunk(cx + "," + cy, verts, uv, tris, colors, terrainMaterial, -20000);
-                if (ev.Count > 0) MakeChunk("SVG biomes " + cx + "," + cy, ev, eu, et, ec, ExpansionGroundMaterial(), -19999);
-                if (dv.Count > 0)
-                {
-                    // A Sprite-Unlit material relies on per-SpriteRenderer constants;
-                    // MeshRenderers use our explicit vertex-colour shader instead.
-                    MakeChunk("Scattered details " + cx + "," + cy, dv, du, dt, dc, SpriteMeshMaterial(), -19000);
-                }
-            }
-            if (mapTexture != null) Destroy(mapTexture);
-            mapTexture = new Texture2D(width, height, TextureFormat.RGBA32, false) { name = "DeadCircuit minimap", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
-            mapBase = new Color32[width * height]; mapPixels = new Color32[width * height];
-            for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
-                mapBase[x+y*width] = (Color)MapColors[Ground(x,y)] * (Ground(x,y) <= 1 ? BiomeTint(world,x,y) : Color.white);
-            minimapImage.texture = mapTexture;
-            nextMapAt = 0;
-        }
-
         int Ground(int x, int y)
         {
-            if (x < 0 || y < 0 || x >= width || y >= height || string.IsNullOrEmpty(groundCache)) return 0;
-            int index = x + y * width;
-            return index < groundCache.Length ? Mathf.Clamp(groundCache[index] - '0', 0, 4) : 0;
+            char tile = WorldTiles.Ground(groundWorld, x, y);
+            return tile >= '0' && tile <= '4' ? tile - '0' : -1;
         }
 
         static uint Hash(int x, int y, int s)
@@ -602,21 +546,10 @@ namespace DeadCircuit
             AddQuad(v,u,t,c,p.x-s.pivot.x/ppu*scale,p.y-s.pivot.y/ppu*scale,r.width/ppu*scale,r.height/ppu*scale,tex,color);
         }
 
-        void MakeChunk(string name, List<Vector3> v, List<Vector2> u, List<int> t, List<Color32> c, Material mat, int order)
-        {
-            var obj = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
-            obj.transform.SetParent(terrainRoot, false);
-            var mesh = new Mesh { name = "DC chunk " + name };
-            mesh.SetVertices(v); mesh.SetUVs(0,u); mesh.SetTriangles(t,0); mesh.SetColors(c); mesh.RecalculateBounds();
-            obj.GetComponent<MeshFilter>().sharedMesh = mesh;
-            var renderer = obj.GetComponent<MeshRenderer>();
-            renderer.sharedMaterial = mat; renderer.sortingOrder = order;
-            renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = false;
-            meshes.Add(mesh);
-        }
-
         bool Visible(float x, float y) { return x >= viewMin.x && x <= viewMax.x && y >= viewMin.y && y <= viewMax.y; }
-        static int Order(float y) { return 6000 - Mathf.RoundToInt(y * 80); }
+        // Keep sorting local to the camera so far-away signed coordinates cannot
+        // push actors behind terrain or exceed Unity's sorting-order range.
+        int Order(float y) { return 6000 - Mathf.RoundToInt((y - WorldCamera.transform.position.y) * 80); }
 
         void DrawNodes(WorldState world, PlayerState local)
         {
@@ -625,7 +558,7 @@ namespace DeadCircuit
             foreach (var state in world.nodes)
             {
                 if (state.hp <= 0 || state.stock <= 0) continue;
-                blockedNodes.Add(state.x + state.y * width);
+                blockedNodes.Add(WorldTiles.Key(state.x, state.y));
                 if (!Visible(state.x,state.y)) continue;
                 var v = Get(nodes,state.id,new Vector2(state.x,state.y),state.hp,state.kind==NodeKind.Wall ? 160f : 35f);
                 string art;
@@ -668,8 +601,9 @@ namespace DeadCircuit
                 int w = DemoCatalog.Width(state), h = DemoCatalog.Height(state);
                 for (int y = state.y; y < state.y + h; y++) for (int x = state.x; x < state.x + w; x++)
                 {
-                    occupied.Add(x + y * width);
-                    if (!DemoCatalog.Walkable(state)) solidBuildings.Add(x + y * width);
+                    long cell = WorldTiles.Key(x, y);
+                    occupied.Add(cell);
+                    if (!DemoCatalog.Walkable(state)) solidBuildings.Add(cell);
                 }
                 buildingStates[state.id] = state;
                 if (DemoCatalog.IsPowerNode(state.kind)) powerNodes.Add(state);
@@ -910,7 +844,7 @@ namespace DeadCircuit
             SetOrder(v,v.position.y);
         }
 
-        static void SetOrder(Visual v,float y)
+        void SetOrder(Visual v,float y)
         {
             int order=Order(y);
             v.body.sortingOrder=order; v.detail.sortingOrder=order+1; v.arrow.sortingOrder=order+2;
@@ -1007,7 +941,8 @@ namespace DeadCircuit
                 {
                     topology = (topology ^ (uint)b.id) * 1099511628211UL;
                     topology = (topology ^ (uint)b.networkId) * 1099511628211UL;
-                    topology = (topology ^ (uint)(b.x + b.y * width)) * 1099511628211UL;
+                    topology = (topology ^ (uint)b.x) * 1099511628211UL;
+                    topology = (topology ^ (uint)b.y) * 1099511628211UL;
                     topology = (topology ^ (uint)((int)b.kind + b.rotation * 32 + b.footprintVersion * 128 + b.setting * 512)) * 1099511628211UL;
                 }
             }
@@ -1288,14 +1223,16 @@ namespace DeadCircuit
             int w = DemoCatalog.Width(b), h = DemoCatalog.Height(b);
             for (int y = b.y; y < b.y + h; y++) for (int x = b.x; x < b.x + w; x++)
             {
-                if (x < 0 || y < 0 || x >= width || y >= height || Ground(x,y) == 2) return false;
-                if (occupied.Contains(x + y * width) || blockedNodes.Contains(x + y * width)) return false;
+                int ground = Ground(x, y);
+                if (!WorldTiles.Inside(world, x, y) || ground < 0 || ground == 2) return false;
+                long cell = WorldTiles.Key(x, y);
+                if (occupied.Contains(cell) || blockedNodes.Contains(cell)) return false;
                 if (world.survival!=null && world.survival.enabled)
                 {
                     foreach (var plot in world.survival.plots) if (plot.x==x && plot.y==y) return false;
                     foreach (var c in world.survival.creatures) if (Mathf.Abs(c.x-x)<.8f && Mathf.Abs(c.y-y)<.8f) return false;
                 }
-                if (Mathf.Abs(x - width / 2) <= 1 && Mathf.Abs(y - (height / 2 + 3)) <= 1) return false;
+                if (Mathf.Abs(x - 32) <= 1 && Mathf.Abs(y - 35) <= 1) return false;
                 if (b.kind != BuildKind.Belt)
                 {
                     if (world.players != null) foreach (var p in world.players)
@@ -1327,7 +1264,10 @@ namespace DeadCircuit
             {
                 int cx=Mathf.FloorToInt(px+(x-px)*i/steps+.5f),cy=Mathf.FloorToInt(py+(y-py)*i/steps+.5f);
                 if ((cx==x && cy==y) || (cx==sx && cy==sy)) continue;
-                if (cx<0 || cy<0 || cx>=width || cy>=height || Ground(cx,cy)==2 || blockedNodes.Contains(cx+cy*width) || solidBuildings.Contains(cx+cy*width)) return false;
+                int ground = Ground(cx, cy);
+                long cell = WorldTiles.Key(cx, cy);
+                if (!WorldTiles.Inside(groundWorld, cx, cy) || ground < 0 || ground == 2 ||
+                    blockedNodes.Contains(cell) || solidBuildings.Contains(cell)) return false;
             }
             return true;
         }
@@ -1369,39 +1309,6 @@ namespace DeadCircuit
             }
         }
 
-        void UpdateMap(WorldState world,PlayerState local)
-        {
-            if (mapTexture==null || mapBase==null) return;
-            Array.Copy(mapBase,mapPixels,mapBase.Length);
-            if (world.nodes!=null) foreach (var n in world.nodes)
-                if (n.hp>0 && n.stock>0) Plot(n.x,n.y,n.kind==NodeKind.Tree ? new Color32(37,61,39,255) : n.kind==NodeKind.Ore ? new Color32(136,164,154,255) : new Color32(154,113,70,255));
-            if (world.buildings!=null) foreach (var b in world.buildings) if (b.hp>0)
-            {
-                Color32 color = b.networkId > 0 ? NetworkEnergized(b.networkId) ? NetworkColor(b.networkId) : new Color(.54f,.33f,.22f) : Amber;
-                for (int y=b.y;y<b.y+DemoCatalog.Height(b);y++) for (int x=b.x;x<b.x+DemoCatalog.Width(b);x++) Plot(x,y,color);
-            }
-            if (world.zombies!=null) foreach (var z in world.zombies) if (z.hp>0) Plot(Mathf.RoundToInt(z.x),Mathf.RoundToInt(z.y),new Color32(237,97,67,255));
-            if (world.survival!=null && world.survival.enabled)
-            {
-                foreach (var c in world.survival.creatures) if (c.hp>0) Plot(Mathf.RoundToInt(c.x),Mathf.RoundToInt(c.y),new Color32(176,177,117,255));
-                foreach (var plot in world.survival.plots) Plot(plot.x,plot.y,new Color32(109,175,101,255));
-            }
-            // Camera footprint is drawn before players so the local marker stays clear.
-            var cp=WorldCamera.transform.position; float hy=WorldCamera.orthographicSize,hx=hy*WorldCamera.aspect;
-            int left=Mathf.RoundToInt(cp.x-hx),right=Mathf.RoundToInt(cp.x+hx),bottom=Mathf.RoundToInt(cp.y-hy),top=Mathf.RoundToInt(cp.y+hy);
-            var border=new Color32(174,175,136,255);
-            for (int x=Mathf.Max(0,left);x<=Mathf.Min(width-1,right);x++) { Plot(x,bottom,border); Plot(x,top,border); }
-            for (int y=Mathf.Max(0,bottom);y<=Mathf.Min(height-1,top);y++) { Plot(left,y,border); Plot(right,y,border); }
-            if (world.players!=null) foreach (var p in world.players)
-            {
-                if (!p.connected) continue; int x=Mathf.RoundToInt(p.x),y=Mathf.RoundToInt(p.y);
-                var c=local!=null && p.id==local.id ? new Color32(255,239,189,255) : new Color32(106,220,234,255);
-                Plot(x,y,c); Plot(x-1,y,c); Plot(x+1,y,c); Plot(x,y-1,c); Plot(x,y+1,c);
-            }
-            mapTexture.SetPixels32(mapPixels); mapTexture.Apply(false,false);
-        }
-
-        void Plot(int x,int y,Color32 color) { if (x>=0 && y>=0 && x<width && y<height) mapPixels[x+y*width]=color; }
         Sprite Machine(BuildKind kind,int rotation)
         {
             Sprite svg=DemoArt.Get("machine_"+(int)kind); if (svg!=null) return svg;
@@ -1450,7 +1357,7 @@ namespace DeadCircuit
         void OnDestroy()
         {
             DisposeRooms();
-            foreach (var mesh in meshes) if (mesh!=null) Destroy(mesh);
+            ResetGroundStreaming();
             foreach (var sprite in sprites.Values) if (sprite!=null) Destroy(sprite);
             if (spriteMaterial!=null) Destroy(spriteMaterial);
             if (terrainMaterial!=null) Destroy(terrainMaterial);
