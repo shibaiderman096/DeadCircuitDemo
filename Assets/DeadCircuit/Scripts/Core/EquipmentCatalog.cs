@@ -6,6 +6,7 @@ namespace DeadCircuit
     {
         public GearKind kind;
         public string name;
+        public string description = "";
         public TechEra era;
         public int[] cost;
         public int maxDurability, magazine, pellets;
@@ -38,7 +39,7 @@ namespace DeadCircuit
     public static class EquipmentCatalog
     {
         public const int MaxGear = 24;
-        public static readonly string[] GearNames = { "石斧", "石镐", "钢斧", "钢镐", "扳手", "战术刀", "9mm手枪", "霰弹枪", "突击步枪", "精密步枪", "布头巾", "皮夹克", "工装裤", "工装靴", "钢盔", "防弹背心", "战术头盔", "战术背心", "战术靴" };
+        public static readonly string[] GearNames = { "石斧", "石镐", "钢斧", "钢镐", "扳手", "KA-BAR 1217军刀", "GLOCK 17手枪", "Mossberg 590霰弹枪", "M4A1卡宾枪", "M24狙击步枪", "布头巾", "皮夹克", "工装裤", "工装靴", "钢盔", "防弹背心", "战术头盔", "战术背心", "战术靴" };
         public static readonly string[] PartNames = { "红点瞄具", "四倍瞄具", "消音器", "制退器", "扩容弹匣", "人体工学握把", "精密枪管" };
         public static readonly string[] SlotNames = { "瞄具", "枪口", "弹匣", "握把", "枪管" };
         public static readonly string[] ArmorSlotNames = { "头部", "躯干", "腿部", "脚部" };
@@ -55,17 +56,21 @@ namespace DeadCircuit
                 case GearKind.SteelAxe: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Wood,2,ItemKind.Scrap,1); d.damage=36f; d.interval=.55f; break;
                 case GearKind.SteelPickaxe: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Wood,2,ItemKind.Scrap,2); d.damage=32f; d.interval=.55f; break;
                 case GearKind.Wrench: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Iron,3,ItemKind.Bronze,2); d.damage=26f; break;
-                case GearKind.Knife: d.cost=DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Scrap,1); d.damage=24f; d.interval=.42f; d.range=1.5f; break;
+                case GearKind.Knife: d.description="KA-BAR 1217固定刃战斗/通用刀。"; d.cost=DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Scrap,1); d.damage=24f; d.interval=.42f; d.range=1.5f; break;
                 case GearKind.Pistol:
+                    d.description="9×19mm半自动手枪原型；基础弹匣17发。";
                     d.era=TechEra.LowVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,4,ItemKind.Copper,2,ItemKind.Scrap,5);
-                    SetGun(d,ItemKind.Ammo,12,24f,9f,.32f,1.3f,.035f,.028f,1); break;
+                    SetGun(d,ItemKind.Ammo,17,24f,9f,.32f,1.3f,.035f,.028f,1); break;
                 case GearKind.Shotgun:
+                    d.description="12号口径泵动霰弹枪；游戏采用6发管式弹仓。";
                     d.era=TechEra.LowVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,6,ItemKind.Wood,3,ItemKind.Scrap,5);
                     SetGun(d,ItemKind.Shell,6,12f,7f,.95f,2.4f,.17f,.09f,7); break;
                 case GearKind.AssaultRifle:
+                    d.description="5.56×45mm选择射击卡宾枪原型；基础弹匣30发。";
                     d.era=TechEra.MediumVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,8,ItemKind.Polymer,4,ItemKind.Circuit,2);
                     SetGun(d,ItemKind.RifleAmmo,30,22f,15f,.13f,2.2f,.045f,.04f,1); break;
                 case GearKind.PrecisionRifle:
+                    d.description="7.62×51mm栓动狙击步枪原型；基础弹仓5发。";
                     d.era=TechEra.HighVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,10,ItemKind.Polymer,4,ItemKind.AdvancedCircuit,2);
                     SetGun(d,ItemKind.PrecisionAmmo,5,86f,24f,1.35f,2.8f,.012f,.12f,1); break;
                 case GearKind.ClothHood:

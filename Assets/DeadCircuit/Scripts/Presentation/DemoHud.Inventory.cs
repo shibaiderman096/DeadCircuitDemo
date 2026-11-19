@@ -667,14 +667,17 @@ namespace DeadCircuit
         static string GearUsage(GearKind kind)
         {
             if (EquipmentCatalog.IsArmor(kind)) return "防具 · 独立装备格；耐久耗尽后无防御。可在工作台维修或回收。";
+            string usage;
             switch (kind)
             {
                 case GearKind.StoneAxe: case GearKind.SteelAxe: return "工具 · 伐木与近战；使用消耗耐久。";
                 case GearKind.StonePickaxe: case GearKind.SteelPickaxe: return "工具 · 采矿与近战；使用消耗耐久。";
                 case GearKind.Wrench: return "工具 · 设备维护与近战；使用消耗耐久。";
-                case GearKind.Knife: return "近战武器 · 不消耗弹药；使用消耗耐久。";
-                default: return "远程武器 · 先装备、选择兼容弹种并装填；右键瞄准，R 装填。";
+                case GearKind.Knife: usage = "近战武器 · 不消耗弹药；使用消耗耐久。"; break;
+                default: usage = "远程武器 · 先装备、选择兼容弹种并装填；右键瞄准，R 装填。"; break;
             }
+            string description = EquipmentCatalog.Gear(kind).description;
+            return description.Length == 0 ? usage : description + "\n" + usage;
         }
 
         static string MaterialUsage(int item)
@@ -685,7 +688,13 @@ namespace DeadCircuit
                 var compatible = new List<string>();
                 for (int i = 0; i < EquipmentCatalog.GearNames.Length; i++)
                     if (EquipmentCatalog.AmmoCompatible((GearKind)i, kind)) compatible.Add(EquipmentCatalog.GearNames[i]);
-                return "弹药用途：" + string.Join("、", compatible) + (kind == ItemKind.Ammo ? "；也可补给机枪塔。" : "。") + "\n在装备详情中选择弹种并装填；切换已装弹种前先卸弹。";
+                string caliber = kind == ItemKind.Ammo ? "对应9×19mm手枪弹；机枪塔沿用此弹药。" :
+                    kind == ItemKind.RifleAmmo ? "对应5.56×45mm步枪弹。" :
+                    kind == ItemKind.Shell ? "对应12号霰弹。" :
+                    kind == ItemKind.PrecisionAmmo ? "对应7.62×51mm狙击步枪弹。" :
+                    "穿甲弹库存按通用类别管理，使用时对应各步枪口径。";
+                return "弹药用途：" + string.Join("、", compatible) + "。\n" + caliber +
+                    "\n在装备详情中选择弹种并装填；切换已装弹种前先卸弹。";
             }
             if (kind == ItemKind.Food) return "食物补充饱食度；点击下方「吃食 F」或关闭面板后按 F。";
             if (kind == ItemKind.Fuel) return "供燃料发电、锅炉与石炉使用；也用于炼钢和化工。";

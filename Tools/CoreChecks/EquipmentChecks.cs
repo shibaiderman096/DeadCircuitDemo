@@ -393,7 +393,29 @@ static partial class Checks
             var sim = EquipmentFixture(out var p, GearKind.Pistol); sim.Apply(Command(p, "reload")); Advance(sim, .3f);
             int total = p.items[(int)ItemKind.Ammo]; var restored = new WorldSimulator(Saved(sim.State));
             Advance(sim, 3); Advance(restored, 3); var q = restored.State.players.Single();
-            Require(p.gear[0].magazine == 12 && q.gear[0].magazine == 12 && p.items[(int)ItemKind.Ammo] == total - 12 && q.items[(int)ItemKind.Ammo] == total - 12, "mid-reload save invented or lost rounds");
+            Require(p.gear[0].magazine == 17 && q.gear[0].magazine == 17 && p.items[(int)ItemKind.Ammo] == total - 17 && q.items[(int)ItemKind.Ammo] == total - 17, "mid-reload save invented or lost rounds");
+        });
+        Run("equipment legacy pistol 12 and extended 18 round saves preserve ammo and reload only the deficit", () =>
+        {
+            foreach (var (savedRounds, capacity, deficit) in new[] { (12, 17, 5), (18, 26, 8) })
+                foreach (int reserve in new[] { 300, 3, 0 })
+                {
+                    var sim = EquipmentFixture(out _, GearKind.Pistol, arrange: (_, player) =>
+                    {
+                        player.gear[0].magazine = savedRounds; player.items[(int)ItemKind.Ammo] = reserve;
+                        if (savedRounds == 18) player.gear[0].attachments[(int)AttachmentSlot.Magazine] = (int)PartKind.ExtendedMag;
+                    });
+                    var restored = new WorldSimulator(Saved(sim.State)); var p = restored.State.players.Single(); var g = p.gear.Single();
+                    Require(g.magazine == savedRounds && p.items[(int)ItemKind.Ammo] == reserve, "restoring a legacy pistol changed ammunition");
+                    Advance(restored, .3f);
+                    Require(g.magazine == savedRounds && p.items[(int)ItemKind.Ammo] == reserve && p.reloadRemaining == 0, "legacy pistol refilled without an explicit reload");
+                    restored.Apply(Command(p, "reload"));
+                    Require(g.magazine == savedRounds && p.items[(int)ItemKind.Ammo] == reserve && (p.reloadRemaining > 0) == (reserve > 0), "legacy pistol reload did not start correctly or charged early");
+                    Advance(restored, 3); int transferred = Math.Min(reserve, deficit);
+                    Require(EquipmentCatalog.Stats(g).magazine == capacity && g.magazine == savedRounds + transferred &&
+                        p.items[(int)ItemKind.Ammo] == reserve - transferred && p.items[(int)ItemKind.Ammo] + g.magazine == reserve + savedRounds &&
+                        p.reloadRemaining == 0 && p.reloadingGearId == 0, "legacy pistol reload did not conserve ammunition or fill only the deficit");
+                }
         });
         Run("equipment incompatible caliber and empty reserves reject without gifting melee", () =>
         {
@@ -459,13 +481,13 @@ static partial class Checks
         Run("equipment extended magazine capacity changes cannot delete excess rounds", () =>
         {
             var sim = EquipmentFixture(out var p, GearKind.Pistol); var g = p.gear[0];
-            InstallPart(sim, p, g, PartKind.ExtendedMag); Require(EquipmentCatalog.Stats(g).magazine == 18, "pistol extended magazine must hold 18");
-            LoadEquipment(sim, p, g); Require(g.magazine == 18, "reload ignored extended capacity");
+            InstallPart(sim, p, g, PartKind.ExtendedMag); Require(EquipmentCatalog.Stats(g).magazine == 26, "pistol extended magazine must hold 26");
+            LoadEquipment(sim, p, g); Require(g.magazine == 26, "reload ignored extended capacity");
             sim.Apply(Command(p, "detach", x: (int)AttachmentSlot.Magazine, arg: g.id));
-            Require(g.magazine == 18 && g.attachments[2] == (int)PartKind.ExtendedMag && p.parts[(int)PartKind.ExtendedMag] == 0, "removing a loaded extended magazine lost excess rounds");
+            Require(g.magazine == 26 && g.attachments[2] == (int)PartKind.ExtendedMag && p.parts[(int)PartKind.ExtendedMag] == 0, "removing a loaded extended magazine lost excess rounds");
             Advance(sim, .3f); int total = p.items[(int)ItemKind.Ammo] + g.magazine; sim.Apply(Command(p, "unload", arg: g.id));
             Advance(sim, .3f); sim.Apply(Command(p, "detach", x: 2, arg: g.id));
-            Require(EquipmentCatalog.Stats(g).magazine == 12 && p.parts[(int)PartKind.ExtendedMag] == 1 && p.items[(int)ItemKind.Ammo] + g.magazine == total, "unload/detach did not preserve ammo and part");
+            Require(EquipmentCatalog.Stats(g).magazine == 17 && p.parts[(int)PartKind.ExtendedMag] == 1 && p.items[(int)ItemKind.Ammo] + g.magazine == total, "unload/detach did not preserve ammo and part");
         });
     }
 
