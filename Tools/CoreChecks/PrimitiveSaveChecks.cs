@@ -38,20 +38,22 @@ static partial class Checks
         return state;
     }
 
+    static bool PrimitiveMigratedItems(int[] current,int[] old) => current.Length==DemoCatalog.ItemCount && current.Take(old.Length).SequenceEqual(old) && current.Skip(old.Length).All(n=>n==0);
+
     static void PrimitiveSaveChecks()
     {
         Run("primitive save genuine v10 25-slot migration conserves inventories production cargo and resources", () =>
         {
             var source = PrimitiveVersionTenFixture(); string before = Dump(source);
             var sim = new WorldSimulator(source); var state = sim.State;
-            Require(state.version == 11 && state.primitiveVersion == 0 && state.primitiveResearch == 0, "v10 migration enabled primitive locks/research");
+            Require(state.version == WorldSimulator.SaveVersion && state.primitiveVersion == 0 && state.primitiveResearch == 0, "v10 migration enabled primitive locks/research");
             Require(Dump(source) == before, "v10 migration mutated its caller");
-            Require(state.produced.Length == 29 && state.produced.Take(25).SequenceEqual(source.produced) && state.produced.Skip(25).All(n => n == 0), "v10 production history changed");
-            Require(state.players[0].items.Length == 29 && state.players[0].items.Take(25).SequenceEqual(source.players[0].items) && state.players[0].items.Skip(25).All(n => n == 0), "v10 player migration lost or gifted inventory");
+            Require(state.produced.Length == DemoCatalog.ItemCount && state.produced.Take(25).SequenceEqual(source.produced) && state.produced.Skip(25).All(n => n == 0), "v10 production history changed");
+            Require(state.players[0].items.Length == DemoCatalog.ItemCount && state.players[0].items.Take(25).SequenceEqual(source.players[0].items) && state.players[0].items.Skip(25).All(n => n == 0), "v10 player migration lost or gifted inventory");
             foreach (var old in source.buildings)
             {
                 var current = state.buildings.Single(b => b.id == old.id);
-                Require(current.items.Length == 29 && current.items.Take(25).SequenceEqual(old.items) && current.items.Skip(25).All(n => n == 0), "v10 machine migration lost or gifted inventory");
+                Require(current.items.Length == DemoCatalog.ItemCount && current.items.Take(25).SequenceEqual(old.items) && current.items.Skip(25).All(n => n == 0), "v10 machine migration lost or gifted inventory");
                 Require(!ReferenceEquals(old.items, current.items), "v10 machine inventory aliases caller");
             }
             Require(!ReferenceEquals(source.produced, state.produced) && !ReferenceEquals(source.players[0].items, state.players[0].items), "v10 migration aliases production/player arrays");
@@ -72,10 +74,10 @@ static partial class Checks
             {
                 var source = PrimitiveVersionTenFixture(); source.version = version;
                 string before = Dump(source); var state = new WorldSimulator(source).State;
-                Require(state.version == 11 && state.primitiveVersion == 0 && state.primitiveResearch == 0, "old save enabled new research gates: v" + version);
-                Require(state.produced.Length == 29 && state.produced.Take(25).SequenceEqual(source.produced) && state.produced.Skip(25).All(n => n == 0), "old production migration: v" + version);
-                Require(state.players[0].items.Length == 29 && state.players[0].items.Take(25).SequenceEqual(source.players[0].items) && state.players[0].items.Skip(25).All(n => n == 0), "old player migration: v" + version);
-                Require(state.buildings.All(b => b.items.Length == 29 && b.items.Skip(25).All(n => n == 0)), "old machine migration: v" + version);
+                Require(state.version == WorldSimulator.SaveVersion && state.primitiveVersion == 0 && state.primitiveResearch == 0, "old save enabled new research gates: v" + version);
+                Require(state.produced.Length == DemoCatalog.ItemCount && state.produced.Take(25).SequenceEqual(source.produced) && state.produced.Skip(25).All(n => n == 0), "old production migration: v" + version);
+                Require(state.players[0].items.Length == DemoCatalog.ItemCount && state.players[0].items.Take(25).SequenceEqual(source.players[0].items) && state.players[0].items.Skip(25).All(n => n == 0), "old player migration: v" + version);
+                Require(state.buildings.All(b => b.items.Length == DemoCatalog.ItemCount && b.items.Skip(25).All(n => n == 0)), "old machine migration: v" + version);
                 Require(Dump(source) == before && state.nextId == source.nextId && state.nodes.Count == source.nodes.Count, "old migration mutated caller or regenerated nodes: v" + version);
             }
         });
@@ -85,9 +87,9 @@ static partial class Checks
             {
                 var source = PrimitiveCurrentSaveFixture(research); string before = Dump(source);
                 var state = new WorldSimulator(source).State; var again = new WorldSimulator(Saved(state)).State;
-                Require(state.version == 11 && state.primitiveVersion == 1 && state.primitiveResearch == research && again.primitiveVersion == 1 && again.primitiveResearch == research, "v11 primitive progression changed on roundtrip");
+                Require(state.version == WorldSimulator.SaveVersion && state.primitiveVersion == 1 && state.primitiveResearch == research && again.primitiveVersion == 1 && again.primitiveResearch == research, "v11 primitive progression changed on roundtrip");
                 Require(Dump(source) == before && Dump(state) == Dump(again), "v11 restore mutated input or changed second restore");
-                Require(state.produced.SequenceEqual(source.produced) && state.players[0].items.SequenceEqual(source.players[0].items) && state.buildings[0].items.SequenceEqual(source.buildings[0].items), "v11 restore lost appended inventory/history");
+                Require(PrimitiveMigratedItems(state.produced,source.produced) && PrimitiveMigratedItems(state.players[0].items,source.players[0].items) && PrimitiveMigratedItems(state.buildings[0].items,source.buildings[0].items), "v11 restore lost appended inventory/history");
                 Require(!ReferenceEquals(source.produced, state.produced) && !ReferenceEquals(source.players[0].items, state.players[0].items) && !ReferenceEquals(source.buildings[0].items, state.buildings[0].items), "v11 restore aliases caller arrays");
                 string isolated = Dump(state);
                 source.primitiveResearch = 0; source.primitiveVersion = 0; source.produced[28]++; source.players[0].items[25]++; source.buildings[0].items[27]++;
@@ -156,7 +158,7 @@ static partial class Checks
             foreach (var pair in new[] { (kind: 36, recipe: 100), (kind: 37, recipe: 101) })
             {
                 var current = PrimitiveCurrentSaveFixture(); var kiln = Add(current, (BuildKind)pair.kind, 20, 10);
-                kiln.recipe = pair.recipe; kiln.progress = 4;
+                kiln.items = new int[29]; kiln.recipe = pair.recipe; kiln.progress = 4;
                 var state = new WorldSimulator(current).State;
                 Require(state.buildings.Single(b => (int)b.kind == pair.kind).progress == 4 && DemoCatalog.Width(kiln) == 2 && DemoCatalog.Height(kiln) == 2, "v11 kiln footprint or recipe progress rejected");
                 kiln.progress = 4.001f; Reject(current, "kiln progress exceeded four seconds"); kiln.progress = 4;

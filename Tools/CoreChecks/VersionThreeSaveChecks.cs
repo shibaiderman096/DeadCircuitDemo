@@ -63,10 +63,10 @@ static partial class Checks
                 {
                     var old=legacy.buildings[i];var current=restored.buildings.Single(b=>b.id==old.id);
                     Require(current.kind==old.kind && current.x==old.x && current.y==old.y && current.rotation==old.rotation && current.footprintVersion==old.footprintVersion,"legacy layout changed");
-                    Require(current.items.Length==29 && current.items.Take(7).SequenceEqual(old.items) && current.items.Skip(7).All(n=>n==0),"legacy building inventory lost or invented items");
+                    Require(current.items.Length==DemoCatalog.ItemCount && current.items.Take(7).SequenceEqual(old.items) && current.items.Skip(7).All(n=>n==0),"legacy building inventory lost or invented items");
                 }
                 var p=restored.players.Single();var source=legacy.players.Single();
-                Require(p.items.Length==29 && p.items.Take(7).SequenceEqual(source.items) && p.items.Skip(7).All(n=>n==0),"legacy player inventory migration");
+                Require(p.items.Length==DemoCatalog.ItemCount && p.items.Take(7).SequenceEqual(source.items) && p.items.Skip(7).All(n=>n==0),"legacy player inventory migration");
                 Require(p.level==source.level && p.xp==source.xp && p.attributePoints==4 && p.skillPoints==2 && p.attributes.SequenceEqual(source.attributes) && p.skills.SequenceEqual(source.skills),"migration changed personal progression");
                 Require(JsonSerializer.Serialize(restored.cargo,Json)==oldCargo,"migration lost in-flight identity or timing");
                 var cargo=restored.cargo.Single();var sink=Building(sim,cargo.toId);int ammo=sink.items[(int)ItemKind.Ammo];var totals=ItemTotals(restored);
@@ -78,8 +78,8 @@ static partial class Checks
         {
             var saved=VersionThreeFixture();var restored=new WorldSimulator(saved);string before=Dump(restored.State);var oldReactor=saved.buildings.Single(b=>b.kind==BuildKind.Reactor);var newReactor=restored.State.buildings.Single(b=>b.kind==BuildKind.Reactor);
             Require(!ReferenceEquals(saved.produced,restored.State.produced) && !ReferenceEquals(saved.buildings,restored.State.buildings),"v3 restore aliases research/production collections");
-            Require(restored.State.produced.Length==29 && restored.State.produced.Take(21).SequenceEqual(saved.produced) && restored.State.produced.Skip(21).All(n=>n==0),"v3 production counters were lost or invented during expansion");
-            Require(restored.State.players.All(p=>p.items.Length==29) && restored.State.buildings.All(b=>b.items.Length==29),"v3 inventories did not expand to the current length");
+            Require(restored.State.produced.Length==DemoCatalog.ItemCount && restored.State.produced.Take(21).SequenceEqual(saved.produced) && restored.State.produced.Skip(21).All(n=>n==0),"v3 production counters were lost or invented during expansion");
+            Require(restored.State.players.All(p=>p.items.Length==DemoCatalog.ItemCount) && restored.State.buildings.All(b=>b.items.Length==DemoCatalog.ItemCount),"v3 inventories did not expand to the current length");
             Require(newReactor.temperature==440 && newReactor.progress==.4f && newReactor.fuel==3 && !newReactor.tripped,"restore changed reactor operating reserves");
             Require(restored.State.buildings.Single(b=>b.kind==BuildKind.NuclearProcessor).recipe==90 && restored.State.buildings.Single(b=>b.kind==BuildKind.Transformer).setting==1,"restore lost recipe/converter configuration");
             saved.era=TechEra.Primitive;saved.produced[17]=999;oldReactor.temperature=1199;oldReactor.tripped=true;oldReactor.items[15]=99;saved.buildings.Single(b=>b.kind==BuildKind.NuclearProcessor).recipe=int.MaxValue;saved.buildings.Single(b=>b.kind==BuildKind.Transformer).setting=0;saved.players[0].items[20]=999;saved.players[0].attributes[0]=9;saved.players[0].skillPoints=0;

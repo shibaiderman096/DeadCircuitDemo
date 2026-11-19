@@ -30,6 +30,7 @@ namespace DeadCircuit
                 UiButton button = Button("Primitive Research " + id, root, "", 588, 12, 170, 64, () => ResearchPrimitive(id));
                 primitiveResearchRows.Add(new PrimitiveResearchRow { id = id, root = root, details = details, research = button });
             }
+            MakeWaterTechnology(content);
         }
 
         void RefreshPrimitiveTechnology(WorldState world, PlayerState player)
@@ -59,6 +60,7 @@ namespace DeadCircuit
                 Set(row.research.label, known ? "已研究" : can ? "研究" + definition.name : state);
                 Tint(row.research, known ? Selected : Raised);
             }
+            RefreshWaterTechnology(world, player);
         }
 
         static string PrimitivePrerequisites(WorldState world, int mask)
@@ -85,14 +87,15 @@ namespace DeadCircuit
         }
 
         static int DefaultTechnologyEra(WorldState world) => PrimitiveCatalog.Enabled(world) && world.era == TechEra.Primitive
-            ? 0 : Mathf.Min((int)world.era + 1, 6);
+            ? 0 : WaterCatalog.Enabled(world) && world.era == TechEra.Water ? 1 : Mathf.Min((int)world.era + 1, 6);
 
         static string EraResearchRequirement(WorldState world, TechEra target)
         {
             string requirement = TechCatalog.ResearchRequirement(world, target);
-            string primitive = target == TechEra.Water ? PrimitiveCatalog.WaterRequirement(world) : "";
-            return string.IsNullOrEmpty(primitive) || requirement.Contains(primitive) ? requirement :
-                string.IsNullOrEmpty(requirement) ? primitive : requirement + "\n" + primitive;
+            string process = target == TechEra.Water ? PrimitiveCatalog.WaterRequirement(world) :
+                target == TechEra.Steam ? WaterCatalog.SteamRequirement(world) : "";
+            return string.IsNullOrEmpty(process) || requirement.Contains(process) ? requirement :
+                string.IsNullOrEmpty(requirement) ? process : requirement + "\n" + process;
         }
 
         static string PrimitiveGoal(WorldState world, PlayerState player)

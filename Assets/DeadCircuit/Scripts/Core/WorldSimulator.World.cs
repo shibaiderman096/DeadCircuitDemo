@@ -14,7 +14,11 @@ namespace DeadCircuit
         }
 
         // Called only by the new-world generator. Restore/migration must remain inert.
-        internal static void PrepareGeneratedWorld(WorldState world) => InitializeSurvivalWorld(world, true);
+        internal static void PrepareGeneratedWorld(WorldState world)
+        {
+            world.waterVersion = 1;
+            InitializeSurvivalWorld(world, true);
+        }
 
         private static NodeState NewNode(int id, int x, int y, NodeKind kind, int stock)
         {

@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 11;
+        public const int SaveVersion = 12;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -146,6 +146,8 @@ namespace DeadCircuit
                 case "craft": Craft(p, cmd.arg); return;
                 case "research": Research(p, cmd.arg); return;
                 case "primitive": ResearchPrimitive(p, cmd.arg); return;
+                case "water": ResearchWater(p, cmd.arg); return;
+                case "mill": Mill(p, cmd.x, cmd.y); return;
                 case "interact": case "build": case "repair": case "dismantle": case "recipe": case "configure":
                     if (p.interactCooldown > 0f || !Inside(cmd.x, cmd.y) ||
                         DistSq(p.x, p.y, cmd.x, cmd.y) > Reach * Reach ||
@@ -186,6 +188,7 @@ namespace DeadCircuit
             if (State.tick % 5 == 0) foreach (PlayerState p in State.players) MapExploration.Reveal(State,p);
             UpdateSurvival();
             RefreshPower(true);
+            UpdateWaterAgriculture();
             UpdateProduction();
             UpdateTurrets();
             if (flowRevision < 0 || State.tick % 5 == 0) RebuildFlow();

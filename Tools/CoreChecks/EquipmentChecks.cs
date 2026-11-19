@@ -68,7 +68,7 @@ static partial class Checks
         {
             var sim = New(out var p);
             Require(sim.State.version == WorldSimulator.SaveVersion, "new world must use save version 4");
-            Require(DemoCatalog.ItemCount == 29 && p.items.Length == DemoCatalog.ItemCount && sim.State.produced.Length == DemoCatalog.ItemCount, "equipment ammunition requires 25 slots");
+            Require(DemoCatalog.ItemCount == 32 && p.items.Length == DemoCatalog.ItemCount && sim.State.produced.Length == DemoCatalog.ItemCount, "equipment inventory does not include the water-era materials");
         });
         Run("equipment preserves old ammo and appends four caliber ordinals", () =>
         {

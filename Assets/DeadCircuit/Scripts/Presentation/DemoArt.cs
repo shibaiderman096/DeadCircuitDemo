@@ -27,17 +27,23 @@ namespace DeadCircuit
             Sprite sprite;
             if (key == null) return null;
             if (sprites.TryGetValue(key, out sprite)) return sprite;
-            // Reuse known atlas cells until dedicated primitive art is supplied.
+            // Reuse known atlas cells until dedicated primitive and water art is supplied.
             // Names and presentation tints keep resources and kilns distinct.
             string fallback;
             switch (key)
             {
                 case "node_8": case "node_9": fallback = "node_1"; break;
                 case "machine_36": case "machine_37": fallback = "machine_11"; break;
+                case "machine_38": fallback = "machine_11"; break;
+                case "machine_39": case "machine_40": case "machine_41": fallback = "machine_14"; break;
+                case "machine_42": fallback = "machine_34"; break;
+                case "machine_43": fallback = "machine_7"; break;
                 case "item_25": fallback = "item_1"; break;
                 case "item_26": fallback = "item_7"; break;
                 case "item_27": fallback = "item_4"; break;
                 case "item_28": fallback = "item_3"; break;
+                case "item_29": fallback = "item_2"; break;
+                case "item_30": case "item_31": fallback = "item_3"; break;
                 default: return null;
             }
             return sprites.TryGetValue(fallback, out sprite) ? sprite : null;

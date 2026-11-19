@@ -517,6 +517,8 @@ namespace DeadCircuit
         {
             var state = new WorldSimulator(seed).State;
             state.era = TechEra.LowVoltage;
+            // The opt-in LAN fixture starts at LV without pretending it ran a water factory.
+            state.waterVersion = 0;
             state.buildings.Clear(); state.cargo.Clear(); state.powerNetworks.Clear();
             state.nodes.RemoveAll(n => n.x >= 23 && n.x <= 39 && n.y >= 25 && n.y <= 33);
             char[] ground = state.ground.ToCharArray();

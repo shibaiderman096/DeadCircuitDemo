@@ -12,7 +12,7 @@ namespace DeadCircuit
             if (source == null) throw new ArgumentNullException(nameof(source));
             SaveCheck(source.version >= 1 && source.version <= SaveVersion, "unsupported version");
             bool legacy=source.version<3;
-            int itemCount=legacy ? 7 : source.version==3 ? 21 : source.version<11 ? 25 : DemoCatalog.ItemCount;
+            int itemCount=legacy ? 7 : source.version==3 ? 21 : source.version<11 ? 25 : source.version==11 ? 29 : DemoCatalog.ItemCount;
             if(!legacy)
             {
                 SaveCheck((int)source.era>=0 && (int)source.era<=6, "technology era");
@@ -51,6 +51,7 @@ namespace DeadCircuit
                 kills = source.kills, manufactured = source.manufactured, gathered = source.gathered
             };
             CopyPrimitiveProgression(source, s);
+            CopyWaterProgression(source, s);
             var entityIds = new HashSet<int>();
             CopyChunks(source,s);
             var occupied = new HashSet<long>();
@@ -70,7 +71,7 @@ namespace DeadCircuit
             {
                 SaveCheck(b != null, "null building"); CheckEntityId(b.id, entityIds, ref highestId);
                 CheckCell(b.x, b.y,source);
-                SaveCheck((int)b.kind >= 0 && (int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : source.version<11 ? 36 : DemoCatalog.BuildNames.Length) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
+                SaveCheck((int)b.kind >= 0 && (int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : source.version<11 ? 36 : source.version==11 ? 38 : DemoCatalog.BuildNames.Length) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
                 SaveCheck(b.footprintVersion == 0 || b.footprintVersion == 1, "footprint version");
                 for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
                 {
@@ -90,6 +91,7 @@ namespace DeadCircuit
                     SaveRange(b.temperature,20f,1200f,"machine temperature");
                     SaveCheck(b.kind==BuildKind.Reactor || (!b.tripped && b.temperature==20f),"reactor-only state");
                     RecipeDefinition r=TechCatalog.SelectedRecipe(b);
+                    SaveCheck(source.version>=12 || r==null || r.id<110 || r.id>115,"water recipe requires v12");
                     SaveCheck(b.recipe==0 || (r!=null && r.building==b.kind && b.kind!=BuildKind.Workbench),"machine recipe");
                     SaveCheck(r==null || r.era<=source.era,"unresearched machine recipe");
                     if(r!=null) SaveRange(b.progress,0f,r.duration,"recipe progress");
@@ -129,6 +131,13 @@ namespace DeadCircuit
                     (to.kind != BuildKind.Belt || TotalItems(to.items) + TotalItems(reserved) <= 2), "cargo reservation capacity");
                 s.cargo.Add(new CargoState { id = c.id, fromId = c.fromId, toId = c.toId, item = c.item,
                     fromX = c.fromX, fromY = c.fromY, toX = c.toX, toY = c.toY, progress = c.progress, duration = c.duration });
+            }
+            foreach(CargoState c in s.cargo)
+            {
+                BuildingState from=byId[c.fromId];
+                if(from.kind!=BuildKind.MechanicalHopper) continue;
+                int[] incoming; reservations.TryGetValue(from.id,out incoming);
+                SaveCheck(from.items[c.item]+(incoming==null ? 0 : incoming[c.item])<BufferLimit,"loader cargo return capacity");
             }
             var playerIds = new HashSet<string>(StringComparer.Ordinal);
             var seats = new HashSet<int>();
