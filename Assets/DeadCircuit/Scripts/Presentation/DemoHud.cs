@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -17,13 +15,16 @@ namespace DeadCircuit
     [DefaultExecutionOrder(-100)]
     public sealed partial class DemoHud : MonoBehaviour
     {
-        static readonly Color Ink = new Color32(225, 237, 231, 255);
-        static readonly Color Muted = new Color32(154, 177, 170, 255);
-        static readonly Color Panel = new Color32(18, 30, 31, 246);
-        static readonly Color HudSurface = new Color32(18, 30, 31, 190);
-        static readonly Color Raised = new Color32(34, 50, 49, 255);
-        static readonly Color Accent = new Color32(111, 221, 178, 255);
-        static readonly Color Amber = new Color32(246, 190, 104, 255);
+        static readonly Color Ink = new Color32(241, 235, 220, 255);
+        static readonly Color Muted = new Color32(171, 188, 177, 255);
+        static readonly Color Panel = new Color32(19, 36, 29, 253);
+        static readonly Color HudSurface = new Color32(16, 31, 26, 235);
+        static readonly Color Raised = new Color32(36, 58, 47, 255);
+        static readonly Color Accent = new Color32(130, 219, 215, 255);
+        static readonly Color Selected = new Color32(31, 77, 72, 255);
+        static readonly Color Edge = new Color32(62, 87, 73, 255);
+        static readonly Color Recessed = new Color32(11, 24, 19, 255);
+        static readonly Color Amber = new Color32(242, 187, 98, 255);
         static readonly Color Danger = new Color32(244, 128, 113, 255);
         static readonly string[] Directions = { "东 →", "北 ↑", "西 ←", "南 ↓" };
         static readonly string[] Nodes = { "树木", "铁矿脉", "废料堆", "补给箱", "障碍墙", "铜矿脉", "锡矿脉", "铀矿脉" };
@@ -76,6 +77,7 @@ namespace DeadCircuit
         {
             public UnityEngine.UI.Button button;
             public UnityEngine.UI.Image image;
+            public UnityEngine.UI.Image icon;
             public TextMeshProUGUI label;
         }
 
@@ -125,7 +127,7 @@ namespace DeadCircuit
         string localFeedback = "";
         string lastBridgeStatus = "", lastPlayerNotice = "", lastWorldNotice = "";
         Color localFeedbackColor;
-        bool initialized, wasRunning, hasSave, localFeedbackError;
+        bool initialized, wasRunning, localFeedbackError;
         int guardThroughFrame = -1, inspectedX = -1, inspectedY = -1, inspectedId = -1;
 
         /// <summary>Text entry, modals, or actual interactive UI hits consume world input.</summary>
@@ -165,6 +167,7 @@ namespace DeadCircuit
             MakeSession(root);
             MakeHelp(root);
             MakeDeath(root);
+            CreateAdditionalPanels(root);
             game.gameObject.SetActive(false);
             ClosePanels();
             buildDetails.gameObject.SetActive(false);
@@ -200,6 +203,11 @@ namespace DeadCircuit
             bool running = bridge.IsRunning;
             PlayerState player = bridge.LocalPlayer;
             var keyboard = Keyboard.current;
+            if (!running && keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+            {
+                if (settingsPanel.gameObject.activeSelf) CloseSettings();
+                else ShowMenuPage(MenuPage.Home);
+            }
             if (running && player != null && player.hp > 0f && keyboard != null)
             {
                 if (keyboard.escapeKey.wasPressedThisFrame)
@@ -214,6 +222,7 @@ namespace DeadCircuit
                     else if (keyboard.tKey.wasPressedThisFrame) SetPanel(technology, !technology.gameObject.activeSelf);
                     else if (keyboard.tabKey.wasPressedThisFrame) SetGrowth(!growth.gameObject.activeSelf);
                     else if (keyboard.hKey.wasPressedThisFrame) SetPanel(help, !help.gameObject.activeSelf);
+                    else if (keyboard.jKey.wasPressedThisFrame) ToggleSurvival();
                 }
             }
             if (running && !AnyPanelOpen() && bridge.BuildSelection.HasValue &&
@@ -230,73 +239,34 @@ namespace DeadCircuit
             }
         }
 
-        void MakeMenu(RectTransform root)
-        {
-            menu = Backdrop("Main Menu", root, new Color32(11, 20, 23, 255));
-            RectTransform frame = NewRect("Menu Content", menu);
-            Center(frame, 1160, 632);
-            Box("Brand Accent", frame, 0, 20, 4, 58, Accent);
-            Label("Edition", frame, "DEAD CIRCUIT  /  LAN SURVIVAL", 22, 20, 430, 25, 14, Accent);
-            Label("Title", frame, "废土回路", 18, 64, 440, 96, 66, Ink, FontStyles.Bold);
-            Label("Tagline", frame, "让废铁转动，让防线亮起。", 22, 174, 428, 34, 24, Ink);
-            Label("Premise", frame, "俯视角生存 × 自动化产线\n同一局域网，协作守住下一个黎明。",
-                22, 226, 420, 66, 18, Muted);
-            Label("Menu Footnote", frame, "最多 4 人协作 · 打开面板时世界继续运行",
-                22, 552, 430, 40, 15, Muted);
-            RectTransform card = Box("Connection Card", frame, 472, 20, 688, 592, Panel);
-            Label("Card Title", card, "接入幸存者回路", 26, 20, 636, 34, 25, Ink, FontStyles.Bold);
-            Label("Name Label", card, "玩家名", 26, 78, 636, 22, 15, Muted);
-            nameField = Input("Player Name", card, bridge.PlayerName, "幸存者", 26, 106, 636, 42, 12);
-            Label("Host Label", card, "建立主机", 26, 176, 300, 25, 19, Accent, FontStyles.Bold);
-            Label("Join Label", card, "加入局域网", 362, 176, 300, 25, 19, Accent, FontStyles.Bold);
-            Label("Seed Label", card, "世界种子 / 整数", 26, 213, 300, 20, 14, Muted);
-            Label("IP Label", card, "主机 IPv4 / UDP 7777", 362, 213, 300, 20, 14, Muted);
-            seedField = Input("World Seed", card, "73149", "例如 73149", 26, 241, 300, 42, 11);
-            seedField.characterValidation = TMP_InputField.CharacterValidation.Integer;
-            ipField = Input("Host IPv4", card, "192.168.1.8", "192.168.1.8", 362, 241, 300, 42, 15);
-            Button("New Game", card, "新建世界并主持", 26, 301, 300, 44, StartNew, true);
-            Button("Join Game", card, "加入主机", 362, 301, 300, 44, Join, true);
-            loadButton = Button("Load Game", card, "读取本地存档", 26, 357, 300, 38, Load);
-            Button("Cancel Connection", card, "取消连接", 362, 357, 300, 38, () => CallBridge(bridge.Leave));
-            menuSave = Label("Save Availability", card, "正在检查本地存档…", 26, 403, 636, 24, 13, Muted);
-            menuStatus = Label("Connection Status", card, "", 26, 438, 636, 68, 16, Ink);
-            menuStatus.overflowMode = TextOverflowModes.Overflow;
-            menuAddress = Label("LAN Address", card, "", 26, 516, 636, 62, 14, Muted);
-        }
-
         void MakeGame(RectTransform root)
         {
             game = NewRect("In Game HUD", root);
             Stretch(game);
             RectTransform vitals = Box("Vitals", game, 18, 18, 242, 108, HudSurface);
             playerTitle = Label("Player", vitals, "", 12, 4, 218, 24, 15, Ink, FontStyles.Bold);
-            Vital(vitals, 0, "Health", 32, new Color32(47, 109, 83, 255));
-            Vital(vitals, 1, "Hunger", 55, new Color32(119, 95, 50, 255));
-            Vital(vitals, 2, "Stamina", 78, new Color32(51, 94, 109, 255));
-            RectTransform goals = NewRect("Objectives", game);
-            Place(goals, 18, 134, 242, 48);
-            objectives = Label("Objectives Text", goals, "", 0, 0, 242, 48, 14, Accent);
-            eraText = Label("Current Technology Era", game, "", 18, 188, 242, 24, 13, Muted);
-            MakeEquipmentSummary();
+            Vital(vitals, 0, "Health", 32, new Color32(54, 111, 80, 255));
+            Vital(vitals, 1, "Hunger", 55, new Color32(122, 94, 46, 255));
+            Vital(vitals, 2, "Stamina", 78, new Color32(43, 100, 105, 255));
             RectTransform world = Box("World Status", game, 0, 18, 228, 60, HudSurface);
-            // The minimap owns right 18 / top 18 / 144 square. Leave an 18 px gap.
+            // DemoWorldView owns the top-right minimap; reserve its existing 144px square.
             TopRight(world, 180, 18, 228, 60);
             clockText = Label("Day Night", world, "", 12, 4, 204, 24, 16, Ink, FontStyles.Bold);
             waveText = Label("Wave Countdown", world, "", 12, 31, 204, 24, 16, Amber, FontStyles.Bold);
-            feedback = Label("World Feedback", game, "", 0, 90, 540, 108, 16, Amber);
-            TopCenter(feedback.rectTransform, 90, 540, 108);
+            feedback = Label("World Feedback", game, "", 0, 90, 540, 72, 16, Amber);
+            TopCenter(feedback.rectTransform, 90, 540, 72);
             feedback.alignment = TextAlignmentOptions.Top;
-            feedback.overflowMode = TextOverflowModes.Overflow;
             MakeInspector();
-            buildDetails = Box("Build Details", game, 0, 0, 600, 96, HudSurface);
-            BottomCenter(buildDetails, 90, 600, 96);
-            buildTitle = Label("Build Description", buildDetails, "", 12, 5, 576, 26, 15, Accent);
-            buildCost = Label("Build Cost", buildDetails, "", 12, 33, 576, 26, 13, Ink);
-            buildHelp = Label("Build Function", buildDetails, "", 12, 61, 576, 30, 13, Muted);
+            buildDetails = Box("Build Details", game, 0, 0, 640, 112, Panel, true);
+            BottomCenter(buildDetails, 140, 640, 112);
+            RectTransform buildContent = ScrollContent("Build Details Scroll View", buildDetails, 8, 8, 624, 96, out _);
+            buildTitle = FlowLabel("Build Description", buildContent, "", 596, 28, 16, Accent);
+            buildCost = FlowLabel("Build Cost", buildContent, "", 596, 28, 14, Ink);
+            buildHelp = FlowLabel("Build Function", buildContent, "", 596, 40, 14, Muted);
             buildDetails.gameObject.SetActive(false);
-            RectTransform hotbar = Box("Build Hotbar", game, 0, 0, 640, 64, HudSurface);
-            BottomCenter(hotbar, 18, 640, 64);
-            var layout = hotbar.gameObject.AddComponent<UnityEngine.UI.HorizontalLayoutGroup>();
+            buildTray = Box("Build Hotbar", game, 0, 0, 640, 64, HudSurface);
+            BottomCenter(buildTray, 64, 640, 64);
+            var layout = buildTray.gameObject.AddComponent<UnityEngine.UI.HorizontalLayoutGroup>();
             layout.padding = new RectOffset(6, 6, 6, 6);
             layout.spacing = 4;
             layout.childControlWidth = layout.childControlHeight = true;
@@ -304,30 +274,30 @@ namespace DeadCircuit
             for (int i = 0; i < slots.Length; i++)
             {
                 int index = i;
-                slots[i] = Button("Build Slot " + (i + 1), hotbar, "",
-                    0, 0, 70, 52, () => SelectHotbar(index));
+                slots[i] = Button("Build Slot " + (i + 1), buildTray, "", 0, 0, 70, 52, () => SelectHotbar(index));
                 var itemLayout = slots[i].button.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
                 itemLayout.minWidth = 52;
                 itemLayout.flexibleWidth = 1;
-                slots[i].label.fontSizeMax = 14;
-                slots[i].label.fontSize = 14;
+                slots[i].label.fontSizeMax = slots[i].label.fontSize = 14;
             }
-            RectTransform shortcuts = NewRect("HUD Shortcuts", game);
-            shortcuts.anchorMin = shortcuts.anchorMax = shortcuts.pivot = new Vector2(1, 0);
-            shortcuts.anchoredPosition = new Vector2(-18, 18);
-            shortcuts.sizeDelta = new Vector2(238, 106);
-            Button("Technology Button", shortcuts, "科技 / 建造 T", 0, 0, 238, 30, () => SetPanel(technology, true));
-            Button("Open Inventory", shortcuts, "背包 B", 0, 38, 115, 30, () => SetPanel(inventory, true));
-            growthButton = Button("Open Growth", shortcuts, "成长 Tab", 123, 38, 115, 30, () => SetGrowth(true));
-            Button("Open Help", shortcuts, "帮助 H", 0, 76, 115, 30, () => SetPanel(help, true));
-            Button("Open Session", shortcuts, "菜单 Esc", 123, 76, 115, 30, () => SetPanel(session, true));
+            buildToggle = Button("HUD Build Toggle", game, "展开建造 1–0", 0, 0, 180, 36, () =>
+            {
+                buildTrayOpen = !(buildTrayOpen || bridge.BuildSelection.HasValue);
+                if (!buildTrayOpen) CancelBuild();
+                RefreshAll();
+            });
+            BottomCenter(buildToggle.button.GetComponent<RectTransform>(), 18, 180, 36);
+            buildTray.gameObject.SetActive(false);
+            MakeEquipmentSummary();
+            MakeHudTools();
         }
 
         void MakeTechnology(RectTransform root)
         {
-            technology = Backdrop("Technology Panel", root, new Color32(4, 10, 11, 190));
+            technology = Backdrop("Technology Panel", root, new Color32(4, 12, 8, 210));
             RectTransform card = Box("Technology Card", technology, 0, 0, 1040, 608, Panel, true);
             Center(card, 1040, 608);
+            PanelRule(card, 1040, 64);
             Label("Technology Heading", card, "工业科技树", 22, 16, 760, 38, 25, Ink, FontStyles.Bold);
             Button("Close Technology", card, "关闭 T / Esc", 902, 20, 116, 32, () => SetPanel(technology, false));
             for (int i = 0; i < eraButtons.Length; i++)
@@ -362,42 +332,44 @@ namespace DeadCircuit
 
         void MakeSession(RectTransform root)
         {
-            session = Backdrop("Session Modal", root, new Color32(4, 10, 11, 170));
-            RectTransform card = Box("Session Card", session, 0, 0, 640, 408, Panel, true);
-            Center(card, 640, 408);
-            Label("Session Heading", card, "会话", 22, 16, 450, 36, 25, Ink, FontStyles.Bold);
-            Button("Close Session", card, "关闭 Esc", 502, 18, 116, 32, () => SetPanel(session, false));
-            networkText = Label("Network", card, "", 22, 74, 596, 68, 16, Muted);
-            gameStatus = Label("Session Status", card, "", 22, 150, 596, 82, 15, Ink);
-            gameStatus.overflowMode = TextOverflowModes.Overflow;
-            saveButton = Button("Save World", card, "保存 F5", 22, 252, 288, 42, () => CallBridge(bridge.Save));
-            Button("Return to Menu", card, "返回主菜单", 330, 252, 288, 42, () => CallBridge(bridge.Leave));
-            Label("Session Hint", card, "世界继续运行 · 房主每 30 秒自动保存", 22, 306, 596, 26, 14, Muted);
-            sessionNotice = Label("Session Feedback", card, "", 22, 342, 596, 50, 15, Amber);
-            sessionNotice.overflowMode = TextOverflowModes.Overflow;
+            session = Backdrop("Session Modal", root, new Color32(4, 12, 8, 210));
+            RectTransform card = Box("Session Card", session, 0, 0, 740, 620, Panel, true);
+            Center(card, 740, 620);
+            PanelRule(card, 740, 68);
+            Label("Session Heading", card, "会话", 28, 16, 500, 38, 27, Ink, FontStyles.Bold);
+            Button("Close Session", card, "返回 Esc", 594, 20, 118, 34, () => SetPanel(session, false));
+            RectTransform content = ScrollContent("Session Scroll View", card, 28, 86, 684, 298, out _);
+            networkText = FlowLabel("Network", content, "", 656, 72, 17, Ink);
+            eraText = FlowLabel("Current Technology Era", content, "", 656, 28, 17, Accent);
+            objectives = FlowLabel("Objectives Text", content, "", 656, 80, 17, Ink);
+            gameStatus = FlowLabel("Session Status", content, "", 656, 72, 16, Muted);
+            saveButton = Button("Save World", card, "保存 F5", 28, 404, 330, 46, () => CallBridge(bridge.Save), true);
+            Button("Session Settings", card, "设置", 382, 404, 330, 46, OpenSettings);
+            Button("Return to Menu", card, "返回主菜单", 28, 466, 684, 44, () => CallBridge(bridge.Leave));
+            Label("Session Hint", card, "世界继续运行 · 房主定期自动保存", 28, 522, 684, 28, 14, Muted);
+            sessionNotice = Label("Session Feedback", card, "", 28, 562, 684, 44, 15, Amber);
             session.gameObject.SetActive(false);
         }
 
         void MakeHelp(RectTransform root)
         {
-            help = Backdrop("Help Panel", root, new Color32(4, 10, 11, 170));
-            RectTransform card = Box("Help Card", help, 0, 0, 780, 574, Panel, true);
-            Center(card, 780, 574);
-            Label("Help Heading", card, "操作与生存指南", 24, 16, 550, 36, 25, Ink, FontStyles.Bold);
-            Button("Close Help", card, "关闭 H / Esc", 640, 18, 116, 32, () => SetPanel(help, false));
-            Label("Controls Title", card, "操作速查", 24, 72, 732, 26, 18, Accent, FontStyles.Bold);
-            Label("Controls Text", card,
-                "WASD 移动 · Shift 冲刺 · 滚轮缩放 · E 交互 / 采集\n左键攻击 / 放置 · 右键瞄准（建造时取消）\nR 装填（建造时旋转）· Q 切换武器 / 工具\n1–0 建造快捷栏 · T 科技 / 全设备 · X 拆除 · G 修理\nF 吃食 · C 燃料 · Ctrl+C 弹药 · B 背包 / 装备 / 制作\nTab 成长 · H 帮助 · Esc 关闭 / 会话 · F5 保存",
-                24, 104, 732, 138, 16, Ink);
-            Label("Tutorial Title", card, "从原始到核工业", 24, 254, 732, 26, 18, Accent, FontStyles.Bold);
-            Label("Production Tutorial", card,
-                "开局采集木材、矿石与废料；建工作台和石炉，按 T 查看下一阶材料。\n原始 → 水力 → 蒸汽 → 低压 → 中压 → 高压 → 核工业，按顺序研究。\n水车 / 轴传机械动力；锅炉 / 管传蒸汽；电网按低、中、高压分开。\n设备须匹配动力与电压；变压器逐级降压。核反应堆需冷却并监测温度。",
-                24, 288, 732, 108, 16, Ink);
-            helpProgress = Label("Tutorial Progress", card, "", 24, 406, 732, 52, 14, Muted);
-            Label("Panel Hint", card, "打开面板时世界继续运行；Esc 优先关闭面板，其次取消建造，再打开会话。",
-                24, 466, 732, 30, 13, Muted);
-            helpNotice = Label("Help Feedback", card, "", 24, 508, 732, 50, 15, Amber);
-            helpNotice.overflowMode = TextOverflowModes.Overflow;
+            help = Backdrop("Help Panel", root, new Color32(4, 12, 8, 210));
+            RectTransform card = Box("Help Card", help, 0, 0, 900, 608, Panel, true);
+            Center(card, 900, 608);
+            PanelRule(card, 900, 68);
+            Label("Help Heading", card, "操作与生存指南", 28, 16, 690, 38, 27, Ink, FontStyles.Bold);
+            Button("Close Help", card, "返回 H / Esc", 756, 20, 116, 34, () => SetPanel(help, false));
+            RectTransform content = ScrollContent("Help Scroll View", card, 28, 88, 844, 420, out _);
+            FlowLabel("Controls Title", content, "操作速查", 816, 30, 20, Accent);
+            FlowLabel("Controls Text", content,
+                "WASD 移动 · Shift 冲刺 · 滚轮缩放 · E 交互 / 采集\n左键攻击 / 放置 · 右键瞄准（建造时取消）\nR 装填（建造时旋转）· Q 切换武器 / 工具\n1–0 建造快捷栏 · T 科技 / 全设备 · X 拆除 · G 修理\nF 吃食 · C 燃料 · Ctrl+C 弹药 · B 背包 / 装备 / 制作\nTab 成长 · J 生存 · H 帮助 · Esc 关闭 / 会话 · F5 保存", 816, 172, 18, Ink);
+            FlowLabel("Tutorial Title", content, "从原始到核工业", 816, 30, 20, Accent);
+            FlowLabel("Production Tutorial", content,
+                "采集木材、矿石与废料；建造工作台和石炉，按 T 查看研究材料。\n原始 → 水力 → 蒸汽 → 低压 → 中压 → 高压 → 核工业，按顺序研究。\n传动轴传机械动力，管道传蒸汽；设备需要匹配动力和电压。\n变压器逐级降压；核反应堆需冷却并监测温度。", 816, 124, 18, Ink);
+            helpProgress = FlowLabel("Tutorial Progress", content, "", 816, 76, 16, Muted);
+            FlowLabel("HUD Expansion Help", content, "底部展开建造栏；右下工具菜单打开详细面板。设备检查可在工具菜单按需开启。", 816, 62, 17, Ink);
+            FlowLabel("Panel Hint", content, "打开面板时世界继续运行。Esc 优先关闭面板，其次取消建造，再打开会话。", 816, 56, 16, Amber);
+            helpNotice = Label("Help Feedback", card, "", 28, 530, 844, 56, 15, Amber);
             help.gameObject.SetActive(false);
         }
 
@@ -405,7 +377,14 @@ namespace DeadCircuit
         {
             machinePanel = Box("Mouse Inspector", game, 0, 184, 304, 390, HudSurface, true);
             TopRight(machinePanel, 18, 184, 304, 390);
-            machineTitle = Label("Inspection Title", machinePanel, "", 12, 8, 280, 28, 17, Accent, FontStyles.Bold);
+            PanelRule(machinePanel, 304, 40);
+            machineTitle = Label("Inspection Title", machinePanel, "", 12, 8, 226, 28, 17, Accent, FontStyles.Bold);
+            Button("Close Inspector", machinePanel, "收起", 246, 8, 46, 28, () =>
+            {
+                inspectorEnabled = false;
+                Set(inspectToggle.label, "设备检查：关");
+                HideInspector();
+            });
             RectTransform content = ScrollContent("Machine Scroll View", machinePanel, 10, 44, 284, 260, out machineScroll);
             // Safety stays at the top of the viewport, even when inventory needs scrolling.
             machineSafety = FlowLabel("Machine Safety", content, "", 260, 52, 14, Amber);
@@ -423,9 +402,10 @@ namespace DeadCircuit
 
         void MakeGrowth(RectTransform root)
         {
-            growth = Backdrop("Growth Modal", root, new Color32(4, 10, 11, 222));
+            growth = Backdrop("Growth Modal", root, new Color32(4, 12, 8, 225));
             RectTransform card = Box("Growth Card", growth, 0, 0, 1080, 606, Panel, true);
             Center(card, 1080, 606);
+            PanelRule(card, 1080, 100);
             Label("Growth Title", card, "幸存者成长", 24, 18, 750, 40, 28, Ink, FontStyles.Bold);
             growthSummary = Label("Growth Summary", card, "", 24, 66, 920, 26, 16, Muted);
             Button("Close Growth", card, "关闭 Esc", 930, 24, 126, 34, () => SetGrowth(false));
@@ -460,14 +440,14 @@ namespace DeadCircuit
             Label("Growth Rules", card, "属性上限 10；每点消耗 1 属性点。技能独立计点，按前置逐阶学习，第 1 / 2 / 3 阶需人物等级 1 / 3 / 5。",
                 24, 529, 1032, 24, 13, Muted);
             growthNotice = Label("Growth Feedback", card, "", 24, 559, 1032, 36, 15, Amber);
-            growthNotice.overflowMode = TextOverflowModes.Overflow;
         }
 
         void MakeDeath(RectTransform root)
         {
-            death = Backdrop("Death Modal", root, new Color32(20, 7, 8, 219));
+            death = Backdrop("Death Modal", root, new Color32(9, 19, 13, 235));
             RectTransform card = Box("Rescue Card", death, 0, 0, 570, 340, Panel, true);
             Center(card, 570, 340);
+            PanelRule(card, 570, 90);
             Label("Death Heading", card, "回路中断", 28, 26, 514, 52, 36, Danger, FontStyles.Bold);
             deathInfo = Label("Death Details", card, "", 28, 100, 514, 108, 18, Ink);
             respawnButton = Button("Respawn", card, "返回救援区", 28, 235, 244, 48, () => Send("respawn"), true);
@@ -488,6 +468,11 @@ namespace DeadCircuit
                 observedEra = -1;
                 lastPlayerNoticeExpiry = lastWorldNoticeExpiry = -1f;
                 ClosePanels();
+                buildTrayOpen = inspectorEnabled = false;
+                toolsTray.gameObject.SetActive(false);
+                Set(toolsToggle.label, "工具 / 菜单");
+                Set(inspectToggle.label, "设备检查：关");
+                if (!running) ShowMenuPage(MenuPage.Home);
                 if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
             }
             wasRunning = running;
@@ -499,7 +484,7 @@ namespace DeadCircuit
             death.gameObject.SetActive(dead);
             if (!running || dead)
             {
-                ClosePanels();
+                ClosePanels(running);
                 buildDetails.gameObject.SetActive(false);
                 machinePanel.gameObject.SetActive(false);
             }
@@ -510,7 +495,7 @@ namespace DeadCircuit
                 buildDetails.gameObject.SetActive(false);
                 machinePanel.gameObject.SetActive(false);
                 Set(feedback, "正在同步世界与角色，请稍候…");
-                Set(gameStatus, Clean(bridge.Status));
+                SetFlowText(gameStatus, Clean(bridge.Status));
                 return;
             }
             RefreshPlayer(world, player);
@@ -518,6 +503,7 @@ namespace DeadCircuit
             RefreshBuild(player);
             RefreshInspector(world, player);
             RefreshFeedback(world, player);
+            RefreshAdditionalPanels(world, player);
             if (inventory.gameObject.activeSelf) RefreshInventory(world, player);
             if (technology.gameObject.activeSelf) RefreshTechnology(world, player);
             if (growth.gameObject.activeSelf) RefreshGrowth(player);
@@ -530,21 +516,6 @@ namespace DeadCircuit
                     (delay > 0f ? "救援信号重新接入中，请稍候。" : "救援区准备就绪，点击下方按钮复活。") +
                     (player.noticeUntil > world.elapsed ? "\n" + Clean(player.notice) : ""));
             }
-        }
-
-        void RefreshMenu()
-        {
-            if (Time.unscaledTime >= saveCheckAt)
-            {
-                saveCheckAt = Time.unscaledTime + 1f;
-                try { hasSave = File.Exists(bridge.SavePath); }
-                catch (Exception) { hasSave = false; }
-            }
-            loadButton.button.interactable = hasSave;
-            Set(menuSave, hasSave ? "已找到本地世界存档 · 读取将继续上次进度" : "暂无本地存档 · 请先新建世界");
-            Set(menuStatus, CurrentLocalFeedback() ? Clean(localFeedback) : Clean(bridge.Status));
-            menuStatus.color = CurrentLocalFeedback() ? localFeedbackColor : StatusColor(bridge.Status);
-            Set(menuAddress, "本机局域网 IPv4：" + Clean(bridge.HostIP) + "\n端口 UDP 7777 · 同一局域网；加入时填写主机地址。");
         }
 
         void RefreshPlayer(WorldState world, PlayerState player)
@@ -568,8 +539,8 @@ namespace DeadCircuit
             }
             string goal = NextEraGoal(world, player);
             Set(eraText, "科技：" + TechCatalog.EraName(world.era) + "  ·  T 查看 / 建造");
-            Set(objectives, (era < 6 ? "下一时代 · " + TechCatalog.EraName((TechEra)(era + 1)) : "核工业运行") + "\n" + goal);
-            Set(helpProgress, "当前：" + TechCatalog.EraName(world.era) + "  ·  " + goal + "\n击杀 " + world.kills + "  ·  制造 " + world.manufactured);
+            SetFlowText(objectives, (era < 6 ? "下一时代 · " + TechCatalog.EraName((TechEra)(era + 1)) : "核工业运行") + "\n" + goal);
+            SetFlowText(helpProgress, "当前：" + TechCatalog.EraName(world.era) + "  ·  " + goal + "\n击杀 " + world.kills + "  ·  制造 " + world.manufactured);
         }
 
         void RefreshWorld(WorldState world)
@@ -586,11 +557,11 @@ namespace DeadCircuit
             waveText.color = remaining <= 30 ? Danger : Amber;
             int connected = 0;
             foreach (PlayerState peer in world.players) if (peer.connected) connected++;
-            Set(networkText, (bridge.IsHost ? "房主" : "客户端") + " · " + connected + "/4 人 · 丧尸 " + world.zombies.Count +
+            SetFlowText(networkText, (bridge.IsHost ? "房主" : "客户端") + " · " + connected + "/" + WorldSimulator.MaxPlayers + " 人 · 丧尸 " + world.zombies.Count +
                 "\n本机 IPv4：" + Clean(bridge.HostIP) + "  ·  UDP 7777");
             saveButton.button.interactable = bridge.IsHost;
             Set(saveButton.label, bridge.IsHost ? "保存 F5" : "仅房主可保存");
-            Set(gameStatus, Clean(bridge.Status));
+            SetFlowText(gameStatus, Clean(bridge.Status));
             gameStatus.color = StatusColor(bridge.Status);
             if (lastBridgeStatus != bridge.Status)
             {
@@ -611,10 +582,14 @@ namespace DeadCircuit
                 bool unlocked = valid && TechCatalog.IsUnlocked(world, hotbar[i]);
                 bool affordable = valid && CanAfford(player.items, costs[kind]);
                 Set(slots[i].label, ((i + 1) % 10) + "\n" + (valid ? DemoCatalog.BuildName(hotbar[i]) : "空"));
-                Tint(slots[i], valid && selected == kind ? new Color32(51, 94, 78, 255) : Raised);
+                Tint(slots[i], valid && selected == kind ? Selected : Raised);
                 slots[i].label.color = valid && selected == kind ? Accent : unlocked && affordable ? Ink : Muted;
                 slots[i].button.interactable = unlocked && player.hp > 0f && !AnyPanelOpen();
             }
+            bool available = player.hp > 0f && !AnyPanelOpen();
+            buildTray.gameObject.SetActive(available && (buildTrayOpen || selected >= 0));
+            buildToggle.button.gameObject.SetActive(available);
+            Set(buildToggle.label, buildTrayOpen || selected >= 0 ? "收起建造" : "展开建造 1–0");
             bool show = selected >= 0 && selected < costs.Length && player.hp > 0f && !AnyPanelOpen();
             buildDetails.gameObject.SetActive(show);
             if (!show)
@@ -622,7 +597,7 @@ namespace DeadCircuit
                 return;
             }
             int rotation = ((bridge.BuildRotation % 4) + 4) % 4;
-            Set(buildTitle, DemoCatalog.BuildNames[selected] + "  ·  " + DemoCatalog.Width((BuildKind)selected, rotation) + "×" + DemoCatalog.Height((BuildKind)selected, rotation) +
+            SetFlowText(buildTitle, DemoCatalog.BuildNames[selected] + "  ·  " + DemoCatalog.Width((BuildKind)selected, rotation) + "×" + DemoCatalog.Height((BuildKind)selected, rotation) +
                 " 格  ·  朝" + Directions[rotation] + "  [R 旋转]  ·  右键取消");
             text.Clear();
             for (int i = 0; i < costs[selected].Length; i++)
@@ -633,8 +608,8 @@ namespace DeadCircuit
                 text.Append(enough ? "<color=#A6D9BB>" : "<color=#F48071>");
                 text.Append(DemoCatalog.ItemNames[i]).Append(' ').Append(Count(player.items, i)).Append('/').Append(costs[selected][i]).Append("</color>");
             }
-            Set(buildCost, text.ToString());
-            Set(buildHelp, EnergyName(TechCatalog.EnergyTier((BuildKind)selected)) + " · " +
+            SetFlowText(buildCost, text.ToString());
+            SetFlowText(buildHelp, EnergyName(TechCatalog.EnergyTier((BuildKind)selected)) + " · " +
                 DemoCatalog.BuildDescriptions[selected] + "  ·  靠近后左键放置");
         }
 
@@ -646,7 +621,7 @@ namespace DeadCircuit
             {
                 string state = i == current ? "当前" : i < current ? "已解锁" : "待解锁";
                 Set(eraButtons[i].label, TechCatalog.EraName((TechEra)i) + "  ·  " + state);
-                Tint(eraButtons[i], i == selectedEra ? new Color32(51, 94, 78, 255) : Raised);
+                Tint(eraButtons[i], i == selectedEra ? Selected : Raised);
                 eraButtons[i].label.color = i == selectedEra ? Accent : i <= current ? Ink : Muted;
             }
             Set(technologyTitle, TechCatalog.EraName(target) + (selectedEra == current ? " · 当前时代" : selectedEra < current ? " · 已解锁" : " · 待解锁"));
@@ -682,7 +657,7 @@ namespace DeadCircuit
         void RefreshInspector(WorldState world, PlayerState player)
         {
             var mouse = Mouse.current;
-            if (AnyPanelOpen() || player.hp <= 0f || bridge.BuildSelection.HasValue || mouse == null)
+            if (!inspectorEnabled || AnyPanelOpen() || player.hp <= 0f || bridge.BuildSelection.HasValue || mouse == null)
             {
                 HideInspector();
                 return;
@@ -887,20 +862,6 @@ namespace DeadCircuit
              value.Contains("下一层需") || value.Contains("人物占据") || value.Contains("只有房主") ||
              value.Contains("暂时无法"));
 
-        void StartNew()
-        {
-            if (!int.TryParse(seedField.text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int seed))
-            { Notify("种子需为 -2147483648 至 2147483647 的整数。", true); return; }
-            bridge.PlayerName = ReadName();
-            CallBridge(() => bridge.StartHost(seed, false));
-        }
-
-        void Load()
-        {
-            bridge.PlayerName = ReadName();
-            CallBridge(() => bridge.StartHost(0, true));
-        }
-
         void Join()
         {
             string value = ipField.text.Trim();
@@ -983,16 +944,29 @@ namespace DeadCircuit
             SendInspected("recipe", options[(index + 1) % options.Count].id);
         }
 
-        bool AnyPanelOpen() => inventory.gameObject.activeSelf || growth.gameObject.activeSelf ||
-            session.gameObject.activeSelf || help.gameObject.activeSelf || technology.gameObject.activeSelf;
+        bool AnyPanelOpen()
+        {
+            bool open = inventory.gameObject.activeSelf || growth.gameObject.activeSelf ||
+                session.gameObject.activeSelf || help.gameObject.activeSelf || technology.gameObject.activeSelf || settingsPanel.gameObject.activeSelf;
+            HasAdditionalPanelOpen(ref open);
+            return open;
+        }
 
-        void ClosePanels()
+        void ClosePanels(bool includeSettings = true)
         {
             inventory.gameObject.SetActive(false);
             growth.gameObject.SetActive(false);
             session.gameObject.SetActive(false);
             help.gameObject.SetActive(false);
             technology.gameObject.SetActive(false);
+            toolsTray.gameObject.SetActive(false);
+            Set(toolsToggle.label, "工具 / 菜单");
+            if (includeSettings)
+            {
+                if (settingsPanel.gameObject.activeSelf) PlayerPrefs.Save();
+                settingsPanel.gameObject.SetActive(false);
+            }
+            CloseAdditionalPanels();
         }
 
         void SetGrowth(bool open) => SetPanel(growth, open);
@@ -1000,10 +974,15 @@ namespace DeadCircuit
         void SetPanel(RectTransform panel, bool open)
         {
             if (!bridge.IsRunning || bridge.World == null || bridge.LocalPlayer == null || bridge.LocalPlayer.hp <= 0f) open = false;
+            bool hadPanel = AnyPanelOpen();
+            bool samePanel = panel != null && panel.gameObject.activeSelf;
             ClosePanels();
+            toolsTray.gameObject.SetActive(false);
+            Set(toolsToggle.label, "工具 / 菜单");
             if (open && panel != null)
             {
                 bridge.BuildSelection = null;
+                buildTrayOpen = false;
                 if (panel == technology)
                 {
                     selectedEra = Mathf.Min((int)bridge.World.era + 1, eraButtons.Length - 1);
@@ -1011,6 +990,8 @@ namespace DeadCircuit
                 }
                 panel.gameObject.SetActive(true);
             }
+            if (hadPanel && (!open || panel == null || !samePanel)) DemoAudio.UiClose();
+            if (open && panel != null && !samePanel) DemoAudio.UiOpen();
             HideInspector();
             guardThroughFrame = Time.frameCount + 1;
             if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
@@ -1298,7 +1279,7 @@ namespace DeadCircuit
         RectTransform ScrollContent(string name, Transform parent, float x, float top, float width, float height,
             out UnityEngine.UI.ScrollRect scroll, bool inventoryGrid = false)
         {
-            RectTransform root = Box(name, parent, x, top, width, height, new Color32(12, 23, 24, 255), true);
+            RectTransform root = Box(name, parent, x, top, width, height, Recessed, true);
             scroll = root.gameObject.AddComponent<UnityEngine.UI.ScrollRect>();
             scroll.horizontal = false;
             scroll.vertical = true;
@@ -1397,7 +1378,7 @@ namespace DeadCircuit
             label.fontSize = size;
             // CJK face metrics need more vertical room than Latin UI defaults.
             label.enableAutoSizing = true;
-            label.fontSizeMin = Mathf.Max(10f, size * .72f);
+            label.fontSizeMin = Mathf.Max(12f, size * .88f);
             label.fontSizeMax = size;
             label.fontStyle = style;
             label.color = color;
@@ -1411,21 +1392,59 @@ namespace DeadCircuit
 
         UiButton Button(string name, Transform parent, string value, float x, float top, float width, float height, Action action, bool primary = false)
         {
-            RectTransform rect = Box(name, parent, x, top, width, height, primary ? new Color32(57, 94, 76, 255) : Raised, true);
+            RectTransform rect = Box(name, parent, x, top, width, height, primary ? Selected : Raised, true);
             var button = rect.gameObject.AddComponent<UnityEngine.UI.Button>();
             button.targetGraphic = rect.GetComponent<UnityEngine.UI.Image>();
-            TextMeshProUGUI label = Label("Label", rect, value, 5, 0, width - 10, height, height <= 34 ? 13 : 17, primary ? Accent : Ink);
+            TextMeshProUGUI label = Label("Label", rect, value, 5, 0, width - 10, height, height <= 36 ? 14 : 17, primary ? Accent : Ink);
             Stretch(label.rectTransform, 5, 0, 5, 0);
             label.alignment = TextAlignmentOptions.Center;
-            button.onClick.AddListener(() => action());
+            button.onClick.AddListener(() => { DemoAudio.UiClick(); action(); });
+            button.navigation = new UnityEngine.UI.Navigation { mode = UnityEngine.UI.Navigation.Mode.Automatic };
             var widget = new UiButton { button = button, image = rect.GetComponent<UnityEngine.UI.Image>(), label = label };
             Tint(widget, widget.image.color);
             return widget;
         }
 
+        UnityEngine.UI.Image MakeHudArt(string name, Transform parent, float x, float top, float size)
+        {
+            RectTransform rect = NewRect(name, parent);
+            Place(rect, x, top, size, size);
+            var icon = rect.gameObject.AddComponent<UnityEngine.UI.Image>();
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+            icon.enabled = false;
+            return icon;
+        }
+
+        static void SetHudArt(UnityEngine.UI.Image icon, string key)
+        {
+            Sprite sprite = string.IsNullOrEmpty(key) ? null : DemoArt.Get(key);
+            if (icon.sprite != sprite) icon.sprite = sprite;
+            icon.enabled = sprite != null;
+        }
+
+        void SetButtonArt(UiButton widget, string key, float size = 32)
+        {
+            if (widget.icon == null)
+            {
+                widget.icon = MakeHudArt("Item Icon", widget.button.transform, 10, 0, size);
+                RectTransform rect = widget.icon.rectTransform;
+                rect.anchorMin = rect.anchorMax = new Vector2(0, .5f);
+                rect.pivot = new Vector2(0, .5f);
+                rect.anchoredPosition = new Vector2(10, 0);
+            }
+            SetHudArt(widget.icon, key);
+            Vector2 min = widget.label.rectTransform.offsetMin;
+            Vector2 max = widget.label.rectTransform.offsetMax;
+            min.x = widget.icon.enabled ? size + 20 : 10;
+            max.x = -8;
+            widget.label.rectTransform.offsetMin = min;
+            widget.label.rectTransform.offsetMax = max;
+        }
+
         TMP_InputField Input(string name, Transform parent, string value, string placeholder, float x, float top, float width, float height, int limit)
         {
-            RectTransform rect = Box(name, parent, x, top, width, height, new Color32(9, 19, 21, 255), true);
+            RectTransform rect = Box(name, parent, x, top, width, height, Recessed, true);
             TMP_InputField field = rect.gameObject.AddComponent<TMP_InputField>();
             field.targetGraphic = rect.GetComponent<UnityEngine.UI.Image>();
             RectTransform viewport = NewRect("Text Area", rect);
@@ -1459,8 +1478,8 @@ namespace DeadCircuit
             colors.normalColor = normal;
             colors.highlightedColor = Color.Lerp(normal, Accent, .20f);
             colors.pressedColor = Color.Lerp(normal, Accent, .35f);
-            colors.selectedColor = normal;
-            colors.disabledColor = Color.Lerp(normal, new Color32(13, 21, 23, 255), .55f);
+            colors.selectedColor = Color.Lerp(normal, Accent, .24f);
+            colors.disabledColor = Color.Lerp(normal, Recessed, .48f);
             colors.colorMultiplier = 1f;
             colors.fadeDuration = .08f;
             widget.image.color = Color.white;

@@ -48,7 +48,7 @@ namespace DeadCircuit
                 GainXp(p, amount * 2);
                 p.interactCooldown = 0.4f * (1f - p.attributes[0] * 0.025f);
                 if(bonus>0) p.interactCooldown*=bonus>=5 ? .5f : .75f;
-                if (n.stock == 0) RemoveNode(n);
+                if (n.stock == 0) { AwardForageLoot(p, n); RemoveNode(n); }
                 Notice(p, "采集 " + DemoCatalog.ItemNames[item] + " +" + amount);
                 return;
             }

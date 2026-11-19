@@ -13,6 +13,9 @@ namespace DeadCircuit
             return WorldGeneration.Generate(new WorldGenerationSettings { seed = seed });
         }
 
+        // Called only by the new-world generator. Restore/migration must remain inert.
+        internal static void PrepareGeneratedWorld(WorldState world) => InitializeSurvivalWorld(world, true);
+
         private static NodeState NewNode(int id, int x, int y, NodeKind kind, int stock)
         {
             return new NodeState { id = id, x = x, y = y, kind = kind, stock = stock, hp = kind == NodeKind.Wall ? 160f : 35f };

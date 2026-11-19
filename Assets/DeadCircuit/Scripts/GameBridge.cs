@@ -18,7 +18,7 @@ using Unity.Netcode.Transports.UTP;
 namespace DeadCircuit
 {
     // The simulator is the only writer of game state. Clients send intent, never inventory.
-    public sealed class GameBridge : MonoBehaviour
+    public sealed partial class GameBridge : MonoBehaviour
     {
         public static GameBridge Instance { get; private set; }
         public WorldState World { get; private set; }
@@ -31,7 +31,7 @@ namespace DeadCircuit
         public BuildKind? BuildSelection { get; set; }
         public int BuildRotation { get; set; }
         public bool WorldInputBlocked => hud != null && hud.CapturesInput;
-        public string SavePath => Path.Combine(Application.persistentDataPath, smokeHost || smokeClient ? "smoke-world-v1.json" : qaRun ? "qa-world-v1.json" : "world-v1.json");
+        public string SavePath => ResolveSavePath();
         public Vector2 MouseWorld
         {
             get
@@ -77,6 +77,7 @@ namespace DeadCircuit
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
+            qaRun = Array.IndexOf(Environment.GetCommandLineArgs(), "--demo-qa") >= 0;
             Application.runInBackground = true;
             Application.targetFrameRate = 60;
             QualitySettings.vSyncCount = 0;
@@ -99,6 +100,9 @@ namespace DeadCircuit
             view.Init(this);
             hud = gameObject.AddComponent<DemoHud>();
             hud.Init(this);
+            var audio = gameObject.AddComponent<DemoAudio>();
+            audio.Init(this);
+            audio.SetVolumePreferences("DeadCircuit.MasterVolume", "DeadCircuit.EffectsVolume");
         }
 
         IEnumerator Start()
@@ -129,7 +133,12 @@ namespace DeadCircuit
                     if (new FileInfo(SavePath).Length > 4 * 1024 * 1024) throw new InvalidDataException("存档过大");
                     simulator = new WorldSimulator(JsonUtility.FromJson<WorldState>(File.ReadAllText(SavePath, Encoding.UTF8)));
                 }
-                else simulator = smokeHost ? new WorldSimulator(CreateSmokeState(seed)) : new WorldSimulator(seed);
+                else
+                {
+                    if (!smokeHost && !qaRun && pendingGeneration == null) activeWorldId = Guid.NewGuid().ToString("N");
+                    simulator = smokeHost ? new WorldSimulator(CreateSmokeState(seed)) : pendingGeneration != null ?
+                        new WorldSimulator(WorldGeneration.Generate(pendingGeneration)) : new WorldSimulator(seed);
+                }
                 World = simulator.State;
                 foreach (var p in World.players) p.connected = false;
                 simulator.AddPlayer(profileId, CleanName(PlayerName));
@@ -202,7 +211,7 @@ namespace DeadCircuit
                 using (var writer = new FastBufferWriter(4096, Allocator.Temp))
                 {
                     writer.WriteValueSafe(json);
-                    network.CustomMessagingManager.SendNamedMessage("dc.cmd.v4", NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableSequenced);
+                    network.CustomMessagingManager.SendNamedMessage("dc.cmd.v6", NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableSequenced);
                 }
             }
 #endif
@@ -297,10 +306,14 @@ namespace DeadCircuit
             if (!IsRunning || !IsHost || simulator == null) { if (notify) Status = "只有房主能保存世界。"; return; }
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(SavePath));
-                string temporary = SavePath + ".tmp";
-                File.WriteAllText(temporary, JsonUtility.ToJson(simulator.State), new UTF8Encoding(false));
-                if (File.Exists(SavePath)) File.Replace(temporary, SavePath, null); else File.Move(temporary, SavePath);
+                if (activeWorldId != null && !smokeHost && !smokeClient && !qaRun) Archive.Write(activeWorldId, simulator.State);
+                else
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(SavePath));
+                    string temporary = SavePath + ".tmp";
+                    File.WriteAllText(temporary, JsonUtility.ToJson(simulator.State), new UTF8Encoding(false));
+                    if (File.Exists(SavePath)) File.Replace(temporary, SavePath, null); else File.Move(temporary, SavePath);
+                }
                 if (notify) Status = "世界已保存 · " + DateTime.Now.ToString("HH:mm:ss");
             }
             catch (Exception e) { Status = "保存失败：" + e.Message; Debug.LogWarning(Status); }
@@ -354,7 +367,7 @@ namespace DeadCircuit
         void OnApplicationQuit() { if (IsHost) SaveInternal(false); }
 
 #if DEADCIRCUIT_NETCODE
-        [Serializable] sealed class JoinTicket { public int version = 4; public string id, name; }
+        [Serializable] sealed class JoinTicket { public int version = WorldSimulator.SaveVersion; public string id, name; }
         byte[] TicketBytes() => Encoding.UTF8.GetBytes(JsonUtility.ToJson(new JoinTicket { id = profileId, name = CleanName(PlayerName) }));
         void SetupNetwork()
         {
@@ -369,8 +382,8 @@ namespace DeadCircuit
         }
         void RegisterMessages()
         {
-            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.cmd.v4", ReceiveCommand);
-            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.world.v4", ReceiveWorld);
+            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.cmd.v6", ReceiveCommand);
+            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.world.v6", ReceiveWorld);
         }
         void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
@@ -380,7 +393,7 @@ namespace DeadCircuit
             {
                 if (request.Payload == null || request.Payload.Length > 512) throw new InvalidDataException("加入资料无效");
                 var ticket = JsonUtility.FromJson<JoinTicket>(Encoding.UTF8.GetString(request.Payload));
-                if (ticket == null || ticket.version != 4 || !Guid.TryParse(ticket.id, out var guid)) throw new InvalidDataException("Demo 版本不一致");
+                if (ticket == null || ticket.version != WorldSimulator.SaveVersion || !Guid.TryParse(ticket.id, out var guid)) throw new InvalidDataException("Demo 版本不一致");
                 string id = guid.ToString("N");
                 if (request.ClientNetworkId != NetworkManager.ServerClientId && peers.Values.Contains(id)) throw new InvalidDataException("此角色已在游戏中，请关闭重复连接");
                 if (peers.Count >= 4) throw new InvalidDataException("房间已满（最多4人）");
@@ -460,7 +473,7 @@ namespace DeadCircuit
                         output.Write(buffer, 0, read);
                     }
                     var next = JsonUtility.FromJson<WorldState>(Encoding.UTF8.GetString(output.ToArray()));
-                    if (next == null || next.version != 4 || next.tick < lastSnapshotTick || next.width != 64 || next.height != 64 || next.ground?.Length != 4096) return;
+                    if (next == null || next.version != WorldSimulator.SaveVersion || next.tick < lastSnapshotTick || next.width != 64 || next.height != 64 || next.ground?.Length != 4096) return;
                     lastSnapshotTick = next.tick;
                     World = next;
                     if (!IsRunning) { IsRunning = true; connecting = false; ResetClocks(); }
@@ -488,7 +501,7 @@ namespace DeadCircuit
                 writer.WriteBytesSafe(bytes);
                 foreach (ulong client in network.ConnectedClientsIds)
                     if (client != NetworkManager.ServerClientId)
-                        network.CustomMessagingManager.SendNamedMessage("dc.world.v4", client, writer, NetworkDelivery.ReliableFragmentedSequenced);
+                        network.CustomMessagingManager.SendNamedMessage("dc.world.v6", client, writer, NetworkDelivery.ReliableFragmentedSequenced);
             }
 #endif
         }
@@ -540,7 +553,7 @@ namespace DeadCircuit
             if (IsRunning && LocalPlayer != null)
             {
                 if (World.players.Count(p => p.connected) >= 2) smokeSawPeer = true;
-                if (World.version == 4 && World.powerNetworks != null && World.powerNetworks.Count > 0 &&
+                if (World.version == WorldSimulator.SaveVersion && World.powerNetworks != null && World.powerNetworks.Count > 0 &&
                     World.buildings.Any(b => b.kind == BuildKind.Assembler && DemoCatalog.Width(b) == 3 && b.powerRatio > 0)) smokeSawGrid = true;
                 if (World.cargo != null && World.cargo.Any(c => c.progress > 0 && c.progress < 1)) smokeSawCargo = true;
                 if (World.era >= TechEra.MediumVoltage) smokeSawResearch = true;

@@ -10,7 +10,7 @@ static partial class Checks
         Run("world generation public seed constructor produces version five", () =>
         {
             var sim = new WorldSimulator(73149);
-            Require(sim.State.version == 5, "seed constructor did not create a v5 world");
+            Require(sim.State.version == WorldSimulator.SaveVersion, "seed constructor did not create a current world");
             Require(sim.State.generation != null && sim.State.generation.seed == 73149 && sim.State.sites.Count > 0, "seed constructor bypassed the generator");
         });
         Run("world generation seed text has stable numeric and literal answers", () =>
@@ -160,7 +160,7 @@ static partial class Checks
 
     static void GenerationMapContract(WorldState state)
     {
-        Require(state.version == 5 && state.generatorVersion == 1 && state.width == 64 && state.height == 64, "generation version/dimensions");
+        Require(state.version == WorldSimulator.SaveVersion && state.generatorVersion == 1 && state.width == 64 && state.height == 64, "generation version/dimensions");
         Require(state.generation != null && state.generation.seed == state.seed, "missing/resolved seed metadata");
         Require(state.ground.Length == 4096 && state.ground.All(c => c >= '0' && c <= '4'), "invalid terrain");
         Require(state.biomes.Length == 4096 && state.biomes.All(c => c >= '0' && c <= '5') && state.biomes.Distinct().Count() == 6, "missing or invalid biome layer");

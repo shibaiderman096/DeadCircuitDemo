@@ -1,0 +1,1361 @@
+[
+  {
+    "name": "terrain_0",
+    "label": "Meadow seamless opaque ground",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "terrain_1",
+    "label": "DeciduousForest seamless opaque ground",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "terrain_2",
+    "label": "ConiferousForest seamless opaque ground",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "terrain_3",
+    "label": "Desert seamless opaque ground",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "terrain_4",
+    "label": "Wetland seamless opaque ground",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "terrain_5",
+    "label": "Tundra seamless opaque ground",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_0",
+    "label": "Meadow ecology cluster",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_1",
+    "label": "DeciduousForest ecology cluster",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_2",
+    "label": "ConiferousForest ecology cluster",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_3",
+    "label": "Desert ecology cluster",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_4",
+    "label": "Wetland ecology cluster",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_5",
+    "label": "Tundra ecology cluster",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_0",
+    "label": "Residence / \u4f4f\u5b85 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_1",
+    "label": "Shop / \u5546\u5e97 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_2",
+    "label": "Warehouse / \u4ed3\u5e93 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_3",
+    "label": "Workshop / \u8f66\u95f4 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_4",
+    "label": "Clinic / \u8bca\u6240 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_5",
+    "label": "Farmhouse / \u519c\u820d entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_6",
+    "label": "GasStation / \u52a0\u6cb9\u7ad9 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_7",
+    "label": "PoliceStation / \u8b66\u5c40 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_8",
+    "label": "School / \u5b66\u6821 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_9",
+    "label": "Apartment / \u516c\u5bd3 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_10",
+    "label": "Greenhouse / \u6e29\u5ba4 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "site_11",
+    "label": "Substation / \u53d8\u7535\u7ad9 entrance",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_0_0",
+    "label": "Carrot seedling",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_0_1",
+    "label": "Carrot mature",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_1_0",
+    "label": "Potato seedling",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_1_1",
+    "label": "Potato mature",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_2_0",
+    "label": "Corn seedling",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_2_1",
+    "label": "Corn mature",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_3_0",
+    "label": "Wheat seedling",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_3_1",
+    "label": "Wheat mature",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_4_0",
+    "label": "Tomato seedling",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_4_1",
+    "label": "Tomato mature",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_5_0",
+    "label": "Pumpkin seedling",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_5_1",
+    "label": "Pumpkin mature",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_6_0",
+    "label": "Beans seedling",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_6_1",
+    "label": "Beans mature",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_7_0",
+    "label": "Herb seedling",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "crop_7_1",
+    "label": "Herb mature",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_0",
+    "label": "Hare",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_1",
+    "label": "Deer",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_2",
+    "label": "Boar",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_3",
+    "label": "Chicken",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_4",
+    "label": "Wolf",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_5",
+    "label": "Bear",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_6",
+    "label": "Fox",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_7",
+    "label": "Goat",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_8",
+    "label": "Cattle",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_9",
+    "label": "Sheep",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_10",
+    "label": "Duck",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "creature_11",
+    "label": "Pheasant",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_0",
+    "label": "Walker / \u666e\u901a\u4e27\u5c38",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_1",
+    "label": "Sprinter / \u5feb\u8dd1\u4e27\u5c38",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_2",
+    "label": "Brute / \u66b4\u5f92\u4e27\u5c38",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_3",
+    "label": "Crawler / \u722c\u884c\u4e27\u5c38",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_4",
+    "label": "Spitter / \u55b7\u5410\u4e27\u5c38",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_5",
+    "label": "Armored / \u88c5\u7532\u4e27\u5c38",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_6",
+    "label": "Burning / \u71c3\u70e7\u4e27\u5c38",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_7",
+    "label": "Screamer / \u5c16\u5578\u4e27\u5c38",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_8",
+    "label": "Hazmat / \u9632\u5316\u611f\u67d3\u8005",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_9",
+    "label": "Frost / \u51bb\u4f24\u4e27\u5c38",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_10",
+    "label": "Bomber / \u81ea\u7206\u4e27\u5c38",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "enemy_11",
+    "label": "NightElite / \u591c\u884c\u7cbe\u82f1",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_0",
+    "label": "berry shrub",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_1",
+    "label": "felled stump",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_2",
+    "label": "fallen log",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_3",
+    "label": "ore outcrop",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_4",
+    "label": "reed fan",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_5",
+    "label": "mushroom patch",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_6",
+    "label": "dead tree",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_7",
+    "label": "hazard barrel",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_rain",
+    "label": "rain static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_snow",
+    "label": "snow static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_dust",
+    "label": "dust static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_fog",
+    "label": "fog static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_muzzle",
+    "label": "muzzle static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_spark",
+    "label": "spark static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_flame",
+    "label": "flame static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_ice",
+    "label": "ice static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_soil",
+    "label": "soil static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_poison",
+    "label": "poison static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_wave",
+    "label": "wave static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_lightning",
+    "label": "lightning static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_ember",
+    "label": "ember static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_fire_large",
+    "label": "fire_large static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_frost_cloud",
+    "label": "frost_cloud static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_ice_shard",
+    "label": "ice_shard static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_hit_flesh",
+    "label": "hit_flesh static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_hit_metal",
+    "label": "hit_metal static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_hit_wood",
+    "label": "hit_wood static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_muzzle_shotgun",
+    "label": "muzzle_shotgun static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_muzzle_rifle",
+    "label": "muzzle_rifle static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_muzzle_sniper",
+    "label": "muzzle_sniper static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_explosion",
+    "label": "explosion static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "fx_smoke",
+    "label": "smoke static FX",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_0",
+    "label": "\u9632\u62a4\u5899 / Wall",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_1",
+    "label": "\u71c3\u6599\u53d1\u7535\u673a / Generator",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_2",
+    "label": "\u91c7\u77ff\u673a / Miner",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_3",
+    "label": "\u4f20\u9001\u5e26 / Belt",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_4",
+    "label": "\u7194\u7089 / Smelter",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_5",
+    "label": "\u88c5\u914d\u673a / Assembler",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_6",
+    "label": "\u673a\u67aa\u5854 / Turret",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_7",
+    "label": "\u50a8\u7269\u7bb1 / Chest",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_8",
+    "label": "\u7535\u7ebf\u6746 / PowerPole",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_9",
+    "label": "\u592a\u9633\u80fd\u677f / SolarPanel",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_10",
+    "label": "\u5de5\u4f5c\u53f0 / Workbench",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_11",
+    "label": "\u77f3\u7089 / StoneFurnace",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_12",
+    "label": "\u6c34\u8f66 / Waterwheel",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_13",
+    "label": "\u4f20\u52a8\u8f74 / Shaft",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_14",
+    "label": "\u673a\u68b0\u7c89\u788e\u673a / MechanicalCrusher",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_15",
+    "label": "\u9505\u7089 / Boiler",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_16",
+    "label": "\u84b8\u6c7d\u7ba1 / SteamPipe",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_17",
+    "label": "\u84b8\u6c7d\u91c7\u77ff\u673a / SteamMiner",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_18",
+    "label": "\u84b8\u6c7d\u9ad8\u7089 / SteamFurnace",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_19",
+    "label": "\u84b8\u6c7d\u8f6e\u673a / SteamTurbine",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_20",
+    "label": "\u7535\u8def\u88c5\u914d\u673a / CircuitAssembler",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_21",
+    "label": "\u67f4\u6cb9\u53d1\u7535\u673a / DieselGenerator",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_22",
+    "label": "\u5316\u5de5\u5382 / ChemicalPlant",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_23",
+    "label": "\u4e2d\u538b\u7535\u6746 / MediumPole",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_24",
+    "label": "\u53d8\u538b\u5668 / Transformer",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_25",
+    "label": "\u9ad8\u538b\u53d1\u7535\u673a / HighGenerator",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_26",
+    "label": "\u9ad8\u538b\u7535\u6746 / HighPole",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_27",
+    "label": "\u7cbe\u5bc6\u88c5\u914d\u673a / PrecisionAssembler",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_28",
+    "label": "\u6838\u71c3\u6599\u5904\u7406\u673a / NuclearProcessor",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_29",
+    "label": "\u6838\u53cd\u5e94\u5806 / Reactor",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_30",
+    "label": "\u51b7\u5374\u5854 / CoolingTower",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_0",
+    "label": "Tree world resource node",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_1",
+    "label": "Ore world resource node",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_2",
+    "label": "Scrap world resource node",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_3",
+    "label": "Crate world resource node",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_4",
+    "label": "Wall world resource node",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_5",
+    "label": "CopperOre world resource node",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_6",
+    "label": "TinOre world resource node",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_7",
+    "label": "UraniumOre world resource node",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_0_0",
+    "label": "survivor E gait 0",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_0_1",
+    "label": "survivor E gait 1",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_0_2",
+    "label": "survivor E gait 2",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_0_3",
+    "label": "survivor E gait 3",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_1_0",
+    "label": "survivor N gait 0",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_1_1",
+    "label": "survivor N gait 1",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_1_2",
+    "label": "survivor N gait 2",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_1_3",
+    "label": "survivor N gait 3",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_2_0",
+    "label": "survivor W gait 0",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_2_1",
+    "label": "survivor W gait 1",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_2_2",
+    "label": "survivor W gait 2",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_2_3",
+    "label": "survivor W gait 3",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_3_0",
+    "label": "survivor S gait 0",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_3_1",
+    "label": "survivor S gait 1",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_3_2",
+    "label": "survivor S gait 2",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "survivor_3_3",
+    "label": "survivor S gait 3",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  }
+]

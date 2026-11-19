@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 5;
+        public const int SaveVersion = 6;
         public const int MaxPlayers = 8, MaxNodes = 1400, MaxBuildings = 1024;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -72,6 +72,7 @@ namespace DeadCircuit
             GiveStartingGear(State,p,false);
             State.players.Add(p);
             inputs.Add(id, new HeldInput { protectionUntil = State.elapsed + 4f });
+            InitializeSurvivalPlayer(p, true);
             Notice(p, "原始开局：采矿、3木材制2燃料，石炉炼铁铜锡。水车保底岸位(25,25)，科技全队共享。");
             flowRevision = -1;
             return p;
@@ -115,6 +116,7 @@ namespace DeadCircuit
             if (action == "respawn") { Respawn(p); return; }
             if (p.hp <= 0f) return;
             RefreshSpatial();
+            if (ApplySurvival(p, cmd)) return;
             switch (action)
             {
                 case "attack":
@@ -182,6 +184,7 @@ namespace DeadCircuit
             RefreshSpatial();
             RefreshBonuses();
             foreach (PlayerState p in State.players) UpdatePlayer(p);
+            UpdateSurvival();
             RefreshPower(true);
             UpdateProduction();
             UpdateTurrets();
@@ -207,10 +210,12 @@ namespace DeadCircuit
             if (sprinting) speed *= 1.6f;
             if (p.aiming) speed *= .6f;
             speed*=1f-EquipmentCatalog.MovementPenalty(p);
+            speed *= SurvivalMovementMultiplier(p);
             if (p.hunger <= 0f) speed *= 0.7f;
             MoveCircle(ref p.x, ref p.y, input.x * speed * FixedStep, input.y * speed * FixedStep, 0.28f);
             p.stamina = Clamp(p.stamina + (sprinting ? -19f : 13f + p.skills[2] * 2f) * FixedStep, 0f, PlayerMaxStamina(p));
             float hungerRate = 0.085f * (1f - p.skills[2] * 0.15f) * (sprinting ? 2.8f : 1f);
+            hungerRate *= SurvivalHungerMultiplier(p);
             p.hunger = Math.Max(0f, p.hunger - hungerRate * FixedStep);
             if (p.hunger <= 0f) DamagePlayer(p, 2.5f * FixedStep, false);
             else if (p.hunger >= 60f && State.elapsed - p.lastDamageAt > 7f)
@@ -226,6 +231,7 @@ namespace DeadCircuit
             if (State.buildings.Count >= MaxBuildings) { Notice(p, "设备数量已达上限。"); return; }
             for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
             {
+                if (SurvivalOccupiesCell(x, y)) { Notice(p, "设备占地内有农田或生物。"); return; }
                 if (BlockedAt(x, y) || BuildingAt(x, y) != null) { Notice(p, "完整占地内有障碍、水域或其他设备。"); return; }
                 if (NearSpawn(x, y)) { Notice(p, "出生救援区不可建造。"); return; }
                 if (kind != BuildKind.Belt && OccupiedByActor(x, y)) { Notice(p, "人物占据设备范围。"); return; }
@@ -358,6 +364,7 @@ namespace DeadCircuit
             if (!FindSpawn(out x, out y)) { Notice(p, "救援区被敌人封锁，暂时无法复活。"); return; }
             p.x = x; p.y = y; p.hp = PlayerMaxHealth(p); p.stamina = PlayerMaxStamina(p);
             p.hunger = Math.Max(45f, p.hunger); p.attackCooldown = 0.5f;
+            ResetSurvivalAfterRespawn(p);
             p.lastDamageAt = State.elapsed;
             HeldInput input = inputs[p.id]; input.x = input.y = 0f; input.sprint = false; input.protectionUntil = State.elapsed + 5f;
             Notice(p, "已在救援区复活，保留背包与成长；短暂无敌。"); flowRevision = -1;

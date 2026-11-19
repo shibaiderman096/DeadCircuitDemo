@@ -1,0 +1,360 @@
+{
+  "status": "pass",
+  "runtimeFileCount": 4,
+  "totalSprites": 241,
+  "atlases": [
+    {
+      "name": "icons",
+      "size": [
+        576,
+        216
+      ],
+      "sprites": 90,
+      "pngSHA256": "16bf80d4b170cccbce0a472b6448013315ea9146f0e89f1e2a49032815aad108"
+    },
+    {
+      "name": "world",
+      "size": [
+        576,
+        360
+      ],
+      "sprites": 151,
+      "pngSHA256": "0a9b5a411489e6885eeb2bdca69fbaf00f5577b36972ab4885e77a453258eb5f"
+    }
+  ],
+  "duplicateFramesAcrossBoth": 0,
+  "issues": [],
+  "audio": {
+    "manifestCues": 30,
+    "directSurvivalAccess": true,
+    "masterKey": "DeadCircuit.MasterVolume",
+    "effectsKey": "DeadCircuit.EffectsVolume",
+    "defaults": [
+      0.7,
+      0.8
+    ],
+    "syntaxCheck": "Roslyn ParseText: 0 errors (separately executed)",
+    "compiled": false,
+    "listened": false
+  },
+  "execution": {
+    "git": false,
+    "unityOrGameRun": false,
+    "build": false,
+    "gui": false,
+    "imageService": false
+  },
+  "enemyCatalog": {
+    "status": "pass",
+    "source": "D:\\unity\\DeadCircuitDemo\\Assets\\DeadCircuit\\Scripts\\Core\\EnemyCatalog.cs",
+    "sourceSHA256": "a4f33f06f1fbf6a68a80fae98d88beba7407de648ce30e26ec013677f2bd9fd3",
+    "count": 12,
+    "variantIndicesMatch": true,
+    "namePrefixesMatch": true,
+    "entries": [
+      {
+        "key": "enemy_0",
+        "variant": 0,
+        "englishPrefix": "Walker",
+        "coreNamePrefix": "普通",
+        "coreName": "普通丧尸",
+        "catalogLabel": "Walker / 普通丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_1",
+        "variant": 1,
+        "englishPrefix": "Sprinter",
+        "coreNamePrefix": "快跑",
+        "coreName": "快跑丧尸",
+        "catalogLabel": "Sprinter / 快跑丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_2",
+        "variant": 2,
+        "englishPrefix": "Brute",
+        "coreNamePrefix": "暴徒",
+        "coreName": "暴徒丧尸",
+        "catalogLabel": "Brute / 暴徒丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_3",
+        "variant": 3,
+        "englishPrefix": "Crawler",
+        "coreNamePrefix": "爬行",
+        "coreName": "爬行丧尸",
+        "catalogLabel": "Crawler / 爬行丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_4",
+        "variant": 4,
+        "englishPrefix": "Spitter",
+        "coreNamePrefix": "喷吐",
+        "coreName": "喷吐丧尸",
+        "catalogLabel": "Spitter / 喷吐丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_5",
+        "variant": 5,
+        "englishPrefix": "Armored",
+        "coreNamePrefix": "装甲",
+        "coreName": "装甲丧尸",
+        "catalogLabel": "Armored / 装甲丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_6",
+        "variant": 6,
+        "englishPrefix": "Burning",
+        "coreNamePrefix": "燃烧",
+        "coreName": "燃烧丧尸",
+        "catalogLabel": "Burning / 燃烧丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_7",
+        "variant": 7,
+        "englishPrefix": "Screamer",
+        "coreNamePrefix": "尖啸",
+        "coreName": "尖啸丧尸",
+        "catalogLabel": "Screamer / 尖啸丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_8",
+        "variant": 8,
+        "englishPrefix": "Hazmat",
+        "coreNamePrefix": "防化",
+        "coreName": "防化感染者",
+        "catalogLabel": "Hazmat / 防化感染者",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_9",
+        "variant": 9,
+        "englishPrefix": "Frost",
+        "coreNamePrefix": "冻伤",
+        "coreName": "冻伤丧尸",
+        "catalogLabel": "Frost / 冻伤丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_10",
+        "variant": 10,
+        "englishPrefix": "Bomber",
+        "coreNamePrefix": "自爆",
+        "coreName": "自爆丧尸",
+        "catalogLabel": "Bomber / 自爆丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_11",
+        "variant": 11,
+        "englishPrefix": "NightElite",
+        "coreNamePrefix": "夜行",
+        "coreName": "夜行精英",
+        "catalogLabel": "NightElite / 夜行精英",
+        "status": "pass"
+      }
+    ]
+  },
+  "siteCatalog": {
+    "status": "pass",
+    "source": "D:\\unity\\DeadCircuitDemo\\Assets\\DeadCircuit\\Scripts\\Core\\WorldGeneration.cs",
+    "sourceSHA256": "5ff5567c3397fa1d2d226138f5946bd0a58fc69899a7df9ab9d542131e4d2ec0",
+    "count": 12,
+    "enumOrdinalsMatch": true,
+    "sitesOrderMatch": true,
+    "namePrefixesMatch": true,
+    "entries": [
+      {
+        "key": "site_0",
+        "ordinal": 0,
+        "englishPrefix": "Residence",
+        "coreName": "住宅",
+        "catalogLabel": "Residence / 住宅 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_1",
+        "ordinal": 1,
+        "englishPrefix": "Shop",
+        "coreName": "商店",
+        "catalogLabel": "Shop / 商店 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_2",
+        "ordinal": 2,
+        "englishPrefix": "Warehouse",
+        "coreName": "仓库",
+        "catalogLabel": "Warehouse / 仓库 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_3",
+        "ordinal": 3,
+        "englishPrefix": "Workshop",
+        "coreName": "车间",
+        "catalogLabel": "Workshop / 车间 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_4",
+        "ordinal": 4,
+        "englishPrefix": "Clinic",
+        "coreName": "诊所",
+        "catalogLabel": "Clinic / 诊所 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_5",
+        "ordinal": 5,
+        "englishPrefix": "Farmhouse",
+        "coreName": "农舍",
+        "catalogLabel": "Farmhouse / 农舍 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_6",
+        "ordinal": 6,
+        "englishPrefix": "GasStation",
+        "coreName": "加油站",
+        "catalogLabel": "GasStation / 加油站 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_7",
+        "ordinal": 7,
+        "englishPrefix": "PoliceStation",
+        "coreName": "警局",
+        "catalogLabel": "PoliceStation / 警局 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_8",
+        "ordinal": 8,
+        "englishPrefix": "School",
+        "coreName": "学校",
+        "catalogLabel": "School / 学校 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_9",
+        "ordinal": 9,
+        "englishPrefix": "Apartment",
+        "coreName": "公寓",
+        "catalogLabel": "Apartment / 公寓 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_10",
+        "ordinal": 10,
+        "englishPrefix": "Greenhouse",
+        "coreName": "温室",
+        "catalogLabel": "Greenhouse / 温室 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_11",
+        "ordinal": 11,
+        "englishPrefix": "Substation",
+        "coreName": "变电站",
+        "catalogLabel": "Substation / 变电站 entrance",
+        "status": "pass"
+      }
+    ]
+  },
+  "survivor": {
+    "status": "pass",
+    "frames": 16,
+    "checks": [
+      {
+        "direction": 0,
+        "directionName": "east",
+        "uniqueFrames": 4,
+        "uniqueBootMasks": 4,
+        "status": "pass"
+      },
+      {
+        "direction": 1,
+        "directionName": "north",
+        "uniqueFrames": 4,
+        "uniqueBootMasks": 4,
+        "status": "pass"
+      },
+      {
+        "direction": 2,
+        "directionName": "west",
+        "uniqueFrames": 4,
+        "uniqueBootMasks": 4,
+        "status": "pass"
+      },
+      {
+        "direction": 3,
+        "directionName": "south",
+        "uniqueFrames": 4,
+        "uniqueBootMasks": 4,
+        "status": "pass"
+      }
+    ],
+    "identity": "existing project rust cap/coat, steel armour, teal visor/core and radio pack; empty hands for runtime equipment overlays",
+    "bakedEquipment": false,
+    "oldBarrelRegionsClear": 16,
+    "visualReview": "Empty hands require native/enlarged visual review; region assertions alone do not prove semantics.",
+    "limits": "Four authored poses per direction; timing and locomotion feel not tested in game."
+  },
+  "visualRevision": {
+    "round": 1,
+    "status": "pass",
+    "report": "visual_revision1_qa.json",
+    "changedFrames": [
+      "site_0",
+      "site_1",
+      "site_2",
+      "site_3",
+      "site_4",
+      "site_5",
+      "site_6",
+      "site_7",
+      "site_8",
+      "site_9",
+      "site_10",
+      "site_11",
+      "enemy_3",
+      "enemy_4",
+      "enemy_5",
+      "enemy_6",
+      "enemy_7",
+      "enemy_8",
+      "enemy_9",
+      "enemy_10",
+      "enemy_11",
+      "survivor_0_0",
+      "survivor_0_1",
+      "survivor_0_2",
+      "survivor_0_3",
+      "survivor_1_0",
+      "survivor_1_1",
+      "survivor_1_2",
+      "survivor_1_3",
+      "survivor_2_0",
+      "survivor_2_1",
+      "survivor_2_2",
+      "survivor_2_3",
+      "survivor_3_0",
+      "survivor_3_1",
+      "survivor_3_2",
+      "survivor_3_3"
+    ],
+    "preservedWorldFrames": 114,
+    "preservedIconFrames": 90,
+    "worldLayoutIdentical": true,
+    "runtimeJSONRevalidated": true,
+    "issues": []
+  }
+}

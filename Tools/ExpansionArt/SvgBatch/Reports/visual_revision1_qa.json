@@ -1,0 +1,1150 @@
+{
+  "status": "pass",
+  "revision": 1,
+  "renderId": "visualreview1",
+  "enemyCatalog": {
+    "status": "pass",
+    "source": "D:\\unity\\DeadCircuitDemo\\Assets\\DeadCircuit\\Scripts\\Core\\EnemyCatalog.cs",
+    "sourceSHA256": "a4f33f06f1fbf6a68a80fae98d88beba7407de648ce30e26ec013677f2bd9fd3",
+    "count": 12,
+    "variantIndicesMatch": true,
+    "namePrefixesMatch": true,
+    "entries": [
+      {
+        "key": "enemy_0",
+        "variant": 0,
+        "englishPrefix": "Walker",
+        "coreNamePrefix": "普通",
+        "coreName": "普通丧尸",
+        "catalogLabel": "Walker / 普通丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_1",
+        "variant": 1,
+        "englishPrefix": "Sprinter",
+        "coreNamePrefix": "快跑",
+        "coreName": "快跑丧尸",
+        "catalogLabel": "Sprinter / 快跑丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_2",
+        "variant": 2,
+        "englishPrefix": "Brute",
+        "coreNamePrefix": "暴徒",
+        "coreName": "暴徒丧尸",
+        "catalogLabel": "Brute / 暴徒丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_3",
+        "variant": 3,
+        "englishPrefix": "Crawler",
+        "coreNamePrefix": "爬行",
+        "coreName": "爬行丧尸",
+        "catalogLabel": "Crawler / 爬行丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_4",
+        "variant": 4,
+        "englishPrefix": "Spitter",
+        "coreNamePrefix": "喷吐",
+        "coreName": "喷吐丧尸",
+        "catalogLabel": "Spitter / 喷吐丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_5",
+        "variant": 5,
+        "englishPrefix": "Armored",
+        "coreNamePrefix": "装甲",
+        "coreName": "装甲丧尸",
+        "catalogLabel": "Armored / 装甲丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_6",
+        "variant": 6,
+        "englishPrefix": "Burning",
+        "coreNamePrefix": "燃烧",
+        "coreName": "燃烧丧尸",
+        "catalogLabel": "Burning / 燃烧丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_7",
+        "variant": 7,
+        "englishPrefix": "Screamer",
+        "coreNamePrefix": "尖啸",
+        "coreName": "尖啸丧尸",
+        "catalogLabel": "Screamer / 尖啸丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_8",
+        "variant": 8,
+        "englishPrefix": "Hazmat",
+        "coreNamePrefix": "防化",
+        "coreName": "防化感染者",
+        "catalogLabel": "Hazmat / 防化感染者",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_9",
+        "variant": 9,
+        "englishPrefix": "Frost",
+        "coreNamePrefix": "冻伤",
+        "coreName": "冻伤丧尸",
+        "catalogLabel": "Frost / 冻伤丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_10",
+        "variant": 10,
+        "englishPrefix": "Bomber",
+        "coreNamePrefix": "自爆",
+        "coreName": "自爆丧尸",
+        "catalogLabel": "Bomber / 自爆丧尸",
+        "status": "pass"
+      },
+      {
+        "key": "enemy_11",
+        "variant": 11,
+        "englishPrefix": "NightElite",
+        "coreNamePrefix": "夜行",
+        "coreName": "夜行精英",
+        "catalogLabel": "NightElite / 夜行精英",
+        "status": "pass"
+      }
+    ]
+  },
+  "siteCatalog": {
+    "status": "pass",
+    "source": "D:\\unity\\DeadCircuitDemo\\Assets\\DeadCircuit\\Scripts\\Core\\WorldGeneration.cs",
+    "sourceSHA256": "5ff5567c3397fa1d2d226138f5946bd0a58fc69899a7df9ab9d542131e4d2ec0",
+    "count": 12,
+    "enumOrdinalsMatch": true,
+    "sitesOrderMatch": true,
+    "namePrefixesMatch": true,
+    "entries": [
+      {
+        "key": "site_0",
+        "ordinal": 0,
+        "englishPrefix": "Residence",
+        "coreName": "住宅",
+        "catalogLabel": "Residence / 住宅 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_1",
+        "ordinal": 1,
+        "englishPrefix": "Shop",
+        "coreName": "商店",
+        "catalogLabel": "Shop / 商店 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_2",
+        "ordinal": 2,
+        "englishPrefix": "Warehouse",
+        "coreName": "仓库",
+        "catalogLabel": "Warehouse / 仓库 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_3",
+        "ordinal": 3,
+        "englishPrefix": "Workshop",
+        "coreName": "车间",
+        "catalogLabel": "Workshop / 车间 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_4",
+        "ordinal": 4,
+        "englishPrefix": "Clinic",
+        "coreName": "诊所",
+        "catalogLabel": "Clinic / 诊所 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_5",
+        "ordinal": 5,
+        "englishPrefix": "Farmhouse",
+        "coreName": "农舍",
+        "catalogLabel": "Farmhouse / 农舍 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_6",
+        "ordinal": 6,
+        "englishPrefix": "GasStation",
+        "coreName": "加油站",
+        "catalogLabel": "GasStation / 加油站 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_7",
+        "ordinal": 7,
+        "englishPrefix": "PoliceStation",
+        "coreName": "警局",
+        "catalogLabel": "PoliceStation / 警局 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_8",
+        "ordinal": 8,
+        "englishPrefix": "School",
+        "coreName": "学校",
+        "catalogLabel": "School / 学校 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_9",
+        "ordinal": 9,
+        "englishPrefix": "Apartment",
+        "coreName": "公寓",
+        "catalogLabel": "Apartment / 公寓 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_10",
+        "ordinal": 10,
+        "englishPrefix": "Greenhouse",
+        "coreName": "温室",
+        "catalogLabel": "Greenhouse / 温室 entrance",
+        "status": "pass"
+      },
+      {
+        "key": "site_11",
+        "ordinal": 11,
+        "englishPrefix": "Substation",
+        "coreName": "变电站",
+        "catalogLabel": "Substation / 变电站 entrance",
+        "status": "pass"
+      }
+    ]
+  },
+  "survivor": {
+    "status": "pass",
+    "frames": 16,
+    "checks": [
+      {
+        "direction": 0,
+        "directionName": "east",
+        "uniqueFrames": 4,
+        "uniqueBootMasks": 4,
+        "status": "pass"
+      },
+      {
+        "direction": 1,
+        "directionName": "north",
+        "uniqueFrames": 4,
+        "uniqueBootMasks": 4,
+        "status": "pass"
+      },
+      {
+        "direction": 2,
+        "directionName": "west",
+        "uniqueFrames": 4,
+        "uniqueBootMasks": 4,
+        "status": "pass"
+      },
+      {
+        "direction": 3,
+        "directionName": "south",
+        "uniqueFrames": 4,
+        "uniqueBootMasks": 4,
+        "status": "pass"
+      }
+    ],
+    "identity": "existing project rust cap/coat, steel armour, teal visor/core and radio pack; empty hands for runtime equipment overlays",
+    "bakedEquipment": false,
+    "oldBarrelRegionsClear": 16,
+    "visualReview": "Empty hands require native/enlarged visual review; region assertions alone do not prove semantics.",
+    "limits": "Four authored poses per direction; timing and locomotion feel not tested in game."
+  },
+  "changedFrames": [
+    "site_0",
+    "site_1",
+    "site_2",
+    "site_3",
+    "site_4",
+    "site_5",
+    "site_6",
+    "site_7",
+    "site_8",
+    "site_9",
+    "site_10",
+    "site_11",
+    "enemy_3",
+    "enemy_4",
+    "enemy_5",
+    "enemy_6",
+    "enemy_7",
+    "enemy_8",
+    "enemy_9",
+    "enemy_10",
+    "enemy_11",
+    "survivor_0_0",
+    "survivor_0_1",
+    "survivor_0_2",
+    "survivor_0_3",
+    "survivor_1_0",
+    "survivor_1_1",
+    "survivor_1_2",
+    "survivor_1_3",
+    "survivor_2_0",
+    "survivor_2_1",
+    "survivor_2_2",
+    "survivor_2_3",
+    "survivor_3_0",
+    "survivor_3_1",
+    "survivor_3_2",
+    "survivor_3_3"
+  ],
+  "preservedWorldFrames": 114,
+  "iconsPreserved": {
+    "frames": 90,
+    "pngSHA256": "16bf80d4b170cccbce0a472b6448013315ea9146f0e89f1e2a49032815aad108",
+    "jsonSHA256": "abc4238c2c5c868236a41962d2b7cdb0fe8c15a1905c5256ed24b8a9c9f89af6"
+  },
+  "worldLayoutIdentical": true,
+  "pixelsChangedOutsideApproved37Frames": 0,
+  "runtimeFilesDifferentFromOriginalBaseline": [
+    "Assets/DeadCircuit/Resources/Art/Expansion/world.png"
+  ],
+  "totalSprites": 241,
+  "nameDuplicates": 0,
+  "requiredKeysMissing": [],
+  "duplicateFramesAcrossBoth": 0,
+  "pythonSyntax": {
+    "status": "pass",
+    "files": [
+      "export_and_qc.py",
+      "pixel_svg.py",
+      "revise_visual_contracts.py",
+      "svg_icons.py",
+      "svg_machines_survivor.py",
+      "svg_world.py"
+    ]
+  },
+  "selfVisualReview": {
+    "views": [
+      "native light/dark",
+      "4x enemy/sites contacts",
+      "4x survivor gait"
+    ],
+    "observations": [
+      "enemy_7 open jaw and cry marks; enemy_10 biped infected with strapped bundle",
+      "site_0..11 are differentiated facades/entrances in Core order, separate from machine_*",
+      "All 16 survivor frames show empty hands; no baked held or slung weapons"
+    ],
+    "mainApproval": "pending; no game or GUI preview performed"
+  },
+  "worldQA": {
+    "status": "pass",
+    "sprites": 151,
+    "width": 576,
+    "height": 360,
+    "rgba": true,
+    "partialAlphaPixels": 0,
+    "offPalettePixels": 0,
+    "gutterPixels": 0,
+    "duplicatePixelFrames": 0,
+    "emptyFrames": 0,
+    "sameSilhouettePairs": [
+      [
+        "survivor_1_0",
+        "survivor_3_0"
+      ],
+      [
+        "survivor_1_1",
+        "survivor_3_1"
+      ],
+      [
+        "survivor_1_2",
+        "survivor_3_2"
+      ],
+      [
+        "survivor_1_3",
+        "survivor_3_3"
+      ]
+    ],
+    "frames": [
+      {
+        "name": "terrain_0",
+        "visiblePixels": 1024,
+        "sha256": "57b2a597f3de47a7942284ad4784b37a8137733345b9801f7ce4b80c170e5a82"
+      },
+      {
+        "name": "terrain_1",
+        "visiblePixels": 1024,
+        "sha256": "c756b405facd1bcbcf84b88586ed4e6d79c136a262e9ac50d50eac52fe393573"
+      },
+      {
+        "name": "terrain_2",
+        "visiblePixels": 1024,
+        "sha256": "054c95ecf53cc6ae070064f01ba9139a2131bac5c2c6ef82beea8bfc97ad9060"
+      },
+      {
+        "name": "terrain_3",
+        "visiblePixels": 1024,
+        "sha256": "2aabc6b7fcd46718ac61bb38df98e503bd452b0da5b6466541e3d66240885445"
+      },
+      {
+        "name": "terrain_4",
+        "visiblePixels": 1024,
+        "sha256": "4ec76f35b2b4492b89adbeaf6b6169582b133692b1a5034f8a2f01a0c18308e1"
+      },
+      {
+        "name": "terrain_5",
+        "visiblePixels": 1024,
+        "sha256": "062c31984917e3b67b58bbcc8f282b7ec4fd40b843a5e9facb36f25eb8ddec97"
+      },
+      {
+        "name": "biome_0",
+        "visiblePixels": 170,
+        "sha256": "37dc19678b55fac3982f1f80f7944c01dc6cf49a4da74eb78bc1e0cadfc3b29c"
+      },
+      {
+        "name": "biome_1",
+        "visiblePixels": 319,
+        "sha256": "13bd0130db09b468b1ce6bce2997ff2c3fb6000dc33d1ddbe0668fbe6fc9af12"
+      },
+      {
+        "name": "biome_2",
+        "visiblePixels": 378,
+        "sha256": "9ad69b97fc6359fd3bb69ad02424a7304863651d934ecc2140cb8cbcf67e37c7"
+      },
+      {
+        "name": "biome_3",
+        "visiblePixels": 391,
+        "sha256": "9b4029a808366f675d4d6adff44b2b488941c8b4509582ccd05cc87ff266f764"
+      },
+      {
+        "name": "biome_4",
+        "visiblePixels": 342,
+        "sha256": "2079efd9d600d1102590c850894719fbed61a99f70440ec2c59c2049e0e76b7f"
+      },
+      {
+        "name": "biome_5",
+        "visiblePixels": 257,
+        "sha256": "03c5670838db6f30e09635c16782fc4b7d055f5fdd38b7e273de9c0fc94cc49a"
+      },
+      {
+        "name": "site_0",
+        "visiblePixels": 620,
+        "sha256": "2be4bf9e117b39f3d6a5440ed32f0d7f079ee7f21a0eb0c5537fa686d6f2d861"
+      },
+      {
+        "name": "site_1",
+        "visiblePixels": 731,
+        "sha256": "7509e67bacf07fd660fac6016b11144f224e945067f2cd299a71eef763707cb7"
+      },
+      {
+        "name": "site_2",
+        "visiblePixels": 731,
+        "sha256": "8c6352d5bd7759f3c22a7dd11e0f8ca949bfe17ad3bb652f4b8899f440dfb0d1"
+      },
+      {
+        "name": "site_3",
+        "visiblePixels": 691,
+        "sha256": "d0e5a2f1d67618007d17c0e1bfadef69dfca84ce64375ea8d7a5c49967a02288"
+      },
+      {
+        "name": "site_4",
+        "visiblePixels": 677,
+        "sha256": "d7fcebfaaf6ea130235c2764429db5f990bec5a198c7bb77f88436d3ad2b02f9"
+      },
+      {
+        "name": "site_5",
+        "visiblePixels": 608,
+        "sha256": "28322206733ac5abb9b5cd22dccf8076f3365fe0e09319481f1562fd669f050c"
+      },
+      {
+        "name": "site_6",
+        "visiblePixels": 653,
+        "sha256": "8eafb20162e1518e407b13ba8057a1fd2c1725d50a60ad10f6070f393103a02d"
+      },
+      {
+        "name": "site_7",
+        "visiblePixels": 654,
+        "sha256": "711c6a91947a869ee631793560efa83e5bc1d130dc145ff44b45752275efe7a2"
+      },
+      {
+        "name": "site_8",
+        "visiblePixels": 661,
+        "sha256": "cf1667311450a080f2461d3348339d98f8517aeab918b41c46cfae4694efed5e"
+      },
+      {
+        "name": "site_9",
+        "visiblePixels": 646,
+        "sha256": "006356050a6ee642273900899c58dc267e19589075b69d5a811b22bb99c23014"
+      },
+      {
+        "name": "site_10",
+        "visiblePixels": 655,
+        "sha256": "6b321f9f47a383a7ad85385ad564eb5822b706d4c9b850bee8b82c8954618b60"
+      },
+      {
+        "name": "site_11",
+        "visiblePixels": 566,
+        "sha256": "92ebef9f8e2b25a63dbd42918e1f677fe750595dedf0cca87636013450eaeb80"
+      },
+      {
+        "name": "crop_0_0",
+        "visiblePixels": 202,
+        "sha256": "0519902c0b932b1646b2d921163ea41d5372c7724954eb77e6f3d87d88e81ec5"
+      },
+      {
+        "name": "crop_0_1",
+        "visiblePixels": 341,
+        "sha256": "e10928d25bede49b3df99a41b3025e84008adda604f37e55560df6ab69c81a03"
+      },
+      {
+        "name": "crop_1_0",
+        "visiblePixels": 177,
+        "sha256": "0bb8442498ca44e792113535e434faa81aa1595ef0a98f71d94ea8d1b4b768b3"
+      },
+      {
+        "name": "crop_1_1",
+        "visiblePixels": 331,
+        "sha256": "95aa26e1392b7ea14a429d72e9a2dd84ae889d3c50a6e17a5ea1690f0774f5ca"
+      },
+      {
+        "name": "crop_2_0",
+        "visiblePixels": 206,
+        "sha256": "edbc8fd7984158df5d881e0dee177cb6338414be07f65dde618d99dd6de86c1e"
+      },
+      {
+        "name": "crop_2_1",
+        "visiblePixels": 335,
+        "sha256": "24671ec6bfe82b9c8e1921d00a602eafa29c6ad7cd1e038094d32416bfcc35a8"
+      },
+      {
+        "name": "crop_3_0",
+        "visiblePixels": 165,
+        "sha256": "84469d834465fa59b2f2a718f3658713c5a53a254e737eb3a6502e21b03339cb"
+      },
+      {
+        "name": "crop_3_1",
+        "visiblePixels": 381,
+        "sha256": "97aeec419a09946a789e1d4887dce7d6df7b3650b453ffb07858a3c316bd4dfd"
+      },
+      {
+        "name": "crop_4_0",
+        "visiblePixels": 212,
+        "sha256": "0d458ca920d6987375f1003ff4a78608a0e537bfda8e8082f07eecf894a44114"
+      },
+      {
+        "name": "crop_4_1",
+        "visiblePixels": 415,
+        "sha256": "d77360259dfad9763adab4bcd3e19ffdd1b984d7509f36c87f2cf85a62dc71fc"
+      },
+      {
+        "name": "crop_5_0",
+        "visiblePixels": 164,
+        "sha256": "b7f5229be711510e828f82e660d91433e597c034e44141e33a9267b416a3d171"
+      },
+      {
+        "name": "crop_5_1",
+        "visiblePixels": 319,
+        "sha256": "c1747f5d6829a14c36a29ec69052b59fcf8ee5e27a107ef4e8918b405ef43f07"
+      },
+      {
+        "name": "crop_6_0",
+        "visiblePixels": 218,
+        "sha256": "13642e31f613ac0494143670a56ddff4038c29594157160f152b235027b991ca"
+      },
+      {
+        "name": "crop_6_1",
+        "visiblePixels": 455,
+        "sha256": "3edfd0d4f770c477eb562b6dfee78a4136bead984f750fba05dc049c4129feee"
+      },
+      {
+        "name": "crop_7_0",
+        "visiblePixels": 170,
+        "sha256": "592a51c60e179a655ad9b69d0903aaec9d5739e2d8b3a41a3460a5398477f238"
+      },
+      {
+        "name": "crop_7_1",
+        "visiblePixels": 319,
+        "sha256": "3da4120fd023660cca85513951dbdcfe9bcfa2ed28b99cf1903fb1d9d796d4ea"
+      },
+      {
+        "name": "creature_0",
+        "visiblePixels": 401,
+        "sha256": "73d5ba1e54ec1a451a5e619b73e0acfe347d784ce416044a589ccaebad855b7b"
+      },
+      {
+        "name": "creature_1",
+        "visiblePixels": 407,
+        "sha256": "bf9a43696ca59d93150ae4ccb58c4d11a0dbae1cb86c8251568641cb7fdf28be"
+      },
+      {
+        "name": "creature_2",
+        "visiblePixels": 475,
+        "sha256": "c4f9ca12af4963e755370dadaf5c68c7cb1e8a292b98a67fc0caa26219bacfac"
+      },
+      {
+        "name": "creature_3",
+        "visiblePixels": 413,
+        "sha256": "59469e8be77685f754e81bee931d1ea311eea8585d310935e9ba1f8bbc50200d"
+      },
+      {
+        "name": "creature_4",
+        "visiblePixels": 394,
+        "sha256": "1da53c9f691385fad212f9b023e0e871cfefd13fe7a149605779905ec51be065"
+      },
+      {
+        "name": "creature_5",
+        "visiblePixels": 527,
+        "sha256": "4807b733d9366198636674f0714d79cfb3435d314843eea3579ba377951e0bf1"
+      },
+      {
+        "name": "creature_6",
+        "visiblePixels": 408,
+        "sha256": "65ed15fea8455f93ca3d0ef277594d3e2be22c672bf46fb0aaae372f09d5a0fb"
+      },
+      {
+        "name": "creature_7",
+        "visiblePixels": 439,
+        "sha256": "c4afd5e4b1a6bfb15bb9355fce8c8a33febb60dd2d5b51836a9df0c1570f1187"
+      },
+      {
+        "name": "creature_8",
+        "visiblePixels": 505,
+        "sha256": "14307dcb4567944a69796618b09fd9233d553c88e80cf564ab77718ddb5a9c79"
+      },
+      {
+        "name": "creature_9",
+        "visiblePixels": 466,
+        "sha256": "d18486068605d1edee281130137733b6976898b9c7a720d7dc0f8872cf52fb78"
+      },
+      {
+        "name": "creature_10",
+        "visiblePixels": 379,
+        "sha256": "dc3221e5bac3cb0a47fcffffc2d16da7840dfef4d0e95e29efd907fed0cebb2a"
+      },
+      {
+        "name": "creature_11",
+        "visiblePixels": 390,
+        "sha256": "a7d0b8a426f6cb5b8107604930c0aa701d2f33943f0304b0c0011fedd7f3e96a"
+      },
+      {
+        "name": "enemy_0",
+        "visiblePixels": 404,
+        "sha256": "d1f4406f6f54bb5db9ba81c1f2328211e2c84641061e3288718b6c43416b3ff4"
+      },
+      {
+        "name": "enemy_1",
+        "visiblePixels": 362,
+        "sha256": "eb6eebb49b5f4cfa34cf084ff5e3f06d9655d0c256bd7df8dd922c26fb6aba8d"
+      },
+      {
+        "name": "enemy_2",
+        "visiblePixels": 623,
+        "sha256": "734bb6658d804289f3e72c5741a5494f692b0d71b1715899df637c34af7bc151"
+      },
+      {
+        "name": "enemy_3",
+        "visiblePixels": 395,
+        "sha256": "b1355402d425bcf39100143e1ebc0754da256c9da72ba6f19e9a9d3715acecee"
+      },
+      {
+        "name": "enemy_4",
+        "visiblePixels": 457,
+        "sha256": "f9ebcc831b150201a4ce16e190e9d56e2d14fc741257031ecd355416be4beda9"
+      },
+      {
+        "name": "enemy_5",
+        "visiblePixels": 508,
+        "sha256": "0989739280b4eb21210c3c7ae731f24e95443fa4030a5401e84aac5f647d67c8"
+      },
+      {
+        "name": "enemy_6",
+        "visiblePixels": 443,
+        "sha256": "9edc4419ecd2b560bcae07487580bb8c97a3403a656d4bdbe63b3d9ba2e0f174"
+      },
+      {
+        "name": "enemy_7",
+        "visiblePixels": 451,
+        "sha256": "2ec402414e2e14bf466dd29693b6537e6ed7c0a4251f8c302b5006ef3232e739"
+      },
+      {
+        "name": "enemy_8",
+        "visiblePixels": 436,
+        "sha256": "dfcc4ed643506cf6473429c529554ff173d34f592dda28414f80cc3a370e5ef8"
+      },
+      {
+        "name": "enemy_9",
+        "visiblePixels": 468,
+        "sha256": "654e9a79a84ec1b513048310b700f66b8285444112d0517696aa57f3920d882a"
+      },
+      {
+        "name": "enemy_10",
+        "visiblePixels": 429,
+        "sha256": "8cf3f1c7a16e1c606cf8b6ac7687447e4a3161f0165d203986edf3724881f1b3"
+      },
+      {
+        "name": "enemy_11",
+        "visiblePixels": 576,
+        "sha256": "4c668b19e0586f540c1b824491c2988eac3aee1f1766132cc1846f0beb885ae4"
+      },
+      {
+        "name": "deco_0",
+        "visiblePixels": 311,
+        "sha256": "52dedade626c9b48536ab13b3f0ea7f5de6f2fc6456a02629cf47bde7fbcc448"
+      },
+      {
+        "name": "deco_1",
+        "visiblePixels": 380,
+        "sha256": "b9e6625a6120a325faed37a004d92e4209e4d6a1f54d8be9a1f4ce0b40d2f695"
+      },
+      {
+        "name": "deco_2",
+        "visiblePixels": 373,
+        "sha256": "26b7d757c30f585a1ebee2ed01f03551c0064f7ef61f189cea1ae051855f4fd9"
+      },
+      {
+        "name": "deco_3",
+        "visiblePixels": 441,
+        "sha256": "9ec5f94534c5506351c159df77795c56147154408e9937897b6b1fb6fab061ff"
+      },
+      {
+        "name": "deco_4",
+        "visiblePixels": 272,
+        "sha256": "db9d5ea7e0379f9524038334f04bd26cf2b6b557adc97fdb01cdfa78179c5f44"
+      },
+      {
+        "name": "deco_5",
+        "visiblePixels": 250,
+        "sha256": "cab510ff720382da6f20a42d7d73c5f0fff41370ed09a20651eaf8d65f33791b"
+      },
+      {
+        "name": "deco_6",
+        "visiblePixels": 318,
+        "sha256": "1a255140695b6e6c5a8619f52d6a2de6035b00a893fde5969d8b314a8432042f"
+      },
+      {
+        "name": "deco_7",
+        "visiblePixels": 487,
+        "sha256": "9880ce5b891eb5284c6cd06ab225408c8cb4d20d416a511d421d68cd5edc86e5"
+      },
+      {
+        "name": "fx_rain",
+        "visiblePixels": 134,
+        "sha256": "b6fc96f37d4c82344becdc06d61b16e765e4a13c2bbbee3788f5038600900173"
+      },
+      {
+        "name": "fx_snow",
+        "visiblePixels": 75,
+        "sha256": "014c0d1f958e57702771fd959d994dd240724b0b356617577c746704561f2087"
+      },
+      {
+        "name": "fx_dust",
+        "visiblePixels": 278,
+        "sha256": "d93ded2b2d8e561bd333b79244869d452f8791dba0d868ffe90a01512ae1e6ac"
+      },
+      {
+        "name": "fx_fog",
+        "visiblePixels": 354,
+        "sha256": "b7044afcf0974e4a03e8a77d95a58a3dd27ace315d0885fd2005d9edbb1049de"
+      },
+      {
+        "name": "fx_muzzle",
+        "visiblePixels": 266,
+        "sha256": "5b48f9cb3f7de62346683a72d37c04922bd69db3a2c0c7010a8b60eea1f5f1b6"
+      },
+      {
+        "name": "fx_spark",
+        "visiblePixels": 194,
+        "sha256": "85b5d03c27626821889c96c58701b6edc4fadee07f57edbcfa96eba9c5750bf0"
+      },
+      {
+        "name": "fx_flame",
+        "visiblePixels": 344,
+        "sha256": "036acd0a0bef02a94e013e1a1efac819aa303bbb354a76c0ac3fc45ae72c6796"
+      },
+      {
+        "name": "fx_ice",
+        "visiblePixels": 291,
+        "sha256": "5d8c5ef60feb7bb2fa1f508839967c24117431535a9d7a7d9d84c8d7a1fde75e"
+      },
+      {
+        "name": "fx_soil",
+        "visiblePixels": 268,
+        "sha256": "7e1ec0fd748c2ae23ef145c9215023581700f104535948af88bd2d7ee607258b"
+      },
+      {
+        "name": "fx_poison",
+        "visiblePixels": 431,
+        "sha256": "e1d52c2bdca9505dabeaf99067042705886d6bc4449aad13a282b856a9e18172"
+      },
+      {
+        "name": "fx_wave",
+        "visiblePixels": 310,
+        "sha256": "a1c9bc938237061dfc87d8f92297b2af7878964618efc0435aaa1574cf9e43eb"
+      },
+      {
+        "name": "fx_lightning",
+        "visiblePixels": 274,
+        "sha256": "da1c4e1f0b1467c48721af8fe9306337d5d5ecc9be93d0f3ae80c1afda46bf30"
+      },
+      {
+        "name": "fx_ember",
+        "visiblePixels": 94,
+        "sha256": "d5857fa7ae9e4865b41eca902a611959d8d78f7a370f151d5bda31763ef48a80"
+      },
+      {
+        "name": "fx_fire_large",
+        "visiblePixels": 471,
+        "sha256": "69eacaec49f8e49b11b65f3cd27e657e045b102280ddd658351eda02021747fd"
+      },
+      {
+        "name": "fx_frost_cloud",
+        "visiblePixels": 403,
+        "sha256": "fba9567e35ab303aad892c6b3871e669e2baeae32aa6d49958530a007f9a123b"
+      },
+      {
+        "name": "fx_ice_shard",
+        "visiblePixels": 313,
+        "sha256": "e4716ddd7399c4426f99563d1acc0f09b371c4e5cb7cdb535cc2bb22b4edc2ea"
+      },
+      {
+        "name": "fx_hit_flesh",
+        "visiblePixels": 262,
+        "sha256": "b4cc310892c6caa3330e55af0e6d5d01898d061e6ca74b5fd4fdedb61fb77e04"
+      },
+      {
+        "name": "fx_hit_metal",
+        "visiblePixels": 198,
+        "sha256": "6fdc3d3aefdf0b7737989b6d2b76748db24df79a045707c4a7ca901a2757f1a5"
+      },
+      {
+        "name": "fx_hit_wood",
+        "visiblePixels": 238,
+        "sha256": "18d2538c8bc1197357151982bfdb78536e1763e938b8155e88b814eb4e2b2349"
+      },
+      {
+        "name": "fx_muzzle_shotgun",
+        "visiblePixels": 336,
+        "sha256": "71aada93f4a66b29cb633c5e23d187b73263703f326a7221cfedc260dec1a804"
+      },
+      {
+        "name": "fx_muzzle_rifle",
+        "visiblePixels": 214,
+        "sha256": "b3638a3d90ca22599ce37247ee16d2318a8dbe2246588936c704e934c9b04ed9"
+      },
+      {
+        "name": "fx_muzzle_sniper",
+        "visiblePixels": 201,
+        "sha256": "53ed1eb9852672c668e27458f1befe2a6a8828f7895c3a906322d9e2f769c044"
+      },
+      {
+        "name": "fx_explosion",
+        "visiblePixels": 585,
+        "sha256": "3a90090309c32bedf2a6de7937ef3cdf2cccc14b6b5dda3eda71a35badd133a7"
+      },
+      {
+        "name": "fx_smoke",
+        "visiblePixels": 494,
+        "sha256": "e4f9d5194e3024e74c32ea2feafdd2b33e33a5d489ac80a44d0363e9a5d1c3c7"
+      },
+      {
+        "name": "machine_0",
+        "visiblePixels": 664,
+        "sha256": "366e1b8e797da1705ea5d0c02a6bd96856175be9a5baa0fb9021ca218251feb9"
+      },
+      {
+        "name": "machine_1",
+        "visiblePixels": 588,
+        "sha256": "4ca2c889ad003a568da62dd57e5b1a121022eaec0fc60be10627ef880cc021f2"
+      },
+      {
+        "name": "machine_2",
+        "visiblePixels": 607,
+        "sha256": "71fbd4c42d4355086beb5de4b95be84bae36a7cd836091756b7b25a7942bafc4"
+      },
+      {
+        "name": "machine_3",
+        "visiblePixels": 806,
+        "sha256": "8a6140bfffc51f8dca1de01244eeb732d38ece9bd53dcc518c462149aced68ad"
+      },
+      {
+        "name": "machine_4",
+        "visiblePixels": 610,
+        "sha256": "f5a1eae24f7c53cb1507259d4d7be9e36379c20894a5bb774cfa1d54ae6a9e9f"
+      },
+      {
+        "name": "machine_5",
+        "visiblePixels": 595,
+        "sha256": "4bc2a5cc43d31cabb652601d7abc090db21af0d4df51b90a877cd161f42bc434"
+      },
+      {
+        "name": "machine_6",
+        "visiblePixels": 535,
+        "sha256": "e576486e11eb67284c5e9824a7eb84f3c606fe51527bc9cf2d23c0424d51c534"
+      },
+      {
+        "name": "machine_7",
+        "visiblePixels": 640,
+        "sha256": "15c45c498a3e062f4de47d26b096cec30b4688596c9c221f8347ad659a766292"
+      },
+      {
+        "name": "machine_8",
+        "visiblePixels": 431,
+        "sha256": "7e81234e6dea7245795ae7f1cc5e35ea2e42d609430f8fa491536cc010b84dd6"
+      },
+      {
+        "name": "machine_9",
+        "visiblePixels": 682,
+        "sha256": "15ead60542873325da9f5d85e86877b6ebf16c371087dd0ccd06c6a4a4630840"
+      },
+      {
+        "name": "machine_10",
+        "visiblePixels": 623,
+        "sha256": "54fadfad1ab0f30dc48c9e1564fdc16178abe52f4b87785783ad62dc70dc8c6c"
+      },
+      {
+        "name": "machine_11",
+        "visiblePixels": 554,
+        "sha256": "1c5fc2b9c93018d4d4bc5ebea21820c193625de1bc61b888e8e6babb79837763"
+      },
+      {
+        "name": "machine_12",
+        "visiblePixels": 728,
+        "sha256": "b66cccba48982f357a23137ec2036a3e1a0c13f09b80965786860bef07b5e03b"
+      },
+      {
+        "name": "machine_13",
+        "visiblePixels": 371,
+        "sha256": "a3d42343d174fb7945066a2789b431bb54814595592be58d804caac6e49c00c2"
+      },
+      {
+        "name": "machine_14",
+        "visiblePixels": 705,
+        "sha256": "ac19d1c985ab4c473523e6d1e63bc1d79e4b55dc92039afce77d17feb9b275b5"
+      },
+      {
+        "name": "machine_15",
+        "visiblePixels": 616,
+        "sha256": "febab50cb2e634fba669f52eb03c58d5364210026bd21e9a3c3b6b43a7534949"
+      },
+      {
+        "name": "machine_16",
+        "visiblePixels": 381,
+        "sha256": "211cadbabbf3a6d36da9dfef23f3ad180dc40378206515320e9f289befa326a8"
+      },
+      {
+        "name": "machine_17",
+        "visiblePixels": 636,
+        "sha256": "8077909e8ad9f5212d64eaa6e0e44859adc2d22ddc5970d0a12a0a6021980f2c"
+      },
+      {
+        "name": "machine_18",
+        "visiblePixels": 632,
+        "sha256": "fb3ada48369ab3a3e73f53e14ab59fc677ce14fad4eb07d3d247db022de1fb1b"
+      },
+      {
+        "name": "machine_19",
+        "visiblePixels": 603,
+        "sha256": "863984190a3b4592940ea0ea7d218b83972f169bf5cb5df92b8d5addd29bfb79"
+      },
+      {
+        "name": "machine_20",
+        "visiblePixels": 643,
+        "sha256": "ee0075fdd1bbf6f0211de5651c258445911f2d6b33d95543d31ac0c67aad2410"
+      },
+      {
+        "name": "machine_21",
+        "visiblePixels": 633,
+        "sha256": "1b6318129445ecc510aa0e48c52f4d3a73b95ac37cc1d34e479197d0e3fbaf33"
+      },
+      {
+        "name": "machine_22",
+        "visiblePixels": 637,
+        "sha256": "295439145bac19d73da345009147e2ba1a84c386d5ddce4001cb978bfd464e47"
+      },
+      {
+        "name": "machine_23",
+        "visiblePixels": 594,
+        "sha256": "7925e66b99a93adb9e798189b2be395253f2afdc35f49f613964409758c2138b"
+      },
+      {
+        "name": "machine_24",
+        "visiblePixels": 592,
+        "sha256": "54a97307897d2e44ec8808d2a77f3b3762939ec08381e54a73af546b625a79fe"
+      },
+      {
+        "name": "machine_25",
+        "visiblePixels": 650,
+        "sha256": "34e0f7e8f8b3932955c6666b4a282eb121ff11d10c948d0bc027874e1c275b39"
+      },
+      {
+        "name": "machine_26",
+        "visiblePixels": 540,
+        "sha256": "10da02a75fe02137ed3aadefa053eaab54ce6d0abd3d8018c1114384060906f5"
+      },
+      {
+        "name": "machine_27",
+        "visiblePixels": 594,
+        "sha256": "2d8790eb289aceec6470b869c3fc8bf8e2eae1ba4211a4611f380895a71f4406"
+      },
+      {
+        "name": "machine_28",
+        "visiblePixels": 587,
+        "sha256": "36afdc37f03539ed9f572920168e2515c174a25b5681d7bfdd4cec7bada86d2c"
+      },
+      {
+        "name": "machine_29",
+        "visiblePixels": 632,
+        "sha256": "1070c639be88e11a664a6af1bf69c8b9871cf91a76707d3b8645a925f2f41b9d"
+      },
+      {
+        "name": "machine_30",
+        "visiblePixels": 561,
+        "sha256": "647438d0c30384e35dd2ece61aeeb6e8834346578691e222279329c7d8e63668"
+      },
+      {
+        "name": "node_0",
+        "visiblePixels": 543,
+        "sha256": "e051b2475047f78a63ebe8d150dd5d8e2bdefa0f07b60fd28b9b19203e7a647a"
+      },
+      {
+        "name": "node_1",
+        "visiblePixels": 523,
+        "sha256": "b8cd53665738cd0912b2e45b2f3615c4efb4fb16d300a27ce12c9fd4e609b839"
+      },
+      {
+        "name": "node_2",
+        "visiblePixels": 496,
+        "sha256": "bdb21ba657e32e8f54c6e56eca575929ae21d86c6634303663e9beeedab55068"
+      },
+      {
+        "name": "node_3",
+        "visiblePixels": 606,
+        "sha256": "bf8a12a3b87ee172c3f8c070b141ae7d2cddde8ecda558062ae258b9ce08efe2"
+      },
+      {
+        "name": "node_4",
+        "visiblePixels": 532,
+        "sha256": "e9bafdc522fb3e708aa55f17f16e2e1f4fe71fbe0b87a3df047bacfa20233b51"
+      },
+      {
+        "name": "node_5",
+        "visiblePixels": 490,
+        "sha256": "0e2b7a7790a6ec845eeddd7ffab6ede840590d84becb45766abc28ae6a553cfb"
+      },
+      {
+        "name": "node_6",
+        "visiblePixels": 520,
+        "sha256": "9c6e029c91c3cb8c4766535713881d68e2fadb8861d568d7b8e715b712b6af17"
+      },
+      {
+        "name": "node_7",
+        "visiblePixels": 451,
+        "sha256": "6a0354dafbe952416176fd8bdfe064b0fe82c441a6e5f9fad87bc0abed1ab9f4"
+      },
+      {
+        "name": "survivor_0_0",
+        "visiblePixels": 389,
+        "sha256": "e80e00ea8ae47f7a9508c75e69648856cabc4837eff2d84e35e5898fbf72a4b9"
+      },
+      {
+        "name": "survivor_0_1",
+        "visiblePixels": 391,
+        "sha256": "aeddc6f0de6f470dd438dcc9a69a77dd3efcbf23bb498f7b1e2c84b7e13ee6d5"
+      },
+      {
+        "name": "survivor_0_2",
+        "visiblePixels": 385,
+        "sha256": "d7311003f36f54add00baee4de08fc9d0923b2bbdb72d384c74c7590ed66d357"
+      },
+      {
+        "name": "survivor_0_3",
+        "visiblePixels": 392,
+        "sha256": "b2c65d5bfb85830267cdf459f39bedd45baf9ad9564ed2ad7f24582786e23d34"
+      },
+      {
+        "name": "survivor_1_0",
+        "visiblePixels": 414,
+        "sha256": "3f166a84237287ee9522a938dc0c48e460de6f296cc08cb7b896d16bb13d85f0"
+      },
+      {
+        "name": "survivor_1_1",
+        "visiblePixels": 429,
+        "sha256": "44e0ce8df006cfbe8187c6b7a93e128375d47f6897414206b19a8b0f00782314"
+      },
+      {
+        "name": "survivor_1_2",
+        "visiblePixels": 415,
+        "sha256": "10c21706b197c752a1a6094ea569e40cc0d4b4755ee6d82abd0d835a260bf52d"
+      },
+      {
+        "name": "survivor_1_3",
+        "visiblePixels": 422,
+        "sha256": "e0cff077d258919552a58d73468ca293850af6d0630d518567b2a07ab6122313"
+      },
+      {
+        "name": "survivor_2_0",
+        "visiblePixels": 389,
+        "sha256": "22965fec193a0445fe0d6b9dab14e3e0401a541f41924a1c90f465849a99dc22"
+      },
+      {
+        "name": "survivor_2_1",
+        "visiblePixels": 391,
+        "sha256": "6376a290ad09d83d83e857116dd92f0e4e513bb40c5db395d588d069fbdaea16"
+      },
+      {
+        "name": "survivor_2_2",
+        "visiblePixels": 385,
+        "sha256": "47b68b7e9e2c9f0d76ee9dbd86ec02f5b591b8f81ec90fba2d161b456b1a5b44"
+      },
+      {
+        "name": "survivor_2_3",
+        "visiblePixels": 392,
+        "sha256": "bf6c00745fe941fe392b95ec13dd0b8d876e9935ed25a221ae6459d933106893"
+      },
+      {
+        "name": "survivor_3_0",
+        "visiblePixels": 414,
+        "sha256": "2a99c84adb603c8bf7faa0b5615d40c25e9de8b43d014086aa7e64b55e1dd664"
+      },
+      {
+        "name": "survivor_3_1",
+        "visiblePixels": 429,
+        "sha256": "d82c137b67b7dccde9768e27ce0dd68b87c78aa05e7b690f0a4204bcd5bf2077"
+      },
+      {
+        "name": "survivor_3_2",
+        "visiblePixels": 415,
+        "sha256": "f1979bce9ddce964eb49d88d52e98bbeef0ab4beda7e34694c03ada0b4f60b20"
+      },
+      {
+        "name": "survivor_3_3",
+        "visiblePixels": 422,
+        "sha256": "9d46ebebcfe667542f151b096f45aa6a9c6d0e89508c1c2c2c5fa7fe2e72d2cb"
+      }
+    ]
+  },
+  "issues": [],
+  "renderer": {
+    "backend": "chrome",
+    "name": "chrome",
+    "version": "157.0.8103.79",
+    "zoom": 1,
+    "size": [
+      576,
+      360
+    ]
+  },
+  "published": true,
+  "actualWorldPNG": "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\SvgBatch\\Reports\\Renders\\visualreview1\\world\\base\\world.png",
+  "newWorldSHA256": "0a9b5a411489e6885eeb2bdca69fbaf00f5577b36972ab4885e77a453258eb5f",
+  "previousWorldSHA256": "84e4212915f5ff8ae5bfb04bca1591457db6daac695cccd6df4605c6577c6033",
+  "runtimeFilesChanged": []
+}

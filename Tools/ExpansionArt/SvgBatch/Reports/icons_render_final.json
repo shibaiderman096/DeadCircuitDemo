@@ -1,0 +1,21 @@
+{
+  "argv": [
+    "C:\\Program Files\\WindowsApps\\OpenAI.CodexPrimaryRuntime.v26-1118-904-0_26.1118.904.0_x64__3k8sg7r9htsxt\\dependencies\\python\\python.exe",
+    "-B",
+    "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+    "render",
+    "--svg",
+    "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\SvgBatch\\Sources\\icons.svg",
+    "--output-dir",
+    "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\SvgBatch\\Reports\\Renders\\final\\icons",
+    "--backend",
+    "chrome",
+    "--crisp",
+    "--zoom",
+    "4",
+    "--strict-qc"
+  ],
+  "exit": 0,
+  "stdout": "{\"output\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\SvgBatch\\\\Reports\\\\Renders\\\\final\\\\icons\", \"metadata\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\SvgBatch\\\\Reports\\\\Renders\\\\final\\\\icons\\\\codeart-meta.json\", \"qa\": \"pass\", \"mode\": \"crisp\", \"variants\": [\"base\"], \"files\": 3, \"renderer\": \"chrome 157.0.8103.79\", \"failed_checks\": []}\n",
+  "stderr": ""
+}

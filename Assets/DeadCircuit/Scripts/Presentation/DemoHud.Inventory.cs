@@ -50,16 +50,25 @@ namespace DeadCircuit
 
         void MakeEquipmentSummary()
         {
-            RectTransform strip = Box("Equipment HUD", game, 278, 18, 566, 32, HudSurface);
-            equipmentSummary = Label("Current Equipment Summary", strip, "", 10, 0, 546, 32, 13, Ink);
+            // Full equipment statistics belong in the inventory, not a permanent HUD strip.
+            RectTransform strip = Box("Equipment HUD", game, 0, 0, 420, 32, HudSurface);
+            strip.anchorMin = strip.anchorMax = strip.pivot = new Vector2(0, 0);
+            strip.anchoredPosition = new Vector2(18, 18);
+            strip.sizeDelta = new Vector2(420, 32);
+            equipmentSummary = Label("Current Equipment Summary", strip, "", 10, 0, 400, 32, 14, Ink);
             equipmentSummary.textWrappingMode = TextWrappingModes.NoWrap;
         }
 
         void MakeInventory(RectTransform root)
         {
-            inventory = Backdrop("Inventory Panel", root, new Color32(4, 10, 11, 190));
+            inventory = Backdrop("Inventory Panel", root, new Color32(4, 12, 8, 225));
             RectTransform card = Box("Inventory Card", inventory, 0, 0, 1160, 688, Panel, true);
             Center(card, 1160, 688);
+            PanelRule(card, 1160, 58);
+            Box("Equipment Slots Surface", card, 14, 62, 1132, 104, Recessed);
+            Box("Inventory Browser Surface", card, 14, 208, 564, 368, Recessed);
+            Box("Inventory Detail Surface", card, 584, 208, 562, 368, Recessed);
+            Box("Inventory Footer Rule", card, 22, 616, 1116, 1, Edge);
             Label("Inventory Heading", card, "随身背包 / 装备工坊", 22, 16, 830, 36, 25, Ink, FontStyles.Bold);
             Button("Close Inventory", card, "关闭 B / Esc", 1012, 18, 126, 32, () => SetPanel(inventory, false));
             equipmentSlots[0] = Button("Weapon Equipment Slot", card, "武器位", 22, 66, 408, 44, () => BrowseEquipmentSlot(0));
@@ -71,6 +80,7 @@ namespace DeadCircuit
                 int slot = i;
                 armorSlots[i] = Button("Armor Slot " + i, card, "", 22 + i * 232, 118, 224, 42, () => BrowseArmorSlot(slot));
                 armorSlots[i].label.fontSizeMax = 14;
+                armorSlots[i].label.fontSizeMin = 12;
             }
             armorSummary = Label("Armor Summary", card, "", 962, 116, 176, 48, 13, Accent);
             string[] names = { "Materials", "Equipment", "Parts", "Craft" };
@@ -292,12 +302,12 @@ namespace DeadCircuit
         void RefreshEquipmentSummary(PlayerState player)
         {
             GearState current = EquipmentCatalog.Equipped(player);
-            if (current == null) { Set(equipmentSummary, "当前：徒手 · Q 切换武器 / 工具 · B 背包"); return; }
+            if (current == null) { Set(equipmentSummary, "徒手 · Q 切换 · B 背包"); return; }
             WeaponStats stats = EquipmentCatalog.Stats(current);
-            string magazine = stats.magazine > 0 ? " · " + current.magazine + "/" + stats.magazine + "  备弹 " + Count(player.items, (int)ReloadAmmo(player, current)) : "";
-            string loading = player.reloadRemaining > 0f ? " · 装填 " + player.reloadRemaining.ToString("0.0") + "s" : "";
-            Set(equipmentSummary, (player.activeSlot == 1 ? "工具：" : "武器：") + EquipmentCatalog.GearNames[(int)current.kind] + magazine + loading +
-                " · 耐久 " + current.durability + "%" + (loading.Length == 0 && stats.magazine > 0 ? " · R 装填" : ""));
+            string magazine = stats.magazine > 0 ? " · " + current.magazine + "/" + stats.magazine : "";
+            string state = player.reloadRemaining > 0f ? " · 装填 " + player.reloadRemaining.ToString("0.0") + "s" :
+                current.durability <= 15 ? " · 低耐久" : "";
+            Set(equipmentSummary, EquipmentCatalog.GearNames[(int)current.kind] + magazine + state);
             equipmentSummary.color = current.durability <= 15 ? Amber : Ink;
         }
 
@@ -320,8 +330,9 @@ namespace DeadCircuit
                 GearState armor = EquipmentCatalog.Find(player, Count(player.armorIds, i));
                 Set(armorSlots[i].label, armorNames[i] + " · " + (armor == null ? "空槽 / 浏览防具" : EquipmentCatalog.GearNames[(int)armor.kind] + "\n耐久 " + armor.durability + "%"));
                 armorSlots[i].button.interactable = ready;
-                Tint(armorSlots[i], armor != null && armor.id == selectedGear ? new Color32(57, 94, 76, 255) : Raised);
+                Tint(armorSlots[i], armor != null && armor.id == selectedGear ? Selected : Raised);
                 armorSlots[i].label.color = armor != null && armor.durability <= 0 ? Danger : Ink;
+                SetButtonArt(armorSlots[i], armor == null ? null : "gear_" + (int)armor.kind, 28);
             }
             Set(armorSummary, "总护甲 " + EquipmentCatalog.ArmorRating(player).ToString("0.#") + "\n移动 -" + (EquipmentCatalog.MovementPenalty(player) * 100f).ToString("0.#") + "%");
             for (int i = 0; i < equipmentSlots.Length; i++)
@@ -330,11 +341,12 @@ namespace DeadCircuit
                 string name = i == 2 ? "徒手" : (i == 0 ? "武器位  " : "工具位  ") + (gear == null ? "空" : EquipmentCatalog.GearNames[(int)gear.kind]);
                 Set(equipmentSlots[i].label, name + (player.activeSlot == i ? "  [当前]" : ""));
                 equipmentSlots[i].button.interactable = ready && (i == 2 || gear != null);
-                Tint(equipmentSlots[i], player.activeSlot == i ? new Color32(57, 94, 76, 255) : Raised);
+                Tint(equipmentSlots[i], player.activeSlot == i ? Selected : Raised);
+                if (i < 2) SetButtonArt(equipmentSlots[i], gear == null ? null : "gear_" + (int)gear.kind, 30);
             }
             Set(inventorySelection, "当前：" + (player.activeSlot == 0 ? "武器" : player.activeSlot == 1 ? "工具" : "徒手") +
                 "\n选中：" + (target == null ? "无装备" : EquipmentCatalog.GearNames[(int)target.kind] + " #" + target.id));
-            for (int i = 0; i < inventoryTabs.Length; i++) Tint(inventoryTabs[i], inventoryTab == i ? new Color32(57, 94, 76, 255) : Raised);
+            for (int i = 0; i < inventoryTabs.Length; i++) Tint(inventoryTabs[i], inventoryTab == i ? Selected : Raised);
             materialScroll.gameObject.SetActive(inventoryTab == 0);
             gearScroll.gameObject.SetActive(inventoryTab == 1);
             partScroll.gameObject.SetActive(inventoryTab == 2);
@@ -363,6 +375,7 @@ namespace DeadCircuit
                 cell.quantity = Count(player.items, cell.id);
                 Set(cell.widget.label, cell.title + "\n× " + cell.quantity + "\n<size=11>" + MaterialCategoryName(cell.category) + "</size>");
                 cell.widget.label.color = cell.quantity > 0 ? Ink : Muted;
+                SetButtonArt(cell.widget, "item_" + cell.id);
             }
             if (player.gear != null) foreach (GearState gear in player.gear)
             {
@@ -382,12 +395,14 @@ namespace DeadCircuit
                 Set(cell.widget.label, cell.title + "  #" + gear.id + "\n耐久 " + gear.durability + "%" +
                     (EquipmentCatalog.IsGun(gear.kind) ? " · " + gear.magazine + "/" + EquipmentCatalog.Stats(gear).magazine : "") + "\n<size=11>" + status + "</size>");
                 cell.widget.label.color = gear.durability <= 0 ? Danger : Ink;
+                SetButtonArt(cell.widget, "gear_" + (int)gear.kind);
             }
             foreach (InventoryCell cell in partCells)
             {
                 cell.quantity = Count(player.parts, cell.id);
                 Set(cell.widget.label, cell.title + "\n× " + cell.quantity + "\n<size=11>" + EquipmentCatalog.SlotNames[cell.category - 1] + "</size>");
                 cell.widget.label.color = cell.quantity > 0 ? Ink : Muted;
+                SetButtonArt(cell.widget, "part_" + cell.id);
             }
             if (inventoryTab == 3) { inventoryEmpty.gameObject.SetActive(false); return; }
             List<InventoryCell> cells = inventoryTab == 0 ? materialCells : inventoryTab == 1 ? gearCells : partCells;
@@ -402,7 +417,7 @@ namespace DeadCircuit
                 if (!visible) continue;
                 visibleCells.Add(cell);
                 bool selected = inventoryDetailKind == inventoryTab && cell.id == (inventoryTab == 0 ? selectedMaterial : inventoryTab == 1 ? selectedGear : selectedPart);
-                Tint(cell.widget, selected ? new Color32(57, 94, 76, 255) : Raised);
+                Tint(cell.widget, selected ? Selected : Raised);
             }
             visibleCells.Sort((a, b) =>
             {
@@ -499,7 +514,7 @@ namespace DeadCircuit
                 ItemKind ammo = inventoryAmmo[i];
                 ammoButtons[i].button.interactable = alive && active && target.magazine == 0 && EquipmentCatalog.AmmoCompatible(target.kind, ammo);
                 Set(ammoButtons[i].label, EquipmentCatalog.AmmoName(ammo) + "\n×" + Count(player.items, (int)ammo));
-                Tint(ammoButtons[i], player.selectedAmmo == ammo ? new Color32(57, 94, 76, 255) : Raised);
+                Tint(ammoButtons[i], player.selectedAmmo == ammo ? Selected : Raised);
             }
             for (int i = 0; i < detachButtons.Count; i++)
             {
@@ -516,7 +531,7 @@ namespace DeadCircuit
                 bool empty = AttachedPart(target, (int)part.slot) < 0;
                 installButtons[i].button.interactable = ready && bench && world.era >= part.era && compatible && empty && Count(player.parts, i) > 0;
                 Set(installButtons[i].label, part.name + " ×" + Count(player.parts, i) + (!compatible ? " · 不兼容" : !empty ? " · 槽已占" : " · 安装"));
-                Tint(installButtons[i], inventoryDetailKind == 2 && selectedPart == i ? new Color32(57, 94, 76, 255) : Raised);
+                Tint(installButtons[i], inventoryDetailKind == 2 && selectedPart == i ? Selected : Raised);
             }
         }
 

@@ -1,0 +1,812 @@
+[
+  {
+    "name": "food_0",
+    "label": "Berries",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_1",
+    "label": "Mushroom",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_2",
+    "label": "Apple",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_3",
+    "label": "Carrot",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_4",
+    "label": "Potato",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_5",
+    "label": "Corn",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_6",
+    "label": "Wheat",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_7",
+    "label": "Tomato",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_8",
+    "label": "Pumpkin",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_9",
+    "label": "Beans",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_10",
+    "label": "RawMeat",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_11",
+    "label": "RawPoultry",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_12",
+    "label": "RawFish",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_13",
+    "label": "Egg",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_14",
+    "label": "RoastMeat",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_15",
+    "label": "RoastPoultry",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_16",
+    "label": "GrilledFish",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_17",
+    "label": "BoiledEgg",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_18",
+    "label": "BakedPotato",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_19",
+    "label": "RoastedCorn",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_20",
+    "label": "Bread",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_21",
+    "label": "VegetableStew",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_22",
+    "label": "MeatStew",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_23",
+    "label": "FishSoup",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_24",
+    "label": "FruitSalad",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_25",
+    "label": "Flour",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_26",
+    "label": "DriedMeat",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_27",
+    "label": "CookedBeans",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_28",
+    "label": "PumpkinSoup",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_29",
+    "label": "HerbalTea",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "food_30",
+    "label": "Herb",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_0",
+    "label": "StoneAxe",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_1",
+    "label": "StonePickaxe",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_2",
+    "label": "SteelAxe",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_3",
+    "label": "SteelPickaxe",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_4",
+    "label": "Wrench",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_5",
+    "label": "Knife",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_6",
+    "label": "Pistol",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_7",
+    "label": "Shotgun",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_8",
+    "label": "AssaultRifle",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_9",
+    "label": "PrecisionRifle",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_10",
+    "label": "ClothHood",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_11",
+    "label": "LeatherJacket",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_12",
+    "label": "WorkPants",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_13",
+    "label": "WorkBoots",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_14",
+    "label": "SteelHelmet",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_15",
+    "label": "ArmorVest",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_16",
+    "label": "TacticalHelmet",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_17",
+    "label": "TacticalVest",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_18",
+    "label": "TacticalBoots",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "part_0",
+    "label": "RedDot",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "part_1",
+    "label": "Scope4x",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "part_2",
+    "label": "Suppressor",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "part_3",
+    "label": "MuzzleBrake",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "part_4",
+    "label": "ExtendedMag",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "part_5",
+    "label": "ErgonomicGrip",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "part_6",
+    "label": "MatchBarrel",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_0",
+    "label": "Wood",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_1",
+    "label": "Ore",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_2",
+    "label": "Iron",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_3",
+    "label": "Scrap",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_4",
+    "label": "Fuel",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_5",
+    "label": "Ammo",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_6",
+    "label": "Food",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_7",
+    "label": "CopperOre",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_8",
+    "label": "Copper",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_9",
+    "label": "Bronze",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_10",
+    "label": "Steel",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_11",
+    "label": "Circuit",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_12",
+    "label": "Polymer",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_13",
+    "label": "AdvancedCircuit",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_14",
+    "label": "UraniumOre",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_15",
+    "label": "NuclearFuel",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_16",
+    "label": "Coolant",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_17",
+    "label": "NuclearWaste",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_18",
+    "label": "CrushedOre",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_19",
+    "label": "TinOre",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_20",
+    "label": "Tin",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_21",
+    "label": "RifleAmmo",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_22",
+    "label": "Shell",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_23",
+    "label": "PrecisionAmmo",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_24",
+    "label": "ArmorPiercingAmmo",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "ui_panel",
+    "label": "ui_panel",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "ui_button",
+    "label": "ui_button",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "ui_button_down",
+    "label": "ui_button_down",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "ui_slot",
+    "label": "ui_slot",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "ui_slot_selected",
+    "label": "ui_slot_selected",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "ui_windowframe",
+    "label": "ui_windowframe",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "ui_tooltip",
+    "label": "ui_tooltip",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "ui_progress",
+    "label": "ui_progress",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  }
+]

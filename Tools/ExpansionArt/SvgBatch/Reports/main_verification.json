@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-19",
+  "coreChecks": { "passed": 395, "failed": 0, "runner": "Tools/CoreChecks/CoreChecks.csproj" },
+  "unityEditor": { "version": "6000.6.8f1", "scriptCompilationErrors": 0, "playMode": "stopped" },
+  "importReadback": {
+    "atlases": [
+      { "name": "icons", "width": 576, "height": 216 },
+      { "name": "world", "width": 576, "height": 360 }
+    ],
+    "textureType": "Default", "npotScale": "None", "filterMode": "Point",
+    "textureCompression": "Uncompressed", "mipmaps": false,
+    "audioClips": 30, "pcmClips": 30, "mono44100Clips": 30,
+    "audioLoadType": "DecompressOnLoad", "sampleRateSetting": "PreserveSampleRate"
+  },
+  "assetChecks": { "svgFrames": 241, "uniqueFrames": 241, "svgPngPixelEquality": true, "transparentGutters": true, "wavFiles": 30, "loopSeams": 3, "errors": [] },
+  "mainVisualReview": [ "enemy_contact_4x.png", "sites_contact_4x.png", "survivor_gait_4x.png" ],
+  "notExecuted": [ "Windows player build", "Windows player launch", "Unity Play Mode", "runtime UI checks", "audio listening", "LAN runtime checks" ],
+  "limits": [ "Static contact sheets do not prove runtime layout or appearance", "Enemy and creature art uses a single pose", "Cross-biome terrain transitions are not provided" ]
+}

@@ -137,6 +137,7 @@ namespace DeadCircuit
                     variant = i == 5 ? 1 : 0, hp = i == 5 ? 32f : 45f });
             state.announcement = "原始时代：工作台(29,35)、石炉(28,37)。采铁铜锡，手制燃料后石炉冶炼；研究水力，岸位(25,25)可建水车。科技全队共享，个人加点独立。";
             state.announcementUntil = 28f;
+            WorldSimulator.PrepareGeneratedWorld(state);
             return state;
         }
 

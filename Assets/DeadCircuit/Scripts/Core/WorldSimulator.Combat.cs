@@ -38,13 +38,13 @@ namespace DeadCircuit
             {
                 if(gear!=null) gear.durability--;
                 float range = stats.range + p.attributes[0] * 0.015f;
-                AddTrace(p.x, p.y, p.x + p.aimX * range, p.y + p.aimY * range, false);
+                AddTrace(p.x, p.y, p.x + p.aimX * range, p.y + p.aimY * range, false, 2);
                 int remaining = p.skills[1] >= 3 ? 3 : 1;
                 // Stable nearest-first melee rather than list order; tier three cleaves three targets.
                 int firstId = -1, secondId = -1;
                 while (remaining-- > 0)
                 {
-                    ZombieState best = null; float nearest = range * range;
+                    ZombieState best = null; CreatureState animal = null; float nearest = range * range;
                     foreach (ZombieState z in State.zombies)
                     {
                         if (z.id == firstId || z.id == secondId) continue;
@@ -53,14 +53,28 @@ namespace DeadCircuit
                             !LineClear(p.x, p.y, z.x, z.y, RoundCell(z.x), RoundCell(z.y))) continue;
                         best = z; nearest = dist;
                     }
-                    if (best == null) break;
-                    if (firstId < 0) firstId = best.id; else secondId = best.id;
-                    DamageZombie(best, damage, p);
+                    if (State.survival != null && State.survival.enabled) foreach (CreatureState c in State.survival.creatures)
+                    {
+                        if (c.hp <= 0 || c.id == firstId || c.id == secondId) continue;
+                        float dx = c.x - p.x, dy = c.y - p.y, dist = dx * dx + dy * dy;
+                        if (dist > nearest || (dist == nearest && (best != null || animal != null)) ||
+                            (dist > .01f && dx * p.aimX + dy * p.aimY < Math.Sqrt(dist) * .2f) ||
+                            !LineClear(p.x, p.y, c.x, c.y, RoundCell(c.x), RoundCell(c.y))) continue;
+                        animal = c; best = null; nearest = dist;
+                    }
+                    if (best == null && animal == null) break;
+                    int hitId = best != null ? best.id : animal.id;
+                    if (firstId < 0) firstId = hitId; else secondId = hitId;
+                    if (best != null) DamageZombie(best, damage, p); else DamageCreature(animal.id, damage, p);
                 }
             }
         }
 
-        private struct BulletHit { public ZombieState zombie; public float distance; }
+        private struct BulletHit
+        {
+            public ZombieState zombie; public CreatureState creature; public float distance;
+            public int Id => zombie != null ? zombie.id : creature.id;
+        }
 
         private void Shoot(float x, float y, float dx, float dy, float range, float damage, PlayerState owner, int penetration=1)
         {
@@ -75,13 +89,21 @@ namespace DeadCircuit
                 if (perpendicular > 0.34f * 0.34f) continue;
                 hits.Add(new BulletHit { zombie=z,distance=projection });
             }
-            hits.Sort((a,b)=> { int result=a.distance.CompareTo(b.distance); return result!=0 ? result : a.zombie.id.CompareTo(b.zombie.id); });
+            if (owner != null && State.survival != null && State.survival.enabled) foreach (CreatureState c in State.survival.creatures)
+            {
+                float cx=c.x-x, cy=c.y-y, projection=cx*dx+cy*dy;
+                if (c.hp<=0 || projection<0 || projection>stop || cx*cx+cy*cy-projection*projection>.34f*.34f) continue;
+                hits.Add(new BulletHit { creature=c, distance=projection });
+            }
+            hits.Sort((a,b)=> { int result=a.distance.CompareTo(b.distance); return result!=0 ? result : a.Id.CompareTo(b.Id); });
             for(int i=0;i<hits.Count && i<penetration;i++)
             {
-                DamageZombie(hits[i].zombie,damage,owner); damage*=.8f;
+                if (hits[i].zombie!=null) DamageZombie(hits[i].zombie,damage,owner);
+                else DamageCreature(hits[i].creature.id,damage,owner);
+                damage*=.8f;
                 if(i==penetration-1) stop=hits[i].distance;
             }
-            AddTrace(x, y, x + dx * stop, y + dy * stop, false);
+            AddTrace(x, y, x + dx * stop, y + dy * stop, false, 1);
         }
 
         private float BulletStop(float x,float y,float dx,float dy,float range)
@@ -132,6 +154,9 @@ namespace DeadCircuit
         private void DamageZombie(ZombieState z, float amount, PlayerState owner)
         {
             if (z.hp <= 0f) return;
+            GearState weapon = owner == null ? null : EquipmentCatalog.Equipped(owner);
+            bool armorPiercing = weapon != null && EquipmentCatalog.IsGun(weapon.kind) && weapon.loadedAmmo == ItemKind.ArmorPiercingAmmo;
+            amount *= EnemyCatalog.IncomingDamageMultiplier(z.variant, armorPiercing);
             z.hp = Math.Max(0f, z.hp - amount);
             if (z.hp > 0f) return;
             State.zombies.Remove(z); State.kills = SaturatingAdd(State.kills, 1);
@@ -167,10 +192,10 @@ namespace DeadCircuit
             Notice(p, "你已倒下；5秒后可复活，背包和成长保留。"); flowRevision = -1;
         }
 
-        private void AddTrace(float x, float y, float tx, float ty, bool hostile)
+        private void AddTrace(float x, float y, float tx, float ty, bool hostile, int effect = 0)
         {
             if (State.traces.Count >= MaxTraces) State.traces.RemoveAt(0);
-            State.traces.Add(new TraceState { x = x, y = y, endX = tx, endY = ty, hostile = hostile, until = State.elapsed + 0.15f });
+            State.traces.Add(new TraceState { x = x, y = y, endX = tx, endY = ty, hostile = hostile, effect = effect, until = State.elapsed + 0.15f });
         }
 
         private void RebuildFlow()
@@ -200,8 +225,11 @@ namespace DeadCircuit
 
         private void UpdateZombies()
         {
-            foreach (ZombieState z in State.zombies)
+            // A bomber can remove itself in this phase. Preserve original AI order while
+            // avoiding mutation of the live collection during enumeration.
+            foreach (ZombieState z in new List<ZombieState>(State.zombies))
             {
+                if (z.hp <= 0f) continue;
                 z.attackCooldown = Math.Max(0f, z.attackCooldown - FixedStep);
                 PlayerState nearest = null; float bestDistance = float.MaxValue;
                 foreach (PlayerState p in State.players) if (p.connected && p.hp > 0f)
@@ -209,13 +237,15 @@ namespace DeadCircuit
                     float d = DistSq(p.x, p.y, z.x, z.y); if (d < bestDistance) { nearest = p; bestDistance = d; }
                 }
                 if (nearest == null) continue;
-                if (State.wave == 0 && bestDistance > 12f * 12f) continue;
+                if (State.wave == 0 && bestDistance > 12f * 12f && z.alertedUntil <= State.elapsed) continue;
+                if (EnemySpecial(z, nearest, bestDistance)) continue;
                 if (bestDistance <= 1.05f * 1.05f && LineClear(z.x, z.y, nearest.x, nearest.y, RoundCell(nearest.x), RoundCell(nearest.y)))
                 {
                     if (z.attackCooldown <= 0f)
                     {
-                        z.attackCooldown = z.variant == 1 ? 0.8f : 1.05f;
-                        DamagePlayer(nearest, z.variant == 2 ? 18f : 10f, true);
+                        bool night = EnemyCatalog.IsNight(State.elapsed, State.dayLength);
+                        z.attackCooldown = EnemyCatalog.AttackInterval(z.variant, night);
+                        EnemyDamagePlayer(nearest, EnemyCatalog.Damage(z.variant, night), z.variant);
                         AddTrace(z.x, z.y, nearest.x, nearest.y, true);
                     }
                     continue;
@@ -233,7 +263,7 @@ namespace DeadCircuit
                 if (BlockedAt(tx, ty) && DistSq(z.x, z.y, tx, ty) <= 1.3f * 1.3f)
                 { ZombieBreak(z, tx, ty); continue; }
                 float dx = targetX - z.x, dy = targetY - z.y; Normalize(ref dx, ref dy, true);
-                float speed = z.variant == 1 ? 1.8f : z.variant == 2 ? 0.85f : 1.15f;
+                float speed = EnemyCatalog.Speed(z.variant, EnemyCatalog.IsNight(State.elapsed, State.dayLength));
                 speed *= 1f + Math.Min(0.35f, State.wave * 0.015f);
                 float oldX = z.x, oldY = z.y;
                 MoveCircle(ref z.x, ref z.y, dx * speed * FixedStep, dy * speed * FixedStep, 0.29f);
@@ -256,7 +286,9 @@ namespace DeadCircuit
             if (z.attackCooldown > 0f) return;
             BuildingState b = BuildingAt(x, y); NodeState n = NodeAt(x, y);
             if (b == null && n == null) return;
-            z.attackCooldown = 0.8f; float damage = z.variant == 2 ? 26f : 14f;
+            if (z.variant == 10) { DetonateEnemy(z); return; }
+            EnemyStats stats = EnemyCatalog.Stats(z.variant);
+            z.attackCooldown = stats.structureInterval; float damage = stats.structureDamage;
             if (b != null) { b.hp -= damage; if (b.hp <= 0f) RemoveBuilding(b); }
             else { n.hp -= damage; if (n.hp <= 0f) RemoveNode(n); }
             // Enemy destruction is an intentional resource sink (contents burn); dismantling is the
@@ -291,7 +323,8 @@ namespace DeadCircuit
                 bool safe = true;
                 foreach (PlayerState p in State.players) if (p.connected && p.hp > 0f && DistSq(x, y, p.x, p.y) < 225f) { safe = false; break; }
                 if (!safe) continue;
-                State.zombies.Add(new ZombieState { id = AllocateId(), x = x, y = y, variant = variant, hp = (variant == 2 ? 110f : variant == 1 ? 32f : 45f) + Math.Min(100f, State.wave * 4f) });
+                int selected = SelectSpawnEnemy(variant, x, y, hash);
+                State.zombies.Add(new ZombieState { id = AllocateId(), x = x, y = y, variant = selected, hp = EnemyCatalog.Stats(selected).hp + Math.Min(100f, State.wave * 4f) });
                 return true;
             }
             return false;

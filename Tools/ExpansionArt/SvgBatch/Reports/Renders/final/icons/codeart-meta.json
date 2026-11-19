@@ -1,0 +1,164 @@
+{
+  "schema": "codeart2d.codeart_meta.v1",
+  "art_source": "code",
+  "placeholder": false,
+  "disclosure": "code-drawn, no image model",
+  "generator": "svg_render.py",
+  "spec_sha256": "68addb4764291e27e063f425b9be405bb68880089c434f67069c9feb4a58efb4",
+  "renderer": {
+    "backend": "chrome",
+    "name": "chrome",
+    "version": "157.0.8103.79",
+    "zoom": 1,
+    "size": [
+      576,
+      216
+    ]
+  },
+  "palette": {
+    "colors": {
+      "0": "#192829",
+      "1": "#253b3b",
+      "2": "#344a43",
+      "3": "#536a68",
+      "4": "#8ba39a",
+      "5": "#ddd5ac",
+      "6": "#eee9d3",
+      "7": "#503e32",
+      "8": "#76533b",
+      "9": "#aa8054",
+      "10": "#c4ab75",
+      "11": "#9b5338",
+      "12": "#e59a50",
+      "13": "#edc566",
+      "14": "#b75446",
+      "15": "#d68169",
+      "16": "#527445",
+      "17": "#739650",
+      "18": "#81824a",
+      "19": "#80d8bc",
+      "20": "#4c9e9b",
+      "21": "#aed5d2",
+      "22": "#497b86",
+      "23": "#796175"
+    },
+    "variants": {}
+  },
+  "outputs": [
+    {
+      "path": "base/icons.svg",
+      "sha256": "415e941108cc06aa0863345b4fe8f62b433137b2caecf15827fb2e7f080112ee",
+      "bytes": 634108
+    },
+    {
+      "path": "base/icons.png",
+      "sha256": "16bf80d4b170cccbce0a472b6448013315ea9146f0e89f1e2a49032815aad108",
+      "bytes": 13393
+    },
+    {
+      "path": "base/icons@4x.png",
+      "sha256": "65b6a84adf371fbf5e879e923902faed6931a592d2379e64c83d1870b9bbf1c0",
+      "bytes": 29458
+    }
+  ],
+  "qa": {
+    "status": "pass",
+    "method": "svg_render.py render: every variant's compiled SVG passed codeart_core.lint_portable_svg (pixel profile) before rasterizing; every 1x PNG was read back and measured with codeart_core.qa_pixels (alpha census, exact palette lookup), and the @Nx copies are integer nearest upscales of it",
+    "notProven": [
+      "Appearance, readability and appeal; look at the PNGs at game size.",
+      "Agreement with other renderers on this machine; run svg_render.py doctor (renders are bit-exact only for the recorded renderer version).",
+      "That the art matches the brief and the intent of the SVG."
+    ],
+    "checks": [
+      {
+        "id": "lint",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0,
+        "profile": "pixel"
+      },
+      {
+        "id": "partial_alpha",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0
+      },
+      {
+        "id": "off_palette",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0
+      }
+    ],
+    "inputs": [
+      {
+        "path": "../../../../Sources/icons.svg",
+        "sha256": "68addb4764291e27e063f425b9be405bb68880089c434f67069c9feb4a58efb4",
+        "bytes": 634290
+      }
+    ],
+    "outputs": [
+      {
+        "path": "base/icons.svg",
+        "sha256": "415e941108cc06aa0863345b4fe8f62b433137b2caecf15827fb2e7f080112ee",
+        "bytes": 634108
+      },
+      {
+        "path": "base/icons.png",
+        "sha256": "16bf80d4b170cccbce0a472b6448013315ea9146f0e89f1e2a49032815aad108",
+        "bytes": 13393
+      },
+      {
+        "path": "base/icons@4x.png",
+        "sha256": "65b6a84adf371fbf5e879e923902faed6931a592d2379e64c83d1870b9bbf1c0",
+        "bytes": 29458
+      }
+    ],
+    "tool": {
+      "name": "svg_render.py render",
+      "version": "0.4.0"
+    }
+  },
+  "svg": {
+    "mode": "crisp",
+    "profile": "pixel",
+    "zoom": 4,
+    "canvas": [
+      576,
+      216
+    ],
+    "anchor_px": null,
+    "palette_source": "svg-colours",
+    "variants": {
+      "base": "base"
+    },
+    "images": [
+      {
+        "variant": "base",
+        "file": "base/icons.png",
+        "scale": 1,
+        "size": [
+          576,
+          216
+        ],
+        "anchor_px": null,
+        "visible": 36906,
+        "partial_alpha": 0,
+        "off_palette": 0,
+        "colors": 24
+      },
+      {
+        "variant": "base",
+        "file": "base/icons@4x.png",
+        "scale": 4,
+        "size": [
+          2304,
+          864
+        ],
+        "anchor_px": null,
+        "from": "base/icons.png",
+        "method": "integer nearest"
+      }
+    ]
+  }
+}

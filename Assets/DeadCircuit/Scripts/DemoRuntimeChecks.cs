@@ -30,18 +30,47 @@ namespace DeadCircuit
             yield return new WaitForSecondsRealtime(1);
             var bridge = GameBridge.Instance;
             Require(bridge != null, "bootstrap");
+            Require(args.Contains("--demo-qa") && !bridge.IsRunning, "QA starts at the menu with isolated saving enabled");
             if (bridge.PlayerName == "联机测试主机" || bridge.PlayerName == "联机测试客户端")
             {
                 // Clean only the display value left by the first smoke-test revision.
                 bridge.PlayerName = "幸存者";
-                FindObjectsByType<TMPro.TMP_InputField>(FindObjectsSortMode.None).Single(f => f.name == "Player Name").text = "幸存者";
+                InputField("Player Name").text = "幸存者";
                 PlayerPrefs.SetString("DeadCircuit.Name", "幸存者");
                 PlayerPrefs.Save();
             }
+            Require(Active("Start Page") && !Active("Create World Page") && !Active("Load World Page") && !Active("LAN Page"), "home page is the initial menu");
             yield return Capture("menu");
             Click("New Game");
+            yield return null;
+            Require(Active("Create World Page") && !bridge.IsRunning, "New Game opens configuration without starting a session");
+            Click("Create World Page Back");
+            yield return null;
+            Click("Open LAN");
+            yield return null;
+            Require(Active("LAN Page") && FindButton("Start Host").interactable && !bridge.IsRunning, "host action belongs to LAN page");
+            yield return Capture("lan");
+            Click("Start Host");
+            yield return null;
+            Require(Active("Create World Page") && !bridge.IsRunning, "Start Host also requires world configuration confirmation");
+            Click("Create World Page Back");
+            yield return null;
+            Click("New Game");
+            string qaWorldName = "运行时QA-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            InputField("World Name").text = qaWorldName;
+            InputField("World Seed").text = "73149";
+            Click("World Preset Balanced");
+            Click("City Density 1");
+            yield return null;
+            Require(!bridge.IsRunning && FindButton("Create World").interactable, "world starts only after Create World confirmation");
+            yield return Capture("create-world");
+            Click("Create World");
             yield return new WaitForSecondsRealtime(.5f);
-            Require(bridge.IsRunning && bridge.IsHost && bridge.LocalPlayer != null, "new game button");
+            Require(bridge.IsRunning && bridge.IsHost && bridge.LocalPlayer != null, "Create World starts the configured host session");
+            Require(bridge.World.generation != null && bridge.World.generation.worldName == qaWorldName && bridge.World.seed == 73149 &&
+                bridge.World.generation.preset == WorldPreset.Balanced && bridge.World.generation.cityDensity == 1, "creation fields reach the generated world");
+            string qaSavePath = Path.GetFullPath(Path.Combine(Application.persistentDataPath, "qa-world-v1.json"));
+            Require(Path.GetFullPath(bridge.SavePath) == qaSavePath, "QA never saves over a regular world");
             var p = bridge.LocalPlayer;
             Require(bridge.World.era == TechEra.Primitive && p.items.Length == DemoCatalog.ItemNames.Length, "primitive world and expanded material inventory");
             Require(!bridge.World.buildings.Any(b => DemoCatalog.Demand(b.kind) > 0 && TechCatalog.RequiredEra(b.kind) >= TechEra.LowVoltage), "no prebuilt modern factory in a new world");
@@ -49,9 +78,14 @@ namespace DeadCircuit
             RequireDefaultHud();
             var hotbar = Rect("Build Hotbar");
             Require(hotbar.rect.width <= 660f && hotbar.rect.height <= 76f, "compact hotbar");
-            yield return Capture("gameplay");
-            Click("Open Inventory");
+            Click("HUD Build Toggle");
             yield return null;
+            Require(Active("Build Hotbar") && !Active("Build Details"), "build toggle expands the tray without selecting a building");
+            Click("HUD Build Toggle");
+            yield return null;
+            RequireDefaultHud();
+            yield return Capture("gameplay");
+            yield return ClickHudTool("Open Inventory");
             Require(Active("Inventory Panel") && bridge.GetComponent<DemoHud>().CapturesInput, "inventory opens and consumes world input");
             yield return Capture("inventory");
             yield return Press(Key.B);
@@ -100,7 +134,7 @@ namespace DeadCircuit
                 foreach (BuildKind required in QaPrerequisites(target))
                     if (!bridge.World.buildings.Any(b => b.kind == required)) yield return BuildQaAtFreePlot(bridge, required);
                 GrantSamples(p, TechCatalog.ResearchCost(target));
-                Click("Technology Button");
+                yield return ClickHudTool("Technology Button");
                 yield return new WaitForSecondsRealtime(.2f);
                 Require(TechCatalog.CanResearch(bridge.World, p, target), "reachable research prerequisites: " + target + " " + TechCatalog.ResearchRequirement(bridge.World,target));
                 Require(FindButton("Research Button").interactable, "next era research button: " + target);
@@ -124,13 +158,14 @@ namespace DeadCircuit
             yield return PointAtWorld(34,27);
             yield return Capture("industrial-machines");
             var reactor=bridge.World.buildings.Single(b=>b.kind==BuildKind.Reactor);
+            yield return SetQaInspector(true);
             yield return PointAtWorld(reactor.x+1,reactor.y+1);
             Require(Active("Mouse Inspector"),"new reactor has a real footprint inspector");
             Require(reactor.powerGeneration>0 && reactor.items[(int)ItemKind.NuclearWaste]>0,"native nuclear fuel coolant and waste cycle");
             yield return Capture("reactor");
+            yield return SetQaInspector(false);
             yield return PointAtWorld(34,27);
-            Click("Open Inventory");
-            yield return null;
+            yield return ClickHudTool("Open Inventory");
             yield return Capture("inventory-industrial");
             Click("Close Inventory");
             yield return VerifyEquipment(bridge);
@@ -148,12 +183,19 @@ namespace DeadCircuit
             bridge.World.buildings.Single(b=>b.kind==BuildKind.Generator).items[(int)ItemKind.Fuel]=8;
             yield return BuildQa(bridge,BuildKind.PowerPole,31,28);
             p.x=34; p.y=32;
-            bridge.BuildSelection=BuildKind.Belt;
+            Click("HUD Build Toggle");
+            yield return null;
+            Require(Active("Build Hotbar"), "build tray must be expanded before choosing a slot");
+            int beltSlot = Array.IndexOf(TechCatalog.Hotbar(bridge.World.era), BuildKind.Belt);
+            Require(beltSlot >= 0, "current era exposes a belt hotbar slot");
+            Click("Build Slot " + (beltSlot + 1));
             yield return new WaitForSecondsRealtime(.2f);
-            Require(Active("Build Details") && !Active("Mouse Inspector"), "building shows contextual details only");
+            Require(bridge.BuildSelection == BuildKind.Belt && Active("Build Details") && !Active("Mouse Inspector"), "build slot selects belt and shows contextual details only");
             yield return Capture("building");
             yield return BuildQa(bridge,BuildKind.Belt,34,30);
-            bridge.BuildSelection = null;
+            Click("HUD Build Toggle");
+            yield return null;
+            Require(!bridge.BuildSelection.HasValue && !Active("Build Hotbar") && !Active("Build Details"), "collapsing build cancels the selected building");
             p.x=34; p.y=33;
             yield return new WaitForSecondsRealtime(15);
             var chest = bridge.World.buildings.Single(b => b.kind == BuildKind.Chest);
@@ -184,10 +226,14 @@ namespace DeadCircuit
             RequireDefaultHud();
             yield return Capture("factory");
             yield return PointAtWorld(29, 31);
+            Require(!Active("Mouse Inspector"), "machine hover stays hidden until inspection is enabled");
+            yield return SetQaInspector(true);
+            yield return PointAtWorld(29, 31);
             Require(Active("Mouse Inspector"), "hovering a machine's non-anchor cell shows its inspector");
             yield return Capture("machine");
             yield return PointAtWorld(32, 34);
             Require(!Active("Mouse Inspector"), "empty ground hides inspector");
+            yield return SetQaInspector(false);
             p.x=32; p.y=29;
             bridge.Send(new PlayerCommand { action="recipe",x=31,y=30,arg=52 });
             yield return new WaitForSecondsRealtime(.3f);
@@ -197,23 +243,37 @@ namespace DeadCircuit
             Require(chest.items[(int)ItemKind.RifleAmmo]>0,"new rifle ammunition is manufactured and physically transported into storage");
             yield return PointAtWorld(32,34);
             yield return Capture("ammunition-production");
-            Click("Open Session");
-            yield return null;
+            yield return ClickHudTool("Open Session");
             Require(Active("Session Modal") && bridge.GetComponent<DemoHud>().CapturesInput, "session menu consumes world input");
             yield return Capture("session");
             Click("Save World");
-            Require(File.Exists(bridge.SavePath), "save button");
+            Require(Path.GetFullPath(bridge.SavePath) == qaSavePath && File.Exists(qaSavePath), "save button writes the isolated QA world");
             int buildings = bridge.World.buildings.Count;
             Click("Return to Menu");
             yield return new WaitForSecondsRealtime(.5f);
             Click("Load Game");
+            yield return null;
+            Require(Active("Load World Page") && !bridge.IsRunning, "Load Game opens the world selector without loading");
+            // qaRun writes qa-world-v1.json, outside the regular Worlds archive. The
+            // bridge exposes ONLY that validated QA save as saveId=qa in this mode.
+            // Never fall back to the first real save or call StartHost(load:true).
+            Require(bridge.Worlds != null && bridge.Worlds.Count == 1, "QA bridge must list only its isolated save, never regular worlds");
+            var qaWorld = bridge.Worlds.SingleOrDefault(w => w != null && w.name == qaWorldName && w.seed == 73149);
+            Require(qaWorld != null && qaWorld.saveId == "qa", "only this run's isolated QA save is selectable as saveId=qa");
+            Require(!FindButton("Load Selected World").interactable, "loading requires an explicit world selection");
+            yield return ClickScrolled("World Save Select " + qaWorld.saveId);
+            Require(!bridge.IsRunning && FindButton("Load Selected World").interactable, "selecting a save only enables confirmation");
+            yield return Capture("load-world");
+            Click("Load Selected World");
             yield return new WaitForSecondsRealtime(.5f);
-            Require(bridge.IsRunning && bridge.World.era == TechEra.Nuclear && bridge.LocalPlayer.items.Length == DemoCatalog.ItemNames.Length && bridge.LocalPlayer.attributes[1] == 1 && bridge.LocalPlayer.skills[0] == 1 && bridge.World.buildings.Count == buildings, "load game button restores world technology, materials, personal growth and factory");
+            Require(bridge.IsRunning && bridge.IsHost && bridge.LocalPlayer != null && Path.GetFullPath(bridge.SavePath) == qaSavePath &&
+                bridge.World.generation.worldName == qaWorldName && bridge.World.seed == 73149, "load confirmation restores the selected isolated QA world");
+            Require(bridge.World.era == TechEra.Nuclear && bridge.LocalPlayer.items.Length == DemoCatalog.ItemNames.Length && bridge.LocalPlayer.attributes[1] == 1 && bridge.LocalPlayer.skills[0] == 1 && bridge.World.buildings.Count == buildings, "selected world restores technology, materials, personal growth and factory");
             VerifyRestoredEquipment(bridge.LocalPlayer);
             yield return PointAtWorld(32, 34);
             RequireDefaultHud();
             yield return Capture("restored");
-            Debug.Log("DEMO_RUNTIME_QA_PASS menu=compactHud=inventory=help=keyboard=growth=technology=sevenEras=researchGates=build=inspection=factory=powerGrid=footprints=smoothCargo=equipment=attachments=reload=weaponDamage=save=load=true");
+            Debug.Log("DEMO_RUNTIME_QA_PASS menu=createConfirmation=lanNavigation=saveSelection=isolatedQaSave=collapsedTools=collapsedBuild=optInInspection=compactHud=inventory=help=keyboard=growth=technology=sevenEras=researchGates=build=inspection=factory=powerGrid=footprints=smoothCargo=equipment=attachments=reload=weaponDamage=save=load=true");
             Application.Quit(0);
         }
         static BuildKind[] QaPrerequisites(TechEra era)
@@ -282,15 +342,66 @@ namespace DeadCircuit
             yield return new WaitForSecondsRealtime(.3f);
         }
         static Button FindButton(string name) => FindObjectsByType<Button>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Single(b=>b.name==name);
+        static TMPro.TMP_InputField InputField(string name) => FindObjectsByType<TMPro.TMP_InputField>(FindObjectsInactive.Include, FindObjectsSortMode.None).Single(f => f.name == name);
         static RectTransform Rect(string name) => FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Single(r => r.name == name);
         static bool Active(string name) => Rect(name).gameObject.activeInHierarchy;
         static void RequireDefaultHud()
         {
-            foreach (string name in new[] { "Inventory Panel", "Session Modal", "Help Panel", "Growth Modal", "Technology Panel", "Build Details", "Mouse Inspector" })
+            foreach (string name in new[] { "Main Menu", "Inventory Panel", "Session Modal", "Help Panel", "Growth Modal", "Technology Panel", "Settings Panel", "HUD Tools Tray", "Build Hotbar", "Build Details", "Mouse Inspector" })
                 Require(!Active(name), "default HUD hides " + name);
+            Require(Active("HUD Tools Toggle") && Active("HUD Build Toggle"), "collapsed HUD keeps its explicit expansion controls");
+            var inspect = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None).Single(b => b.name == "Inspect Toggle");
+            Require(inspect.GetComponentInChildren<TMPro.TextMeshProUGUI>(true).text == "设备检查：关", "default HUD keeps inspection disabled");
             var hits = new List<RaycastResult>();
             EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = new Vector2(Screen.width * .5f, Screen.height * .5f) }, hits);
             Require(hits.Count == 0, "default HUD leaves world centre interactive");
+        }
+        static IEnumerator ClickHudTool(string name)
+        {
+            if (!Active("HUD Tools Tray"))
+            {
+                Click("HUD Tools Toggle");
+                yield return null;
+            }
+            Require(Active("HUD Tools Tray"), "HUD tools must be expanded before " + name);
+            Click(name);
+            yield return null;
+            Require(!Active("HUD Tools Tray"), "opening " + name + " collapses the tools tray");
+        }
+        static IEnumerator SetQaInspector(bool enabled)
+        {
+            var toggle = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None).Single(b => b.name == "Inspect Toggle");
+            var label = toggle.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+            if (label.text != (enabled ? "设备检查：开" : "设备检查：关"))
+                yield return ClickHudTool("Inspect Toggle");
+            Require(label.text == (enabled ? "设备检查：开" : "设备检查：关"), "inspection toggle reflects the requested state");
+            if (!enabled) Require(!Active("Mouse Inspector"), "disabling inspection hides its panel");
+        }
+        static IEnumerator ClickScrolled(string name)
+        {
+            var button = FindButton(name);
+            var scroll = button.GetComponentInParent<ScrollRect>();
+            if (scroll != null)
+            {
+                Require(scroll.content != null && scroll.viewport != null, "scroll structure for " + name);
+                Canvas.ForceUpdateCanvases();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(scroll.content);
+                Canvas.ForceUpdateCanvases();
+                var target = button.GetComponent<RectTransform>();
+                var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(scroll.viewport, target);
+                var view = scroll.viewport.rect;
+                float shift = bounds.min.y < view.yMin ? view.yMin - bounds.min.y : bounds.max.y > view.yMax ? view.yMax - bounds.max.y : 0f;
+                scroll.StopMovement();
+                Vector3 delta = scroll.content.parent.InverseTransformVector(scroll.viewport.TransformVector(new Vector3(0, shift, 0)));
+                scroll.content.anchoredPosition += new Vector2(delta.x, delta.y);
+                yield return null;
+                Canvas.ForceUpdateCanvases();
+                bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(scroll.viewport, target);
+                Require(bounds.min.y >= view.yMin - 1f && bounds.max.y <= view.yMax + 1f &&
+                    bounds.min.x >= view.xMin - 1f && bounds.max.x <= view.xMax + 1f, "scrolled button is inside its viewport: " + name);
+            }
+            Click(name);
+            yield return null;
         }
         static IEnumerator Press(Key key)
         {

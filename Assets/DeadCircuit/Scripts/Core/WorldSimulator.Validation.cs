@@ -160,16 +160,18 @@ namespace DeadCircuit
                     items = CopyItems(p.items, InventoryLimit, "player inventory",itemCount), attributes = attributes, skills = skills
                 };
                 if(source.version>=4) CopyEquipment(p,clone,entityIds,ref highestId);
+                CopyNeeds(p, clone, source.version);
                 Aim(clone, p.aimX, p.aimY); s.players.Add(clone);
             }
             foreach (ZombieState z in source.zombies)
             {
                 SaveCheck(z != null, "null zombie"); CheckEntityId(z.id, entityIds, ref highestId);
                 CheckPosition(z.x, z.y); SaveRange(z.hp, 0.001f, 1000f, "zombie hp"); SaveRange(z.attackCooldown, 0f, 5f, "zombie cooldown");
-                SaveCheck(z.variant >= 0 && z.variant <= 2, "zombie variant");
+                SaveCheck(z.variant >= 0 && z.variant <= (source.version >= 6 ? 11 : 2), "zombie variant");
+                if (source.version >= 6) SaveRange(z.alertedUntil, 0f, source.elapsed + 8.1f, "enemy alert duration");
                 int cell = RoundCell(z.x) + RoundCell(z.y) * 64;
                 SaveCheck(source.ground[cell] != '2' && !solid.Contains(cell), "zombie in solid cell");
-                s.zombies.Add(new ZombieState { id = z.id, x = z.x, y = z.y, hp = z.hp, variant = z.variant, attackCooldown = z.attackCooldown });
+                s.zombies.Add(new ZombieState { id = z.id, x = z.x, y = z.y, hp = z.hp, variant = z.variant, attackCooldown = z.attackCooldown, alertedUntil = source.version >= 6 ? z.alertedUntil : 0f });
             }
             foreach (TraceState t in source.traces)
             {
@@ -177,9 +179,11 @@ namespace DeadCircuit
                 SaveRange(t.x, -16f, 80f, "trace x"); SaveRange(t.y, -16f, 80f, "trace y");
                 SaveRange(t.endX, -16f, 80f, "trace endX"); SaveRange(t.endY, -16f, 80f, "trace endY");
                 SaveRange(t.until, 0f, source.elapsed + 1f, "trace lifetime");
-                if (t.until > source.elapsed) s.traces.Add(new TraceState { x = t.x, y = t.y, endX = t.endX, endY = t.endY, until = t.until, hostile = t.hostile });
+                SaveCheck(source.version < 6 || (t.effect >= 0 && t.effect <= 8), "trace effect");
+                if (t.until > source.elapsed) s.traces.Add(new TraceState { x = t.x, y = t.y, endX = t.endX, endY = t.endY, until = t.until, hostile = t.hostile, effect = source.version >= 6 ? t.effect : 0 });
             }
             CopyExploration(source, s, entityIds, ref highestId);
+            CopySurvival(source, s, entityIds, ref highestId);
             SaveCheck(source.nextId > 0 && source.nextId < int.MaxValue - 1 && highestId < int.MaxValue - 2, "next entity id");
             if(source.version>=4) SaveCheck(source.nextId>highestId,"next entity id must exceed all equipment and world ids");
             s.nextId = Math.Max(source.nextId, highestId + 1);

@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "C:\\Program Files\\WindowsApps\\OpenAI.CodexPrimaryRuntime.v26-1118-904-0_26.1118.904.0_x64__3k8sg7r9htsxt\\dependencies\\python\\python.exe",
+    "-B",
+    "C:\\Users\\man\\.codex\\skills\\generate2dsprite\\scripts\\sheet_qc.py",
+    "spill",
+    "--input",
+    "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\SvgBatch\\Reports\\Renders\\final\\icons\\base\\icons.png",
+    "--rows",
+    "6",
+    "--cols",
+    "16",
+    "--expect",
+    "90",
+    "--key",
+    "none",
+    "--band",
+    "2",
+    "--safe-margin",
+    "0.05555555555555555",
+    "--min-area",
+    "1",
+    "--output-dir",
+    "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\SvgBatch\\Reports\\spill_icons_final"
+  ],
+  "exit": 0,
+  "stdout": "{\"status\": \"pass\", \"check\": \"spill\", \"output\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\SvgBatch\\\\Reports\\\\spill_icons_final\", \"metadata\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\SvgBatch\\\\Reports\\\\spill_icons_final\\\\sheet-qc.json\", \"failed\": [], \"warnings\": []}\n",
+  "stderr": ""
+}

@@ -23,11 +23,12 @@ namespace DeadCircuit
 
     [Serializable] public sealed class WorldState
     {
-        public int version = 5, seed, width = 64, height = 64, nextId = 1, wave;
+        public int version = 6, seed, width = 64, height = 64, nextId = 1, wave;
         public WorldGenerationSettings generation;
         public int generatorVersion;
         public string biomes = "";
         public List<SiteState> sites = new List<SiteState>();
+        public SurvivalWorldState survival = new SurvivalWorldState();
         public TechEra era = TechEra.Primitive;
         public int[] produced = new int[DemoCatalog.ItemCount];
         public long tick;
@@ -60,6 +61,7 @@ namespace DeadCircuit
         public float reloadRemaining, recoil;
         public int reloadingGearId;
         public bool aiming, moving;
+        public SurvivalPlayerState needs = new SurvivalPlayerState();
     }
 
     [Serializable] public sealed class NodeState
@@ -97,13 +99,15 @@ namespace DeadCircuit
     [Serializable] public sealed class ZombieState
     {
         public int id, variant;
-        public float x, y, hp = 45f, attackCooldown;
+        public float x, y, hp = 45f, attackCooldown, alertedUntil;
     }
 
     [Serializable] public sealed class TraceState
     {
         public float x, y, endX, endY, until;
         public bool hostile;
+        // 0 impact, 1 shot, 2 melee, 3 spit, 4 flame, 5 toxin, 6 frost, 7 blast, 8 scream.
+        public int effect;
     }
 
     [Serializable] public sealed class PlayerCommand

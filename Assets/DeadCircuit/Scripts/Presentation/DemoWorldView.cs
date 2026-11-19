@@ -32,8 +32,9 @@ namespace DeadCircuit
             public GameObject root;
             public SpriteRenderer body, shadow, detail, arrow, lamp, cargo, barBack, bar;
             public Vector2 position, previous;
-            public float hp, maxHp, damageAt = -100f, walk;
+            public float hp, maxHp, damageAt = -100f, walk, nextSpecialEffect;
             public int stamp;
+            public ActorEquipment equipment;
         }
 
         sealed class TraceVisual
@@ -100,6 +101,7 @@ namespace DeadCircuit
         GameBridge bridge;
         Transform worldRoot, terrainRoot, entityRoot, effectsRoot;
         GameObject minimapCanvas;
+        GameObject ownedAudioListener;
         RawImage minimapImage;
         Image hurtOverlay;
         Texture2D spriteTexture, terrainTexture, mapTexture, powerTexture, industryTexture;
@@ -286,6 +288,16 @@ namespace DeadCircuit
             WorldCamera.transform.SetPositionAndRotation(new Vector3(0, 0, -10), Quaternion.identity);
             WorldCamera.allowHDR = true;
             WorldCamera.allowMSAA = false;
+            bool hasListener = false;
+            foreach (var listener in FindObjectsByType<AudioListener>(FindObjectsSortMode.None))
+                if (listener.isActiveAndEnabled) { hasListener = true; break; }
+            if (!hasListener)
+            {
+                ownedAudioListener = new GameObject("DeadCircuit / Audio Listener");
+                ownedAudioListener.transform.SetParent(WorldCamera.transform, false);
+                ownedAudioListener.transform.localPosition = new Vector3(0, 0, 10);
+                ownedAudioListener.AddComponent<AudioListener>();
+            }
             var additional = WorldCamera.GetUniversalAdditionalCameraData();
             additional.renderPostProcessing = true;
             additional.antialiasing = AntialiasingMode.None;
@@ -405,6 +417,7 @@ namespace DeadCircuit
             DrawNodes(world, local);
             DrawBuildings(world);
             DrawActors(world, local);
+            DrawExpansion(world, local);
             Sweep(nodes); Sweep(buildings); Sweep(zombies);
             removePlayers.Clear();
             foreach (var pair in players) if (pair.Value.stamp != stamp) removePlayers.Add(pair.Key);
@@ -480,9 +493,12 @@ namespace DeadCircuit
             // Starts at readable morning; night never blacks out the survival space.
             float night = Mathf.SmoothStep(0, 1, Mathf.Clamp01((Mathf.Cos((cycle + .5f) * Mathf.PI * 2f) + .12f) * 1.5f));
             Color ambient = Color.Lerp(Color.white, new Color(.50f, .65f, .76f), night);
+            if (world.survival != null && world.survival.enabled)
+                ambient = Color.Lerp(ambient, ambient * new Color(.78f, .84f, .88f), world.survival.weather.intensity * .35f);
             spriteMaterial.SetColor("_Color", ambient);
             terrainMaterial.SetColor("_Color", ambient);
             if (spriteMeshMaterial!=null) spriteMeshMaterial.SetColor("_Color",ambient);
+            if (expansionGroundMaterial != null) expansionGroundMaterial.SetColor("_Color", ambient);
             lantern.enabled = local != null && local.hp > 0 && night > .03f;
             if (local != null) lantern.transform.position = new Vector3(local.x, local.y + .25f, 0);
             lantern.color = new Color(1f, .87f, .56f, night * .20f);
@@ -501,14 +517,22 @@ namespace DeadCircuit
             {
                 var verts = new List<Vector3>(); var uv = new List<Vector2>(); var tris = new List<int>(); var colors = new List<Color32>();
                 var dv = new List<Vector3>(); var du = new List<Vector2>(); var dt = new List<int>(); var dc = new List<Color32>();
+                var ev = new List<Vector3>(); var eu = new List<Vector2>(); var et = new List<int>(); var ec = new List<Color32>();
                 for (int y = cy; y < Mathf.Min(cy + ChunkSize, height); y++)
                 for (int x = cx; x < Mathf.Min(cx + ChunkSize, width); x++)
                 {
                     int kind = Ground(x, y);
                     uint h = Hash(x, y, seed);
                     float tint = .96f + (h % 9) * .01f;
-                    var color = new Color(tint, tint, tint, 1);
+                    var color = (kind <= 1 ? BiomeTint(world, x, y) : Color.white) * new Color(tint, tint, tint, 1);
                     AddQuad(verts, uv, tris, colors, x-.5f, y-.5f, 1, 1, TerrainUV(kind*8 + (int)(h % 8)), color);
+                    if (kind == 0)
+                    {
+                        Sprite tile = DemoArt.Get("terrain_" + BiomeAt(world, x, y));
+                        if (tile != null) AddSpriteQuad(ev, eu, et, ec, tile, new Vector2(x,y), 1, new Color(tint,tint,tint,1));
+                        if (world.generatorVersion > 0 && h % 43 == 0)
+                            AddSpriteQuad(ev, eu, et, ec, DemoArt.Get("biome_" + BiomeAt(world,x,y)), new Vector2(x,y), .68f, Color.white);
+                    }
                     for (int side = 0; side < 4; side++)
                     {
                         int nx = x + (side == 0 ? -1 : side == 2 ? 1 : 0);
@@ -522,6 +546,7 @@ namespace DeadCircuit
                     if (prop != null) AddSpriteQuad(dv, du, dt, dc, Art(prop), new Vector2(x + ((h >> 8) % 9 - 4f)*.03f, y), .7f, Color.white);
                 }
                 MakeChunk(cx + "," + cy, verts, uv, tris, colors, terrainMaterial, -20000);
+                if (ev.Count > 0) MakeChunk("SVG biomes " + cx + "," + cy, ev, eu, et, ec, ExpansionGroundMaterial(), -19999);
                 if (dv.Count > 0)
                 {
                     // A Sprite-Unlit material relies on per-SpriteRenderer constants;
@@ -532,7 +557,8 @@ namespace DeadCircuit
             if (mapTexture != null) Destroy(mapTexture);
             mapTexture = new Texture2D(width, height, TextureFormat.RGBA32, false) { name = "DeadCircuit minimap", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
             mapBase = new Color32[width * height]; mapPixels = new Color32[width * height];
-            for (int y = 0; y < height; y++) for (int x = 0; x < width; x++) mapBase[x+y*width] = MapColors[Ground(x,y)];
+            for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+                mapBase[x+y*width] = (Color)MapColors[Ground(x,y)] * (Ground(x,y) <= 1 ? BiomeTint(world,x,y) : Color.white);
             minimapImage.texture = mapTexture;
             nextMapAt = 0;
         }
@@ -610,7 +636,13 @@ namespace DeadCircuit
                     case NodeKind.Crate: art = "node_crate"; break;
                     default: art = "node_wall"; break;
                 }
-                v.body.sprite = Art(art);
+                Sprite nodeArt=DemoArt.Get("node_"+(int)state.kind);
+                v.body.sprite = nodeArt ?? Art(art);
+                if (nodeArt!=null)
+                {
+                    v.body.transform.localScale=Vector3.one*(state.kind==NodeKind.Tree ? 1.8f : 1.05f);
+                    v.body.transform.localPosition=new Vector3(0,state.kind==NodeKind.Tree ? .6f : .18f,0);
+                }
                 float canopy = state.kind == NodeKind.Tree && local != null && Mathf.Abs(local.x-state.x)<.8f && local.y > state.y && local.y < state.y+1.8f ? .52f : 1f;
                 Color mineral = state.kind == NodeKind.CopperOre ? new Color(1f,.62f,.35f) :
                     state.kind == NodeKind.TinOre ? new Color(.68f,.84f,1f) :
@@ -726,11 +758,18 @@ namespace DeadCircuit
         {
             int rotation = ((b.rotation % 4) + 4) % 4;
             float w = DemoCatalog.Width(b), h = DemoCatalog.Height(b);
-            renderer.sprite = Machine(b.kind, rotation);
+            Sprite svg = DemoArt.Get("machine_" + (int)b.kind);
+            renderer.sprite = svg ?? Machine(b.kind, rotation);
             renderer.transform.localPosition = Vector3.zero;
             renderer.transform.localRotation = Quaternion.identity;
             renderer.transform.localScale = new Vector3(w,h,1);
-            if (b.kind == BuildKind.SolarPanel)
+            if (svg != null)
+            {
+                // SVG frames are all one world unit; rotate the unrotated footprint.
+                renderer.transform.localRotation = Quaternion.Euler(0,0,rotation * 90);
+                renderer.transform.localScale = (rotation & 1) == 0 ? new Vector3(w,h,1) : new Vector3(h,w,1);
+            }
+            else if (b.kind == BuildKind.SolarPanel)
             {
                 renderer.transform.localRotation = Quaternion.Euler(0,0,rotation * 90);
                 renderer.transform.localScale = (rotation & 1) == 0 ? new Vector3(w / 3f,h / 2f,1) : new Vector3(h / 3f,w / 2f,1);
@@ -761,9 +800,12 @@ namespace DeadCircuit
                 if (walking) v.walk += Time.unscaledDeltaTime*9f;
                 int frame=walking ? Mathf.FloorToInt(v.walk)%4 : 0;
                 int facing=Direction(new Vector2(state.aimX,state.aimY));
-                v.body.sprite=Art("actor_0_"+facing+"_"+frame);
-                v.body.transform.localPosition=new Vector3(0,walking ? Mathf.Sin(v.walk*Mathf.PI)*.018f : 0,0);
+                Sprite survivorArt=DemoArt.Get("survivor_"+facing+"_"+frame);
+                v.body.sprite=survivorArt ?? Art("actor_0_"+facing+"_"+frame);
+                v.body.transform.localScale=survivorArt!=null ? Vector3.one*1.5f : Vector3.one;
+                v.body.transform.localPosition=new Vector3(0,(survivorArt!=null ? .42f : 0)+(walking ? Mathf.Sin(v.walk*Mathf.PI)*.018f : 0),0);
                 v.body.color=DamageColor(v, state.hp > 0 ? Color.white : new Color(.48f,.53f,.50f,.65f));
+                DrawPlayerEquipment(v, state);
                 v.body.transform.localRotation=Quaternion.Euler(0,0,state.hp<=0 ? -80 : 0);
                 Health(v,state.hp,state.hp>0,new Vector2(0,1.04f));
                 v.previous=Vector2.Lerp(v.previous,target,1-Mathf.Exp(-8f*Time.unscaledDeltaTime));
@@ -772,7 +814,7 @@ namespace DeadCircuit
             {
                 if (state.hp<=0 || !Visible(state.x,state.y)) continue;
                 var target=new Vector2(state.x,state.y);
-                float baseHealth=state.variant==2 ? 110f : state.variant==1 ? 32f : 45f;
+                float baseHealth=EnemyCatalog.Stats(state.variant).hp;
                 var v=Get(zombies,state.id,target,state.hp,Mathf.Max(baseHealth,state.hp));
                 Vector2 movement=target-v.previous;
                 if (movement.sqrMagnitude<.00005f && local!=null) movement=new Vector2(local.x,local.y)-target;
@@ -780,10 +822,14 @@ namespace DeadCircuit
                 if (walking) v.walk+=Time.unscaledDeltaTime*(state.variant==1 ? 10f : 7f);
                 int facing=Direction(movement);
                 int frame=walking ? Mathf.FloorToInt(v.walk)%4 : 0;
-                v.body.sprite=Art("actor_"+(1+Mathf.Abs(state.variant)%2)+"_"+facing+"_"+frame);
-                v.body.transform.localScale=Vector3.one*(state.variant>=2 ? 1.15f : 1);
+                Sprite enemyArt = DemoArt.Get("enemy_"+state.variant);
+                v.body.sprite=enemyArt != null ? enemyArt : Art("actor_"+(1+Mathf.Abs(state.variant)%2)+"_"+facing+"_"+frame);
+                v.body.transform.localScale=Vector3.one*(state.variant==2 || state.variant==5 ? 1.25f : state.variant==3 ? .78f : 1.05f);
+                v.body.transform.localPosition=new Vector3(0, enemyArt != null ? .35f : 0, 0);
+                if (enemyArt != null) v.body.flipX=movement.x<0;
                 v.body.transform.localRotation=Quaternion.Euler(0,0,walking ? Mathf.Sin(v.walk*Mathf.PI*.5f)*3f : 0);
                 v.body.color=DamageColor(v,Color.white);
+                DrawEnemyAura(v,state);
                 Health(v,state.hp,state.hp<v.maxHp || Time.unscaledTime-v.damageAt<3f,new Vector2(0,1.04f));
                 v.previous=Vector2.Lerp(v.previous,target,1-Mathf.Exp(-8f*Time.unscaledDeltaTime));
             }
@@ -826,12 +872,16 @@ namespace DeadCircuit
                 v.bar=NewSprite("Health",v.root.transform,11); v.bar.sprite=Art("pixel");
             }
             v.position=v.previous=p; v.root.transform.position=p; v.hp=hp; v.maxHp=maxHp;
-            v.damageAt=-100; v.walk=0;
+            v.damageAt=-100; v.walk=0; v.nextSpecialEffect=0;
             v.body.color=v.detail.color=Color.white;
             v.body.transform.localScale=Vector3.one;
             v.body.transform.localPosition=Vector3.zero;
             v.body.transform.localRotation=Quaternion.identity;
+            v.body.flipX=false;
+            if (v.equipment != null) v.equipment.SetVisible(false);
             v.detail.enabled=v.arrow.enabled=v.lamp.enabled=v.cargo.enabled=v.bar.enabled=v.barBack.enabled=false;
+            v.detail.transform.localPosition=Vector3.zero; v.detail.transform.localScale=Vector3.one; v.detail.transform.localRotation=Quaternion.identity;
+            v.shadow.enabled=true;
             v.shadow.transform.localScale=Vector3.one;
             v.shadow.transform.localPosition=Vector3.zero;
             return v;
@@ -890,6 +940,7 @@ namespace DeadCircuit
 
         void ResetEntities()
         {
+            ResetExpansion();
             foreach (var v in nodes.Values) Release(v); nodes.Clear();
             foreach (var v in buildings.Values) Release(v); buildings.Clear();
             foreach (var v in zombies.Values) Release(v); zombies.Clear();
@@ -1092,10 +1143,10 @@ namespace DeadCircuit
                 }
                 else v=traces[count];
                 float alpha=Mathf.Clamp01((t.until-world.elapsed)/.12f);
-                Color color=t.hostile ? Danger : new Color(1f,.88f,.53f); color.a=alpha;
-                v.line.enabled=true; v.line.startColor=color; v.line.endColor=new Color(color.r,color.g,color.b,alpha*.35f);
+                Color color=t.effect==3 || t.effect==5 ? new Color(.65f,.90f,.3f) : t.effect==6 ? new Color(.55f,.84f,1) : t.effect==8 ? new Color(.79f,.56f,.93f) : t.hostile ? Danger : new Color(1f,.88f,.53f); color.a=alpha;
+                v.line.enabled=t.effect<4 || t.effect==6; v.line.startColor=color; v.line.endColor=new Color(color.r,color.g,color.b,alpha*.35f);
                 v.line.SetPosition(0,new Vector3(t.x,t.y,0)); v.line.SetPosition(1,new Vector3(t.endX,t.endY,0));
-                v.impact.enabled=true; v.impact.color=color; v.impact.transform.position=new Vector3(t.endX,t.endY,0);
+                v.impact.enabled=t.effect<4 || t.effect==6; v.impact.color=color; v.impact.transform.position=new Vector3(t.endX,t.endY,0);
                 count++;
             }
             for (int i=count;i<traces.Count;i++) { traces[i].line.enabled=false; traces[i].impact.enabled=false; }
@@ -1231,6 +1282,11 @@ namespace DeadCircuit
             {
                 if (x < 0 || y < 0 || x >= width || y >= height || Ground(x,y) == 2) return false;
                 if (occupied.Contains(x + y * width) || blockedNodes.Contains(x + y * width)) return false;
+                if (world.survival!=null && world.survival.enabled)
+                {
+                    foreach (var plot in world.survival.plots) if (plot.x==x && plot.y==y) return false;
+                    foreach (var c in world.survival.creatures) if (Mathf.Abs(c.x-x)<.8f && Mathf.Abs(c.y-y)<.8f) return false;
+                }
                 if (Mathf.Abs(x - width / 2) <= 1 && Mathf.Abs(y - (height / 2 + 3)) <= 1) return false;
                 if (b.kind != BuildKind.Belt)
                 {
@@ -1248,7 +1304,7 @@ namespace DeadCircuit
             {
                 bool ore = false;
                 if (world.nodes != null) foreach (var n in world.nodes)
-                    if (n.kind == NodeKind.Ore && n.hp > 0 && n.stock > 0 && n.x >= b.x - 1 && n.x <= b.x + w && n.y >= b.y - 1 && n.y <= b.y + h)
+                    if ((n.kind==NodeKind.Ore || n.kind==NodeKind.CopperOre || n.kind==NodeKind.TinOre || n.kind==NodeKind.UraniumOre) && n.hp > 0 && n.stock > 0 && n.x >= b.x - 1 && n.x <= b.x + w && n.y >= b.y - 1 && n.y <= b.y + h)
                     { ore = true; break; }
                 if (!ore) return false;
             }
@@ -1317,6 +1373,11 @@ namespace DeadCircuit
                 for (int y=b.y;y<b.y+DemoCatalog.Height(b);y++) for (int x=b.x;x<b.x+DemoCatalog.Width(b);x++) Plot(x,y,color);
             }
             if (world.zombies!=null) foreach (var z in world.zombies) if (z.hp>0) Plot(Mathf.RoundToInt(z.x),Mathf.RoundToInt(z.y),new Color32(237,97,67,255));
+            if (world.survival!=null && world.survival.enabled)
+            {
+                foreach (var c in world.survival.creatures) if (c.hp>0) Plot(Mathf.RoundToInt(c.x),Mathf.RoundToInt(c.y),new Color32(176,177,117,255));
+                foreach (var plot in world.survival.plots) Plot(plot.x,plot.y,new Color32(109,175,101,255));
+            }
             // Camera footprint is drawn before players so the local marker stays clear.
             var cp=WorldCamera.transform.position; float hy=WorldCamera.orthographicSize,hx=hy*WorldCamera.aspect;
             int left=Mathf.RoundToInt(cp.x-hx),right=Mathf.RoundToInt(cp.x+hx),bottom=Mathf.RoundToInt(cp.y-hy),top=Mathf.RoundToInt(cp.y+hy);
@@ -1335,12 +1396,13 @@ namespace DeadCircuit
         void Plot(int x,int y,Color32 color) { if (x>=0 && y>=0 && x<width && y<height) mapPixels[x+y*width]=color; }
         Sprite Machine(BuildKind kind,int rotation)
         {
+            Sprite svg=DemoArt.Get("machine_"+(int)kind); if (svg!=null) return svg;
             if (kind==BuildKind.PowerPole) return Art("runtime_powerpole");
             if (kind==BuildKind.SolarPanel) return Art("runtime_solarpanel");
             if ((int)kind >= (int)BuildKind.Workbench) return Art("industry_" + (int)kind);
             return Art("build_"+MachineNames[Mathf.Clamp((int)kind,0,MachineNames.Length-1)]+"_"+rotation);
         }
-        Sprite Art(string key) { Sprite sprite; return sprites.TryGetValue(key,out sprite) ? sprite : null; }
+        Sprite Art(string key) { Sprite sprite = DemoArt.Get(key); return sprite != null ? sprite : sprites.TryGetValue(key,out sprite) ? sprite : null; }
 
         static Transform NewRoot(string name,Transform parent)
         { var obj=new GameObject(name); obj.transform.SetParent(parent,false); return obj.transform; }
@@ -1372,6 +1434,7 @@ namespace DeadCircuit
             if (minimapCanvas!=null) minimapCanvas.SetActive(show);
             if (MinimapRect!=null) MinimapRect.gameObject.SetActive(show);
             if (hurtOverlay!=null) hurtOverlay.gameObject.SetActive(show);
+            if (weatherVeil!=null) weatherVeil.gameObject.SetActive(show);
             if (volume!=null) volume.enabled=enabledView;
             if (!enabledView) { observedWorld=null; observedElapsed=-1; observedTick=-1; }
         }
@@ -1384,6 +1447,7 @@ namespace DeadCircuit
             if (terrainMaterial!=null) Destroy(terrainMaterial);
             if (effectMaterial!=null) Destroy(effectMaterial);
             if (spriteMeshMaterial!=null) Destroy(spriteMeshMaterial);
+            if (expansionGroundMaterial!=null) Destroy(expansionGroundMaterial);
             if (mapTexture!=null) Destroy(mapTexture);
             if (powerTexture!=null) Destroy(powerTexture);
             if (industryTexture!=null) Destroy(industryTexture);
@@ -1397,8 +1461,10 @@ namespace DeadCircuit
             // These may have been adopted by the HUD Canvas. They remain view-owned.
             if (MinimapRect!=null) Destroy(MinimapRect.gameObject);
             if (hurtOverlay!=null) Destroy(hurtOverlay.gameObject);
+            if (weatherVeil!=null) Destroy(weatherVeil.gameObject);
             if (volume!=null) Destroy(volume.gameObject);
             if (ownsCamera && WorldCamera!=null) Destroy(WorldCamera.gameObject);
+            if (ownedAudioListener!=null) Destroy(ownedAudioListener);
         }
 
         Material spriteMeshMaterial;

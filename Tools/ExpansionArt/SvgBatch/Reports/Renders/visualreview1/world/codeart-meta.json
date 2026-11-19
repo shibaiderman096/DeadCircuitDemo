@@ -1,0 +1,164 @@
+{
+  "schema": "codeart2d.codeart_meta.v1",
+  "art_source": "code",
+  "placeholder": false,
+  "disclosure": "code-drawn, no image model",
+  "generator": "svg_render.py",
+  "spec_sha256": "73f197444d537c768b1500d1e2ed06f276f79ac476f26803f7fe3c92086a2105",
+  "renderer": {
+    "backend": "chrome",
+    "name": "chrome",
+    "version": "157.0.8103.79",
+    "zoom": 1,
+    "size": [
+      576,
+      360
+    ]
+  },
+  "palette": {
+    "colors": {
+      "0": "#192829",
+      "1": "#253b3b",
+      "2": "#344a43",
+      "3": "#536a68",
+      "4": "#8ba39a",
+      "5": "#ddd5ac",
+      "6": "#eee9d3",
+      "7": "#503e32",
+      "8": "#76533b",
+      "9": "#aa8054",
+      "10": "#c4ab75",
+      "11": "#9b5338",
+      "12": "#e59a50",
+      "13": "#edc566",
+      "14": "#b75446",
+      "15": "#d68169",
+      "16": "#527445",
+      "17": "#739650",
+      "18": "#81824a",
+      "19": "#80d8bc",
+      "20": "#4c9e9b",
+      "21": "#aed5d2",
+      "22": "#497b86",
+      "23": "#796175"
+    },
+    "variants": {}
+  },
+  "outputs": [
+    {
+      "path": "base/world.svg",
+      "sha256": "f49f5bfc98037ef82e4746d969645cb74fdbb81561d5020ab49a2d37a58f410a",
+      "bytes": 1321558
+    },
+    {
+      "path": "base/world.png",
+      "sha256": "0a9b5a411489e6885eeb2bdca69fbaf00f5577b36972ab4885e77a453258eb5f",
+      "bytes": 31005
+    },
+    {
+      "path": "base/world@4x.png",
+      "sha256": "4ed13cff6288c1904b900ec611d7f313dffea1500e83739f3f37f24aed93605d",
+      "bytes": 64479
+    }
+  ],
+  "qa": {
+    "status": "pass",
+    "method": "svg_render.py render: every variant's compiled SVG passed codeart_core.lint_portable_svg (pixel profile) before rasterizing; every 1x PNG was read back and measured with codeart_core.qa_pixels (alpha census, exact palette lookup), and the @Nx copies are integer nearest upscales of it",
+    "notProven": [
+      "Appearance, readability and appeal; look at the PNGs at game size.",
+      "Agreement with other renderers on this machine; run svg_render.py doctor (renders are bit-exact only for the recorded renderer version).",
+      "That the art matches the brief and the intent of the SVG."
+    ],
+    "checks": [
+      {
+        "id": "lint",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0,
+        "profile": "pixel"
+      },
+      {
+        "id": "partial_alpha",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0
+      },
+      {
+        "id": "off_palette",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0
+      }
+    ],
+    "inputs": [
+      {
+        "path": "../../../../Sources/world.svg",
+        "sha256": "73f197444d537c768b1500d1e2ed06f276f79ac476f26803f7fe3c92086a2105",
+        "bytes": 1321862
+      }
+    ],
+    "outputs": [
+      {
+        "path": "base/world.svg",
+        "sha256": "f49f5bfc98037ef82e4746d969645cb74fdbb81561d5020ab49a2d37a58f410a",
+        "bytes": 1321558
+      },
+      {
+        "path": "base/world.png",
+        "sha256": "0a9b5a411489e6885eeb2bdca69fbaf00f5577b36972ab4885e77a453258eb5f",
+        "bytes": 31005
+      },
+      {
+        "path": "base/world@4x.png",
+        "sha256": "4ed13cff6288c1904b900ec611d7f313dffea1500e83739f3f37f24aed93605d",
+        "bytes": 64479
+      }
+    ],
+    "tool": {
+      "name": "svg_render.py render",
+      "version": "0.4.0"
+    }
+  },
+  "svg": {
+    "mode": "crisp",
+    "profile": "pixel",
+    "zoom": 4,
+    "canvas": [
+      576,
+      360
+    ],
+    "anchor_px": null,
+    "palette_source": "svg-colours",
+    "variants": {
+      "base": "base"
+    },
+    "images": [
+      {
+        "variant": "base",
+        "file": "base/world.png",
+        "scale": 1,
+        "size": [
+          576,
+          360
+        ],
+        "anchor_px": null,
+        "visible": 70225,
+        "partial_alpha": 0,
+        "off_palette": 0,
+        "colors": 23
+      },
+      {
+        "variant": "base",
+        "file": "base/world@4x.png",
+        "scale": 4,
+        "size": [
+          2304,
+          1440
+        ],
+        "anchor_px": null,
+        "from": "base/world.png",
+        "method": "integer nearest"
+      }
+    ]
+  }
+}

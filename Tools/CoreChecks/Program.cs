@@ -97,7 +97,7 @@ static partial class Checks
     {
         filters = args;
         CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); CargoChecks(); SaveAndCombatChecks();
-        TechnologyChecks(); EraEnergyChecks(); EraProductionChecks(); VersionThreeSaveChecks(); EquipmentChecks(); WorldGenerationChecks(); WorldArchiveChecks();
+        TechnologyChecks(); EraEnergyChecks(); EraProductionChecks(); VersionThreeSaveChecks(); EquipmentChecks(); WorldGenerationChecks(); WorldArchiveChecks(); SurvivalChecks(); EnemyChecks(); ExpansionIntegrationChecks(); ForagingChecks();
         if (selected == 0) { Console.Error.WriteLine("No check names matched the supplied filters."); return 2; }
         Console.WriteLine($"CORE_CHECKS_{(failed == 0 ? "PASS" : "FAIL")} suites={selected} passed={passed} failed={failed}");
         return failed == 0 ? 0 : 1;
