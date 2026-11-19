@@ -1,7 +1,8 @@
 """Deterministic pixel-art atlas builder for Dead Circuit.
 
 The playable survivor's four-direction walk cycle is authored in Tools/protagonist.svg
-and rasterized into Tools/protagonist-sheet.png for the atlas builder. Other art is drawn with Pillow.
+and rasterized into Tools/protagonist-sheet.png for the atlas builder. Terrain and
+environment props are authored in Tools/scene-art/*.svg; remaining art uses Pillow.
 
 Run: python Tools/generate_art.py
 Outputs only Assets/DeadCircuit/Resources/Art. Atlas rectangles use PNG top-left
@@ -10,6 +11,7 @@ coordinates; atlas.json also records a bottom-left normalized Sprite pivot.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import math
 import random
@@ -27,6 +29,7 @@ CREAM = '#ddd5ac'
 RUST = '#9b5338'
 ORANGE = '#e59a50'
 TEAL = '#80d8bc'
+SCENE_ART = Path(__file__).with_name('scene-art')
 
 
 def canvas():
@@ -303,6 +306,15 @@ def decoration(kind):
         for y in (31, 42):
             d.line((25, y, 39, y), fill=STEEL, width=2)
         d.rectangle((29, 34, 35, 38), fill=CREAM)
+    elif kind == 'decals':
+        d.polygon([(7, 46), (14, 43), (22, 45), (29, 42), (38, 45),
+                   (45, 40), (55, 43), (51, 48), (41, 49), (33, 52),
+                   (21, 50), (13, 53), (7, 51)], fill=DARK)
+        d.rectangle((12, 46, 20, 48), fill=STEEL)
+        d.rectangle((28, 44, 37, 46), fill='#685841')
+        d.rectangle((46, 42, 52, 44), fill=RUST)
+        d.rectangle((19, 51, 24, 53), fill=CREAM)
+        d.rectangle((39, 49, 43, 51), fill=ORANGE)
     elif kind == 'shadow':
         d.ellipse((9, 23, 55, 43), fill=(7, 18, 19, 100))
         d.ellipse((16, 27, 48, 39), fill=(7, 18, 19, 65))
@@ -434,11 +446,38 @@ def terrain():
     return im
 
 
+def svg_image(path):
+    """Render a portable authored SVG through resvg, preserving its native logical pixels."""
+    import resvg_py
+
+    rendered = resvg_py.svg_to_bytes(svg_string=path.read_text(encoding='utf-8'))
+    with Image.open(io.BytesIO(rendered)) as image:
+        return image.convert('RGBA')
+
+
+def environment_overrides():
+    """Load the 4x3 SVG prop sheet into the legacy 64-pixel sprite slots."""
+    source = SCENE_ART / 'environment.svg'
+    if not source.is_file():
+        return {}
+    sheet = svg_image(source)
+    if sheet.size != (CELL * 4, CELL * 3):
+        raise ValueError(f'environment.svg must render at 256x192, got {sheet.size}')
+    names = ('tree_0', 'tree_1', 'tree_2', 'node_ore',
+             'node_scrap', 'node_crate', 'node_wall', 'car',
+             'tuft', 'rubble', 'barrel', 'decals')
+    return {name: sheet.crop(((index % 4) * CELL, (index // 4) * CELL,
+                              (index % 4 + 1) * CELL, (index // 4 + 1) * CELL)).copy()
+            for index, name in enumerate(names)}
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     assets = []
+    svg_overrides = environment_overrides()
 
     def add(name, im, ppu=48, pivot=(.5, .5)):
+        im = svg_overrides.get(name, im)
         assets.append((name, im, ppu, pivot))
 
     with Image.open(Path(__file__).with_name('protagonist-sheet.png')) as hero_source:
@@ -461,7 +500,7 @@ def main():
     for kind in ('wall', 'generator', 'miner', 'belt', 'smelter', 'assembler', 'turret', 'chest'):
         for rotation in range(4):
             add(f'build_{kind}_{rotation}', machine(kind, rotation), 52, (.5, .5))
-    for name in ('car', 'tuft', 'rubble', 'barrel', 'shadow', 'arrow', 'rotor',
+    for name in ('car', 'tuft', 'rubble', 'barrel', 'decals', 'shadow', 'arrow', 'rotor',
                  'turret_barrel', 'glow', 'ring', 'hit', 'blood', 'pixel'):
         add(name, decoration(name))
     for i in range(7):
@@ -476,13 +515,14 @@ def main():
         entries.append(dict(name=name, x=x, y=y, width=CELL, height=CELL,
                             pixelsPerUnit=ppu, pivotX=pivot[0], pivotY=pivot[1]))
     atlas.save(OUT / 'sprites.png', optimize=True)
-    terrain().save(OUT / 'terrain.png', optimize=True)
+    terrain_svg = SCENE_ART / 'terrain.svg'
+    (svg_image(terrain_svg) if terrain_svg.is_file() else terrain()).save(OUT / 'terrain.png', optimize=True)
     (OUT / 'atlas.json').write_text(json.dumps(dict(sprites=entries), ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     # Sanity checks are about published art, not game simulation.
     assert len({e['name'] for e in entries}) == len(entries)
     for _, im, _, _ in assets:
         assert im.getbbox() is not None and im.size == (64, 64)
-    print(json.dumps(dict(art_source='code-drawn, no image model', sprites=len(entries),
+    print(json.dumps(dict(art_source='SVG-authored, code-rendered, no image model', sprites=len(entries),
                           atlas_size=atlas.size, terrain_tiles=40, edge_tiles=20,
                           files={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in
                                  (OUT/'sprites.png', OUT/'terrain.png', OUT/'atlas.json')}), ensure_ascii=False))

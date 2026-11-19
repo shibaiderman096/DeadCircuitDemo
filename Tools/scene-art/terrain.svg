@@ -1,0 +1,1170 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" shape-rendering="crispEdges">
+  <!-- Dead Circuit terrain atlas. One SVG unit is one logical pixel. -->
+  <!-- Rows 0-4: eight base tiles per material. Rows 5-7: west, north, east, south edge overlays. -->
+  <!-- Cells 60-63 are intentionally empty. Flat opaque fills and integer step geometry throughout. -->
+  <g id="tile-00-grass-1" transform="translate(0 0)">
+    <rect x="0" y="0" width="32" height="32" fill="#414d35"/>
+    <path d="M4 5H13V6H15V9H13V11H4V10H3V7H4Z" fill="#394730"/>
+    <rect x="6" y="7" width="5" height="1" fill="#48543a"/>
+    <path d="M18 18H27V19H29V23H27V25H18V24H17V20H18Z" fill="#4b5639"/>
+    <rect x="20" y="20" width="5" height="1" fill="#48543a"/>
+    <path d="M5 24H11V25H13V27H11V29H5V28H4V26H5Z" fill="#394730"/>
+    <rect x="7" y="26" width="4" height="1" fill="#48543a"/>
+    <path d="M18 11H22V12H24V13H22V15H18V14H17V13H18Z" fill="#535039"/>
+    <rect x="18" y="13" width="3" height="1" fill="#625a3d"/>
+    <path d="M5 17h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="6" y="16" width="1" height="2" fill="#657044"/>
+    <rect x="9" y="15" width="1" height="2" fill="#606c41"/>
+    <path d="M20 9h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="21" y="8" width="1" height="2" fill="#657044"/>
+    <rect x="24" y="7" width="1" height="2" fill="#606c41"/>
+    <path d="M12 28h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="13" y="27" width="1" height="2" fill="#657044"/>
+    <rect x="16" y="26" width="1" height="2" fill="#606c41"/>
+    <rect x="3" y="3" width="4" height="2" fill="#4d4b38"/>
+    <rect x="3" y="2" width="3" height="2" fill="#777057"/>
+    <rect x="3" y="2" width="2" height="1" fill="#8b8162"/>
+  </g>
+  <g id="tile-01-grass-2" transform="translate(32 0)">
+    <rect x="0" y="0" width="32" height="32" fill="#414d35"/>
+    <path d="M16 4H25V5H27V9H25V11H16V10H15V6H16Z" fill="#394730"/>
+    <rect x="18" y="6" width="5" height="1" fill="#48543a"/>
+    <path d="M4 15H14V16H16V21H14V23H4V22H3V17H4Z" fill="#4b5639"/>
+    <rect x="6" y="17" width="5" height="1" fill="#48543a"/>
+    <path d="M21 25H26V26H28V27H26V29H21V28H20V27H21Z" fill="#394730"/>
+    <rect x="23" y="27" width="3" height="1" fill="#48543a"/>
+    <path d="M22 15H26V16H28V17H26V19H22V18H21V17H22Z" fill="#535039"/>
+    <rect x="22" y="17" width="3" height="1" fill="#625a3d"/>
+    <path d="M5 9h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="6" y="8" width="1" height="2" fill="#657044"/>
+    <rect x="9" y="7" width="1" height="2" fill="#606c41"/>
+    <path d="M19 21h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="20" y="20" width="1" height="2" fill="#657044"/>
+    <rect x="23" y="19" width="1" height="2" fill="#606c41"/>
+    <path d="M8 28h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="9" y="27" width="1" height="2" fill="#657044"/>
+    <rect x="12" y="26" width="1" height="2" fill="#606c41"/>
+    <rect x="26" y="29" width="4" height="2" fill="#4d4b38"/>
+    <rect x="26" y="28" width="3" height="2" fill="#777057"/>
+    <rect x="26" y="28" width="2" height="1" fill="#8b8162"/>
+  </g>
+  <g id="tile-02-grass-3" transform="translate(64 0)">
+    <rect x="0" y="0" width="32" height="32" fill="#414d35"/>
+    <path d="M6 4H13V5H15V10H13V12H6V11H5V6H6Z" fill="#394730"/>
+    <rect x="8" y="6" width="5" height="1" fill="#48543a"/>
+    <path d="M19 13H26V14H28V17H26V19H19V18H18V15H19Z" fill="#4b5639"/>
+    <rect x="21" y="15" width="5" height="1" fill="#48543a"/>
+    <path d="M7 24H19V25H21V27H19V29H7V28H6V26H7Z" fill="#394730"/>
+    <rect x="9" y="26" width="5" height="1" fill="#48543a"/>
+    <path d="M5 14H9V15H11V16H9V18H5V17H4V16H5Z" fill="#535039"/>
+    <rect x="5" y="16" width="3" height="1" fill="#625a3d"/>
+    <path d="M6 18h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="7" y="17" width="1" height="2" fill="#657044"/>
+    <rect x="10" y="16" width="1" height="2" fill="#606c41"/>
+    <path d="M19 9h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="20" y="8" width="1" height="2" fill="#657044"/>
+    <rect x="23" y="7" width="1" height="2" fill="#606c41"/>
+    <path d="M22 27h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="23" y="26" width="1" height="2" fill="#657044"/>
+    <rect x="26" y="25" width="1" height="2" fill="#606c41"/>
+    <rect x="14" y="16" width="4" height="2" fill="#4d4b38"/>
+    <rect x="14" y="15" width="3" height="2" fill="#777057"/>
+    <rect x="14" y="15" width="2" height="1" fill="#8b8162"/>
+  </g>
+  <g id="tile-03-grass-4" transform="translate(96 0)">
+    <rect x="0" y="0" width="32" height="32" fill="#414d35"/>
+    <path d="M4 10H12V11H14V14H12V16H4V15H3V12H4Z" fill="#394730"/>
+    <rect x="6" y="12" width="5" height="1" fill="#48543a"/>
+    <path d="M18 5H25V6H27V8H25V10H18V9H17V7H18Z" fill="#4b5639"/>
+    <rect x="20" y="7" width="5" height="1" fill="#48543a"/>
+    <path d="M17 22H27V23H29V26H27V28H17V27H16V24H17Z" fill="#394730"/>
+    <rect x="19" y="24" width="5" height="1" fill="#48543a"/>
+    <path d="M9 18H13V19H15V20H13V22H9V21H8V20H9Z" fill="#535039"/>
+    <rect x="9" y="20" width="3" height="1" fill="#625a3d"/>
+    <path d="M6 25h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="7" y="24" width="1" height="2" fill="#657044"/>
+    <rect x="10" y="23" width="1" height="2" fill="#606c41"/>
+    <path d="M17 16h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="18" y="15" width="1" height="2" fill="#657044"/>
+    <rect x="21" y="14" width="1" height="2" fill="#606c41"/>
+    <path d="M23 9h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="24" y="8" width="1" height="2" fill="#657044"/>
+    <rect x="27" y="7" width="1" height="2" fill="#606c41"/>
+    <rect x="25" y="5" width="4" height="2" fill="#4d4b38"/>
+    <rect x="25" y="4" width="3" height="2" fill="#777057"/>
+    <rect x="25" y="4" width="2" height="1" fill="#8b8162"/>
+  </g>
+  <g id="tile-04-grass-5" transform="translate(128 0)">
+    <rect x="0" y="0" width="32" height="32" fill="#414d35"/>
+    <path d="M5 21H13V22H15V26H13V28H5V27H4V23H5Z" fill="#394730"/>
+    <rect x="7" y="23" width="5" height="1" fill="#48543a"/>
+    <path d="M13 5H25V6H27V10H25V12H13V11H12V7H13Z" fill="#4b5639"/>
+    <rect x="15" y="7" width="5" height="1" fill="#48543a"/>
+    <path d="M22 16H27V17H29V18H27V20H22V19H21V18H22Z" fill="#394730"/>
+    <rect x="24" y="18" width="3" height="1" fill="#48543a"/>
+    <path d="M5 5H9V6H11V7H9V9H5V8H4V7H5Z" fill="#535039"/>
+    <rect x="5" y="7" width="3" height="1" fill="#625a3d"/>
+    <path d="M5 13h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="6" y="12" width="1" height="2" fill="#657044"/>
+    <rect x="9" y="11" width="1" height="2" fill="#606c41"/>
+    <path d="M15 23h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="16" y="22" width="1" height="2" fill="#657044"/>
+    <rect x="19" y="21" width="1" height="2" fill="#606c41"/>
+    <path d="M24 8h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="25" y="7" width="1" height="2" fill="#657044"/>
+    <rect x="28" y="6" width="1" height="2" fill="#606c41"/>
+    <rect x="4" y="18" width="4" height="2" fill="#4d4b38"/>
+    <rect x="4" y="17" width="3" height="2" fill="#777057"/>
+    <rect x="4" y="17" width="2" height="1" fill="#8b8162"/>
+  </g>
+  <g id="tile-05-grass-6" transform="translate(160 0)">
+    <rect x="0" y="0" width="32" height="32" fill="#414d35"/>
+    <path d="M4 3H11V4H13V7H11V9H4V8H3V5H4Z" fill="#394730"/>
+    <rect x="6" y="5" width="5" height="1" fill="#48543a"/>
+    <path d="M18 12H27V13H29V17H27V19H18V18H17V14H18Z" fill="#4b5639"/>
+    <rect x="20" y="14" width="5" height="1" fill="#48543a"/>
+    <path d="M8 23H17V24H19V27H17V29H8V28H7V25H8Z" fill="#394730"/>
+    <rect x="10" y="25" width="5" height="1" fill="#48543a"/>
+    <path d="M5 11H9V12H11V13H9V15H5V14H4V13H5Z" fill="#535039"/>
+    <rect x="5" y="13" width="3" height="1" fill="#625a3d"/>
+    <path d="M7 17h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="8" y="16" width="1" height="2" fill="#657044"/>
+    <rect x="11" y="15" width="1" height="2" fill="#606c41"/>
+    <path d="M19 7h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="20" y="6" width="1" height="2" fill="#657044"/>
+    <rect x="23" y="5" width="1" height="2" fill="#606c41"/>
+    <path d="M19 27h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="20" y="26" width="1" height="2" fill="#657044"/>
+    <rect x="23" y="25" width="1" height="2" fill="#606c41"/>
+    <rect x="27" y="11" width="4" height="2" fill="#4d4b38"/>
+    <rect x="27" y="10" width="3" height="2" fill="#777057"/>
+    <rect x="27" y="10" width="2" height="1" fill="#8b8162"/>
+  </g>
+  <g id="tile-06-grass-7" transform="translate(192 0)">
+    <rect x="0" y="0" width="32" height="32" fill="#414d35"/>
+    <path d="M6 12H18V13H20V18H18V20H6V19H5V14H6Z" fill="#394730"/>
+    <rect x="8" y="14" width="5" height="1" fill="#48543a"/>
+    <path d="M19 3H26V4H28V7H26V9H19V8H18V5H19Z" fill="#4b5639"/>
+    <rect x="21" y="5" width="5" height="1" fill="#48543a"/>
+    <path d="M22 24H27V25H29V27H27V29H22V28H21V26H22Z" fill="#394730"/>
+    <rect x="24" y="26" width="3" height="1" fill="#48543a"/>
+    <path d="M24 11H28V12H30V13H28V15H24V14H23V13H24Z" fill="#535039"/>
+    <rect x="24" y="13" width="3" height="1" fill="#625a3d"/>
+    <path d="M5 7h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="6" y="6" width="1" height="2" fill="#657044"/>
+    <rect x="9" y="5" width="1" height="2" fill="#606c41"/>
+    <path d="M19 17h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="20" y="16" width="1" height="2" fill="#657044"/>
+    <rect x="23" y="15" width="1" height="2" fill="#606c41"/>
+    <path d="M6 28h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="7" y="27" width="1" height="2" fill="#657044"/>
+    <rect x="10" y="26" width="1" height="2" fill="#606c41"/>
+    <rect x="12" y="6" width="4" height="2" fill="#4d4b38"/>
+    <rect x="12" y="5" width="3" height="2" fill="#777057"/>
+    <rect x="12" y="5" width="2" height="1" fill="#8b8162"/>
+  </g>
+  <g id="tile-07-grass-8" transform="translate(224 0)">
+    <rect x="0" y="0" width="32" height="32" fill="#414d35"/>
+    <path d="M4 5H17V6H19V9H17V11H4V10H3V7H4Z" fill="#394730"/>
+    <rect x="6" y="7" width="5" height="1" fill="#48543a"/>
+    <path d="M19 19H26V20H28V26H26V28H19V27H18V21H19Z" fill="#4b5639"/>
+    <rect x="21" y="21" width="5" height="1" fill="#48543a"/>
+    <path d="M4 23H11V24H13V26H11V28H4V27H3V25H4Z" fill="#394730"/>
+    <rect x="6" y="25" width="5" height="1" fill="#48543a"/>
+    <path d="M12 15H16V16H18V17H16V19H12V18H11V17H12Z" fill="#535039"/>
+    <rect x="12" y="17" width="3" height="1" fill="#625a3d"/>
+    <path d="M5 17h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="6" y="16" width="1" height="2" fill="#657044"/>
+    <rect x="9" y="15" width="1" height="2" fill="#606c41"/>
+    <path d="M20 11h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="21" y="10" width="1" height="2" fill="#657044"/>
+    <rect x="24" y="9" width="1" height="2" fill="#606c41"/>
+    <path d="M14 27h2v-3h1v2h2v-4h1v3h2v-2h1v4h-2v2h-4v-1h-2Z" fill="#36422f"/>
+    <rect x="15" y="26" width="1" height="2" fill="#657044"/>
+    <rect x="18" y="25" width="1" height="2" fill="#606c41"/>
+    <rect x="24" y="27" width="4" height="2" fill="#4d4b38"/>
+    <rect x="24" y="26" width="3" height="2" fill="#777057"/>
+    <rect x="24" y="26" width="2" height="1" fill="#8b8162"/>
+  </g>
+  <g id="tile-08-dirt-1" transform="translate(0 32)">
+    <rect x="0" y="0" width="32" height="32" fill="#695c42"/>
+    <path d="M4 4H14V5H16V9H14V11H4V10H3V6H4Z" fill="#5e553d"/>
+    <rect x="6" y="6" width="4" height="1" fill="#79694b"/>
+    <path d="M18 20H27V21H29V26H27V28H18V27H17V22H18Z" fill="#716247"/>
+    <rect x="20" y="22" width="4" height="1" fill="#79694b"/>
+    <rect x="8" y="5" width="1" height="7" fill="#524b37"/>
+    <rect x="8" y="12" width="1" height="1" fill="#524b37"/>
+    <rect x="9" y="12" width="1" height="10" fill="#524b37"/>
+    <rect x="9" y="22" width="1" height="1" fill="#524b37"/>
+    <rect x="10" y="22" width="1" height="6" fill="#524b37"/>
+    <rect x="16" y="4" width="1" height="9" fill="#524b37"/>
+    <rect x="16" y="13" width="1" height="1" fill="#524b37"/>
+    <rect x="17" y="13" width="1" height="10" fill="#524b37"/>
+    <rect x="17" y="23" width="1" height="1" fill="#524b37"/>
+    <rect x="18" y="23" width="1" height="5" fill="#524b37"/>
+    <rect x="9" y="8" width="2" height="1" fill="#806e4d"/>
+    <rect x="16" y="6" width="2" height="1" fill="#806e4d"/>
+    <rect x="9" y="14" width="2" height="1" fill="#806e4d"/>
+    <rect x="16" y="12" width="2" height="1" fill="#806e4d"/>
+    <rect x="9" y="20" width="2" height="1" fill="#806e4d"/>
+    <rect x="16" y="18" width="2" height="1" fill="#806e4d"/>
+    <rect x="9" y="26" width="2" height="1" fill="#806e4d"/>
+    <rect x="16" y="24" width="2" height="1" fill="#806e4d"/>
+    <rect x="21" y="8" width="4" height="2" fill="#4d4b38"/>
+    <rect x="21" y="7" width="3" height="2" fill="#777057"/>
+    <rect x="21" y="7" width="2" height="1" fill="#8b8162"/>
+    <rect x="24" y="11" width="4" height="2" fill="#4d4b38"/>
+    <rect x="24" y="10" width="3" height="2" fill="#777057"/>
+    <rect x="24" y="10" width="2" height="1" fill="#8b8162"/>
+    <rect x="14" y="29" width="3" height="1" fill="#79694b"/>
+  </g>
+  <g id="tile-09-dirt-2" transform="translate(32 32)">
+    <rect x="0" y="0" width="32" height="32" fill="#695c42"/>
+    <path d="M16 3H26V4H28V8H26V10H16V9H15V5H16Z" fill="#5e553d"/>
+    <rect x="18" y="5" width="4" height="1" fill="#79694b"/>
+    <path d="M4 19H15V20H17V25H15V27H4V26H3V21H4Z" fill="#716247"/>
+    <rect x="6" y="21" width="4" height="1" fill="#79694b"/>
+    <rect x="3" y="14" width="9" height="1" fill="#5b513b"/>
+    <rect x="12" y="13" width="1" height="1" fill="#5b513b"/>
+    <rect x="12" y="13" width="8" height="1" fill="#5b513b"/>
+    <rect x="20" y="12" width="1" height="1" fill="#5b513b"/>
+    <rect x="20" y="12" width="8" height="1" fill="#5b513b"/>
+    <rect x="5" y="12" width="7" height="1" fill="#82714f"/>
+    <rect x="21" y="10" width="5" height="1" fill="#82714f"/>
+    <rect x="5" y="7" width="4" height="2" fill="#4d4b38"/>
+    <rect x="5" y="6" width="3" height="2" fill="#777057"/>
+    <rect x="5" y="6" width="2" height="1" fill="#8b8162"/>
+    <rect x="9" y="10" width="4" height="2" fill="#4d4b38"/>
+    <rect x="9" y="9" width="3" height="2" fill="#777057"/>
+    <rect x="9" y="9" width="2" height="1" fill="#8b8162"/>
+    <rect x="14" y="29" width="3" height="1" fill="#79694b"/>
+  </g>
+  <g id="tile-10-dirt-3" transform="translate(64 32)">
+    <rect x="0" y="0" width="32" height="32" fill="#695c42"/>
+    <path d="M4 12H13V13H15V18H13V20H4V19H3V14H4Z" fill="#5e553d"/>
+    <rect x="6" y="14" width="4" height="1" fill="#79694b"/>
+    <path d="M18 4H27V5H29V9H27V11H18V10H17V6H18Z" fill="#716247"/>
+    <rect x="20" y="6" width="4" height="1" fill="#79694b"/>
+    <rect x="19" y="20" width="4" height="1" fill="#594f3b"/>
+    <rect x="23" y="20" width="1" height="2" fill="#594f3b"/>
+    <rect x="23" y="22" width="3" height="1" fill="#594f3b"/>
+    <rect x="26" y="22" width="1" height="3" fill="#594f3b"/>
+    <rect x="6" y="26" width="4" height="2" fill="#4d4b38"/>
+    <rect x="6" y="25" width="3" height="2" fill="#777057"/>
+    <rect x="6" y="25" width="2" height="1" fill="#8b8162"/>
+    <rect x="10" y="28" width="4" height="2" fill="#4d4b38"/>
+    <rect x="10" y="27" width="3" height="2" fill="#777057"/>
+    <rect x="10" y="27" width="2" height="1" fill="#8b8162"/>
+    <rect x="14" y="29" width="3" height="1" fill="#79694b"/>
+  </g>
+  <g id="tile-11-dirt-4" transform="translate(96 32)">
+    <rect x="0" y="0" width="32" height="32" fill="#695c42"/>
+    <path d="M5 22H14V23H16V26H14V28H5V27H4V24H5Z" fill="#5e553d"/>
+    <rect x="7" y="24" width="4" height="1" fill="#79694b"/>
+    <path d="M17 10H27V11H29V17H27V19H17V18H16V12H17Z" fill="#716247"/>
+    <rect x="19" y="12" width="4" height="1" fill="#79694b"/>
+    <rect x="15" y="5" width="1" height="7" fill="#524b37"/>
+    <rect x="15" y="12" width="1" height="1" fill="#524b37"/>
+    <rect x="16" y="12" width="1" height="10" fill="#524b37"/>
+    <rect x="16" y="22" width="1" height="1" fill="#524b37"/>
+    <rect x="17" y="22" width="1" height="6" fill="#524b37"/>
+    <rect x="23" y="4" width="1" height="9" fill="#524b37"/>
+    <rect x="23" y="13" width="1" height="1" fill="#524b37"/>
+    <rect x="24" y="13" width="1" height="10" fill="#524b37"/>
+    <rect x="24" y="23" width="1" height="1" fill="#524b37"/>
+    <rect x="25" y="23" width="1" height="5" fill="#524b37"/>
+    <rect x="16" y="8" width="2" height="1" fill="#806e4d"/>
+    <rect x="23" y="6" width="2" height="1" fill="#806e4d"/>
+    <rect x="16" y="14" width="2" height="1" fill="#806e4d"/>
+    <rect x="23" y="12" width="2" height="1" fill="#806e4d"/>
+    <rect x="16" y="20" width="2" height="1" fill="#806e4d"/>
+    <rect x="23" y="18" width="2" height="1" fill="#806e4d"/>
+    <rect x="16" y="26" width="2" height="1" fill="#806e4d"/>
+    <rect x="23" y="24" width="2" height="1" fill="#806e4d"/>
+    <rect x="5" y="7" width="4" height="2" fill="#4d4b38"/>
+    <rect x="5" y="6" width="3" height="2" fill="#777057"/>
+    <rect x="5" y="6" width="2" height="1" fill="#8b8162"/>
+    <rect x="25" y="24" width="4" height="2" fill="#4d4b38"/>
+    <rect x="25" y="23" width="3" height="2" fill="#777057"/>
+    <rect x="25" y="23" width="2" height="1" fill="#8b8162"/>
+    <rect x="14" y="29" width="3" height="1" fill="#79694b"/>
+  </g>
+  <g id="tile-12-dirt-5" transform="translate(128 32)">
+    <rect x="0" y="0" width="32" height="32" fill="#695c42"/>
+    <path d="M5 5H13V6H15V11H13V13H5V12H4V7H5Z" fill="#5e553d"/>
+    <rect x="7" y="7" width="4" height="1" fill="#79694b"/>
+    <path d="M19 21H26V22H28V26H26V28H19V27H18V23H19Z" fill="#716247"/>
+    <rect x="21" y="23" width="4" height="1" fill="#79694b"/>
+    <rect x="5" y="21" width="4" height="1" fill="#594f3b"/>
+    <rect x="9" y="21" width="1" height="2" fill="#594f3b"/>
+    <rect x="9" y="23" width="3" height="1" fill="#594f3b"/>
+    <rect x="12" y="23" width="1" height="3" fill="#594f3b"/>
+    <rect x="21" y="13" width="4" height="2" fill="#4d4b38"/>
+    <rect x="21" y="12" width="3" height="2" fill="#777057"/>
+    <rect x="21" y="12" width="2" height="1" fill="#8b8162"/>
+    <rect x="25" y="16" width="4" height="2" fill="#4d4b38"/>
+    <rect x="25" y="15" width="3" height="2" fill="#777057"/>
+    <rect x="25" y="15" width="2" height="1" fill="#8b8162"/>
+    <rect x="14" y="29" width="3" height="1" fill="#79694b"/>
+  </g>
+  <g id="tile-13-dirt-6" transform="translate(160 32)">
+    <rect x="0" y="0" width="32" height="32" fill="#695c42"/>
+    <path d="M4 18H13V19H15V24H13V26H4V25H3V20H4Z" fill="#5e553d"/>
+    <rect x="6" y="20" width="4" height="1" fill="#79694b"/>
+    <path d="M18 4H26V5H28V10H26V12H18V11H17V6H18Z" fill="#716247"/>
+    <rect x="20" y="6" width="4" height="1" fill="#79694b"/>
+    <rect x="3" y="23" width="9" height="1" fill="#5b513b"/>
+    <rect x="12" y="22" width="1" height="1" fill="#5b513b"/>
+    <rect x="12" y="22" width="8" height="1" fill="#5b513b"/>
+    <rect x="20" y="21" width="1" height="1" fill="#5b513b"/>
+    <rect x="20" y="21" width="8" height="1" fill="#5b513b"/>
+    <rect x="5" y="21" width="7" height="1" fill="#82714f"/>
+    <rect x="21" y="19" width="5" height="1" fill="#82714f"/>
+    <rect x="5" y="9" width="4" height="2" fill="#4d4b38"/>
+    <rect x="5" y="8" width="3" height="2" fill="#777057"/>
+    <rect x="5" y="8" width="2" height="1" fill="#8b8162"/>
+    <rect x="10" y="11" width="4" height="2" fill="#4d4b38"/>
+    <rect x="10" y="10" width="3" height="2" fill="#777057"/>
+    <rect x="10" y="10" width="2" height="1" fill="#8b8162"/>
+    <rect x="14" y="29" width="3" height="1" fill="#79694b"/>
+  </g>
+  <g id="tile-14-dirt-7" transform="translate(192 32)">
+    <rect x="0" y="0" width="32" height="32" fill="#695c42"/>
+    <path d="M7 3H18V4H20V9H18V11H7V10H6V5H7Z" fill="#5e553d"/>
+    <rect x="9" y="5" width="4" height="1" fill="#79694b"/>
+    <path d="M20 18H27V19H29V24H27V26H20V25H19V20H20Z" fill="#716247"/>
+    <rect x="22" y="20" width="4" height="1" fill="#79694b"/>
+    <rect x="7" y="5" width="1" height="7" fill="#524b37"/>
+    <rect x="7" y="12" width="1" height="1" fill="#524b37"/>
+    <rect x="8" y="12" width="1" height="10" fill="#524b37"/>
+    <rect x="8" y="22" width="1" height="1" fill="#524b37"/>
+    <rect x="9" y="22" width="1" height="6" fill="#524b37"/>
+    <rect x="15" y="4" width="1" height="9" fill="#524b37"/>
+    <rect x="15" y="13" width="1" height="1" fill="#524b37"/>
+    <rect x="16" y="13" width="1" height="10" fill="#524b37"/>
+    <rect x="16" y="23" width="1" height="1" fill="#524b37"/>
+    <rect x="17" y="23" width="1" height="5" fill="#524b37"/>
+    <rect x="8" y="8" width="2" height="1" fill="#806e4d"/>
+    <rect x="15" y="6" width="2" height="1" fill="#806e4d"/>
+    <rect x="8" y="14" width="2" height="1" fill="#806e4d"/>
+    <rect x="15" y="12" width="2" height="1" fill="#806e4d"/>
+    <rect x="8" y="20" width="2" height="1" fill="#806e4d"/>
+    <rect x="15" y="18" width="2" height="1" fill="#806e4d"/>
+    <rect x="8" y="26" width="2" height="1" fill="#806e4d"/>
+    <rect x="15" y="24" width="2" height="1" fill="#806e4d"/>
+    <rect x="22" y="9" width="4" height="2" fill="#4d4b38"/>
+    <rect x="22" y="8" width="3" height="2" fill="#777057"/>
+    <rect x="22" y="8" width="2" height="1" fill="#8b8162"/>
+    <rect x="25" y="12" width="4" height="2" fill="#4d4b38"/>
+    <rect x="25" y="11" width="3" height="2" fill="#777057"/>
+    <rect x="25" y="11" width="2" height="1" fill="#8b8162"/>
+    <rect x="14" y="29" width="3" height="1" fill="#79694b"/>
+  </g>
+  <g id="tile-15-dirt-8" transform="translate(224 32)">
+    <rect x="0" y="0" width="32" height="32" fill="#695c42"/>
+    <path d="M4 13H14V14H16V19H14V21H4V20H3V15H4Z" fill="#5e553d"/>
+    <rect x="6" y="15" width="4" height="1" fill="#79694b"/>
+    <path d="M17 3H27V4H29V8H27V10H17V9H16V5H17Z" fill="#716247"/>
+    <rect x="19" y="5" width="4" height="1" fill="#79694b"/>
+    <rect x="20" y="22" width="4" height="1" fill="#594f3b"/>
+    <rect x="24" y="22" width="1" height="2" fill="#594f3b"/>
+    <rect x="24" y="24" width="3" height="1" fill="#594f3b"/>
+    <rect x="27" y="24" width="1" height="3" fill="#594f3b"/>
+    <rect x="5" y="25" width="4" height="2" fill="#4d4b38"/>
+    <rect x="5" y="24" width="3" height="2" fill="#777057"/>
+    <rect x="5" y="24" width="2" height="1" fill="#8b8162"/>
+    <rect x="9" y="28" width="4" height="2" fill="#4d4b38"/>
+    <rect x="9" y="27" width="3" height="2" fill="#777057"/>
+    <rect x="9" y="27" width="2" height="1" fill="#8b8162"/>
+    <rect x="14" y="29" width="3" height="1" fill="#79694b"/>
+  </g>
+  <g id="tile-16-water-1" transform="translate(0 64)">
+    <rect x="0" y="0" width="32" height="32" fill="#24494b"/>
+    <path d="M3 5h8v1h5v3h-5v-1H3Z" fill="#294f50"/>
+    <rect x="5" y="5" width="6" height="1" fill="#355d5a"/>
+    <rect x="11" y="8" width="4" height="1" fill="#1e4146"/>
+    <path d="M17 13h7v-1h5v3h-5v1H17Z" fill="#203f44"/>
+    <rect x="19" y="13" width="5" height="1" fill="#2c5152"/>
+    <rect x="24" y="14" width="4" height="1" fill="#1e4146"/>
+    <path d="M5 23h12v1h5v3h-5v-1H5Z" fill="#294f50"/>
+    <rect x="7" y="23" width="10" height="1" fill="#355d5a"/>
+    <rect x="17" y="26" width="4" height="1" fill="#1e4146"/>
+    <path d="M6 7h5v-1h4v1h-3v1h-6Z" fill="#486e67"/>
+    <rect x="8" y="6" width="3" height="1" fill="#52746a"/>
+    <rect x="4" y="30" width="5" height="1" fill="#2c5152"/>
+  </g>
+  <g id="tile-17-water-2" transform="translate(32 64)">
+    <rect x="0" y="0" width="32" height="32" fill="#24494b"/>
+    <path d="M13 4h9v1h5v3h-5v-1H13Z" fill="#294f50"/>
+    <rect x="15" y="4" width="7" height="1" fill="#355d5a"/>
+    <rect x="22" y="7" width="4" height="1" fill="#1e4146"/>
+    <path d="M3 14h9v-1h5v3h-5v1H3Z" fill="#203f44"/>
+    <rect x="5" y="14" width="7" height="1" fill="#2c5152"/>
+    <rect x="12" y="15" width="4" height="1" fill="#1e4146"/>
+    <path d="M15 25h8v-1h5v3h-5v1H15Z" fill="#294f50"/>
+    <rect x="17" y="25" width="6" height="1" fill="#355d5a"/>
+    <rect x="23" y="26" width="4" height="1" fill="#1e4146"/>
+    <path d="M18 6h5v-1h4v1h-3v1h-6Z" fill="#486e67"/>
+    <rect x="20" y="5" width="3" height="1" fill="#688579"/>
+    <rect x="5" y="30" width="5" height="1" fill="#2c5152"/>
+  </g>
+  <g id="tile-18-water-3" transform="translate(64 64)">
+    <rect x="0" y="0" width="32" height="32" fill="#24494b"/>
+    <path d="M4 8h14v-1h5v3h-5v1H4Z" fill="#294f50"/>
+    <rect x="6" y="8" width="12" height="1" fill="#355d5a"/>
+    <rect x="18" y="9" width="4" height="1" fill="#1e4146"/>
+    <path d="M14 17h9v1h5v3h-5v-1H14Z" fill="#203f44"/>
+    <rect x="16" y="17" width="7" height="1" fill="#2c5152"/>
+    <rect x="23" y="20" width="4" height="1" fill="#1e4146"/>
+    <path d="M3 26h7v1h5v3h-5v-1H3Z" fill="#294f50"/>
+    <rect x="5" y="26" width="5" height="1" fill="#355d5a"/>
+    <rect x="10" y="29" width="4" height="1" fill="#1e4146"/>
+    <path d="M7 10h5v-1h4v1h-3v1h-6Z" fill="#486e67"/>
+    <rect x="9" y="9" width="3" height="1" fill="#52746a"/>
+    <rect x="6" y="30" width="5" height="1" fill="#2c5152"/>
+  </g>
+  <g id="tile-19-water-4" transform="translate(96 64)">
+    <rect x="0" y="0" width="32" height="32" fill="#24494b"/>
+    <path d="M3 4h5v1h5v3h-5v-1H3Z" fill="#294f50"/>
+    <rect x="5" y="4" width="3" height="1" fill="#355d5a"/>
+    <rect x="8" y="7" width="4" height="1" fill="#1e4146"/>
+    <path d="M8 14h14v1h5v3h-5v-1H8Z" fill="#203f44"/>
+    <rect x="10" y="14" width="12" height="1" fill="#2c5152"/>
+    <rect x="22" y="17" width="4" height="1" fill="#1e4146"/>
+    <path d="M4 25h12v-1h5v3h-5v1H4Z" fill="#294f50"/>
+    <rect x="6" y="25" width="10" height="1" fill="#355d5a"/>
+    <rect x="16" y="26" width="4" height="1" fill="#1e4146"/>
+    <path d="M12 16h5v-1h4v1h-3v1h-6Z" fill="#486e67"/>
+    <rect x="14" y="15" width="3" height="1" fill="#52746a"/>
+    <rect x="4" y="30" width="5" height="1" fill="#2c5152"/>
+  </g>
+  <g id="tile-20-water-5" transform="translate(128 64)">
+    <rect x="0" y="0" width="32" height="32" fill="#24494b"/>
+    <path d="M10 6h13v-1h5v3h-5v1H10Z" fill="#294f50"/>
+    <rect x="12" y="6" width="11" height="1" fill="#355d5a"/>
+    <rect x="23" y="7" width="4" height="1" fill="#1e4146"/>
+    <path d="M3 17h9v1h5v3h-5v-1H3Z" fill="#203f44"/>
+    <rect x="5" y="17" width="7" height="1" fill="#2c5152"/>
+    <rect x="12" y="20" width="4" height="1" fill="#1e4146"/>
+    <path d="M17 26h7v1h5v3h-5v-1H17Z" fill="#294f50"/>
+    <rect x="19" y="26" width="5" height="1" fill="#355d5a"/>
+    <rect x="24" y="29" width="4" height="1" fill="#1e4146"/>
+    <path d="M14 8h5v-1h4v1h-3v1h-6Z" fill="#486e67"/>
+    <rect x="16" y="7" width="3" height="1" fill="#688579"/>
+    <rect x="5" y="30" width="5" height="1" fill="#2c5152"/>
+  </g>
+  <g id="tile-21-water-6" transform="translate(160 64)">
+    <rect x="0" y="0" width="32" height="32" fill="#24494b"/>
+    <path d="M4 5h10v1h5v3h-5v-1H4Z" fill="#294f50"/>
+    <rect x="6" y="5" width="8" height="1" fill="#355d5a"/>
+    <rect x="14" y="8" width="4" height="1" fill="#1e4146"/>
+    <path d="M16 15h8v-1h5v3h-5v1H16Z" fill="#203f44"/>
+    <rect x="18" y="15" width="6" height="1" fill="#2c5152"/>
+    <rect x="24" y="16" width="4" height="1" fill="#1e4146"/>
+    <path d="M5 24h10v1h5v3h-5v-1H5Z" fill="#294f50"/>
+    <rect x="7" y="24" width="8" height="1" fill="#355d5a"/>
+    <rect x="15" y="27" width="4" height="1" fill="#1e4146"/>
+    <path d="M7 7h5v-1h4v1h-3v1h-6Z" fill="#486e67"/>
+    <rect x="9" y="6" width="3" height="1" fill="#52746a"/>
+    <rect x="6" y="30" width="5" height="1" fill="#2c5152"/>
+  </g>
+  <g id="tile-22-water-7" transform="translate(192 64)">
+    <rect x="0" y="0" width="32" height="32" fill="#24494b"/>
+    <path d="M14 4h9v-1h5v3h-5v1H14Z" fill="#294f50"/>
+    <rect x="16" y="4" width="7" height="1" fill="#355d5a"/>
+    <rect x="23" y="5" width="4" height="1" fill="#1e4146"/>
+    <path d="M3 13h13v1h5v3h-5v-1H3Z" fill="#203f44"/>
+    <rect x="5" y="13" width="11" height="1" fill="#2c5152"/>
+    <rect x="16" y="16" width="4" height="1" fill="#1e4146"/>
+    <path d="M13 24h11v-1h5v3h-5v1H13Z" fill="#294f50"/>
+    <rect x="15" y="24" width="9" height="1" fill="#355d5a"/>
+    <rect x="24" y="25" width="4" height="1" fill="#1e4146"/>
+    <path d="M6 15h5v-1h4v1h-3v1h-6Z" fill="#486e67"/>
+    <rect x="8" y="14" width="3" height="1" fill="#52746a"/>
+    <rect x="4" y="30" width="5" height="1" fill="#2c5152"/>
+  </g>
+  <g id="tile-23-water-8" transform="translate(224 64)">
+    <rect x="0" y="0" width="32" height="32" fill="#24494b"/>
+    <path d="M3 7h10v1h5v3h-5v-1H3Z" fill="#294f50"/>
+    <rect x="5" y="7" width="8" height="1" fill="#355d5a"/>
+    <rect x="13" y="10" width="4" height="1" fill="#1e4146"/>
+    <path d="M12 16h12v1h5v3h-5v-1H12Z" fill="#203f44"/>
+    <rect x="14" y="16" width="10" height="1" fill="#2c5152"/>
+    <rect x="24" y="19" width="4" height="1" fill="#1e4146"/>
+    <path d="M4 27h9v-1h5v3h-5v1H4Z" fill="#294f50"/>
+    <rect x="6" y="27" width="7" height="1" fill="#355d5a"/>
+    <rect x="13" y="28" width="4" height="1" fill="#1e4146"/>
+    <path d="M16 18h5v-1h4v1h-3v1h-6Z" fill="#486e67"/>
+    <rect x="18" y="17" width="3" height="1" fill="#688579"/>
+    <rect x="5" y="30" width="5" height="1" fill="#2c5152"/>
+  </g>
+  <g id="tile-24-asphalt-1" transform="translate(0 96)">
+    <rect x="0" y="0" width="32" height="32" fill="#3f4641"/>
+    <path d="M4 4H13V5H15V9H13V11H4V10H3V6H4Z" fill="#444a43"/>
+    <path d="M18 21H27V22H29V26H27V28H18V27H17V23H18Z" fill="#39423e"/>
+    <rect x="6" y="5" width="4" height="1" fill="#2d3935"/>
+    <rect x="10" y="5" width="1" height="4" fill="#2d3935"/>
+    <rect x="10" y="9" width="4" height="1" fill="#2d3935"/>
+    <rect x="14" y="9" width="1" height="7" fill="#2d3935"/>
+    <rect x="14" y="16" width="4" height="1" fill="#2d3935"/>
+    <rect x="18" y="16" width="1" height="7" fill="#2d3935"/>
+    <rect x="18" y="23" width="6" height="1" fill="#2d3935"/>
+    <rect x="24" y="23" width="1" height="5" fill="#2d3935"/>
+    <rect x="11" y="16" width="3" height="1" fill="#323c36"/>
+    <rect x="11" y="16" width="1" height="3" fill="#323c36"/>
+    <rect x="9" y="19" width="2" height="1" fill="#323c36"/>
+    <rect x="6" y="4" width="3" height="1" fill="#505548"/>
+    <rect x="15" y="13" width="1" height="3" fill="#4b5146"/>
+    <rect x="3" y="14" width="2" height="1" fill="#4b5147"/>
+    <rect x="24" y="5" width="3" height="1" fill="#4b5147"/>
+    <rect x="6" y="28" width="2" height="1" fill="#353f39"/>
+    <rect x="23" y="18" width="2" height="1" fill="#4b5147"/>
+    <rect x="17" y="3" width="1" height="1" fill="#353f39"/>
+    <rect x="4" y="22" width="1" height="1" fill="#353f39"/>
+    <rect x="28" y="28" width="1" height="1" fill="#353f39"/>
+    <rect x="19" y="28" width="2" height="1" fill="#4b5147"/>
+  </g>
+  <g id="tile-25-asphalt-2" transform="translate(32 96)">
+    <rect x="0" y="0" width="32" height="32" fill="#3f4641"/>
+    <path d="M5 4H14V5H16V9H14V11H5V10H4V6H5Z" fill="#444a43"/>
+    <path d="M18 20H27V21H29V25H27V27H18V26H17V22H18Z" fill="#39423e"/>
+    <rect x="4" y="19" width="5" height="1" fill="#2d3935"/>
+    <rect x="9" y="15" width="1" height="4" fill="#2d3935"/>
+    <rect x="9" y="15" width="6" height="1" fill="#2d3935"/>
+    <rect x="15" y="9" width="1" height="6" fill="#2d3935"/>
+    <rect x="15" y="9" width="6" height="1" fill="#2d3935"/>
+    <rect x="21" y="5" width="1" height="4" fill="#2d3935"/>
+    <rect x="12" y="9" width="3" height="1" fill="#323c36"/>
+    <rect x="12" y="9" width="1" height="3" fill="#323c36"/>
+    <rect x="10" y="12" width="2" height="1" fill="#323c36"/>
+    <rect x="4" y="18" width="3" height="1" fill="#505548"/>
+    <rect x="16" y="6" width="1" height="3" fill="#4b5146"/>
+    <rect x="4" y="14" width="2" height="1" fill="#4b5147"/>
+    <rect x="25" y="5" width="3" height="1" fill="#4b5147"/>
+    <rect x="7" y="28" width="2" height="1" fill="#353f39"/>
+    <rect x="24" y="18" width="2" height="1" fill="#4b5147"/>
+    <rect x="18" y="3" width="1" height="1" fill="#353f39"/>
+    <rect x="5" y="22" width="1" height="1" fill="#353f39"/>
+    <rect x="29" y="28" width="1" height="1" fill="#353f39"/>
+    <rect x="20" y="28" width="2" height="1" fill="#4b5147"/>
+    <rect x="26" y="25" width="3" height="1" fill="#665944"/>
+    <rect x="27" y="26" width="2" height="1" fill="#4c4739"/>
+  </g>
+  <g id="tile-26-asphalt-3" transform="translate(64 96)">
+    <rect x="0" y="0" width="32" height="32" fill="#3f4641"/>
+    <path d="M6 4H15V5H17V9H15V11H6V10H5V6H6Z" fill="#444a43"/>
+    <path d="M18 19H27V20H29V24H27V26H18V25H17V21H18Z" fill="#39423e"/>
+    <path d="M6 5H11V6H13V8H11V10H6V9H5V7H6Z" fill="#35403b"/>
+    <rect x="7" y="6" width="4" height="1" fill="#51564b"/>
+    <rect x="8" y="21" width="1" height="6" fill="#2d3935"/>
+    <rect x="8" y="21" width="4" height="1" fill="#2d3935"/>
+    <rect x="12" y="17" width="1" height="4" fill="#2d3935"/>
+    <rect x="12" y="17" width="7" height="1" fill="#2d3935"/>
+    <rect x="19" y="12" width="1" height="5" fill="#2d3935"/>
+    <rect x="19" y="12" width="6" height="1" fill="#2d3935"/>
+    <rect x="16" y="17" width="3" height="1" fill="#323c36"/>
+    <rect x="16" y="17" width="1" height="3" fill="#323c36"/>
+    <rect x="14" y="20" width="2" height="1" fill="#323c36"/>
+    <rect x="8" y="26" width="3" height="1" fill="#505548"/>
+    <rect x="20" y="14" width="1" height="3" fill="#4b5146"/>
+    <rect x="3" y="14" width="2" height="1" fill="#4b5147"/>
+    <rect x="24" y="5" width="3" height="1" fill="#4b5147"/>
+    <rect x="6" y="28" width="2" height="1" fill="#353f39"/>
+    <rect x="23" y="18" width="2" height="1" fill="#4b5147"/>
+    <rect x="17" y="3" width="1" height="1" fill="#353f39"/>
+    <rect x="4" y="22" width="1" height="1" fill="#353f39"/>
+    <rect x="28" y="28" width="1" height="1" fill="#353f39"/>
+    <rect x="19" y="28" width="2" height="1" fill="#4b5147"/>
+  </g>
+  <g id="tile-27-asphalt-4" transform="translate(96 96)">
+    <rect x="0" y="0" width="32" height="32" fill="#3f4641"/>
+    <path d="M4 4H13V5H15V9H13V11H4V10H3V6H4Z" fill="#444a43"/>
+    <path d="M18 21H27V22H29V26H27V28H18V27H17V23H18Z" fill="#39423e"/>
+    <rect x="4" y="8" width="7" height="1" fill="#2d3935"/>
+    <rect x="11" y="8" width="1" height="3" fill="#2d3935"/>
+    <rect x="11" y="11" width="5" height="1" fill="#2d3935"/>
+    <rect x="16" y="11" width="1" height="6" fill="#2d3935"/>
+    <rect x="16" y="17" width="5" height="1" fill="#2d3935"/>
+    <rect x="21" y="17" width="1" height="7" fill="#2d3935"/>
+    <rect x="21" y="24" width="6" height="1" fill="#2d3935"/>
+    <rect x="13" y="17" width="3" height="1" fill="#323c36"/>
+    <rect x="13" y="17" width="1" height="3" fill="#323c36"/>
+    <rect x="11" y="20" width="2" height="1" fill="#323c36"/>
+    <rect x="4" y="7" width="3" height="1" fill="#505548"/>
+    <rect x="17" y="14" width="1" height="3" fill="#4b5146"/>
+    <rect x="4" y="14" width="2" height="1" fill="#4b5147"/>
+    <rect x="25" y="5" width="3" height="1" fill="#4b5147"/>
+    <rect x="7" y="28" width="2" height="1" fill="#353f39"/>
+    <rect x="24" y="18" width="2" height="1" fill="#4b5147"/>
+    <rect x="18" y="3" width="1" height="1" fill="#353f39"/>
+    <rect x="5" y="22" width="1" height="1" fill="#353f39"/>
+    <rect x="29" y="28" width="1" height="1" fill="#353f39"/>
+    <rect x="20" y="28" width="2" height="1" fill="#4b5147"/>
+  </g>
+  <g id="tile-28-asphalt-5" transform="translate(128 96)">
+    <rect x="0" y="0" width="32" height="32" fill="#3f4641"/>
+    <path d="M5 4H14V5H16V9H14V11H5V10H4V6H5Z" fill="#444a43"/>
+    <path d="M18 20H27V21H29V25H27V27H18V26H17V22H18Z" fill="#39423e"/>
+    <rect x="7" y="4" width="1" height="6" fill="#2d3935"/>
+    <rect x="7" y="10" width="5" height="1" fill="#2d3935"/>
+    <rect x="12" y="10" width="1" height="6" fill="#2d3935"/>
+    <rect x="12" y="16" width="5" height="1" fill="#2d3935"/>
+    <rect x="17" y="16" width="1" height="6" fill="#2d3935"/>
+    <rect x="17" y="22" width="6" height="1" fill="#2d3935"/>
+    <rect x="23" y="22" width="1" height="6" fill="#2d3935"/>
+    <rect x="14" y="16" width="3" height="1" fill="#323c36"/>
+    <rect x="14" y="16" width="1" height="3" fill="#323c36"/>
+    <rect x="12" y="19" width="2" height="1" fill="#323c36"/>
+    <rect x="7" y="3" width="3" height="1" fill="#505548"/>
+    <rect x="18" y="13" width="1" height="3" fill="#4b5146"/>
+    <rect x="3" y="14" width="2" height="1" fill="#4b5147"/>
+    <rect x="24" y="5" width="3" height="1" fill="#4b5147"/>
+    <rect x="6" y="28" width="2" height="1" fill="#353f39"/>
+    <rect x="23" y="18" width="2" height="1" fill="#4b5147"/>
+    <rect x="17" y="3" width="1" height="1" fill="#353f39"/>
+    <rect x="4" y="22" width="1" height="1" fill="#353f39"/>
+    <rect x="28" y="28" width="1" height="1" fill="#353f39"/>
+    <rect x="19" y="28" width="2" height="1" fill="#4b5147"/>
+  </g>
+  <g id="tile-29-asphalt-6" transform="translate(160 96)">
+    <rect x="0" y="0" width="32" height="32" fill="#3f4641"/>
+    <path d="M6 4H15V5H17V9H15V11H6V10H5V6H6Z" fill="#444a43"/>
+    <path d="M18 19H27V20H29V24H27V26H18V25H17V21H18Z" fill="#39423e"/>
+    <path d="M21 23H26V24H28V26H26V28H21V27H20V25H21Z" fill="#35403b"/>
+    <rect x="22" y="24" width="4" height="1" fill="#51564b"/>
+    <rect x="4" y="24" width="7" height="1" fill="#2d3935"/>
+    <rect x="11" y="20" width="1" height="4" fill="#2d3935"/>
+    <rect x="11" y="20" width="5" height="1" fill="#2d3935"/>
+    <rect x="16" y="14" width="1" height="6" fill="#2d3935"/>
+    <rect x="16" y="14" width="5" height="1" fill="#2d3935"/>
+    <rect x="21" y="8" width="1" height="6" fill="#2d3935"/>
+    <rect x="21" y="8" width="6" height="1" fill="#2d3935"/>
+    <rect x="13" y="14" width="3" height="1" fill="#323c36"/>
+    <rect x="13" y="14" width="1" height="3" fill="#323c36"/>
+    <rect x="11" y="17" width="2" height="1" fill="#323c36"/>
+    <rect x="4" y="23" width="3" height="1" fill="#505548"/>
+    <rect x="17" y="11" width="1" height="3" fill="#4b5146"/>
+    <rect x="4" y="14" width="2" height="1" fill="#4b5147"/>
+    <rect x="25" y="5" width="3" height="1" fill="#4b5147"/>
+    <rect x="7" y="28" width="2" height="1" fill="#353f39"/>
+    <rect x="24" y="18" width="2" height="1" fill="#4b5147"/>
+    <rect x="18" y="3" width="1" height="1" fill="#353f39"/>
+    <rect x="5" y="22" width="1" height="1" fill="#353f39"/>
+    <rect x="29" y="28" width="1" height="1" fill="#353f39"/>
+    <rect x="20" y="28" width="2" height="1" fill="#4b5147"/>
+  </g>
+  <g id="tile-30-asphalt-7" transform="translate(192 96)">
+    <rect x="0" y="0" width="32" height="32" fill="#3f4641"/>
+    <path d="M4 4H13V5H15V9H13V11H4V10H3V6H4Z" fill="#444a43"/>
+    <path d="M18 21H27V22H29V26H27V28H18V27H17V23H18Z" fill="#39423e"/>
+    <rect x="5" y="12" width="7" height="1" fill="#2d3935"/>
+    <rect x="12" y="12" width="1" height="4" fill="#2d3935"/>
+    <rect x="12" y="16" width="5" height="1" fill="#2d3935"/>
+    <rect x="17" y="16" width="1" height="5" fill="#2d3935"/>
+    <rect x="17" y="21" width="5" height="1" fill="#2d3935"/>
+    <rect x="22" y="21" width="1" height="6" fill="#2d3935"/>
+    <rect x="14" y="21" width="3" height="1" fill="#323c36"/>
+    <rect x="14" y="21" width="1" height="3" fill="#323c36"/>
+    <rect x="12" y="24" width="2" height="1" fill="#323c36"/>
+    <rect x="5" y="11" width="3" height="1" fill="#505548"/>
+    <rect x="18" y="18" width="1" height="3" fill="#4b5146"/>
+    <rect x="3" y="14" width="2" height="1" fill="#4b5147"/>
+    <rect x="24" y="5" width="3" height="1" fill="#4b5147"/>
+    <rect x="6" y="28" width="2" height="1" fill="#353f39"/>
+    <rect x="23" y="18" width="2" height="1" fill="#4b5147"/>
+    <rect x="17" y="3" width="1" height="1" fill="#353f39"/>
+    <rect x="4" y="22" width="1" height="1" fill="#353f39"/>
+    <rect x="28" y="28" width="1" height="1" fill="#353f39"/>
+    <rect x="19" y="28" width="2" height="1" fill="#4b5147"/>
+    <rect x="26" y="25" width="3" height="1" fill="#665944"/>
+    <rect x="27" y="26" width="2" height="1" fill="#4c4739"/>
+  </g>
+  <g id="tile-31-asphalt-8" transform="translate(224 96)">
+    <rect x="0" y="0" width="32" height="32" fill="#3f4641"/>
+    <path d="M5 4H14V5H16V9H14V11H5V10H4V6H5Z" fill="#444a43"/>
+    <path d="M18 20H27V21H29V25H27V27H18V26H17V22H18Z" fill="#39423e"/>
+    <rect x="5" y="6" width="7" height="1" fill="#2d3935"/>
+    <rect x="12" y="6" width="1" height="6" fill="#2d3935"/>
+    <rect x="12" y="12" width="5" height="1" fill="#2d3935"/>
+    <rect x="17" y="12" width="1" height="7" fill="#2d3935"/>
+    <rect x="17" y="19" width="7" height="1" fill="#2d3935"/>
+    <rect x="24" y="19" width="1" height="6" fill="#2d3935"/>
+    <rect x="14" y="19" width="3" height="1" fill="#323c36"/>
+    <rect x="14" y="19" width="1" height="3" fill="#323c36"/>
+    <rect x="12" y="22" width="2" height="1" fill="#323c36"/>
+    <rect x="5" y="5" width="3" height="1" fill="#505548"/>
+    <rect x="18" y="16" width="1" height="3" fill="#4b5146"/>
+    <rect x="4" y="14" width="2" height="1" fill="#4b5147"/>
+    <rect x="25" y="5" width="3" height="1" fill="#4b5147"/>
+    <rect x="7" y="28" width="2" height="1" fill="#353f39"/>
+    <rect x="24" y="18" width="2" height="1" fill="#4b5147"/>
+    <rect x="18" y="3" width="1" height="1" fill="#353f39"/>
+    <rect x="5" y="22" width="1" height="1" fill="#353f39"/>
+    <rect x="29" y="28" width="1" height="1" fill="#353f39"/>
+    <rect x="20" y="28" width="2" height="1" fill="#4b5147"/>
+  </g>
+  <g id="tile-32-concrete-1" transform="translate(0 128)">
+    <rect x="0" y="0" width="32" height="32" fill="#606455"/>
+    <path d="M5 4H14V5H16V9H14V11H5V10H4V6H5Z" fill="#696b59"/>
+    <path d="M18 21H27V22H29V26H27V28H18V27H17V23H18Z" fill="#595f50"/>
+    <rect x="4" y="2" width="1" height="11" fill="#727561"/>
+    <rect x="4" y="13" width="3" height="1" fill="#727561"/>
+    <rect x="7" y="13" width="1" height="14" fill="#727561"/>
+    <rect x="5" y="3" width="1" height="11" fill="#414e43"/>
+    <rect x="5" y="14" width="3" height="1" fill="#414e43"/>
+    <rect x="8" y="14" width="1" height="14" fill="#414e43"/>
+    <rect x="8" y="14" width="3" height="1" fill="#485246"/>
+    <rect x="11" y="14" width="1" height="3" fill="#485246"/>
+    <rect x="11" y="17" width="3" height="1" fill="#485246"/>
+    <rect x="14" y="17" width="1" height="3" fill="#485246"/>
+    <path d="M20 8H25V9H27V11H25V13H20V12H19V10H20Z" fill="#475346"/>
+    <rect x="21" y="9" width="4" height="1" fill="#80684a"/>
+    <rect x="22" y="8" width="1" height="4" fill="#80684a"/>
+    <rect x="21" y="12" width="4" height="1" fill="#515749"/>
+    <rect x="4" y="16" width="2" height="1" fill="#707360"/>
+    <rect x="27" y="7" width="2" height="1" fill="#707360"/>
+    <rect x="16" y="28" width="2" height="1" fill="#707360"/>
+    <rect x="17" y="15" width="2" height="1" fill="#707360"/>
+  </g>
+  <g id="tile-33-concrete-2" transform="translate(32 128)">
+    <rect x="0" y="0" width="32" height="32" fill="#606455"/>
+    <path d="M5 5H14V6H16V10H14V12H5V11H4V7H5Z" fill="#696b59"/>
+    <path d="M18 20H27V21H29V25H27V27H18V26H17V22H18Z" fill="#595f50"/>
+    <rect x="2" y="17" width="10" height="1" fill="#727561"/>
+    <rect x="12" y="17" width="1" height="2" fill="#727561"/>
+    <rect x="12" y="19" width="15" height="1" fill="#727561"/>
+    <rect x="3" y="18" width="10" height="1" fill="#414e43"/>
+    <rect x="13" y="18" width="1" height="2" fill="#414e43"/>
+    <rect x="13" y="20" width="15" height="1" fill="#414e43"/>
+    <rect x="13" y="20" width="3" height="1" fill="#485246"/>
+    <rect x="16" y="20" width="1" height="3" fill="#485246"/>
+    <rect x="16" y="23" width="3" height="1" fill="#485246"/>
+    <rect x="19" y="23" width="1" height="3" fill="#485246"/>
+    <path d="M5 25h4v1h3v2h-2v1h-5v-1h-2v-2h2Z" fill="#4b593d"/>
+    <rect x="6" y="26" width="3" height="1" fill="#617047"/>
+    <rect x="5" y="16" width="2" height="1" fill="#707360"/>
+    <rect x="28" y="7" width="2" height="1" fill="#707360"/>
+    <rect x="17" y="28" width="2" height="1" fill="#707360"/>
+    <rect x="18" y="15" width="2" height="1" fill="#707360"/>
+  </g>
+  <g id="tile-34-concrete-3" transform="translate(64 128)">
+    <rect x="0" y="0" width="32" height="32" fill="#606455"/>
+    <path d="M5 6H14V7H16V11H14V13H5V12H4V8H5Z" fill="#696b59"/>
+    <path d="M18 19H27V20H29V24H27V26H18V25H17V21H18Z" fill="#595f50"/>
+    <rect x="23" y="2" width="1" height="8" fill="#727561"/>
+    <rect x="21" y="10" width="2" height="1" fill="#727561"/>
+    <rect x="21" y="10" width="1" height="17" fill="#727561"/>
+    <rect x="24" y="3" width="1" height="8" fill="#414e43"/>
+    <rect x="22" y="11" width="2" height="1" fill="#414e43"/>
+    <rect x="22" y="11" width="1" height="17" fill="#414e43"/>
+    <rect x="22" y="11" width="3" height="1" fill="#485246"/>
+    <rect x="25" y="11" width="1" height="3" fill="#485246"/>
+    <rect x="25" y="14" width="3" height="1" fill="#485246"/>
+    <rect x="28" y="14" width="1" height="3" fill="#485246"/>
+    <path d="M5 25h4v1h3v2h-2v1h-5v-1h-2v-2h2Z" fill="#4b593d"/>
+    <rect x="6" y="26" width="3" height="1" fill="#617047"/>
+    <rect x="4" y="16" width="2" height="1" fill="#707360"/>
+    <rect x="27" y="7" width="2" height="1" fill="#707360"/>
+    <rect x="16" y="28" width="2" height="1" fill="#707360"/>
+    <rect x="17" y="15" width="2" height="1" fill="#707360"/>
+  </g>
+  <g id="tile-35-concrete-4" transform="translate(96 128)">
+    <rect x="0" y="0" width="32" height="32" fill="#606455"/>
+    <path d="M5 4H14V5H16V9H14V11H5V10H4V6H5Z" fill="#696b59"/>
+    <path d="M18 21H27V22H29V26H27V28H18V27H17V23H18Z" fill="#595f50"/>
+    <rect x="2" y="9" width="14" height="1" fill="#727561"/>
+    <rect x="16" y="9" width="1" height="2" fill="#727561"/>
+    <rect x="16" y="11" width="11" height="1" fill="#727561"/>
+    <rect x="3" y="10" width="14" height="1" fill="#414e43"/>
+    <rect x="17" y="10" width="1" height="2" fill="#414e43"/>
+    <rect x="17" y="12" width="11" height="1" fill="#414e43"/>
+    <rect x="17" y="12" width="3" height="1" fill="#485246"/>
+    <rect x="20" y="12" width="1" height="3" fill="#485246"/>
+    <rect x="20" y="15" width="3" height="1" fill="#485246"/>
+    <rect x="23" y="15" width="1" height="3" fill="#485246"/>
+    <path d="M8 23H13V24H15V26H13V28H8V27H7V25H8Z" fill="#475346"/>
+    <rect x="9" y="24" width="4" height="1" fill="#80684a"/>
+    <rect x="10" y="23" width="1" height="4" fill="#80684a"/>
+    <rect x="9" y="27" width="4" height="1" fill="#515749"/>
+    <rect x="5" y="16" width="2" height="1" fill="#707360"/>
+    <rect x="28" y="7" width="2" height="1" fill="#707360"/>
+    <rect x="17" y="28" width="2" height="1" fill="#707360"/>
+    <rect x="18" y="15" width="2" height="1" fill="#707360"/>
+  </g>
+  <g id="tile-36-concrete-5" transform="translate(128 128)">
+    <rect x="0" y="0" width="32" height="32" fill="#606455"/>
+    <path d="M5 5H14V6H16V10H14V12H5V11H4V7H5Z" fill="#696b59"/>
+    <path d="M18 20H27V21H29V25H27V27H18V26H17V22H18Z" fill="#595f50"/>
+    <rect x="10" y="2" width="1" height="15" fill="#727561"/>
+    <rect x="10" y="17" width="2" height="1" fill="#727561"/>
+    <rect x="12" y="17" width="1" height="10" fill="#727561"/>
+    <rect x="11" y="3" width="1" height="15" fill="#414e43"/>
+    <rect x="11" y="18" width="2" height="1" fill="#414e43"/>
+    <rect x="13" y="18" width="1" height="10" fill="#414e43"/>
+    <rect x="13" y="18" width="3" height="1" fill="#485246"/>
+    <rect x="16" y="18" width="1" height="3" fill="#485246"/>
+    <rect x="16" y="21" width="3" height="1" fill="#485246"/>
+    <rect x="19" y="21" width="1" height="3" fill="#485246"/>
+    <rect x="4" y="16" width="2" height="1" fill="#707360"/>
+    <rect x="27" y="7" width="2" height="1" fill="#707360"/>
+    <rect x="16" y="28" width="2" height="1" fill="#707360"/>
+    <rect x="17" y="15" width="2" height="1" fill="#707360"/>
+  </g>
+  <g id="tile-37-concrete-6" transform="translate(160 128)">
+    <rect x="0" y="0" width="32" height="32" fill="#606455"/>
+    <path d="M5 6H14V7H16V11H14V13H5V12H4V8H5Z" fill="#696b59"/>
+    <path d="M18 19H27V20H29V24H27V26H18V25H17V21H18Z" fill="#595f50"/>
+    <rect x="2" y="23" width="12" height="1" fill="#727561"/>
+    <rect x="14" y="21" width="1" height="2" fill="#727561"/>
+    <rect x="14" y="21" width="13" height="1" fill="#727561"/>
+    <rect x="3" y="24" width="12" height="1" fill="#414e43"/>
+    <rect x="15" y="22" width="1" height="2" fill="#414e43"/>
+    <rect x="15" y="22" width="13" height="1" fill="#414e43"/>
+    <rect x="15" y="22" width="3" height="1" fill="#485246"/>
+    <rect x="18" y="22" width="1" height="3" fill="#485246"/>
+    <rect x="18" y="25" width="3" height="1" fill="#485246"/>
+    <rect x="21" y="25" width="1" height="3" fill="#485246"/>
+    <path d="M22 6h4v1h3v2h-2v1h-5v-1h-2v-2h2Z" fill="#4b593d"/>
+    <rect x="23" y="7" width="3" height="1" fill="#617047"/>
+    <rect x="5" y="16" width="2" height="1" fill="#707360"/>
+    <rect x="28" y="7" width="2" height="1" fill="#707360"/>
+    <rect x="17" y="28" width="2" height="1" fill="#707360"/>
+    <rect x="18" y="15" width="2" height="1" fill="#707360"/>
+  </g>
+  <g id="tile-38-concrete-7" transform="translate(192 128)">
+    <rect x="0" y="0" width="32" height="32" fill="#606455"/>
+    <path d="M5 4H14V5H16V9H14V11H5V10H4V6H5Z" fill="#696b59"/>
+    <path d="M18 21H27V22H29V26H27V28H18V27H17V23H18Z" fill="#595f50"/>
+    <rect x="20" y="2" width="1" height="14" fill="#727561"/>
+    <rect x="18" y="16" width="2" height="1" fill="#727561"/>
+    <rect x="18" y="16" width="1" height="11" fill="#727561"/>
+    <rect x="21" y="3" width="1" height="14" fill="#414e43"/>
+    <rect x="19" y="17" width="2" height="1" fill="#414e43"/>
+    <rect x="19" y="17" width="1" height="11" fill="#414e43"/>
+    <rect x="19" y="17" width="3" height="1" fill="#485246"/>
+    <rect x="22" y="17" width="1" height="3" fill="#485246"/>
+    <rect x="22" y="20" width="3" height="1" fill="#485246"/>
+    <rect x="25" y="20" width="1" height="3" fill="#485246"/>
+    <path d="M20 8H25V9H27V11H25V13H20V12H19V10H20Z" fill="#475346"/>
+    <rect x="21" y="9" width="4" height="1" fill="#80684a"/>
+    <rect x="22" y="8" width="1" height="4" fill="#80684a"/>
+    <rect x="21" y="12" width="4" height="1" fill="#515749"/>
+    <rect x="4" y="16" width="2" height="1" fill="#707360"/>
+    <rect x="27" y="7" width="2" height="1" fill="#707360"/>
+    <rect x="16" y="28" width="2" height="1" fill="#707360"/>
+    <rect x="17" y="15" width="2" height="1" fill="#707360"/>
+  </g>
+  <g id="tile-39-concrete-8" transform="translate(224 128)">
+    <rect x="0" y="0" width="32" height="32" fill="#606455"/>
+    <path d="M5 5H14V6H16V10H14V12H5V11H4V7H5Z" fill="#696b59"/>
+    <path d="M18 20H27V21H29V25H27V27H18V26H17V22H18Z" fill="#595f50"/>
+    <rect x="2" y="13" width="7" height="1" fill="#727561"/>
+    <rect x="9" y="11" width="1" height="2" fill="#727561"/>
+    <rect x="9" y="11" width="18" height="1" fill="#727561"/>
+    <rect x="3" y="14" width="7" height="1" fill="#414e43"/>
+    <rect x="10" y="12" width="1" height="2" fill="#414e43"/>
+    <rect x="10" y="12" width="18" height="1" fill="#414e43"/>
+    <rect x="10" y="12" width="3" height="1" fill="#485246"/>
+    <rect x="13" y="12" width="1" height="3" fill="#485246"/>
+    <rect x="13" y="15" width="3" height="1" fill="#485246"/>
+    <rect x="16" y="15" width="1" height="3" fill="#485246"/>
+    <path d="M5 25h4v1h3v2h-2v1h-5v-1h-2v-2h2Z" fill="#4b593d"/>
+    <rect x="6" y="26" width="3" height="1" fill="#617047"/>
+    <rect x="5" y="16" width="2" height="1" fill="#707360"/>
+    <rect x="28" y="7" width="2" height="1" fill="#707360"/>
+    <rect x="17" y="28" width="2" height="1" fill="#707360"/>
+    <rect x="18" y="15" width="2" height="1" fill="#707360"/>
+  </g>
+  <g id="tile-40-grass-edge-west" transform="translate(0 160)">
+    <path d="M0 0H5V4H7V7H6V12H4V16H6V19H7V24H5V28H5V32H0Z" fill="#343e2d"/>
+    <path d="M0 0H4V4H6V7H5V12H3V16H5V19H6V24H4V28H4V32H0Z" fill="#58523a"/>
+    <path d="M0 0H3V4H5V7H4V12H2V16H4V19H5V24H3V28H3V32H0Z" fill="#4b5839"/>
+    <rect x="2" y="5" width="3" height="2" fill="#58643f"/>
+    <rect x="1" y="14" width="3" height="2" fill="#58643f"/>
+    <rect x="3" y="22" width="3" height="2" fill="#58643f"/>
+    <rect x="1" y="28" width="3" height="1" fill="#58643f"/>
+    <path d="M2 7H5V8H6V10H4V9H2Z" fill="#667245"/>
+    <path d="M2 21H4V19H5V22H7V23H2Z" fill="#56613d"/>
+    <rect x="4" y="15" width="2" height="3" fill="#685e42"/>
+  </g>
+  <g id="tile-41-grass-edge-north" transform="translate(32 160)">
+    <path d="M0 0V5H4V7H7V6H12V4H16V6H19V7H24V5H28H28H32V0Z" fill="#343e2d"/>
+    <path d="M0 0V4H4V6H7V5H12V3H16V5H19V6H24V4H28H28H32V0Z" fill="#58523a"/>
+    <path d="M0 0V3H4V5H7V4H12V2H16V4H19V5H24V3H28H28H32V0Z" fill="#4b5839"/>
+    <rect x="5" y="2" width="2" height="3" fill="#58643f"/>
+    <rect x="14" y="1" width="2" height="3" fill="#58643f"/>
+    <rect x="22" y="3" width="2" height="3" fill="#58643f"/>
+    <rect x="28" y="1" width="1" height="3" fill="#58643f"/>
+    <path d="M7 2V5H8V6H10V4H9V2Z" fill="#667245"/>
+    <path d="M21 2V4H19V5H22V7H23V2Z" fill="#56613d"/>
+    <rect x="15" y="4" width="3" height="2" fill="#685e42"/>
+  </g>
+  <g id="tile-42-grass-edge-east" transform="translate(64 160)">
+    <path d="M31 0H26V4H24V7H25V12H27V16H25V19H24V24H26V28H26V32H31Z" fill="#343e2d"/>
+    <path d="M31 0H27V4H25V7H26V12H28V16H26V19H25V24H27V28H27V32H31Z" fill="#58523a"/>
+    <path d="M31 0H28V4H26V7H27V12H29V16H27V19H26V24H28V28H28V32H31Z" fill="#3e4b32"/>
+    <rect x="27" y="5" width="3" height="2" fill="#58643f"/>
+    <rect x="28" y="14" width="3" height="2" fill="#58643f"/>
+    <rect x="26" y="22" width="3" height="2" fill="#58643f"/>
+    <rect x="28" y="28" width="3" height="1" fill="#58643f"/>
+    <path d="M29 7H26V8H25V10H27V9H29Z" fill="#667245"/>
+    <path d="M29 21H27V19H26V22H24V23H29Z" fill="#56613d"/>
+    <rect x="26" y="15" width="2" height="3" fill="#685e42"/>
+  </g>
+  <g id="tile-43-grass-edge-south" transform="translate(96 160)">
+    <path d="M0 31V26H4V24H7V25H12V27H16V25H19V24H24V26H28H28H32V31Z" fill="#343e2d"/>
+    <path d="M0 31V27H4V25H7V26H12V28H16V26H19V25H24V27H28H28H32V31Z" fill="#58523a"/>
+    <path d="M0 31V28H4V26H7V27H12V29H16V27H19V26H24V28H28H28H32V31Z" fill="#3e4b32"/>
+    <rect x="5" y="27" width="2" height="3" fill="#58643f"/>
+    <rect x="14" y="28" width="2" height="3" fill="#58643f"/>
+    <rect x="22" y="26" width="2" height="3" fill="#58643f"/>
+    <rect x="28" y="28" width="1" height="3" fill="#58643f"/>
+    <path d="M7 29V26H8V25H10V27H9V29Z" fill="#667245"/>
+    <path d="M21 29V27H19V26H22V24H23V29Z" fill="#56613d"/>
+    <rect x="15" y="26" width="3" height="2" fill="#685e42"/>
+  </g>
+  <g id="tile-44-dirt-edge-west" transform="translate(128 160)">
+    <path d="M0 0H6V5H5V8H7V13H6V17H4V21H6V26H7V29H6V32H0Z" fill="#444535"/>
+    <path d="M0 0H5V5H4V8H6V13H5V17H3V21H5V26H6V29H5V32H0Z" fill="#5b523c"/>
+    <path d="M0 0H4V5H3V8H5V13H4V17H2V21H4V26H5V29H4V32H0Z" fill="#796b4b"/>
+    <rect x="1" y="2" width="2" height="4" fill="#857653"/>
+    <rect x="2" y="10" width="3" height="3" fill="#786e52"/>
+    <rect x="1" y="23" width="3" height="2" fill="#786e52"/>
+    <rect x="3" y="6" width="3" height="3" fill="#857653"/>
+    <rect x="3" y="17" width="3" height="4" fill="#786e52"/>
+    <rect x="2" y="27" width="4" height="2" fill="#857653"/>
+    <rect x="0" y="14" width="3" height="2" fill="#60563d"/>
+    <rect x="8" y="5" width="1" height="1" fill="#948361"/>
+  </g>
+  <g id="tile-45-dirt-edge-north" transform="translate(160 160)">
+    <path d="M0 0V6H5V5H8V7H13V6H17V4H21V6H26V7H29V6H32V0Z" fill="#444535"/>
+    <path d="M0 0V5H5V4H8V6H13V5H17V3H21V5H26V6H29V5H32V0Z" fill="#5b523c"/>
+    <path d="M0 0V4H5V3H8V5H13V4H17V2H21V4H26V5H29V4H32V0Z" fill="#796b4b"/>
+    <rect x="2" y="1" width="4" height="2" fill="#857653"/>
+    <rect x="10" y="2" width="3" height="3" fill="#786e52"/>
+    <rect x="23" y="1" width="2" height="3" fill="#786e52"/>
+    <rect x="6" y="3" width="3" height="3" fill="#857653"/>
+    <rect x="17" y="3" width="4" height="3" fill="#786e52"/>
+    <rect x="27" y="2" width="2" height="4" fill="#857653"/>
+    <rect x="14" y="0" width="2" height="3" fill="#60563d"/>
+    <rect x="5" y="8" width="1" height="1" fill="#948361"/>
+  </g>
+  <g id="tile-46-dirt-edge-east" transform="translate(192 160)">
+    <path d="M31 0H25V5H26V8H24V13H25V17H27V21H25V26H24V29H25V32H31Z" fill="#444535"/>
+    <path d="M31 0H26V5H27V8H25V13H26V17H28V21H26V26H25V29H26V32H31Z" fill="#5b523c"/>
+    <path d="M31 0H27V5H28V8H26V13H27V17H29V21H27V26H26V29H27V32H31Z" fill="#6c5f43"/>
+    <rect x="29" y="2" width="2" height="4" fill="#857653"/>
+    <rect x="27" y="10" width="3" height="3" fill="#786e52"/>
+    <rect x="28" y="23" width="3" height="2" fill="#786e52"/>
+    <rect x="26" y="6" width="3" height="3" fill="#857653"/>
+    <rect x="26" y="17" width="3" height="4" fill="#786e52"/>
+    <rect x="26" y="27" width="4" height="2" fill="#857653"/>
+    <rect x="29" y="14" width="3" height="2" fill="#60563d"/>
+    <rect x="23" y="5" width="1" height="1" fill="#948361"/>
+  </g>
+  <g id="tile-47-dirt-edge-south" transform="translate(224 160)">
+    <path d="M0 31V25H5V26H8V24H13V25H17V27H21V25H26V24H29V25H32V31Z" fill="#444535"/>
+    <path d="M0 31V26H5V27H8V25H13V26H17V28H21V26H26V25H29V26H32V31Z" fill="#5b523c"/>
+    <path d="M0 31V27H5V28H8V26H13V27H17V29H21V27H26V26H29V27H32V31Z" fill="#6c5f43"/>
+    <rect x="2" y="29" width="4" height="2" fill="#857653"/>
+    <rect x="10" y="27" width="3" height="3" fill="#786e52"/>
+    <rect x="23" y="28" width="2" height="3" fill="#786e52"/>
+    <rect x="6" y="26" width="3" height="3" fill="#857653"/>
+    <rect x="17" y="26" width="4" height="3" fill="#786e52"/>
+    <rect x="27" y="26" width="2" height="4" fill="#857653"/>
+    <rect x="14" y="29" width="2" height="3" fill="#60563d"/>
+    <rect x="5" y="23" width="1" height="1" fill="#948361"/>
+  </g>
+  <g id="tile-48-water-edge-west" transform="translate(0 192)">
+    <path d="M0 0H7V4H6V8H8V12H7V17H5V21H6V25H8V29H7V32H0Z" fill="#293f3c"/>
+    <path d="M0 0H5V4H4V8H6V12H5V17H3V21H4V25H6V29H5V32H0Z" fill="#4d5140"/>
+    <path d="M0 0H4V4H3V8H5V12H4V17H2V21H3V25H5V29H4V32H0Z" fill="#716348"/>
+    <rect x="0" y="1" width="2" height="3" fill="#827154"/>
+    <rect x="1" y="10" width="2" height="3" fill="#827154"/>
+    <rect x="1" y="26" width="2" height="3" fill="#827154"/>
+    <rect x="4" y="1" width="2" height="3" fill="#7f9486"/>
+    <rect x="4" y="9" width="3" height="3" fill="#7f9486"/>
+    <rect x="3" y="18" width="2" height="3" fill="#7f9486"/>
+    <rect x="5" y="26" width="2" height="3" fill="#7f9486"/>
+    <rect x="5" y="9" width="2" height="2" fill="#a0a78f"/>
+    <rect x="6" y="27" width="2" height="1" fill="#93a08e"/>
+    <rect x="7" y="13" width="1" height="2" fill="#456a60"/>
+    <rect x="1" y="15" width="3" height="3" fill="#6b6650"/>
+  </g>
+  <g id="tile-49-water-edge-north" transform="translate(32 192)">
+    <path d="M0 0V7H4V6H8V8H12V7H17V5H21V6H25V8H29V7H32V0Z" fill="#293f3c"/>
+    <path d="M0 0V5H4V4H8V6H12V5H17V3H21V4H25V6H29V5H32V0Z" fill="#4d5140"/>
+    <path d="M0 0V4H4V3H8V5H12V4H17V2H21V3H25V5H29V4H32V0Z" fill="#716348"/>
+    <rect x="1" y="0" width="3" height="2" fill="#827154"/>
+    <rect x="10" y="1" width="3" height="2" fill="#827154"/>
+    <rect x="26" y="1" width="3" height="2" fill="#827154"/>
+    <rect x="1" y="4" width="3" height="2" fill="#7f9486"/>
+    <rect x="9" y="4" width="3" height="3" fill="#7f9486"/>
+    <rect x="18" y="3" width="3" height="2" fill="#7f9486"/>
+    <rect x="26" y="5" width="3" height="2" fill="#7f9486"/>
+    <rect x="9" y="5" width="2" height="2" fill="#a0a78f"/>
+    <rect x="27" y="6" width="1" height="2" fill="#93a08e"/>
+    <rect x="13" y="7" width="2" height="1" fill="#456a60"/>
+    <rect x="15" y="1" width="3" height="3" fill="#6b6650"/>
+  </g>
+  <g id="tile-50-water-edge-east" transform="translate(64 192)">
+    <path d="M31 0H24V4H25V8H23V12H24V17H26V21H25V25H23V29H24V32H31Z" fill="#293f3c"/>
+    <path d="M31 0H26V4H27V8H25V12H26V17H28V21H27V25H25V29H26V32H31Z" fill="#4d5140"/>
+    <path d="M31 0H27V4H28V8H26V12H27V17H29V21H28V25H26V29H27V32H31Z" fill="#5f5740"/>
+    <rect x="30" y="1" width="2" height="3" fill="#6d6147"/>
+    <rect x="29" y="10" width="2" height="3" fill="#6d6147"/>
+    <rect x="29" y="26" width="2" height="3" fill="#6d6147"/>
+    <rect x="26" y="1" width="2" height="3" fill="#667e74"/>
+    <rect x="25" y="9" width="3" height="3" fill="#667e74"/>
+    <rect x="27" y="18" width="2" height="3" fill="#667e74"/>
+    <rect x="25" y="26" width="2" height="3" fill="#667e74"/>
+    <rect x="25" y="9" width="2" height="2" fill="#83968a"/>
+    <rect x="24" y="27" width="2" height="1" fill="#7b9184"/>
+    <rect x="24" y="13" width="1" height="2" fill="#456a60"/>
+    <rect x="28" y="15" width="3" height="3" fill="#6b6650"/>
+  </g>
+  <g id="tile-51-water-edge-south" transform="translate(96 192)">
+    <path d="M0 31V24H4V25H8V23H12V24H17V26H21V25H25V23H29V24H32V31Z" fill="#293f3c"/>
+    <path d="M0 31V26H4V27H8V25H12V26H17V28H21V27H25V25H29V26H32V31Z" fill="#4d5140"/>
+    <path d="M0 31V27H4V28H8V26H12V27H17V29H21V28H25V26H29V27H32V31Z" fill="#5f5740"/>
+    <rect x="1" y="30" width="3" height="2" fill="#6d6147"/>
+    <rect x="10" y="29" width="3" height="2" fill="#6d6147"/>
+    <rect x="26" y="29" width="3" height="2" fill="#6d6147"/>
+    <rect x="1" y="26" width="3" height="2" fill="#667e74"/>
+    <rect x="9" y="25" width="3" height="3" fill="#667e74"/>
+    <rect x="18" y="27" width="3" height="2" fill="#667e74"/>
+    <rect x="26" y="25" width="3" height="2" fill="#667e74"/>
+    <rect x="9" y="25" width="2" height="2" fill="#83968a"/>
+    <rect x="27" y="24" width="1" height="2" fill="#7b9184"/>
+    <rect x="13" y="24" width="2" height="1" fill="#456a60"/>
+    <rect x="15" y="28" width="3" height="3" fill="#6b6650"/>
+  </g>
+  <g id="tile-52-asphalt-edge-west" transform="translate(128 192)">
+    <path d="M0 0H6V5H7V9H5V13H6V17H4V22H6V26H7V29H6V32H0Z" fill="#303b32"/>
+    <path d="M0 0H5V5H6V9H4V13H5V17H3V22H5V26H6V29H5V32H0Z" fill="#605d44"/>
+    <path d="M0 0H4V5H5V9H3V13H4V17H2V22H4V26H5V29H4V32H0Z" fill="#4a5145"/>
+    <rect x="0" y="1" width="4" height="5" fill="#686b57"/>
+    <rect x="1" y="9" width="3" height="4" fill="#686b57"/>
+    <rect x="0" y="16" width="4" height="4" fill="#686b57"/>
+    <rect x="1" y="24" width="4" height="4" fill="#686b57"/>
+    <rect x="0" y="29" width="3" height="3" fill="#686b57"/>
+    <rect x="0" y="1" width="3" height="1" fill="#85856c"/>
+    <rect x="3" y="5" width="2" height="2" fill="#3b4235"/>
+    <rect x="0" y="13" width="2" height="2" fill="#645e43"/>
+    <rect x="4" y="23" width="3" height="2" fill="#4a5739"/>
+    <path d="M2 21H3V19H4V21H6V23H4V25H2Z" fill="#637044"/>
+    <rect x="4" y="7" width="2" height="1" fill="#796e50"/>
+  </g>
+  <g id="tile-53-asphalt-edge-north" transform="translate(160 192)">
+    <path d="M0 0V6H5V7H9V5H13V6H17V4H22V6H26V7H29V6H32V0Z" fill="#303b32"/>
+    <path d="M0 0V5H5V6H9V4H13V5H17V3H22V5H26V6H29V5H32V0Z" fill="#605d44"/>
+    <path d="M0 0V4H5V5H9V3H13V4H17V2H22V4H26V5H29V4H32V0Z" fill="#4a5145"/>
+    <rect x="1" y="0" width="5" height="4" fill="#686b57"/>
+    <rect x="9" y="1" width="4" height="3" fill="#686b57"/>
+    <rect x="16" y="0" width="4" height="4" fill="#686b57"/>
+    <rect x="24" y="1" width="4" height="4" fill="#686b57"/>
+    <rect x="29" y="0" width="3" height="3" fill="#686b57"/>
+    <rect x="1" y="0" width="1" height="3" fill="#85856c"/>
+    <rect x="5" y="3" width="2" height="2" fill="#3b4235"/>
+    <rect x="13" y="0" width="2" height="2" fill="#645e43"/>
+    <rect x="23" y="4" width="2" height="3" fill="#4a5739"/>
+    <path d="M21 2V3H19V4H21V6H23V4H25V2Z" fill="#637044"/>
+    <rect x="7" y="4" width="1" height="2" fill="#796e50"/>
+  </g>
+  <g id="tile-54-asphalt-edge-east" transform="translate(192 192)">
+    <path d="M31 0H25V5H24V9H26V13H25V17H27V22H25V26H24V29H25V32H31Z" fill="#303b32"/>
+    <path d="M31 0H26V5H25V9H27V13H26V17H28V22H26V26H25V29H26V32H31Z" fill="#605d44"/>
+    <path d="M31 0H27V5H26V9H28V13H27V17H29V22H27V26H26V29H27V32H31Z" fill="#4a5145"/>
+    <rect x="28" y="1" width="4" height="5" fill="#686b57"/>
+    <rect x="28" y="9" width="3" height="4" fill="#686b57"/>
+    <rect x="28" y="16" width="4" height="4" fill="#686b57"/>
+    <rect x="27" y="24" width="4" height="4" fill="#686b57"/>
+    <rect x="29" y="29" width="3" height="3" fill="#686b57"/>
+    <rect x="29" y="1" width="3" height="1" fill="#85856c"/>
+    <rect x="27" y="5" width="2" height="2" fill="#3b4235"/>
+    <rect x="30" y="13" width="2" height="2" fill="#645e43"/>
+    <rect x="25" y="23" width="3" height="2" fill="#4a5739"/>
+    <path d="M29 21H28V19H27V21H25V23H27V25H29Z" fill="#637044"/>
+    <rect x="26" y="7" width="2" height="1" fill="#796e50"/>
+  </g>
+  <g id="tile-55-asphalt-edge-south" transform="translate(224 192)">
+    <path d="M0 31V25H5V24H9V26H13V25H17V27H22V25H26V24H29V25H32V31Z" fill="#303b32"/>
+    <path d="M0 31V26H5V25H9V27H13V26H17V28H22V26H26V25H29V26H32V31Z" fill="#605d44"/>
+    <path d="M0 31V27H5V26H9V28H13V27H17V29H22V27H26V26H29V27H32V31Z" fill="#4a5145"/>
+    <rect x="1" y="28" width="5" height="4" fill="#686b57"/>
+    <rect x="9" y="28" width="4" height="3" fill="#686b57"/>
+    <rect x="16" y="28" width="4" height="4" fill="#686b57"/>
+    <rect x="24" y="27" width="4" height="4" fill="#686b57"/>
+    <rect x="29" y="29" width="3" height="3" fill="#686b57"/>
+    <rect x="1" y="29" width="1" height="3" fill="#85856c"/>
+    <rect x="5" y="27" width="2" height="2" fill="#3b4235"/>
+    <rect x="13" y="30" width="2" height="2" fill="#645e43"/>
+    <rect x="23" y="25" width="2" height="3" fill="#4a5739"/>
+    <path d="M21 29V28H19V27H21V25H23V27H25V29Z" fill="#637044"/>
+    <rect x="7" y="26" width="1" height="2" fill="#796e50"/>
+  </g>
+  <g id="tile-56-concrete-edge-west" transform="translate(0 224)">
+    <path d="M0 0H6V4H7V8H5V12H6V17H4V21H6V25H7V29H6V32H0Z" fill="#364237"/>
+    <path d="M0 0H5V4H6V8H4V12H5V17H3V21H5V25H6V29H5V32H0Z" fill="#515b48"/>
+    <path d="M0 0H4V4H5V8H3V12H4V17H2V21H4V25H5V29H4V32H0Z" fill="#767965"/>
+    <rect x="0" y="1" width="4" height="4" fill="#7e806a"/>
+    <rect x="1" y="7" width="4" height="4" fill="#7e806a"/>
+    <rect x="0" y="13" width="3" height="3" fill="#7e806a"/>
+    <rect x="0" y="24" width="5" height="4" fill="#7e806a"/>
+    <rect x="1" y="29" width="3" height="3" fill="#7e806a"/>
+    <rect x="0" y="1" width="3" height="1" fill="#979680"/>
+    <rect x="1" y="17" width="4" height="3" fill="#3c493c"/>
+    <rect x="2" y="18" width="5" height="1" fill="#795f45"/>
+    <rect x="6" y="17" width="1" height="3" fill="#8a6c4d"/>
+    <rect x="2" y="21" width="1" height="2" fill="#596643"/>
+    <rect x="3" y="22" width="3" height="2" fill="#68744c"/>
+  </g>
+  <g id="tile-57-concrete-edge-north" transform="translate(32 224)">
+    <path d="M0 0V6H4V7H8V5H12V6H17V4H21V6H25V7H29V6H32V0Z" fill="#364237"/>
+    <path d="M0 0V5H4V6H8V4H12V5H17V3H21V5H25V6H29V5H32V0Z" fill="#515b48"/>
+    <path d="M0 0V4H4V5H8V3H12V4H17V2H21V4H25V5H29V4H32V0Z" fill="#767965"/>
+    <rect x="1" y="0" width="4" height="4" fill="#7e806a"/>
+    <rect x="7" y="1" width="4" height="4" fill="#7e806a"/>
+    <rect x="13" y="0" width="3" height="3" fill="#7e806a"/>
+    <rect x="24" y="0" width="4" height="5" fill="#7e806a"/>
+    <rect x="29" y="1" width="3" height="3" fill="#7e806a"/>
+    <rect x="1" y="0" width="1" height="3" fill="#979680"/>
+    <rect x="17" y="1" width="3" height="4" fill="#3c493c"/>
+    <rect x="18" y="2" width="1" height="5" fill="#795f45"/>
+    <rect x="17" y="6" width="3" height="1" fill="#8a6c4d"/>
+    <rect x="21" y="2" width="2" height="1" fill="#596643"/>
+    <rect x="22" y="3" width="2" height="3" fill="#68744c"/>
+  </g>
+  <g id="tile-58-concrete-edge-east" transform="translate(64 224)">
+    <path d="M31 0H25V4H24V8H26V12H25V17H27V21H25V25H24V29H25V32H31Z" fill="#364237"/>
+    <path d="M31 0H26V4H25V8H27V12H26V17H28V21H26V25H25V29H26V32H31Z" fill="#515b48"/>
+    <path d="M31 0H27V4H26V8H28V12H27V17H29V21H27V25H26V29H27V32H31Z" fill="#626957"/>
+    <rect x="28" y="1" width="4" height="4" fill="#6a705c"/>
+    <rect x="27" y="7" width="4" height="4" fill="#6a705c"/>
+    <rect x="29" y="13" width="3" height="3" fill="#6a705c"/>
+    <rect x="27" y="24" width="5" height="4" fill="#6a705c"/>
+    <rect x="28" y="29" width="3" height="3" fill="#6a705c"/>
+    <rect x="29" y="1" width="3" height="1" fill="#818772"/>
+    <rect x="27" y="17" width="4" height="3" fill="#3c493c"/>
+    <rect x="25" y="18" width="5" height="1" fill="#795f45"/>
+    <rect x="25" y="17" width="1" height="3" fill="#8a6c4d"/>
+    <rect x="29" y="21" width="1" height="2" fill="#596643"/>
+    <rect x="26" y="22" width="3" height="2" fill="#68744c"/>
+  </g>
+  <g id="tile-59-concrete-edge-south" transform="translate(96 224)">
+    <path d="M0 31V25H4V24H8V26H12V25H17V27H21V25H25V24H29V25H32V31Z" fill="#364237"/>
+    <path d="M0 31V26H4V25H8V27H12V26H17V28H21V26H25V25H29V26H32V31Z" fill="#515b48"/>
+    <path d="M0 31V27H4V26H8V28H12V27H17V29H21V27H25V26H29V27H32V31Z" fill="#626957"/>
+    <rect x="1" y="28" width="4" height="4" fill="#6a705c"/>
+    <rect x="7" y="27" width="4" height="4" fill="#6a705c"/>
+    <rect x="13" y="29" width="3" height="3" fill="#6a705c"/>
+    <rect x="24" y="27" width="4" height="5" fill="#6a705c"/>
+    <rect x="29" y="28" width="3" height="3" fill="#6a705c"/>
+    <rect x="1" y="29" width="1" height="3" fill="#818772"/>
+    <rect x="17" y="27" width="3" height="4" fill="#3c493c"/>
+    <rect x="18" y="25" width="1" height="5" fill="#795f45"/>
+    <rect x="17" y="25" width="3" height="1" fill="#8a6c4d"/>
+    <rect x="21" y="29" width="2" height="1" fill="#596643"/>
+    <rect x="22" y="26" width="2" height="3" fill="#68744c"/>
+  </g>
+</svg>
