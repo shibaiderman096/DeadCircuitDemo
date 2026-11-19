@@ -13,8 +13,8 @@ namespace DeadCircuit
         sealed class GroundChunkVisual
         {
             public Transform root;
-            public readonly Mesh[] meshes = new Mesh[3];
-            public readonly MeshRenderer[] renderers = new MeshRenderer[3];
+            public readonly Mesh[] meshes = new Mesh[4];
+            public readonly MeshRenderer[] renderers = new MeshRenderer[4];
         }
 
         sealed class GroundMeshData
@@ -34,6 +34,8 @@ namespace DeadCircuit
         readonly GroundMeshData groundMesh = new GroundMeshData();
         readonly GroundMeshData biomeMesh = new GroundMeshData();
         readonly GroundMeshData detailMesh = new GroundMeshData();
+        readonly GroundMeshData specialBiomeMesh = new GroundMeshData();
+        Material specialBiomeGroundMaterial;
         WorldState groundWorld;
         int groundRevision = -1, groundGeneratorVersion, groundCenterX, groundCenterY;
         bool groundInitialized, groundChunked;
@@ -140,7 +142,7 @@ namespace DeadCircuit
                 chunk = new GroundChunkVisual { root = NewRoot("Chunk " + chunkX + "," + chunkY, terrainRoot) };
                 groundChunks.Add(key, chunk);
             }
-            groundMesh.Clear(); biomeMesh.Clear(); detailMesh.Clear();
+            groundMesh.Clear(); biomeMesh.Clear(); detailMesh.Clear(); specialBiomeMesh.Clear();
             int cx = chunkX * ChunkSize, cy = chunkY * ChunkSize;
             for (int y = cy; y < cy + ChunkSize; y++)
             for (int x = cx; x < cx + ChunkSize; x++)
@@ -152,13 +154,25 @@ namespace DeadCircuit
                 Color color = (kind <= 1 ? BiomeTint(world, x, y) : Color.white) * new Color(tint, tint, tint, 1);
                 AddQuad(groundMesh.vertices, groundMesh.uv, groundMesh.triangles, groundMesh.colors,
                     x - .5f, y - .5f, 1, 1, TerrainUV(kind * 8 + (int)(h % 8)), color);
-                if (kind == 0)
+                int biome = BiomeAt(world, x, y);
+                if (kind <= 1 && biome >= (int)BiomeKind.Swamp)
+                {
+                    AddSpriteQuad(specialBiomeMesh.vertices, specialBiomeMesh.uv, specialBiomeMesh.triangles, specialBiomeMesh.colors,
+                        DemoArt.Get("terrain_" + biome), new Vector2(x, y), 1, new Color(tint, tint, tint, 1));
+                    if (world.generatorVersion > 0 && h % 43 == 0)
+                        AddSpriteQuad(specialBiomeMesh.vertices, specialBiomeMesh.uv, specialBiomeMesh.triangles, specialBiomeMesh.colors,
+                            DemoArt.Get("biome_" + biome), new Vector2(x, y), .68f, BiomeTint(world, x, y));
+                    if (world.generatorVersion > 0 && h % 71 == 0)
+                        AddSpriteQuad(specialBiomeMesh.vertices, specialBiomeMesh.uv, specialBiomeMesh.triangles, specialBiomeMesh.colors,
+                            DemoArt.Get("deco_biome_" + biome), new Vector2(x + ((h >> 8) % 9 - 4f) * .03f, y), .72f, Color.white);
+                }
+                else if (kind == 0)
                 {
                     AddSpriteQuad(biomeMesh.vertices, biomeMesh.uv, biomeMesh.triangles, biomeMesh.colors,
-                        DemoArt.Get("terrain_" + BiomeArtIndex(BiomeAt(world, x, y))), new Vector2(x, y), 1, new Color(tint, tint, tint, 1));
+                        DemoArt.Get("terrain_" + BiomeArtIndex(biome)), new Vector2(x, y), 1, new Color(tint, tint, tint, 1));
                     if (world.generatorVersion > 0 && h % 43 == 0)
                         AddSpriteQuad(biomeMesh.vertices, biomeMesh.uv, biomeMesh.triangles, biomeMesh.colors,
-                            DemoArt.Get("biome_" + BiomeArtIndex(BiomeAt(world, x, y))), new Vector2(x, y), .68f,
+                            DemoArt.Get("biome_" + BiomeArtIndex(biome)), new Vector2(x, y), .68f,
                             BiomeTint(world, x, y));
                 }
                 for (int side = 0; side < 4; side++)
@@ -170,7 +184,6 @@ namespace DeadCircuit
                     if (edge) AddQuad(groundMesh.vertices, groundMesh.uv, groundMesh.triangles, groundMesh.colors,
                         x - .5f, y - .5f, 1, 1, TerrainUV(40 + kind * 4 + side), Color.white);
                 }
-                int biome = BiomeAt(world, x, y);
                 string prop = kind == 0 && (h % (biome == (int)BiomeKind.SakuraGrove ? 11 : 19)) == 0 ? "tuft" :
                     (kind == 1 || kind == 4 || biome == (int)BiomeKind.Swamp || biome == (int)BiomeKind.RiverValley) && h % 41 == 0 ? "rubble" : null;
                 if (prop != null) AddSpriteQuad(detailMesh.vertices, detailMesh.uv, detailMesh.triangles, detailMesh.colors,
@@ -181,6 +194,8 @@ namespace DeadCircuit
                 UpdateGroundMesh(chunk, 1, "SVG biomes", biomeMesh, ExpansionGroundMaterial(), -19999);
             if (detailMesh.vertices.Count > 0 || chunk.meshes[2] != null)
                 UpdateGroundMesh(chunk, 2, "Scattered details", detailMesh, SpriteMeshMaterial(), -19000);
+            if (specialBiomeMesh.vertices.Count > 0 || chunk.meshes[3] != null)
+                UpdateGroundMesh(chunk, 3, "Dedicated natural biomes", specialBiomeMesh, SpecialBiomeGroundMaterial(), -19998);
         }
 
         void UpdateGroundMesh(GroundChunkVisual chunk, int layer, string name, GroundMeshData data, Material material, int order)
@@ -214,9 +229,20 @@ namespace DeadCircuit
         {
             foreach (GroundChunkVisual chunk in groundChunks.Values) ReleaseGroundChunk(chunk);
             groundChunks.Clear();
+            if (specialBiomeGroundMaterial != null) { Destroy(specialBiomeGroundMaterial); specialBiomeGroundMaterial = null; }
             wantedGroundChunks.Clear(); dirtyGroundChunks.Clear(); groundSignatures.Clear(); removedGroundChunks.Clear();
             groundWorld = null; groundCache = biomeCache = null; groundRevision = -1; groundInitialized = false;
             nextMapAt = 0;
+        }
+
+        Material SpecialBiomeGroundMaterial()
+        {
+            Sprite tile = DemoArt.Get("terrain_" + (int)BiomeKind.Swamp);
+            if (tile == null) return ExpansionGroundMaterial();
+            if (specialBiomeGroundMaterial == null)
+                specialBiomeGroundMaterial = new Material(terrainMaterial) { name = "DeadCircuit dedicated biome atlas", mainTexture = tile.texture };
+            specialBiomeGroundMaterial.SetColor("_Color", terrainMaterial.GetColor("_Color"));
+            return specialBiomeGroundMaterial;
         }
 
         Color UpdateSeasonTint(WorldState world)

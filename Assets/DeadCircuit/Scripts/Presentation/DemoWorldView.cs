@@ -577,7 +577,11 @@ namespace DeadCircuit
                     case NodeKind.Crate: art = "node_crate"; break;
                     default: art = "node_wall"; break;
                 }
-                Sprite nodeArt=state.kind == NodeKind.Wall ? ConnectedWall(state.x, state.y) : DemoArt.Get("node_"+(int)state.kind);
+                int biome = BiomeAt(world, state.x, state.y);
+                bool dedicatedBiomeTree = state.kind == NodeKind.Tree && world.generatorVersion >= 8 && biome >= (int)BiomeKind.Swamp;
+                Sprite nodeArt = state.kind == NodeKind.Wall ? ConnectedWall(state.x, state.y) :
+                    dedicatedBiomeTree ? DemoArt.Get("biome_tree_" + biome) : DemoArt.Get("node_" + (int)state.kind);
+
                 v.body.sprite = nodeArt ?? Art(art);
                 if (nodeArt!=null)
                 {
@@ -597,7 +601,7 @@ namespace DeadCircuit
                     v.root.name = state.kind == NodeKind.Stone ? "石料堆 / Stone" : "黏土矿床 / Clay";
                 if (state.kind == NodeKind.Coal || state.kind == NodeKind.Limestone || state.kind == NodeKind.FireClay)
                     v.root.name = (state.kind == NodeKind.Coal ? "煤" : state.kind == NodeKind.Limestone ? "石灰石" : "耐火黏土") + "矿床";
-                Color ecology = state.kind == NodeKind.Tree && world.generatorVersion >= 8 ? BiomeTint(world,state.x,state.y) : Color.white;
+                Color ecology = state.kind == NodeKind.Tree && world.generatorVersion >= 8 && !dedicatedBiomeTree ? BiomeTint(world,state.x,state.y) : Color.white;
                 v.body.color = DamageColor(v,mineral * ecology); v.body.color = new Color(v.body.color.r,v.body.color.g,v.body.color.b,canopy);
                 v.shadow.transform.localScale = state.kind == NodeKind.Tree ? new Vector3(1.4f,.9f,1) : Vector3.one;
                 float sway = state.kind == NodeKind.Tree ? Mathf.Sin(Time.unscaledTime*.9f+state.id)*.8f : 0;

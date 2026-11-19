@@ -1,0 +1,146 @@
+[
+  {
+    "name": "terrain_6",
+    "label": "Swamp / \u6cbc\u6cfd seamless ground",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "terrain_7",
+    "label": "SnowMountain / \u96ea\u5c71 seamless ground",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "terrain_8",
+    "label": "SakuraGrove / \u6a31\u82b1\u6797 seamless ground",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "terrain_9",
+    "label": "RiverValley / \u6cb3\u8c37 seamless ground",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_6",
+    "label": "Swamp / \u6cbc\u6cfd ecology cluster",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_7",
+    "label": "SnowMountain / \u96ea\u5c71 ecology cluster",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_8",
+    "label": "SakuraGrove / \u6a31\u82b1\u6797 ecology cluster",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_9",
+    "label": "RiverValley / \u6cb3\u8c37 ecology cluster",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_tree_6",
+    "label": "Swamp / \u6cbc\u6cfd tree",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_tree_7",
+    "label": "SnowMountain / \u96ea\u5c71 tree",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_tree_8",
+    "label": "SakuraGrove / \u6a31\u82b1\u6797 tree",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "biome_tree_9",
+    "label": "RiverValley / \u6cb3\u8c37 tree",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_biome_6",
+    "label": "Swamp / \u6cbc\u6cfd ground detail",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_biome_7",
+    "label": "SnowMountain / \u96ea\u5c71 ground detail",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_biome_8",
+    "label": "SakuraGrove / \u6a31\u82b1\u6797 ground detail",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "deco_biome_9",
+    "label": "RiverValley / \u6cb3\u8c37 ground detail",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  }
+]
