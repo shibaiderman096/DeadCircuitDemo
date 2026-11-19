@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" shape-rendering="crispEdges">
+  <defs>
+    <!-- E-facing upper body. Flip this for the west-facing row. -->
+    <g id="hero-side">
+      <!-- field pack and antenna -->
+      <path d="M20 26h6v3h-3v12h3v3h-8v-3h-2V30h4z" fill="#192829"/>
+      <path d="M19 29h5v12h-5z" fill="#536a68"/>
+      <rect x="20" y="31" width="3" height="2" fill="#80d8bc"/>
+      <rect x="20" y="35" width="3" height="4" fill="#253b3b"/>
+      <rect x="18" y="25" width="2" height="5" fill="#192829"/>
+      <rect x="17" y="23" width="4" height="2" fill="#e59a50"/>
+      <!-- rifle and hands -->
+      <path d="M38 30h15v2h4v3h-3v2h-4v-2h-9v3h-3v-3h-2z" fill="#192829"/>
+      <rect x="41" y="31" width="10" height="2" fill="#8ba39a"/>
+      <rect x="51" y="31" width="5" height="1" fill="#ddd5ac"/>
+      <rect x="44" y="33" width="3" height="3" fill="#9b5338"/>
+      <rect x="38" y="29" width="4" height="3" fill="#cec297"/>
+      <!-- torso silhouette and coat -->
+      <path d="M25 27h13v2h4v3h3v9h-3v4H23v-3h-3v-9h3v-4h2z" fill="#192829"/>
+      <path d="M27 29h9v2h4v3h3v5h-3v3H24v-3h-2v-7h3v-2h2z" fill="#9b5338"/>
+      <path d="M27 39h13v3H25v-3z" fill="#253b3b"/>
+      <!-- shoulder armor, collar and circuit core -->
+      <path d="M23 30h5v4h-4v3h-3v-4h2z" fill="#536a68"/>
+      <rect x="23" y="30" width="4" height="1" fill="#8ba39a"/>
+      <path d="M37 29h5v4h-4v3h-3v-4h2z" fill="#536a68"/>
+      <rect x="38" y="30" width="3" height="1" fill="#ddd5ac"/>
+      <path d="M29 30h6v2h2v7h-2v2h-6v-2h-2v-7h2z" fill="#253b3b"/>
+      <rect x="30" y="32" width="5" height="5" fill="#80d8bc"/>
+      <rect x="31" y="33" width="3" height="3" fill="#536a68"/>
+      <rect x="32" y="34" width="1" height="1" fill="#ddd5ac"/>
+      <rect x="25" y="36" width="2" height="3" fill="#e59a50"/>
+      <!-- helmet and side visor -->
+      <path d="M27 14h11v2h4v4h2v7h-3v3H26v-3h-3v-9h3v-2h1z" fill="#192829"/>
+      <path d="M28 16h9v2h4v4h-2v5h-3v2h-8v-2h-3v-7h3z" fill="#cec297"/>
+      <path d="M26 14h12v2h4v3H25v-2h1z" fill="#9b5338"/>
+      <rect x="28" y="15" width="9" height="1" fill="#e59a50"/>
+      <path d="M35 21h7v4h-2v2h-5z" fill="#253b3b"/>
+      <rect x="36" y="22" width="5" height="2" fill="#80d8bc"/>
+      <rect x="39" y="22" width="1" height="1" fill="#ddd5ac"/>
+      <rect x="24" y="23" width="2" height="4" fill="#536a68"/>
+      <rect x="25" y="23" width="1" height="2" fill="#8ba39a"/>
+      <!-- hood tab and helmet lamp -->
+      <rect x="30" y="12" width="5" height="2" fill="#192829"/>
+      <rect x="31" y="12" width="3" height="1" fill="#80d8bc"/>
+      <rect x="42" y="18" width="2" height="2" fill="#e59a50"/>
+    </g>
+    <!-- North-facing back: pack and raised rifle make the silhouette readable. -->
+    <g id="hero-north">
+      <path d="M30 27h8v3h4v9h-3v4H24v-3h-3v-9h4v-3h5z" fill="#192829"/>
+      <path d="M25 30h13v2h3v6h-3v3H25v-3h-2v-6h2z" fill="#9b5338"/>
+      <path d="M27 31h9v2h2v4h-2v2h-9v-2h-2v-4h2z" fill="#536a68"/>
+      <!-- large battery pack -->
+      <path d="M25 27h13v2h3v11h-3v3H25v-2h-3V30h3z" fill="#192829"/>
+      <rect x="26" y="30" width="12" height="9" fill="#253b3b"/>
+      <rect x="28" y="31" width="8" height="5" fill="#536a68"/>
+      <rect x="29" y="32" width="6" height="2" fill="#80d8bc"/>
+      <rect x="30" y="35" width="4" height="2" fill="#9b5338"/>
+      <rect x="27" y="39" width="10" height="2" fill="#e59a50"/>
+      <rect x="23" y="32" width="2" height="6" fill="#8ba39a"/>
+      <rect x="39" y="32" width="2" height="6" fill="#8ba39a"/>
+      <!-- rifle pointing north -->
+      <path d="M31 8h4v3h2v13h-2v6h-5v-5h-2V12h3z" fill="#192829"/>
+      <rect x="32" y="10" width="2" height="14" fill="#8ba39a"/>
+      <rect x="31" y="9" width="4" height="2" fill="#ddd5ac"/>
+      <rect x="30" y="23" width="6" height="3" fill="#9b5338"/>
+      <rect x="28" y="25" width="10" height="4" fill="#536a68"/>
+      <rect x="28" y="26" width="2" height="3" fill="#cec297"/>
+      <!-- rear helmet and hood -->
+      <path d="M27 14h12v2h3v5h-2v6h-3v3H27v-2h-3v-8h2v-4h1z" fill="#192829"/>
+      <path d="M28 17h10v2h2v5h-3v3h-9v-2h-2v-6h2z" fill="#536a68"/>
+      <path d="M26 14h13v2h3v3H25v-2h1z" fill="#9b5338"/>
+      <rect x="28" y="15" width="9" height="1" fill="#e59a50"/>
+      <rect x="30" y="19" width="5" height="2" fill="#253b3b"/>
+      <rect x="31" y="20" width="3" height="1" fill="#80d8bc"/>
+      <rect x="23" y="23" width="3" height="4" fill="#253b3b"/>
+      <rect x="40" y="23" width="3" height="4" fill="#253b3b"/>
+      <rect x="30" y="12" width="5" height="2" fill="#192829"/>
+      <rect x="31" y="12" width="3" height="1" fill="#80d8bc"/>
+    </g>
+    <!-- South-facing front with luminous visor and lowered carbine. -->
+    <g id="hero-south">
+      <!-- coat and shoulder armor -->
+      <path d="M25 27h14v2h4v4h3v8h-4v4H22v-3h-3v-8h3v-4h3z" fill="#192829"/>
+      <path d="M27 29h10v2h4v3h3v5h-3v3H24v-3h-2v-6h3v-2h2z" fill="#9b5338"/>
+      <path d="M24 30h5v4h-4v3h-3v-4h2z" fill="#536a68"/>
+      <rect x="23" y="30" width="4" height="1" fill="#8ba39a"/>
+      <path d="M37 29h5v4h-3v3h-3v-4h1z" fill="#536a68"/>
+      <rect x="38" y="30" width="3" height="1" fill="#ddd5ac"/>
+      <path d="M29 30h7v2h2v7h-2v2h-7v-2h-2v-7h2z" fill="#253b3b"/>
+      <rect x="30" y="32" width="6" height="5" fill="#80d8bc"/>
+      <rect x="31" y="33" width="4" height="2" fill="#536a68"/>
+      <rect x="32" y="36" width="2" height="1" fill="#ddd5ac"/>
+      <rect x="26" y="38" width="2" height="3" fill="#e59a50"/>
+      <!-- face mask, visor and helmet -->
+      <path d="M27 14h12v2h4v5h2v6h-3v3H25v-3h-3v-8h3v-3h2z" fill="#192829"/>
+      <path d="M27 18h12v2h3v5h-3v3H27v-2h-2v-6h2z" fill="#cec297"/>
+      <path d="M26 14h13v2h4v4H24v-3h2z" fill="#9b5338"/>
+      <rect x="28" y="15" width="9" height="1" fill="#e59a50"/>
+      <path d="M26 20h16v5h-2v2H28v-2h-2z" fill="#253b3b"/>
+      <rect x="27" y="21" width="13" height="3" fill="#80d8bc"/>
+      <rect x="29" y="22" width="2" height="1" fill="#ddd5ac"/>
+      <rect x="36" y="22" width="2" height="1" fill="#536a68"/>
+      <rect x="23" y="24" width="2" height="3" fill="#536a68"/>
+      <rect x="42" y="24" width="2" height="3" fill="#536a68"/>
+      <rect x="30" y="12" width="5" height="2" fill="#192829"/>
+      <rect x="31" y="12" width="3" height="1" fill="#80d8bc"/>
+      <!-- lowered rifle -->
+      <path d="M31 36h5v3h2v12h-2v4h-4v-3h-2V42h-2v-3h3z" fill="#192829"/>
+      <rect x="33" y="39" width="2" height="10" fill="#8ba39a"/>
+      <rect x="32" y="49" width="4" height="4" fill="#536a68"/>
+      <rect x="31" y="40" width="6" height="3" fill="#9b5338"/>
+      <rect x="30" y="37" width="7" height="3" fill="#cec297"/>
+    </g>
+    <g id="north-rifle-front">
+      <path d="M35 7h5v2h2v12h-2v4h-4v-3h-2v-11h1z" fill="#192829"/>
+      <rect x="36" y="9" width="2" height="9" fill="#8ba39a"/>
+      <rect x="36" y="7" width="4" height="2" fill="#ddd5ac"/>
+      <rect x="40" y="11" width="2" height="2" fill="#e59a50"/>
+      <rect x="34" y="20" width="7" height="3" fill="#536a68"/>
+      <rect x="35" y="21" width="3" height="3" fill="#cec297"/>
+    </g>    <!-- Four registered boot/leg poses; feet stay on the same baseline. -->
+    <g id="legs0">
+      <path d="M24 40h8v8h-2v4h-8v-3h2zM34 40h7v8h2v4h-8v-3h-2z" fill="#192829"/>
+      <rect x="26" y="42" width="4" height="7" fill="#253b3b"/>
+      <rect x="35" y="42" width="4" height="7" fill="#536a68"/>
+      <rect x="24" y="50" width="8" height="3" fill="#192829"/>
+      <rect x="34" y="50" width="9" height="3" fill="#192829"/>
+      <rect x="26" y="50" width="4" height="1" fill="#e59a50"/>
+      <rect x="36" y="50" width="4" height="1" fill="#80d8bc"/>
+    </g>
+    <g id="legs1">
+      <path d="M22 40h8v8h-2v4h-8v-3h2zM36 40h7v8h2v4h-8v-3h-2z" fill="#192829"/>
+      <rect x="24" y="42" width="4" height="7" fill="#253b3b"/>
+      <rect x="37" y="42" width="4" height="7" fill="#536a68"/>
+      <rect x="22" y="50" width="8" height="3" fill="#192829"/>
+      <rect x="36" y="50" width="9" height="3" fill="#192829"/>
+      <rect x="24" y="50" width="4" height="1" fill="#e59a50"/>
+      <rect x="38" y="50" width="4" height="1" fill="#80d8bc"/>
+    </g>
+    <g id="legs2">
+      <path d="M26 40h8v8h-2v4h-8v-3h2zM32 40h7v8h2v4h-8v-3h-2z" fill="#192829"/>
+      <rect x="28" y="42" width="4" height="7" fill="#253b3b"/>
+      <rect x="33" y="42" width="4" height="7" fill="#536a68"/>
+      <rect x="26" y="50" width="8" height="3" fill="#192829"/>
+      <rect x="32" y="50" width="9" height="3" fill="#192829"/>
+      <rect x="28" y="50" width="4" height="1" fill="#e59a50"/>
+      <rect x="34" y="50" width="4" height="1" fill="#80d8bc"/>
+    </g>
+    <g id="legs3">
+      <path d="M25 40h8v8h-2v4h-8v-3h2zM31 40h7v8h2v4h-8v-3h-2z" fill="#192829"/>
+      <rect x="27" y="42" width="4" height="7" fill="#253b3b"/>
+      <rect x="32" y="42" width="4" height="7" fill="#536a68"/>
+      <rect x="25" y="50" width="8" height="3" fill="#192829"/>
+      <rect x="31" y="50" width="9" height="3" fill="#192829"/>
+      <rect x="27" y="50" width="4" height="1" fill="#e59a50"/>
+      <rect x="33" y="50" width="4" height="1" fill="#80d8bc"/>
+    </g>
+  </defs>
+  <!-- Rows: east, north, west, south. Columns: four registered walk poses. -->
+  <g transform="translate(0 0)"><use href="#legs0"/><use href="#hero-side"/></g>
+  <g transform="translate(64 0)"><use href="#legs1"/><use href="#hero-side" transform="translate(0 -1)"/></g>
+  <g transform="translate(128 0)"><use href="#legs2"/><use href="#hero-side"/></g>
+  <g transform="translate(192 0)"><use href="#legs3"/><use href="#hero-side" transform="translate(0 -1)"/></g>
+
+  <g transform="translate(0 64)"><use href="#legs0"/><use href="#hero-north"/><use href="#north-rifle-front"/></g>
+  <g transform="translate(64 64)"><use href="#legs1"/><use href="#hero-north" transform="translate(0 -1)"/><use href="#north-rifle-front" transform="translate(0 -1)"/></g>
+  <g transform="translate(128 64)"><use href="#legs2"/><use href="#hero-north"/><use href="#north-rifle-front"/></g>
+  <g transform="translate(192 64)"><use href="#legs3"/><use href="#hero-north" transform="translate(0 -1)"/><use href="#north-rifle-front" transform="translate(0 -1)"/></g>
+
+  <g transform="translate(64 128) scale(-1 1)"><use href="#legs0"/><use href="#hero-side"/></g>
+  <g transform="translate(128 128) scale(-1 1)"><use href="#legs1"/><use href="#hero-side" transform="translate(0 -1)"/></g>
+  <g transform="translate(192 128) scale(-1 1)"><use href="#legs2"/><use href="#hero-side"/></g>
+  <g transform="translate(256 128) scale(-1 1)"><use href="#legs3"/><use href="#hero-side" transform="translate(0 -1)"/></g>
+
+  <g transform="translate(0 192)"><use href="#legs0"/><use href="#hero-south"/></g>
+  <g transform="translate(64 192)"><use href="#legs1"/><use href="#hero-south" transform="translate(0 -1)"/></g>
+  <g transform="translate(128 192)"><use href="#legs2"/><use href="#hero-south"/></g>
+  <g transform="translate(192 192)"><use href="#legs3"/><use href="#hero-south" transform="translate(0 -1)"/></g>
+</svg>
+
+
