@@ -472,15 +472,19 @@ def environment_overrides():
             for index, name in enumerate(names)}
 
 
-def main(weapons_only=False, equipment_only=False):
+def main(weapons_only=False, equipment_only=False, avatar_only=False):
     from generate_weapon_art import generate as generate_weapons
     from generate_equipment_art import generate as generate_equipment
+    from generate_avatar_art import generate as generate_avatar
 
     if weapons_only:
         generate_weapons()
         return
     if equipment_only:
         generate_equipment()
+        return
+    if avatar_only:
+        generate_avatar()
         return
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -539,6 +543,7 @@ def main(weapons_only=False, equipment_only=False):
                                  (OUT/'sprites.png', OUT/'terrain.png', OUT/'atlas.json')}), ensure_ascii=False))
     generate_weapons()
     generate_equipment()
+    generate_avatar()
 
 
 if __name__ == '__main__':
@@ -548,7 +553,8 @@ if __name__ == '__main__':
     scope = parser.add_mutually_exclusive_group()
     scope.add_argument('--weapons-only', action='store_true', help='Generate only the dedicated weapon atlas')
     scope.add_argument('--equipment-only', action='store_true', help='Generate only the equipment icon atlas')
+    scope.add_argument('--avatar-only', action='store_true', help='Generate only the modular survivor atlas')
     args = parser.parse_args()
-    main(weapons_only=args.weapons_only, equipment_only=args.equipment_only)
+    main(weapons_only=args.weapons_only, equipment_only=args.equipment_only, avatar_only=args.avatar_only)
 
 

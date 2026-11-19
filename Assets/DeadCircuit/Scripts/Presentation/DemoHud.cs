@@ -162,6 +162,7 @@ namespace DeadCircuit
             MakeMenu(root);
             MakeGame(root);
             MakeInventory(root);
+            MakeAppearance(root);
             MakeTechnology(root);
             MakeGrowth(root);
             MakeSession(root);
@@ -213,7 +214,8 @@ namespace DeadCircuit
             {
                 if (keyboard.escapeKey.wasPressedThisFrame)
                 {
-                    if (AnyPanelOpen()) SetPanel(null, false);
+                    if (appearancePanel != null && appearancePanel.gameObject.activeSelf) CloseAppearance();
+                    else if (AnyPanelOpen()) SetPanel(null, false);
                     else if (bridge.BuildSelection.HasValue) CancelBuild();
                     else SetPanel(session, true);
                 }
@@ -238,6 +240,7 @@ namespace DeadCircuit
                 refreshAt = Time.unscaledTime + .1f;
                 RefreshAll();
             }
+            TickAppearancePreview();
         }
 
         void MakeGame(RectTransform root)
@@ -509,6 +512,7 @@ namespace DeadCircuit
             RefreshFeedback(world, player);
             RefreshAdditionalPanels(world, player);
             if (inventory.gameObject.activeSelf) RefreshInventory(world, player);
+            if (appearancePanel != null && appearancePanel.gameObject.activeSelf) RefreshAppearance(world, player);
             if (technology.gameObject.activeSelf) RefreshTechnology(world, player);
             if (growth.gameObject.activeSelf) RefreshGrowth(player);
             if (dead)
@@ -990,12 +994,14 @@ namespace DeadCircuit
             bool open = inventory.gameObject.activeSelf || growth.gameObject.activeSelf ||
                 session.gameObject.activeSelf || help.gameObject.activeSelf || technology.gameObject.activeSelf || settingsPanel.gameObject.activeSelf;
             HasAdditionalPanelOpen(ref open);
+            if (appearancePanel != null && appearancePanel.gameObject.activeSelf) open = true;
             return open;
         }
 
         void ClosePanels(bool includeSettings = true)
         {
             inventory.gameObject.SetActive(false);
+            if (appearancePanel != null) appearancePanel.gameObject.SetActive(false);
             growth.gameObject.SetActive(false);
             session.gameObject.SetActive(false);
             help.gameObject.SetActive(false);

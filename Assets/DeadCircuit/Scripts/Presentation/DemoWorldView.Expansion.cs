@@ -131,10 +131,15 @@ namespace DeadCircuit
                 e.flash=NewSprite("Shot muzzle flash",parent,10);
             }
             var look=visual.equipment; int order=visual.body.sortingOrder;
-            DrawArmorLayer(look.hat,player,0,new Vector2(0,.86f),.42f,order+7);
-            DrawArmorLayer(look.vest,player,1,new Vector2(0,.52f),.46f,order+4);
-            DrawArmorLayer(look.trousers,player,2,new Vector2(0,.26f),.38f,order+3);
-            DrawArmorLayer(look.boots,player,3,new Vector2(0,.06f),.36f,order+3);
+            if (visual.avatar != null && visual.avatar.root.gameObject.activeSelf)
+                look.hat.enabled=look.vest.enabled=look.trousers.enabled=look.boots.enabled=false;
+            else
+            {
+                DrawArmorLayer(look.hat,player,0,new Vector2(0,.86f),.42f,order+7);
+                DrawArmorLayer(look.vest,player,1,new Vector2(0,.52f),.46f,order+4);
+                DrawArmorLayer(look.trousers,player,2,new Vector2(0,.26f),.38f,order+3);
+                DrawArmorLayer(look.boots,player,3,new Vector2(0,.06f),.36f,order+3);
+            }
             if (visual.damageAt>look.armorImpactAt && visual.damageAt>0)
             {
                 look.armorImpactAt=visual.damageAt;

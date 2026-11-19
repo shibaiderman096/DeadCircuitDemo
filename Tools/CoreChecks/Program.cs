@@ -113,6 +113,7 @@ static partial class Checks
         if(args.Length==2 && args[0]=="--export-landmarks") { ExportLandmarks(args[1]); return 0; }
         includeHistorical = args.Contains("--historical");
         filters = args.Where(arg=>arg!="--historical").ToArray();
+        AppearanceChecks();
         SiteBlueprintDefinitionChecks();
         LandmarkChecks();
         SettlementChecks();

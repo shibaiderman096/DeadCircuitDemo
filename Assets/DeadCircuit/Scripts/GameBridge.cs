@@ -477,6 +477,7 @@ namespace DeadCircuit
                     int extent=64;
                     if(next.width!=extent || next.height!=extent || next.ground?.Length!=extent*extent || next.biomes?.Length!=extent*extent ||
                         (ChunkStreaming.Enabled(next) && (next.chunks.records==null || next.chunks.records.Count>81))) return;
+                    if (next.players == null || next.players.Any(p => p == null || !AppearanceCatalog.IsValid(p.appearance))) return;
                     lastSnapshotTick = next.tick;
                     World = next;
                     if (!IsRunning) { IsRunning = true; connecting = false; ResetClocks(); }

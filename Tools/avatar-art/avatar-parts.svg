@@ -1,0 +1,1300 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="290" height="128" viewBox="0 0 290 128" shape-rendering="crispEdges">
+<title>Dead Circuit modular block avatar parts</title>
+<desc>art_source=existing; adapted existing protagonist and equipment palette; SVG-authored/code-rendered; no image model; 112 independent four-facing parts; three intentionally empty back-facing face overlays.</desc>
+<style>.c-ink{fill:#192829}.c-dark{fill:#253b3b}.c-shadow{fill:#344a43}.c-steel{fill:#536a68}.c-light{fill:#8ba39a}.c-cream{fill:#ddd5ac}.c-soil{fill:#503e32}.c-brown{fill:#76533b}.c-tan{fill:#aa8054}.c-sand{fill:#c4ab75}.c-gold{fill:#edc566}.c-blue{fill:#497b86}.c-leaf{fill:#527445}.c-olive{fill:#81824a}.c-cyan{fill:#4c9e9b}.c-teal{fill:#80d8bc}.c-white{fill:#ffffff}.c-pale{fill:#dedede}.c-gray{fill:#aeaeae}.c-shade{fill:#777777}</style>
+
+<g id="avatar_head_0" transform="translate(2 2)">
+<title>avatar_head_0</title>
+<rect class="c-ink" x="2" y="2" width="12" height="12"/>
+<rect class="c-pale" x="3" y="3" width="10" height="10"/>
+<rect class="c-white" x="3" y="3" width="8" height="2"/>
+<rect class="c-gray" x="11" y="4" width="2" height="8"/>
+<rect class="c-gray" x="3" y="12" width="10" height="1"/>
+<rect class="c-gray" x="3" y="5" width="4" height="7"/>
+<rect class="c-pale" x="7" y="5" width="5" height="7"/>
+<rect class="c-white" x="8" y="5" width="3" height="1"/>
+<rect class="c-shade" x="5" y="8" width="1" height="2"/>
+<rect class="c-pale" x="4" y="8" width="1" height="2"/>
+</g>
+
+<g id="avatar_head_1" transform="translate(20 2)">
+<title>avatar_head_1</title>
+<rect class="c-ink" x="2" y="2" width="12" height="12"/>
+<rect class="c-pale" x="3" y="3" width="10" height="10"/>
+<rect class="c-white" x="3" y="3" width="8" height="2"/>
+<rect class="c-gray" x="11" y="4" width="2" height="8"/>
+<rect class="c-gray" x="3" y="12" width="10" height="1"/>
+<rect class="c-gray" x="4" y="10" width="8" height="2"/>
+<rect class="c-pale" x="6" y="11" width="4" height="2"/>
+</g>
+
+<g id="avatar_head_2" transform="translate(38 2)">
+<title>avatar_head_2</title>
+<rect class="c-ink" x="2" y="2" width="12" height="12"/>
+<rect class="c-pale" x="3" y="3" width="10" height="10"/>
+<rect class="c-white" x="5" y="3" width="8" height="2"/>
+<rect class="c-gray" x="3" y="4" width="2" height="8"/>
+<rect class="c-gray" x="3" y="12" width="10" height="1"/>
+<rect class="c-gray" x="9" y="5" width="4" height="7"/>
+<rect class="c-pale" x="4" y="5" width="5" height="7"/>
+<rect class="c-white" x="5" y="5" width="3" height="1"/>
+<rect class="c-shade" x="10" y="8" width="1" height="2"/>
+<rect class="c-pale" x="11" y="8" width="1" height="2"/>
+</g>
+
+<g id="avatar_head_3" transform="translate(56 2)">
+<title>avatar_head_3</title>
+<rect class="c-ink" x="2" y="2" width="12" height="12"/>
+<rect class="c-pale" x="3" y="3" width="10" height="10"/>
+<rect class="c-white" x="3" y="3" width="8" height="2"/>
+<rect class="c-gray" x="11" y="4" width="2" height="8"/>
+<rect class="c-gray" x="3" y="12" width="10" height="1"/>
+</g>
+
+<g id="avatar_face_0_0" transform="translate(74 2)">
+<title>avatar_face_0_0</title>
+<rect class="c-ink" x="11" y="7" width="1" height="2"/>
+<rect class="c-ink" x="10" y="6" width="2" height="1"/>
+<rect class="c-shade" x="11" y="11" width="2" height="1"/>
+</g>
+
+<g id="avatar_face_0_1" transform="translate(92 2)">
+<title>avatar_face_0_1</title>
+</g>
+
+<g id="avatar_face_0_2" transform="translate(110 2)">
+<title>avatar_face_0_2</title>
+<rect class="c-ink" x="4" y="7" width="1" height="2"/>
+<rect class="c-ink" x="4" y="6" width="2" height="1"/>
+<rect class="c-shade" x="3" y="11" width="2" height="1"/>
+</g>
+
+<g id="avatar_face_0_3" transform="translate(128 2)">
+<title>avatar_face_0_3</title>
+<rect class="c-ink" x="5" y="7" width="1" height="2"/>
+<rect class="c-ink" x="10" y="7" width="1" height="2"/>
+<rect class="c-ink" x="4" y="6" width="2" height="1"/>
+<rect class="c-ink" x="10" y="6" width="2" height="1"/>
+<rect class="c-shade" x="7" y="11" width="2" height="1"/>
+</g>
+
+<g id="avatar_face_1_0" transform="translate(146 2)">
+<title>avatar_face_1_0</title>
+<rect class="c-ink" x="11" y="8" width="1" height="1"/>
+<rect class="c-ink" x="10" y="6" width="3" height="1"/>
+<rect class="c-shade" x="11" y="11" width="2" height="1"/>
+<rect class="c-shade" x="9" y="12" width="3" height="1"/>
+<rect class="c-ink" x="12" y="10" width="1" height="1"/>
+</g>
+
+<g id="avatar_face_1_1" transform="translate(164 2)">
+<title>avatar_face_1_1</title>
+</g>
+
+<g id="avatar_face_1_2" transform="translate(182 2)">
+<title>avatar_face_1_2</title>
+<rect class="c-ink" x="4" y="8" width="1" height="1"/>
+<rect class="c-ink" x="3" y="6" width="3" height="1"/>
+<rect class="c-shade" x="3" y="11" width="2" height="1"/>
+<rect class="c-shade" x="4" y="12" width="3" height="1"/>
+<rect class="c-ink" x="3" y="10" width="1" height="1"/>
+</g>
+
+<g id="avatar_face_1_3" transform="translate(200 2)">
+<title>avatar_face_1_3</title>
+<rect class="c-ink" x="5" y="8" width="1" height="1"/>
+<rect class="c-ink" x="10" y="8" width="1" height="1"/>
+<rect class="c-ink" x="4" y="6" width="3" height="1"/>
+<rect class="c-ink" x="9" y="6" width="3" height="1"/>
+<rect class="c-shade" x="7" y="11" width="2" height="1"/>
+<rect class="c-shade" x="6" y="12" width="4" height="1"/>
+<rect class="c-shade" x="8" y="9" width="1" height="1"/>
+</g>
+
+<g id="avatar_face_2_0" transform="translate(218 2)">
+<title>avatar_face_2_0</title>
+<rect class="c-ink" x="11" y="7" width="1" height="1"/>
+<rect class="c-ink" x="10" y="6" width="2" height="1"/>
+<rect class="c-shade" x="11" y="11" width="1" height="1"/>
+<rect class="c-shade" x="12" y="10" width="1" height="1"/>
+</g>
+
+<g id="avatar_face_2_1" transform="translate(236 2)">
+<title>avatar_face_2_1</title>
+</g>
+
+<g id="avatar_face_2_2" transform="translate(254 2)">
+<title>avatar_face_2_2</title>
+<rect class="c-ink" x="4" y="7" width="1" height="1"/>
+<rect class="c-ink" x="4" y="6" width="2" height="1"/>
+<rect class="c-shade" x="4" y="11" width="1" height="1"/>
+<rect class="c-shade" x="3" y="10" width="1" height="1"/>
+</g>
+
+<g id="avatar_face_2_3" transform="translate(272 2)">
+<title>avatar_face_2_3</title>
+<rect class="c-ink" x="5" y="7" width="1" height="1"/>
+<rect class="c-ink" x="10" y="7" width="1" height="1"/>
+<rect class="c-ink" x="4" y="6" width="2" height="1"/>
+<rect class="c-ink" x="10" y="6" width="2" height="1"/>
+<rect class="c-shade" x="7" y="11" width="2" height="1"/>
+<rect class="c-shade" x="6" y="10" width="1" height="1"/>
+<rect class="c-shade" x="9" y="10" width="1" height="1"/>
+</g>
+
+<g id="avatar_hair_0_0" transform="translate(2 20)">
+<title>avatar_hair_0_0</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="3" y="2" width="5" height="1"/>
+<rect class="c-ink" x="2" y="4" width="4" height="4"/>
+<rect class="c-gray" x="3" y="4" width="2" height="3"/>
+</g>
+
+<g id="avatar_hair_0_1" transform="translate(20 20)">
+<title>avatar_hair_0_1</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="3" y="2" width="5" height="1"/>
+<rect class="c-ink" x="2" y="4" width="12" height="4"/>
+<rect class="c-pale" x="3" y="4" width="10" height="3"/>
+<rect class="c-gray" x="10" y="4" width="3" height="3"/>
+</g>
+
+<g id="avatar_hair_0_2" transform="translate(38 20)">
+<title>avatar_hair_0_2</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="8" y="2" width="5" height="1"/>
+<rect class="c-ink" x="10" y="4" width="4" height="4"/>
+<rect class="c-gray" x="11" y="4" width="2" height="3"/>
+</g>
+
+<g id="avatar_hair_0_3" transform="translate(56 20)">
+<title>avatar_hair_0_3</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="3" y="2" width="5" height="1"/>
+<rect class="c-ink" x="2" y="4" width="2" height="3"/>
+<rect class="c-ink" x="12" y="4" width="2" height="3"/>
+<rect class="c-gray" x="3" y="4" width="3" height="1"/>
+<rect class="c-gray" x="9" y="4" width="3" height="1"/>
+</g>
+
+<g id="avatar_hair_1_0" transform="translate(74 20)">
+<title>avatar_hair_1_0</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="3" y="2" width="5" height="1"/>
+<rect class="c-ink" x="2" y="4" width="5" height="6"/>
+<rect class="c-gray" x="3" y="4" width="3" height="5"/>
+<rect class="c-ink" x="6" y="4" width="6" height="2"/>
+<rect class="c-pale" x="6" y="4" width="5" height="1"/>
+</g>
+
+<g id="avatar_hair_1_1" transform="translate(92 20)">
+<title>avatar_hair_1_1</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="3" y="2" width="5" height="1"/>
+<rect class="c-ink" x="2" y="4" width="12" height="5"/>
+<rect class="c-pale" x="3" y="4" width="10" height="4"/>
+<rect class="c-gray" x="10" y="4" width="3" height="4"/>
+<rect class="c-gray" x="4" y="5" width="1" height="3"/>
+<rect class="c-gray" x="8" y="5" width="1" height="3"/>
+<rect class="c-gray" x="12" y="5" width="1" height="3"/>
+</g>
+
+<g id="avatar_hair_1_2" transform="translate(110 20)">
+<title>avatar_hair_1_2</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="8" y="2" width="5" height="1"/>
+<rect class="c-ink" x="9" y="4" width="5" height="6"/>
+<rect class="c-gray" x="10" y="4" width="3" height="5"/>
+<rect class="c-ink" x="4" y="4" width="6" height="2"/>
+<rect class="c-pale" x="5" y="4" width="5" height="1"/>
+</g>
+
+<g id="avatar_hair_1_3" transform="translate(128 20)">
+<title>avatar_hair_1_3</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="3" y="2" width="5" height="1"/>
+<rect class="c-ink" x="2" y="4" width="3" height="4"/>
+<rect class="c-gray" x="3" y="4" width="1" height="3"/>
+<rect class="c-ink" x="5" y="4" width="6" height="2"/>
+<rect class="c-pale" x="5" y="4" width="5" height="1"/>
+<rect class="c-ink" x="5" y="6" width="2" height="1"/>
+</g>
+
+<g id="avatar_hair_2_0" transform="translate(146 20)">
+<title>avatar_hair_2_0</title>
+<rect class="c-ink" x="2" y="3" width="12" height="2"/>
+<rect class="c-pale" x="3" y="3" width="10" height="2"/>
+<rect class="c-white" x="3" y="3" width="5" height="1"/>
+<rect class="c-ink" x="3" y="1" width="2" height="4"/>
+<rect class="c-white" x="3" y="2" width="1" height="2"/>
+<rect class="c-ink" x="7" y="1" width="2" height="5"/>
+<rect class="c-white" x="7" y="2" width="1" height="3"/>
+<rect class="c-ink" x="11" y="1" width="2" height="4"/>
+<rect class="c-white" x="11" y="2" width="1" height="2"/>
+<rect class="c-gray" x="3" y="4" width="10" height="1"/>
+<rect class="c-ink" x="2" y="4" width="4" height="4"/>
+<rect class="c-gray" x="3" y="4" width="2" height="3"/>
+</g>
+
+<g id="avatar_hair_2_1" transform="translate(164 20)">
+<title>avatar_hair_2_1</title>
+<rect class="c-ink" x="2" y="3" width="12" height="2"/>
+<rect class="c-pale" x="3" y="3" width="10" height="2"/>
+<rect class="c-white" x="3" y="3" width="5" height="1"/>
+<rect class="c-ink" x="3" y="1" width="2" height="4"/>
+<rect class="c-white" x="3" y="2" width="1" height="2"/>
+<rect class="c-ink" x="7" y="1" width="2" height="5"/>
+<rect class="c-white" x="7" y="2" width="1" height="3"/>
+<rect class="c-ink" x="11" y="1" width="2" height="4"/>
+<rect class="c-white" x="11" y="2" width="1" height="2"/>
+<rect class="c-gray" x="3" y="4" width="10" height="1"/>
+<rect class="c-ink" x="2" y="4" width="12" height="4"/>
+<rect class="c-pale" x="3" y="4" width="10" height="3"/>
+<rect class="c-gray" x="10" y="4" width="3" height="3"/>
+</g>
+
+<g id="avatar_hair_2_2" transform="translate(182 20)">
+<title>avatar_hair_2_2</title>
+<rect class="c-ink" x="2" y="3" width="12" height="2"/>
+<rect class="c-pale" x="3" y="3" width="10" height="2"/>
+<rect class="c-white" x="8" y="3" width="5" height="1"/>
+<rect class="c-ink" x="11" y="1" width="2" height="4"/>
+<rect class="c-white" x="12" y="2" width="1" height="2"/>
+<rect class="c-ink" x="7" y="1" width="2" height="5"/>
+<rect class="c-white" x="8" y="2" width="1" height="3"/>
+<rect class="c-ink" x="3" y="1" width="2" height="4"/>
+<rect class="c-white" x="4" y="2" width="1" height="2"/>
+<rect class="c-gray" x="3" y="4" width="10" height="1"/>
+<rect class="c-ink" x="10" y="4" width="4" height="4"/>
+<rect class="c-gray" x="11" y="4" width="2" height="3"/>
+</g>
+
+<g id="avatar_hair_2_3" transform="translate(200 20)">
+<title>avatar_hair_2_3</title>
+<rect class="c-ink" x="2" y="3" width="12" height="2"/>
+<rect class="c-pale" x="3" y="3" width="10" height="2"/>
+<rect class="c-white" x="3" y="3" width="5" height="1"/>
+<rect class="c-ink" x="3" y="1" width="2" height="4"/>
+<rect class="c-white" x="3" y="2" width="1" height="2"/>
+<rect class="c-ink" x="7" y="1" width="2" height="5"/>
+<rect class="c-white" x="7" y="2" width="1" height="3"/>
+<rect class="c-ink" x="11" y="1" width="2" height="4"/>
+<rect class="c-white" x="11" y="2" width="1" height="2"/>
+<rect class="c-gray" x="3" y="4" width="10" height="1"/>
+<rect class="c-ink" x="2" y="4" width="2" height="3"/>
+<rect class="c-ink" x="12" y="4" width="2" height="3"/>
+<rect class="c-gray" x="3" y="4" width="3" height="1"/>
+<rect class="c-gray" x="9" y="4" width="3" height="1"/>
+</g>
+
+<g id="avatar_hair_3_0" transform="translate(218 20)">
+<title>avatar_hair_3_0</title>
+<rect class="c-ink" x="1" y="1" width="14" height="4"/>
+<rect class="c-pale" x="2" y="2" width="12" height="2"/>
+<rect class="c-white" x="2" y="2" width="5" height="1"/>
+<rect class="c-ink" x="1" y="4" width="5" height="9"/>
+<rect class="c-gray" x="2" y="4" width="3" height="8"/>
+<rect class="c-pale" x="2" y="5" width="1" height="7"/>
+<rect class="c-ink" x="6" y="4" width="5" height="1"/>
+</g>
+
+<g id="avatar_hair_3_1" transform="translate(236 20)">
+<title>avatar_hair_3_1</title>
+<rect class="c-ink" x="1" y="1" width="14" height="4"/>
+<rect class="c-pale" x="2" y="2" width="12" height="2"/>
+<rect class="c-white" x="2" y="2" width="5" height="1"/>
+<rect class="c-ink" x="1" y="4" width="14" height="10"/>
+<rect class="c-pale" x="2" y="4" width="12" height="9"/>
+<rect class="c-gray" x="10" y="4" width="4" height="9"/>
+<rect class="c-gray" x="4" y="5" width="1" height="8"/>
+<rect class="c-gray" x="8" y="5" width="1" height="8"/>
+<rect class="c-gray" x="12" y="5" width="1" height="8"/>
+</g>
+
+<g id="avatar_hair_3_2" transform="translate(254 20)">
+<title>avatar_hair_3_2</title>
+<rect class="c-ink" x="1" y="1" width="14" height="4"/>
+<rect class="c-pale" x="2" y="2" width="12" height="2"/>
+<rect class="c-white" x="9" y="2" width="5" height="1"/>
+<rect class="c-ink" x="10" y="4" width="5" height="9"/>
+<rect class="c-gray" x="11" y="4" width="3" height="8"/>
+<rect class="c-pale" x="13" y="5" width="1" height="7"/>
+<rect class="c-ink" x="5" y="4" width="5" height="1"/>
+</g>
+
+<g id="avatar_hair_3_3" transform="translate(272 20)">
+<title>avatar_hair_3_3</title>
+<rect class="c-ink" x="1" y="1" width="14" height="4"/>
+<rect class="c-pale" x="2" y="2" width="12" height="2"/>
+<rect class="c-white" x="2" y="2" width="5" height="1"/>
+<rect class="c-ink" x="1" y="4" width="3" height="10"/>
+<rect class="c-gray" x="2" y="4" width="1" height="9"/>
+<rect class="c-ink" x="12" y="4" width="3" height="10"/>
+<rect class="c-gray" x="13" y="4" width="1" height="9"/>
+<rect class="c-ink" x="4" y="4" width="8" height="1"/>
+</g>
+
+<g id="avatar_hair_4_0" transform="translate(2 38)">
+<title>avatar_hair_4_0</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="3" y="2" width="5" height="1"/>
+<rect class="c-ink" x="2" y="4" width="5" height="6"/>
+<rect class="c-gray" x="3" y="4" width="3" height="5"/>
+<rect class="c-ink" x="1" y="7" width="3" height="7"/>
+<rect class="c-gray" x="2" y="8" width="1" height="5"/>
+<rect class="c-white" x="1" y="7" width="3" height="1"/>
+</g>
+
+<g id="avatar_hair_4_1" transform="translate(20 38)">
+<title>avatar_hair_4_1</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="3" y="2" width="5" height="1"/>
+<rect class="c-ink" x="2" y="4" width="12" height="6"/>
+<rect class="c-pale" x="3" y="4" width="10" height="5"/>
+<rect class="c-gray" x="10" y="4" width="3" height="5"/>
+<rect class="c-ink" x="9" y="6" width="5" height="8"/>
+<rect class="c-gray" x="10" y="7" width="3" height="6"/>
+<rect class="c-pale" x="10" y="8" width="1" height="5"/>
+<rect class="c-white" x="10" y="7" width="3" height="1"/>
+</g>
+
+<g id="avatar_hair_4_2" transform="translate(38 38)">
+<title>avatar_hair_4_2</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="8" y="2" width="5" height="1"/>
+<rect class="c-ink" x="9" y="4" width="5" height="6"/>
+<rect class="c-gray" x="10" y="4" width="3" height="5"/>
+<rect class="c-ink" x="12" y="7" width="3" height="7"/>
+<rect class="c-gray" x="13" y="8" width="1" height="5"/>
+<rect class="c-white" x="12" y="7" width="3" height="1"/>
+</g>
+
+<g id="avatar_hair_4_3" transform="translate(56 38)">
+<title>avatar_hair_4_3</title>
+<rect class="c-ink" x="2" y="1" width="12" height="4"/>
+<rect class="c-pale" x="3" y="2" width="10" height="2"/>
+<rect class="c-white" x="3" y="2" width="5" height="1"/>
+<rect class="c-ink" x="2" y="4" width="2" height="3"/>
+<rect class="c-ink" x="12" y="4" width="2" height="3"/>
+<rect class="c-ink" x="12" y="8" width="3" height="6"/>
+<rect class="c-gray" x="13" y="9" width="1" height="4"/>
+<rect class="c-white" x="12" y="8" width="2" height="1"/>
+</g>
+
+<g id="avatar_torso_0_0" transform="translate(74 38)">
+<title>avatar_torso_0_0</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="4" y="3" width="2" height="9"/>
+<rect class="c-gray" x="10" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-gray" x="4" y="4" width="3" height="8"/>
+<rect class="c-white" x="8" y="3" width="3" height="1"/>
+</g>
+
+<g id="avatar_torso_0_1" transform="translate(92 38)">
+<title>avatar_torso_0_1</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="4" y="3" width="2" height="9"/>
+<rect class="c-gray" x="10" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-gray" x="4" y="5" width="8" height="1"/>
+</g>
+
+<g id="avatar_torso_0_2" transform="translate(110 38)">
+<title>avatar_torso_0_2</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="10" y="3" width="2" height="9"/>
+<rect class="c-gray" x="4" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-gray" x="9" y="4" width="3" height="8"/>
+<rect class="c-white" x="5" y="3" width="3" height="1"/>
+</g>
+
+<g id="avatar_torso_0_3" transform="translate(128 38)">
+<title>avatar_torso_0_3</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="4" y="3" width="2" height="9"/>
+<rect class="c-gray" x="10" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-ink" x="6" y="2" width="4" height="1"/>
+<rect class="c-gray" x="6" y="3" width="4" height="1"/>
+</g>
+
+<g id="avatar_torso_1_0" transform="translate(146 38)">
+<title>avatar_torso_1_0</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="4" y="3" width="2" height="9"/>
+<rect class="c-gray" x="10" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-gray" x="4" y="4" width="3" height="8"/>
+<rect class="c-white" x="8" y="3" width="3" height="1"/>
+<rect class="c-shade" x="10" y="4" width="1" height="8"/>
+<rect class="c-white" x="9" y="7" width="2" height="1"/>
+<rect class="c-gray" x="9" y="8" width="2" height="2"/>
+</g>
+
+<g id="avatar_torso_1_1" transform="translate(164 38)">
+<title>avatar_torso_1_1</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="4" y="3" width="2" height="9"/>
+<rect class="c-gray" x="10" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-gray" x="4" y="5" width="8" height="1"/>
+<rect class="c-gray" x="7" y="6" width="1" height="6"/>
+<rect class="c-white" x="5" y="7" width="2" height="1"/>
+</g>
+
+<g id="avatar_torso_1_2" transform="translate(182 38)">
+<title>avatar_torso_1_2</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="10" y="3" width="2" height="9"/>
+<rect class="c-gray" x="4" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-gray" x="9" y="4" width="3" height="8"/>
+<rect class="c-white" x="5" y="3" width="3" height="1"/>
+<rect class="c-shade" x="5" y="4" width="1" height="8"/>
+<rect class="c-white" x="5" y="7" width="2" height="1"/>
+<rect class="c-gray" x="5" y="8" width="2" height="2"/>
+</g>
+
+<g id="avatar_torso_1_3" transform="translate(200 38)">
+<title>avatar_torso_1_3</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="4" y="3" width="2" height="9"/>
+<rect class="c-gray" x="10" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-ink" x="6" y="2" width="4" height="1"/>
+<rect class="c-shade" x="8" y="4" width="1" height="8"/>
+<rect class="c-white" x="5" y="3" width="2" height="2"/>
+<rect class="c-gray" x="5" y="8" width="2" height="2"/>
+<rect class="c-white" x="9" y="3" width="2" height="2"/>
+<rect class="c-gray" x="9" y="8" width="2" height="2"/>
+<rect class="c-white" x="8" y="7" width="1" height="1"/>
+</g>
+
+<g id="avatar_torso_2_0" transform="translate(218 38)">
+<title>avatar_torso_2_0</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="4" y="3" width="2" height="9"/>
+<rect class="c-gray" x="10" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-gray" x="4" y="4" width="3" height="8"/>
+<rect class="c-white" x="8" y="3" width="3" height="1"/>
+<rect class="c-ink" x="4" y="2" width="3" height="4"/>
+<rect class="c-gray" x="5" y="3" width="2" height="2"/>
+<rect class="c-white" x="10" y="4" width="1" height="3"/>
+<rect class="c-gray" x="8" y="10" width="3" height="1"/>
+</g>
+
+<g id="avatar_torso_2_1" transform="translate(236 38)">
+<title>avatar_torso_2_1</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="4" y="3" width="2" height="9"/>
+<rect class="c-gray" x="10" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-gray" x="4" y="5" width="8" height="1"/>
+<rect class="c-ink" x="5" y="2" width="6" height="5"/>
+<rect class="c-gray" x="6" y="3" width="4" height="3"/>
+<rect class="c-pale" x="6" y="3" width="3" height="2"/>
+<rect class="c-white" x="7" y="6" width="2" height="1"/>
+</g>
+
+<g id="avatar_torso_2_2" transform="translate(254 38)">
+<title>avatar_torso_2_2</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="10" y="3" width="2" height="9"/>
+<rect class="c-gray" x="4" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-gray" x="9" y="4" width="3" height="8"/>
+<rect class="c-white" x="5" y="3" width="3" height="1"/>
+<rect class="c-ink" x="9" y="2" width="3" height="4"/>
+<rect class="c-gray" x="9" y="3" width="2" height="2"/>
+<rect class="c-white" x="5" y="4" width="1" height="3"/>
+<rect class="c-gray" x="5" y="10" width="3" height="1"/>
+</g>
+
+<g id="avatar_torso_2_3" transform="translate(272 38)">
+<title>avatar_torso_2_3</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-pale" x="4" y="3" width="8" height="10"/>
+<rect class="c-white" x="4" y="3" width="2" height="9"/>
+<rect class="c-gray" x="10" y="4" width="2" height="9"/>
+<rect class="c-gray" x="4" y="12" width="8" height="1"/>
+<rect class="c-ink" x="6" y="2" width="4" height="1"/>
+<rect class="c-gray" x="5" y="3" width="1" height="3"/>
+<rect class="c-gray" x="10" y="3" width="1" height="3"/>
+<rect class="c-white" x="6" y="4" width="1" height="3"/>
+<rect class="c-white" x="9" y="4" width="1" height="3"/>
+<rect class="c-gray" x="5" y="10" width="6" height="1"/>
+</g>
+
+<g id="avatar_arm_0" transform="translate(2 56)">
+<title>avatar_arm_0</title>
+<rect class="c-ink" x="2" y="2" width="4" height="12"/>
+<rect class="c-pale" x="3" y="3" width="2" height="10"/>
+<rect class="c-white" x="3" y="3" width="1" height="9"/>
+<rect class="c-gray" x="4" y="4" width="1" height="9"/>
+<rect class="c-pale" x="3" y="11" width="2" height="2"/>
+<rect class="c-white" x="3" y="11" width="1" height="1"/>
+</g>
+
+<g id="avatar_arm_1" transform="translate(20 56)">
+<title>avatar_arm_1</title>
+<rect class="c-ink" x="2" y="2" width="4" height="12"/>
+<rect class="c-pale" x="3" y="3" width="2" height="10"/>
+<rect class="c-white" x="3" y="3" width="1" height="9"/>
+<rect class="c-gray" x="3" y="5" width="2" height="1"/>
+<rect class="c-pale" x="3" y="11" width="2" height="2"/>
+<rect class="c-white" x="3" y="11" width="1" height="1"/>
+</g>
+
+<g id="avatar_arm_2" transform="translate(38 56)">
+<title>avatar_arm_2</title>
+<rect class="c-ink" x="2" y="2" width="4" height="12"/>
+<rect class="c-pale" x="3" y="3" width="2" height="10"/>
+<rect class="c-white" x="4" y="3" width="1" height="9"/>
+<rect class="c-gray" x="3" y="4" width="1" height="9"/>
+<rect class="c-pale" x="3" y="11" width="2" height="2"/>
+<rect class="c-white" x="4" y="11" width="1" height="1"/>
+</g>
+
+<g id="avatar_arm_3" transform="translate(56 56)">
+<title>avatar_arm_3</title>
+<rect class="c-ink" x="2" y="2" width="4" height="12"/>
+<rect class="c-pale" x="3" y="3" width="2" height="10"/>
+<rect class="c-white" x="3" y="3" width="1" height="9"/>
+<rect class="c-pale" x="3" y="11" width="2" height="2"/>
+<rect class="c-white" x="3" y="11" width="1" height="1"/>
+</g>
+
+<g id="avatar_sleeve_0_0" transform="translate(74 56)">
+<title>avatar_sleeve_0_0</title>
+<rect class="c-ink" x="2" y="2" width="4" height="5"/>
+<rect class="c-pale" x="3" y="3" width="2" height="3"/>
+<rect class="c-white" x="3" y="3" width="1" height="2"/>
+<rect class="c-gray" x="4" y="4" width="1" height="2"/>
+</g>
+
+<g id="avatar_sleeve_0_1" transform="translate(92 56)">
+<title>avatar_sleeve_0_1</title>
+<rect class="c-ink" x="2" y="2" width="4" height="5"/>
+<rect class="c-pale" x="3" y="3" width="2" height="3"/>
+<rect class="c-white" x="3" y="3" width="1" height="2"/>
+<rect class="c-gray" x="3" y="5" width="2" height="1"/>
+</g>
+
+<g id="avatar_sleeve_0_2" transform="translate(110 56)">
+<title>avatar_sleeve_0_2</title>
+<rect class="c-ink" x="2" y="2" width="4" height="5"/>
+<rect class="c-pale" x="3" y="3" width="2" height="3"/>
+<rect class="c-white" x="4" y="3" width="1" height="2"/>
+<rect class="c-gray" x="3" y="4" width="1" height="2"/>
+</g>
+
+<g id="avatar_sleeve_0_3" transform="translate(128 56)">
+<title>avatar_sleeve_0_3</title>
+<rect class="c-ink" x="2" y="2" width="4" height="5"/>
+<rect class="c-pale" x="3" y="3" width="2" height="3"/>
+<rect class="c-white" x="3" y="3" width="1" height="2"/>
+</g>
+
+<g id="avatar_sleeve_1_0" transform="translate(146 56)">
+<title>avatar_sleeve_1_0</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-pale" x="3" y="3" width="2" height="7"/>
+<rect class="c-white" x="3" y="3" width="1" height="6"/>
+<rect class="c-gray" x="4" y="4" width="1" height="6"/>
+</g>
+
+<g id="avatar_sleeve_1_1" transform="translate(164 56)">
+<title>avatar_sleeve_1_1</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-pale" x="3" y="3" width="2" height="7"/>
+<rect class="c-white" x="3" y="3" width="1" height="6"/>
+<rect class="c-gray" x="3" y="5" width="2" height="1"/>
+</g>
+
+<g id="avatar_sleeve_1_2" transform="translate(182 56)">
+<title>avatar_sleeve_1_2</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-pale" x="3" y="3" width="2" height="7"/>
+<rect class="c-white" x="4" y="3" width="1" height="6"/>
+<rect class="c-gray" x="3" y="4" width="1" height="6"/>
+</g>
+
+<g id="avatar_sleeve_1_3" transform="translate(200 56)">
+<title>avatar_sleeve_1_3</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-pale" x="3" y="3" width="2" height="7"/>
+<rect class="c-white" x="3" y="3" width="1" height="6"/>
+</g>
+
+<g id="avatar_sleeve_2_0" transform="translate(218 56)">
+<title>avatar_sleeve_2_0</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-pale" x="3" y="3" width="2" height="7"/>
+<rect class="c-white" x="3" y="3" width="1" height="6"/>
+<rect class="c-gray" x="4" y="4" width="1" height="6"/>
+<rect class="c-gray" x="3" y="9" width="2" height="1"/>
+</g>
+
+<g id="avatar_sleeve_2_1" transform="translate(236 56)">
+<title>avatar_sleeve_2_1</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-pale" x="3" y="3" width="2" height="7"/>
+<rect class="c-white" x="3" y="3" width="1" height="6"/>
+<rect class="c-gray" x="3" y="5" width="2" height="1"/>
+<rect class="c-gray" x="3" y="9" width="2" height="1"/>
+</g>
+
+<g id="avatar_sleeve_2_2" transform="translate(254 56)">
+<title>avatar_sleeve_2_2</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-pale" x="3" y="3" width="2" height="7"/>
+<rect class="c-white" x="4" y="3" width="1" height="6"/>
+<rect class="c-gray" x="3" y="4" width="1" height="6"/>
+<rect class="c-gray" x="3" y="9" width="2" height="1"/>
+</g>
+
+<g id="avatar_sleeve_2_3" transform="translate(272 56)">
+<title>avatar_sleeve_2_3</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-pale" x="3" y="3" width="2" height="7"/>
+<rect class="c-white" x="3" y="3" width="1" height="6"/>
+<rect class="c-gray" x="3" y="9" width="2" height="1"/>
+</g>
+
+<g id="avatar_leg_0" transform="translate(2 74)">
+<title>avatar_leg_0</title>
+<rect class="c-ink" x="2" y="2" width="5" height="12"/>
+<rect class="c-pale" x="3" y="3" width="3" height="10"/>
+<rect class="c-white" x="3" y="3" width="1" height="9"/>
+<rect class="c-gray" x="5" y="4" width="1" height="9"/>
+<rect class="c-shade" x="3" y="2" width="3" height="1"/>
+<rect class="c-shade" x="5" y="7" width="1" height="2"/>
+</g>
+
+<g id="avatar_leg_1" transform="translate(20 74)">
+<title>avatar_leg_1</title>
+<rect class="c-ink" x="2" y="2" width="5" height="12"/>
+<rect class="c-pale" x="3" y="3" width="3" height="10"/>
+<rect class="c-white" x="3" y="3" width="1" height="9"/>
+<rect class="c-gray" x="5" y="4" width="1" height="9"/>
+<rect class="c-shade" x="3" y="2" width="3" height="1"/>
+<rect class="c-gray" x="3" y="4" width="3" height="2"/>
+</g>
+
+<g id="avatar_leg_2" transform="translate(38 74)">
+<title>avatar_leg_2</title>
+<rect class="c-ink" x="2" y="2" width="5" height="12"/>
+<rect class="c-pale" x="3" y="3" width="3" height="10"/>
+<rect class="c-white" x="5" y="3" width="1" height="9"/>
+<rect class="c-gray" x="3" y="4" width="1" height="9"/>
+<rect class="c-shade" x="3" y="2" width="3" height="1"/>
+<rect class="c-shade" x="3" y="7" width="1" height="2"/>
+</g>
+
+<g id="avatar_leg_3" transform="translate(56 74)">
+<title>avatar_leg_3</title>
+<rect class="c-ink" x="2" y="2" width="5" height="12"/>
+<rect class="c-pale" x="3" y="3" width="3" height="10"/>
+<rect class="c-white" x="3" y="3" width="1" height="9"/>
+<rect class="c-gray" x="5" y="4" width="1" height="9"/>
+<rect class="c-shade" x="3" y="2" width="3" height="1"/>
+</g>
+
+<g id="avatar_shoe_0" transform="translate(74 74)">
+<title>avatar_shoe_0</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-pale" x="2" y="3" width="4" height="2"/>
+<rect class="c-white" x="2" y="3" width="2" height="1"/>
+<rect class="c-gray" x="5" y="4" width="1" height="1"/>
+<rect class="c-pale" x="5" y="4" width="1" height="1"/>
+<rect class="c-white" x="5" y="4" width="1" height="1"/>
+</g>
+
+<g id="avatar_shoe_1" transform="translate(92 74)">
+<title>avatar_shoe_1</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-pale" x="2" y="3" width="4" height="2"/>
+<rect class="c-white" x="2" y="3" width="2" height="1"/>
+<rect class="c-gray" x="5" y="4" width="1" height="1"/>
+<rect class="c-gray" x="2" y="4" width="4" height="1"/>
+</g>
+
+<g id="avatar_shoe_2" transform="translate(110 74)">
+<title>avatar_shoe_2</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-pale" x="2" y="3" width="4" height="2"/>
+<rect class="c-white" x="4" y="3" width="2" height="1"/>
+<rect class="c-gray" x="2" y="4" width="1" height="1"/>
+<rect class="c-pale" x="2" y="4" width="1" height="1"/>
+<rect class="c-white" x="2" y="4" width="1" height="1"/>
+</g>
+
+<g id="avatar_shoe_3" transform="translate(128 74)">
+<title>avatar_shoe_3</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-pale" x="2" y="3" width="4" height="2"/>
+<rect class="c-white" x="2" y="3" width="2" height="1"/>
+<rect class="c-gray" x="5" y="4" width="1" height="1"/>
+</g>
+
+<g id="avatar_armor_10_head_0" transform="translate(146 74)">
+<title>avatar_armor_10_head_0</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-tan" x="2" y="2" width="12" height="3"/>
+<rect class="c-sand" x="3" y="2" width="7" height="1"/>
+<rect class="c-soil" x="11" y="3" width="3" height="2"/>
+<rect class="c-sand" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="1" y="5" width="4" height="3"/>
+<rect class="c-soil" x="2" y="5" width="2" height="2"/>
+<rect class="c-ink" x="1" y="7" width="2" height="4"/>
+<rect class="c-sand" x="2" y="7" width="1" height="3"/>
+</g>
+
+<g id="avatar_armor_10_head_1" transform="translate(164 74)">
+<title>avatar_armor_10_head_1</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-tan" x="2" y="2" width="12" height="3"/>
+<rect class="c-sand" x="3" y="2" width="7" height="1"/>
+<rect class="c-soil" x="11" y="3" width="3" height="2"/>
+<rect class="c-sand" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="1" y="5" width="14" height="3"/>
+<rect class="c-soil" x="2" y="5" width="12" height="2"/>
+<rect class="c-tan" x="3" y="5" width="8" height="2"/>
+<rect class="c-ink" x="10" y="7" width="3" height="4"/>
+<rect class="c-sand" x="11" y="7" width="1" height="3"/>
+</g>
+
+<g id="avatar_armor_10_head_2" transform="translate(182 74)">
+<title>avatar_armor_10_head_2</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-tan" x="2" y="2" width="12" height="3"/>
+<rect class="c-sand" x="6" y="2" width="7" height="1"/>
+<rect class="c-soil" x="2" y="3" width="3" height="2"/>
+<rect class="c-sand" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="11" y="5" width="4" height="3"/>
+<rect class="c-soil" x="12" y="5" width="2" height="2"/>
+<rect class="c-ink" x="13" y="7" width="2" height="4"/>
+<rect class="c-sand" x="13" y="7" width="1" height="3"/>
+</g>
+
+<g id="avatar_armor_10_head_3" transform="translate(200 74)">
+<title>avatar_armor_10_head_3</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-tan" x="2" y="2" width="12" height="3"/>
+<rect class="c-sand" x="3" y="2" width="7" height="1"/>
+<rect class="c-soil" x="11" y="3" width="3" height="2"/>
+<rect class="c-sand" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="1" y="5" width="2" height="2"/>
+<rect class="c-soil" x="1" y="5" width="1" height="1"/>
+<rect class="c-ink" x="13" y="5" width="2" height="2"/>
+<rect class="c-soil" x="13" y="5" width="1" height="1"/>
+<rect class="c-cream" x="4" y="3" width="6" height="1"/>
+</g>
+
+<g id="avatar_armor_11_torso_0" transform="translate(218 74)">
+<title>avatar_armor_11_torso_0</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-brown" x="4" y="3" width="8" height="10"/>
+<rect class="c-tan" x="4" y="3" width="2" height="9"/>
+<rect class="c-soil" x="10" y="4" width="2" height="9"/>
+<rect class="c-soil" x="4" y="12" width="8" height="1"/>
+<rect class="c-soil" x="4" y="4" width="3" height="8"/>
+<rect class="c-tan" x="8" y="3" width="3" height="1"/>
+<rect class="c-soil" x="10" y="4" width="1" height="8"/>
+<rect class="c-tan" x="9" y="7" width="2" height="1"/>
+<rect class="c-soil" x="9" y="8" width="2" height="2"/>
+</g>
+
+<g id="avatar_armor_11_torso_1" transform="translate(236 74)">
+<title>avatar_armor_11_torso_1</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-brown" x="4" y="3" width="8" height="10"/>
+<rect class="c-tan" x="4" y="3" width="2" height="9"/>
+<rect class="c-soil" x="10" y="4" width="2" height="9"/>
+<rect class="c-soil" x="4" y="12" width="8" height="1"/>
+<rect class="c-soil" x="4" y="5" width="8" height="1"/>
+<rect class="c-soil" x="7" y="6" width="1" height="6"/>
+<rect class="c-tan" x="5" y="7" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_11_torso_2" transform="translate(254 74)">
+<title>avatar_armor_11_torso_2</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-brown" x="4" y="3" width="8" height="10"/>
+<rect class="c-tan" x="10" y="3" width="2" height="9"/>
+<rect class="c-soil" x="4" y="4" width="2" height="9"/>
+<rect class="c-soil" x="4" y="12" width="8" height="1"/>
+<rect class="c-soil" x="9" y="4" width="3" height="8"/>
+<rect class="c-tan" x="5" y="3" width="3" height="1"/>
+<rect class="c-soil" x="5" y="4" width="1" height="8"/>
+<rect class="c-tan" x="5" y="7" width="2" height="1"/>
+<rect class="c-soil" x="5" y="8" width="2" height="2"/>
+</g>
+
+<g id="avatar_armor_11_torso_3" transform="translate(272 74)">
+<title>avatar_armor_11_torso_3</title>
+<rect class="c-ink" x="3" y="2" width="10" height="12"/>
+<rect class="c-brown" x="4" y="3" width="8" height="10"/>
+<rect class="c-tan" x="4" y="3" width="2" height="9"/>
+<rect class="c-soil" x="10" y="4" width="2" height="9"/>
+<rect class="c-soil" x="4" y="12" width="8" height="1"/>
+<rect class="c-ink" x="6" y="2" width="4" height="1"/>
+<rect class="c-soil" x="8" y="4" width="1" height="8"/>
+<rect class="c-tan" x="5" y="3" width="2" height="2"/>
+<rect class="c-soil" x="5" y="8" width="2" height="2"/>
+<rect class="c-tan" x="9" y="3" width="2" height="2"/>
+<rect class="c-soil" x="9" y="8" width="2" height="2"/>
+<rect class="c-gold" x="8" y="7" width="1" height="1"/>
+</g>
+
+<g id="avatar_armor_11_arm_0" transform="translate(2 92)">
+<title>avatar_armor_11_arm_0</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-brown" x="3" y="3" width="2" height="7"/>
+<rect class="c-tan" x="3" y="3" width="1" height="6"/>
+<rect class="c-soil" x="4" y="4" width="1" height="6"/>
+<rect class="c-soil" x="3" y="9" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_11_arm_1" transform="translate(20 92)">
+<title>avatar_armor_11_arm_1</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-brown" x="3" y="3" width="2" height="7"/>
+<rect class="c-tan" x="3" y="3" width="1" height="6"/>
+<rect class="c-soil" x="3" y="5" width="2" height="1"/>
+<rect class="c-soil" x="3" y="9" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_11_arm_2" transform="translate(38 92)">
+<title>avatar_armor_11_arm_2</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-brown" x="3" y="3" width="2" height="7"/>
+<rect class="c-tan" x="4" y="3" width="1" height="6"/>
+<rect class="c-soil" x="3" y="4" width="1" height="6"/>
+<rect class="c-soil" x="3" y="9" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_11_arm_3" transform="translate(56 92)">
+<title>avatar_armor_11_arm_3</title>
+<rect class="c-ink" x="2" y="2" width="4" height="9"/>
+<rect class="c-brown" x="3" y="3" width="2" height="7"/>
+<rect class="c-tan" x="3" y="3" width="1" height="6"/>
+<rect class="c-soil" x="3" y="9" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_12_leg_0" transform="translate(74 92)">
+<title>avatar_armor_12_leg_0</title>
+<rect class="c-ink" x="2" y="2" width="5" height="12"/>
+<rect class="c-blue" x="3" y="3" width="3" height="10"/>
+<rect class="c-steel" x="3" y="3" width="1" height="9"/>
+<rect class="c-dark" x="5" y="4" width="1" height="9"/>
+<rect class="c-soil" x="3" y="2" width="3" height="1"/>
+<rect class="c-sand" x="4" y="2" width="1" height="1"/>
+<rect class="c-dark" x="3" y="6" width="3" height="3"/>
+<rect class="c-steel" x="3" y="6" width="3" height="1"/>
+<rect class="c-light" x="3" y="6" width="1" height="1"/>
+<rect class="c-steel" x="3" y="10" width="2" height="2"/>
+</g>
+
+<g id="avatar_armor_12_leg_1" transform="translate(92 92)">
+<title>avatar_armor_12_leg_1</title>
+<rect class="c-ink" x="2" y="2" width="5" height="12"/>
+<rect class="c-blue" x="3" y="3" width="3" height="10"/>
+<rect class="c-steel" x="3" y="3" width="1" height="9"/>
+<rect class="c-dark" x="5" y="4" width="1" height="9"/>
+<rect class="c-soil" x="3" y="2" width="3" height="1"/>
+<rect class="c-sand" x="4" y="2" width="1" height="1"/>
+<rect class="c-dark" x="3" y="6" width="3" height="3"/>
+<rect class="c-steel" x="3" y="6" width="3" height="1"/>
+<rect class="c-light" x="3" y="6" width="1" height="1"/>
+<rect class="c-steel" x="3" y="10" width="2" height="2"/>
+</g>
+
+<g id="avatar_armor_12_leg_2" transform="translate(110 92)">
+<title>avatar_armor_12_leg_2</title>
+<rect class="c-ink" x="2" y="2" width="5" height="12"/>
+<rect class="c-blue" x="3" y="3" width="3" height="10"/>
+<rect class="c-steel" x="5" y="3" width="1" height="9"/>
+<rect class="c-dark" x="3" y="4" width="1" height="9"/>
+<rect class="c-soil" x="3" y="2" width="3" height="1"/>
+<rect class="c-sand" x="4" y="2" width="1" height="1"/>
+<rect class="c-dark" x="3" y="6" width="3" height="3"/>
+<rect class="c-steel" x="3" y="6" width="3" height="1"/>
+<rect class="c-light" x="5" y="6" width="1" height="1"/>
+<rect class="c-steel" x="4" y="10" width="2" height="2"/>
+</g>
+
+<g id="avatar_armor_12_leg_3" transform="translate(128 92)">
+<title>avatar_armor_12_leg_3</title>
+<rect class="c-ink" x="2" y="2" width="5" height="12"/>
+<rect class="c-blue" x="3" y="3" width="3" height="10"/>
+<rect class="c-steel" x="3" y="3" width="1" height="9"/>
+<rect class="c-dark" x="5" y="4" width="1" height="9"/>
+<rect class="c-soil" x="3" y="2" width="3" height="1"/>
+<rect class="c-sand" x="4" y="2" width="1" height="1"/>
+<rect class="c-dark" x="3" y="6" width="3" height="3"/>
+<rect class="c-steel" x="3" y="6" width="3" height="1"/>
+<rect class="c-light" x="3" y="6" width="1" height="1"/>
+<rect class="c-steel" x="3" y="10" width="2" height="2"/>
+</g>
+
+<g id="avatar_armor_13_shoe_0" transform="translate(146 92)">
+<title>avatar_armor_13_shoe_0</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-brown" x="2" y="3" width="4" height="2"/>
+<rect class="c-tan" x="2" y="3" width="2" height="1"/>
+<rect class="c-soil" x="5" y="4" width="1" height="1"/>
+<rect class="c-brown" x="5" y="4" width="1" height="1"/>
+<rect class="c-tan" x="5" y="4" width="1" height="1"/>
+<rect class="c-sand" x="3" y="4" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_13_shoe_1" transform="translate(164 92)">
+<title>avatar_armor_13_shoe_1</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-brown" x="2" y="3" width="4" height="2"/>
+<rect class="c-tan" x="2" y="3" width="2" height="1"/>
+<rect class="c-soil" x="5" y="4" width="1" height="1"/>
+<rect class="c-soil" x="2" y="4" width="4" height="1"/>
+<rect class="c-sand" x="3" y="4" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_13_shoe_2" transform="translate(182 92)">
+<title>avatar_armor_13_shoe_2</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-brown" x="2" y="3" width="4" height="2"/>
+<rect class="c-tan" x="4" y="3" width="2" height="1"/>
+<rect class="c-soil" x="2" y="4" width="1" height="1"/>
+<rect class="c-brown" x="2" y="4" width="1" height="1"/>
+<rect class="c-tan" x="2" y="4" width="1" height="1"/>
+<rect class="c-sand" x="3" y="4" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_13_shoe_3" transform="translate(200 92)">
+<title>avatar_armor_13_shoe_3</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-brown" x="2" y="3" width="4" height="2"/>
+<rect class="c-tan" x="2" y="3" width="2" height="1"/>
+<rect class="c-soil" x="5" y="4" width="1" height="1"/>
+<rect class="c-sand" x="3" y="4" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_14_head_0" transform="translate(218 92)">
+<title>avatar_armor_14_head_0</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-steel" x="2" y="2" width="12" height="3"/>
+<rect class="c-light" x="3" y="2" width="7" height="1"/>
+<rect class="c-shadow" x="11" y="3" width="3" height="2"/>
+<rect class="c-light" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="1" y="5" width="4" height="3"/>
+<rect class="c-shadow" x="2" y="5" width="2" height="2"/>
+</g>
+
+<g id="avatar_armor_14_head_1" transform="translate(236 92)">
+<title>avatar_armor_14_head_1</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-steel" x="2" y="2" width="12" height="3"/>
+<rect class="c-light" x="3" y="2" width="7" height="1"/>
+<rect class="c-shadow" x="11" y="3" width="3" height="2"/>
+<rect class="c-light" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="1" y="5" width="14" height="3"/>
+<rect class="c-shadow" x="2" y="5" width="12" height="2"/>
+<rect class="c-steel" x="3" y="5" width="8" height="2"/>
+</g>
+
+<g id="avatar_armor_14_head_2" transform="translate(254 92)">
+<title>avatar_armor_14_head_2</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-steel" x="2" y="2" width="12" height="3"/>
+<rect class="c-light" x="6" y="2" width="7" height="1"/>
+<rect class="c-shadow" x="2" y="3" width="3" height="2"/>
+<rect class="c-light" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="11" y="5" width="4" height="3"/>
+<rect class="c-shadow" x="12" y="5" width="2" height="2"/>
+</g>
+
+<g id="avatar_armor_14_head_3" transform="translate(272 92)">
+<title>avatar_armor_14_head_3</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-steel" x="2" y="2" width="12" height="3"/>
+<rect class="c-light" x="3" y="2" width="7" height="1"/>
+<rect class="c-shadow" x="11" y="3" width="3" height="2"/>
+<rect class="c-light" x="2" y="4" width="12" height="1"/>
+</g>
+
+<g id="avatar_armor_15_torso_0" transform="translate(2 110)">
+<title>avatar_armor_15_torso_0</title>
+<rect class="c-ink" x="3" y="3" width="10" height="11"/>
+<rect class="c-dark" x="4" y="4" width="8" height="9"/>
+<rect class="c-ink" x="3" y="2" width="3" height="3"/>
+<rect class="c-steel" x="4" y="2" width="1" height="3"/>
+<rect class="c-ink" x="10" y="2" width="3" height="3"/>
+<rect class="c-steel" x="11" y="2" width="1" height="3"/>
+<rect class="c-dark" x="4" y="5" width="3" height="6"/>
+<rect class="c-steel" x="8" y="5" width="3" height="5"/>
+<rect class="c-light" x="8" y="5" width="2" height="1"/>
+<rect class="c-blue" x="8" y="7" width="3" height="1"/>
+<rect class="c-sand" x="4" y="10" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_15_torso_1" transform="translate(20 110)">
+<title>avatar_armor_15_torso_1</title>
+<rect class="c-ink" x="3" y="3" width="10" height="11"/>
+<rect class="c-dark" x="4" y="4" width="8" height="9"/>
+<rect class="c-ink" x="3" y="2" width="3" height="3"/>
+<rect class="c-steel" x="4" y="2" width="1" height="3"/>
+<rect class="c-ink" x="10" y="2" width="3" height="3"/>
+<rect class="c-steel" x="11" y="2" width="1" height="3"/>
+<rect class="c-steel" x="5" y="5" width="6" height="5"/>
+<rect class="c-light" x="5" y="5" width="5" height="1"/>
+<rect class="c-blue" x="6" y="7" width="4" height="1"/>
+<rect class="c-dark" x="4" y="10" width="8" height="3"/>
+<rect class="c-steel" x="5" y="10" width="6" height="2"/>
+<rect class="c-blue" x="6" y="11" width="4" height="1"/>
+</g>
+
+<g id="avatar_armor_15_torso_2" transform="translate(38 110)">
+<title>avatar_armor_15_torso_2</title>
+<rect class="c-ink" x="3" y="3" width="10" height="11"/>
+<rect class="c-dark" x="4" y="4" width="8" height="9"/>
+<rect class="c-ink" x="10" y="2" width="3" height="3"/>
+<rect class="c-steel" x="11" y="2" width="1" height="3"/>
+<rect class="c-ink" x="3" y="2" width="3" height="3"/>
+<rect class="c-steel" x="4" y="2" width="1" height="3"/>
+<rect class="c-dark" x="9" y="5" width="3" height="6"/>
+<rect class="c-steel" x="5" y="5" width="3" height="5"/>
+<rect class="c-light" x="6" y="5" width="2" height="1"/>
+<rect class="c-blue" x="5" y="7" width="3" height="1"/>
+<rect class="c-sand" x="10" y="10" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_15_torso_3" transform="translate(56 110)">
+<title>avatar_armor_15_torso_3</title>
+<rect class="c-ink" x="3" y="3" width="10" height="11"/>
+<rect class="c-dark" x="4" y="4" width="8" height="9"/>
+<rect class="c-ink" x="3" y="2" width="3" height="3"/>
+<rect class="c-steel" x="4" y="2" width="1" height="3"/>
+<rect class="c-ink" x="10" y="2" width="3" height="3"/>
+<rect class="c-steel" x="11" y="2" width="1" height="3"/>
+<rect class="c-steel" x="5" y="5" width="6" height="5"/>
+<rect class="c-light" x="5" y="5" width="5" height="1"/>
+<rect class="c-blue" x="6" y="7" width="4" height="1"/>
+<rect class="c-dark" x="4" y="10" width="8" height="3"/>
+<rect class="c-steel" x="5" y="11" width="6" height="1"/>
+<rect class="c-sand" x="4" y="10" width="1" height="1"/>
+<rect class="c-sand" x="11" y="10" width="1" height="1"/>
+</g>
+
+<g id="avatar_armor_16_head_0" transform="translate(74 110)">
+<title>avatar_armor_16_head_0</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-leaf" x="2" y="2" width="12" height="3"/>
+<rect class="c-olive" x="3" y="2" width="7" height="1"/>
+<rect class="c-shadow" x="11" y="3" width="3" height="2"/>
+<rect class="c-light" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="1" y="5" width="4" height="5"/>
+<rect class="c-shadow" x="2" y="5" width="2" height="4"/>
+<rect class="c-dark" x="3" y="6" width="3" height="3"/>
+<rect class="c-steel" x="3" y="6" width="2" height="2"/>
+<rect class="c-cyan" x="12" y="3" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_16_head_1" transform="translate(92 110)">
+<title>avatar_armor_16_head_1</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-leaf" x="2" y="2" width="12" height="3"/>
+<rect class="c-olive" x="3" y="2" width="7" height="1"/>
+<rect class="c-shadow" x="11" y="3" width="3" height="2"/>
+<rect class="c-light" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="1" y="5" width="14" height="5"/>
+<rect class="c-shadow" x="2" y="5" width="12" height="4"/>
+<rect class="c-leaf" x="3" y="5" width="8" height="2"/>
+<rect class="c-dark" x="3" y="6" width="10" height="1"/>
+<rect class="c-steel" x="7" y="6" width="2" height="2"/>
+</g>
+
+<g id="avatar_armor_16_head_2" transform="translate(110 110)">
+<title>avatar_armor_16_head_2</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-leaf" x="2" y="2" width="12" height="3"/>
+<rect class="c-olive" x="6" y="2" width="7" height="1"/>
+<rect class="c-shadow" x="2" y="3" width="3" height="2"/>
+<rect class="c-light" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="11" y="5" width="4" height="5"/>
+<rect class="c-shadow" x="12" y="5" width="2" height="4"/>
+<rect class="c-dark" x="10" y="6" width="3" height="3"/>
+<rect class="c-steel" x="11" y="6" width="2" height="2"/>
+<rect class="c-cyan" x="2" y="3" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_16_head_3" transform="translate(128 110)">
+<title>avatar_armor_16_head_3</title>
+<rect class="c-ink" x="1" y="1" width="14" height="5"/>
+<rect class="c-leaf" x="2" y="2" width="12" height="3"/>
+<rect class="c-olive" x="3" y="2" width="7" height="1"/>
+<rect class="c-shadow" x="11" y="3" width="3" height="2"/>
+<rect class="c-light" x="2" y="4" width="12" height="1"/>
+<rect class="c-ink" x="1" y="5" width="2" height="4"/>
+<rect class="c-shadow" x="1" y="5" width="1" height="3"/>
+<rect class="c-ink" x="13" y="5" width="2" height="4"/>
+<rect class="c-shadow" x="13" y="5" width="1" height="3"/>
+<rect class="c-dark" x="6" y="1" width="4" height="3"/>
+<rect class="c-steel" x="7" y="2" width="2" height="1"/>
+<rect class="c-cyan" x="12" y="3" width="2" height="1"/>
+</g>
+
+<g id="avatar_armor_17_torso_0" transform="translate(146 110)">
+<title>avatar_armor_17_torso_0</title>
+<rect class="c-ink" x="3" y="3" width="10" height="11"/>
+<rect class="c-shadow" x="4" y="4" width="8" height="9"/>
+<rect class="c-ink" x="3" y="2" width="3" height="3"/>
+<rect class="c-olive" x="4" y="2" width="1" height="3"/>
+<rect class="c-ink" x="10" y="2" width="3" height="3"/>
+<rect class="c-olive" x="11" y="2" width="1" height="3"/>
+<rect class="c-dark" x="4" y="5" width="3" height="6"/>
+<rect class="c-steel" x="8" y="5" width="3" height="5"/>
+<rect class="c-light" x="8" y="5" width="2" height="1"/>
+<rect class="c-olive" x="8" y="7" width="3" height="1"/>
+<rect class="c-sand" x="4" y="10" width="2" height="1"/>
+<rect class="c-leaf" x="7" y="10" width="2" height="3"/>
+<rect class="c-olive" x="10" y="10" width="2" height="3"/>
+</g>
+
+<g id="avatar_armor_17_torso_1" transform="translate(164 110)">
+<title>avatar_armor_17_torso_1</title>
+<rect class="c-ink" x="3" y="3" width="10" height="11"/>
+<rect class="c-shadow" x="4" y="4" width="8" height="9"/>
+<rect class="c-ink" x="3" y="2" width="3" height="3"/>
+<rect class="c-olive" x="4" y="2" width="1" height="3"/>
+<rect class="c-ink" x="10" y="2" width="3" height="3"/>
+<rect class="c-olive" x="11" y="2" width="1" height="3"/>
+<rect class="c-steel" x="5" y="5" width="6" height="5"/>
+<rect class="c-light" x="5" y="5" width="5" height="1"/>
+<rect class="c-olive" x="6" y="7" width="4" height="1"/>
+<rect class="c-dark" x="4" y="10" width="8" height="3"/>
+<rect class="c-steel" x="5" y="10" width="6" height="2"/>
+<rect class="c-olive" x="6" y="11" width="4" height="1"/>
+</g>
+
+<g id="avatar_armor_17_torso_2" transform="translate(182 110)">
+<title>avatar_armor_17_torso_2</title>
+<rect class="c-ink" x="3" y="3" width="10" height="11"/>
+<rect class="c-shadow" x="4" y="4" width="8" height="9"/>
+<rect class="c-ink" x="10" y="2" width="3" height="3"/>
+<rect class="c-olive" x="11" y="2" width="1" height="3"/>
+<rect class="c-ink" x="3" y="2" width="3" height="3"/>
+<rect class="c-olive" x="4" y="2" width="1" height="3"/>
+<rect class="c-dark" x="9" y="5" width="3" height="6"/>
+<rect class="c-steel" x="5" y="5" width="3" height="5"/>
+<rect class="c-light" x="6" y="5" width="2" height="1"/>
+<rect class="c-olive" x="5" y="7" width="3" height="1"/>
+<rect class="c-sand" x="10" y="10" width="2" height="1"/>
+<rect class="c-leaf" x="7" y="10" width="2" height="3"/>
+<rect class="c-olive" x="4" y="10" width="2" height="3"/>
+</g>
+
+<g id="avatar_armor_17_torso_3" transform="translate(200 110)">
+<title>avatar_armor_17_torso_3</title>
+<rect class="c-ink" x="3" y="3" width="10" height="11"/>
+<rect class="c-shadow" x="4" y="4" width="8" height="9"/>
+<rect class="c-ink" x="3" y="2" width="3" height="3"/>
+<rect class="c-olive" x="4" y="2" width="1" height="3"/>
+<rect class="c-ink" x="10" y="2" width="3" height="3"/>
+<rect class="c-olive" x="11" y="2" width="1" height="3"/>
+<rect class="c-steel" x="5" y="5" width="6" height="5"/>
+<rect class="c-light" x="5" y="5" width="5" height="1"/>
+<rect class="c-olive" x="6" y="7" width="4" height="1"/>
+<rect class="c-dark" x="4" y="10" width="8" height="3"/>
+<rect class="c-leaf" x="4" y="10" width="2" height="3"/>
+<rect class="c-olive" x="4" y="10" width="2" height="1"/>
+<rect class="c-sand" x="4" y="11" width="1" height="1"/>
+<rect class="c-leaf" x="7" y="10" width="2" height="3"/>
+<rect class="c-olive" x="7" y="10" width="2" height="1"/>
+<rect class="c-sand" x="7" y="11" width="1" height="1"/>
+<rect class="c-leaf" x="10" y="10" width="2" height="3"/>
+<rect class="c-olive" x="10" y="10" width="2" height="1"/>
+<rect class="c-sand" x="10" y="11" width="1" height="1"/>
+</g>
+
+<g id="avatar_armor_18_shoe_0" transform="translate(218 110)">
+<title>avatar_armor_18_shoe_0</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-shadow" x="2" y="3" width="4" height="2"/>
+<rect class="c-steel" x="2" y="3" width="2" height="1"/>
+<rect class="c-dark" x="5" y="4" width="1" height="1"/>
+<rect class="c-shadow" x="5" y="4" width="1" height="1"/>
+<rect class="c-steel" x="5" y="4" width="1" height="1"/>
+<rect class="c-light" x="3" y="3" width="2" height="1"/>
+<rect class="c-olive" x="2" y="4" width="1" height="1"/>
+</g>
+
+<g id="avatar_armor_18_shoe_1" transform="translate(236 110)">
+<title>avatar_armor_18_shoe_1</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-shadow" x="2" y="3" width="4" height="2"/>
+<rect class="c-steel" x="2" y="3" width="2" height="1"/>
+<rect class="c-dark" x="5" y="4" width="1" height="1"/>
+<rect class="c-dark" x="2" y="4" width="4" height="1"/>
+<rect class="c-light" x="3" y="3" width="2" height="1"/>
+<rect class="c-olive" x="2" y="4" width="1" height="1"/>
+</g>
+
+<g id="avatar_armor_18_shoe_2" transform="translate(254 110)">
+<title>avatar_armor_18_shoe_2</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-shadow" x="2" y="3" width="4" height="2"/>
+<rect class="c-steel" x="4" y="3" width="2" height="1"/>
+<rect class="c-dark" x="2" y="4" width="1" height="1"/>
+<rect class="c-shadow" x="2" y="4" width="1" height="1"/>
+<rect class="c-steel" x="2" y="4" width="1" height="1"/>
+<rect class="c-light" x="3" y="3" width="2" height="1"/>
+<rect class="c-olive" x="5" y="4" width="1" height="1"/>
+</g>
+
+<g id="avatar_armor_18_shoe_3" transform="translate(272 110)">
+<title>avatar_armor_18_shoe_3</title>
+<rect class="c-ink" x="2" y="2" width="4" height="4"/>
+<rect class="c-ink" x="1" y="3" width="6" height="3"/>
+<rect class="c-shadow" x="2" y="3" width="4" height="2"/>
+<rect class="c-steel" x="2" y="3" width="2" height="1"/>
+<rect class="c-dark" x="5" y="4" width="1" height="1"/>
+<rect class="c-light" x="3" y="3" width="2" height="1"/>
+<rect class="c-olive" x="2" y="4" width="1" height="1"/>
+</g>
+</svg>

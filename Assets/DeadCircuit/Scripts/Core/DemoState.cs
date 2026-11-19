@@ -24,7 +24,7 @@ namespace DeadCircuit
     [Serializable] public sealed class WorldState
     {
         internal WorldState SnapshotCopy() => (WorldState)MemberwiseClone();
-        public int version = 13, seed, width = 64, height = 64, nextId = 1, wave;
+        public int version = 14, seed, width = 64, height = 64, nextId = 1, wave;
         // Zero preserves pre-v11 progression; only new worlds opt into primitive research.
         public int primitiveVersion, primitiveResearch;
         // Zero preserves pre-v12 progression; only new worlds opt into water research.
@@ -62,6 +62,7 @@ namespace DeadCircuit
         internal PlayerState SnapshotCopy() => (PlayerState)MemberwiseClone();
         public string id = "", name = "幸存者", notice = "";
         public int seat, level = 1, xp, attributePoints = 2, skillPoints = 1, deaths;
+        public int appearance;
         public bool connected = true;
         public float x, y, aimX = 1f, aimY, hp = 100f, hunger = 100f, stamina = 100f;
         public float attackCooldown, interactCooldown, noticeUntil, lastDamageAt;

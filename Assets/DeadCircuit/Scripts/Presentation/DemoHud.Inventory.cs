@@ -70,6 +70,7 @@ namespace DeadCircuit
             Box("Inventory Detail Surface", card, 584, 208, 562, 368, Recessed);
             Box("Inventory Footer Rule", card, 22, 616, 1116, 1, Edge);
             Label("Inventory Heading", card, "随身背包 / 装备工坊", 22, 16, 830, 36, 25, Ink, FontStyles.Bold);
+            MakeAppearanceButton(card);
             Button("Close Inventory", card, "关闭 B / Esc", 1012, 18, 126, 32, () => SetPanel(inventory, false));
             equipmentSlots[0] = Button("Weapon Equipment Slot", card, "武器位", 22, 66, 408, 44, () => BrowseEquipmentSlot(0));
             equipmentSlots[1] = Button("Tool Equipment Slot", card, "工具位", 438, 66, 408, 44, () => BrowseEquipmentSlot(1));

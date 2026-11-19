@@ -170,6 +170,7 @@ namespace DeadCircuit
                 {
                     id = p.id, name = CleanName(p.name), notice = p.notice, seat = p.seat, level = p.level, xp = p.xp,
                     attributePoints = p.attributePoints, skillPoints = p.skillPoints, deaths = p.deaths, connected = p.connected,
+                    appearance = CopyAppearance(p.appearance, source.version),
                     x = p.x, y = p.y, aimX = 1f, aimY = 0f, hp = p.hp, hunger = p.hunger, stamina = p.stamina,
                     attackCooldown = p.attackCooldown, interactCooldown = p.interactCooldown, noticeUntil = p.noticeUntil, lastDamageAt = p.lastDamageAt,
                     items = CopyItems(p.items, InventoryLimit, "player inventory",itemCount), attributes = attributes, skills = skills

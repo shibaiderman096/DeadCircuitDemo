@@ -165,12 +165,15 @@ namespace DeadCircuit
             float angle=Mathf.Atan2(aim.y,aim.x)*Mathf.Rad2Deg+(gun ? rise*kick*strength : swing)*(flipY ? -1 : 1);
             var rotation=Quaternion.Euler(0,0,angle);
             look.weapon.flipX=false; look.weapon.flipY=flipY;
-            look.weapon.sortingOrder=order+6; look.weapon.color=gear.durability>0 ? Color.white : new Color(.45f,.43f,.4f);
+            bool modular=visual.avatar!=null && visual.avatar.root.gameObject.activeSelf;
+            look.weapon.sortingOrder=order+(modular ? (visual.avatar.facing==1 ? -7 : 3) : 6);
+            look.weapon.color=gear.durability>0 ? Color.white : new Color(.45f,.43f,.4f);
             look.weapon.transform.localScale=Vector3.one*scale; look.weapon.transform.localRotation=rotation;
             Vector2 grip=WeaponSpritePoint(look.weapon.sprite,new Vector2(20,20),64,32,flipY);
             // Rotate 180 degrees plus flipY when looking left: the stock stays behind
             // the hand, and the sights remain above the barrel in both hemispheres.
-            look.weapon.transform.localPosition=(Vector3)(aim*(.25f-travel*kick*strength)+Vector2.up*.43f)-rotation*(Vector3)(grip*scale);
+            Vector2 hand=modular ? visual.avatar.grip : aim*.25f+Vector2.up*.43f;
+            look.weapon.transform.localPosition=(Vector3)(hand-aim*(travel*kick*strength))-rotation*(Vector3)(grip*scale);
             Vector2 barrel=WeaponSocket(look,WeaponMuzzleSource(gear.kind));
             look.muzzleWorld=barrel;
             if (gun)
@@ -178,8 +181,8 @@ namespace DeadCircuit
                 // M24 art already includes its scope. Installed optics retain all
                 // authoritative stat effects without drawing a second scope.
                 if (gear.kind!=GearKind.PrecisionRifle)
-                    DrawWeaponPart(look.optic,WeaponPart(gear,0),WeaponSocket(look,WeaponOpticSource(gear.kind)),angle,flipY,.36f*scale,order+8);
-                DrawWeaponPart(look.muzzle,WeaponPart(gear,1),barrel,angle,flipY,.42f*scale,order+8);
+                    DrawWeaponPart(look.optic,WeaponPart(gear,0),WeaponSocket(look,WeaponOpticSource(gear.kind)),angle,flipY,.36f*scale,look.weapon.sortingOrder+1);
+                DrawWeaponPart(look.muzzle,WeaponPart(gear,1),barrel,angle,flipY,.42f*scale,look.weapon.sortingOrder+1);
                 if (look.muzzle.enabled) look.muzzleWorld=look.muzzle.transform.TransformPoint(
                     WeaponSpritePoint(look.muzzle.sprite,new Vector2(28,16),32,32,flipY));
                 DrawWeaponFlash(look,gear,age,angle,suppressed,order+10);

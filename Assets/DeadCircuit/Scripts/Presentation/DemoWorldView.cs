@@ -35,6 +35,7 @@ namespace DeadCircuit
             public float hp, maxHp, damageAt = -100f, walk, nextSpecialEffect;
             public int stamp;
             public ActorEquipment equipment;
+            public SurvivorRig avatar;
         }
 
         sealed class TraceVisual
@@ -767,14 +768,19 @@ namespace DeadCircuit
                 if (walking) v.walk += Time.unscaledDeltaTime*9f;
                 int frame=walking ? Mathf.FloorToInt(v.walk)%4 : 0;
                 int facing=Direction(new Vector2(state.aimX,state.aimY));
-                Sprite survivorArt=DemoArt.Get("survivor_"+facing+"_"+frame);
-                v.body.sprite=survivorArt ?? Art("actor_0_"+facing+"_"+frame);
-                v.body.transform.localScale=survivorArt!=null ? Vector3.one*1.5f : Vector3.one;
-                v.body.transform.localPosition=new Vector3(0,(survivorArt!=null ? .42f : 0)+(walking ? Mathf.Sin(v.walk*Mathf.PI)*.018f : 0),0);
-                v.body.color=DamageColor(v, state.hp > 0 ? Color.white : new Color(.48f,.53f,.50f,.65f));
+                bool modular = DrawPlayerAvatar(v, state, facing, walking);
+                if (!modular)
+                {
+                    v.body.enabled = true;
+                    Sprite survivorArt=DemoArt.Get("survivor_"+facing+"_"+frame);
+                    v.body.sprite=survivorArt ?? Art("actor_0_"+facing+"_"+frame);
+                    v.body.transform.localScale=survivorArt!=null ? Vector3.one*1.5f : Vector3.one;
+                    v.body.transform.localPosition=new Vector3(0,(survivorArt!=null ? .42f : 0)+(walking ? Mathf.Sin(v.walk*Mathf.PI)*.018f : 0),0);
+                    v.body.color=DamageColor(v, state.hp > 0 ? Color.white : new Color(.48f,.53f,.50f,.65f));
+                }
                 DrawPlayerEquipment(v, state);
                 v.body.transform.localRotation=Quaternion.Euler(0,0,state.hp<=0 ? -80 : 0);
-                Health(v,state.hp,state.hp>0,new Vector2(0,1.04f));
+                Health(v,state.hp,state.hp>0,new Vector2(0,modular ? 1.27f : 1.04f));
                 v.previous=Vector2.Lerp(v.previous,target,1-Mathf.Exp(-8f*Time.unscaledDeltaTime));
             }
             if (world.zombies != null) foreach (var state in world.zombies)
@@ -841,11 +847,13 @@ namespace DeadCircuit
             v.position=v.previous=p; v.root.transform.position=p; v.hp=hp; v.maxHp=maxHp;
             v.damageAt=-100; v.walk=0; v.nextSpecialEffect=0;
             v.body.color=v.detail.color=Color.white;
+            v.body.enabled=true;
             v.body.transform.localScale=Vector3.one;
             v.body.transform.localPosition=Vector3.zero;
             v.body.transform.localRotation=Quaternion.identity;
             v.body.flipX=false;
             if (v.equipment != null) v.equipment.SetVisible(false);
+            if (v.avatar != null) v.avatar.root.gameObject.SetActive(false);
             v.detail.enabled=v.arrow.enabled=v.lamp.enabled=v.cargo.enabled=v.bar.enabled=v.barBack.enabled=false;
             v.detail.transform.localPosition=Vector3.zero; v.detail.transform.localScale=Vector3.one; v.detail.transform.localRotation=Quaternion.identity;
             v.shadow.enabled=true;
