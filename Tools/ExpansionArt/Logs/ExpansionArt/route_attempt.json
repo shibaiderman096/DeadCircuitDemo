@@ -1,0 +1,11 @@
+{
+  "entrypoint": "C:\\Users\\man\\.codex\\skills\\generate2dmedia\\scripts\\route_media.py",
+  "real_request": true,
+  "fake_route_enabled": false,
+  "timeout_seconds": 120,
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "error: local:codex-cli: RATE_LIMIT: the Codex CLI reports a quota or rate limit (run 99448171854444199b3575556412839c)\r\n",
+  "overrides": "diagnostic/temp paths only; auth, API keys and model untouched",
+  "codeart_allowed": false
+}

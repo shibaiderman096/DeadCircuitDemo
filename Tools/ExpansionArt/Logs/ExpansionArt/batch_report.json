@@ -1,0 +1,289 @@
+{
+  "schema": "deadcircuit.expansion.batch.v1",
+  "status": "PARTIAL_IMAGE_ROUTE_BLOCKED",
+  "created_at_utc": "2026-11-19T09:29:17.986491+00:00",
+  "modified_asset_scope": "Assets/DeadCircuit/Resources/Audio/Expansion/",
+  "tool_scope": "Tools/ExpansionArt/",
+  "existing_art_characters_and_source_modified_by_this_batch": false,
+  "counts": {
+    "wav": 30,
+    "audio_categories": 26,
+    "required_audio_categories": 20,
+    "loop_audio": 3,
+    "png": 0,
+    "sprite_rectangles": 0
+  },
+  "audio": {
+    "source": "original procedural Python synthesis, not recordings",
+    "numeric_qa": "PASS",
+    "reproducibility": "PASS",
+    "sample_rate": 44100,
+    "channels": 1,
+    "format": "PCM16",
+    "max_peak": 0.869964599609375,
+    "clipped_files": 0,
+    "listening_test": "NOT_PERFORMED",
+    "game_integration": "NOT_PERFORMED"
+  },
+  "image_route": {
+    "attempts": 1,
+    "route": "local:codex-cli",
+    "cli_version": "0.162.1",
+    "model_returned": null,
+    "result": "RATE_LIMIT",
+    "exit_code": 1,
+    "artifacts": [],
+    "codeart_fallback_used": false,
+    "reason": "Fallback requires no-route exit 3; actual exit was 1."
+  },
+  "image_qa": {
+    "rgba_true_alpha": "NOT_RUN_NO_IMAGES",
+    "integral_32_64_grid": "NOT_RUN_NO_IMAGES",
+    "gutter": "NOT_RUN_NO_IMAGES",
+    "sheet_qc_spill": "NOT_RUN_NO_IMAGES",
+    "rectangles_pivots": "NOT_RUN_NO_IMAGES"
+  },
+  "doctor_diagnostics_verbatim": [
+    {
+      "id": "python.interpreter",
+      "status": "WARN",
+      "detail": "this is the Microsoft Store alias, which may install or launch a different Python",
+      "remedy": "install CPython from python.org, or run Forge with py -3"
+    },
+    {
+      "id": "python.path",
+      "status": "WARN",
+      "detail": "other python.exe on PATH: ~/AppData/Local/Programs/Python/Python312/python.exe; ~/AppData/Local/Microsoft/WindowsApps/python.exe",
+      "remedy": "PowerShell, cmd and Git Bash may resolve different interpreters; run Forge with the one shown in python.version"
+    },
+    {
+      "id": "deps.scipy",
+      "status": "WARN",
+      "detail": "not installed; needed for faster labelling and keying (forge_core falls back to numpy)",
+      "remedy": "\"C:\\Program Files\\WindowsApps\\OpenAI.CodexPrimaryRuntime.v26-1118-904-0_26.1118.904.0_x64__3k8sg7r9htsxt\\dependencies\\python\\python.exe\" -m pip install \"scipy>=1.11\""
+    },
+    {
+      "id": "deps.resvg-py",
+      "status": "MISSING",
+      "detail": "not installed; needed for codeart2d SVG rendering (PixelSpec needs only numpy and Pillow)",
+      "remedy": "\"C:\\Program Files\\WindowsApps\\OpenAI.CodexPrimaryRuntime.v26-1118-904-0_26.1118.904.0_x64__3k8sg7r9htsxt\\dependencies\\python\\python.exe\" -m pip install \"resvg-py>=0.5,<0.6\""
+    },
+    {
+      "id": "media.api.openai",
+      "status": "MISSING",
+      "detail": "OPENAI_API_KEY is not configured",
+      "remedy": "optional: set OPENAI_API_KEY in the environment or in the user config file to make the OpenAI API an image route (GPT Image)"
+    },
+    {
+      "id": "media.api.gemini",
+      "status": "MISSING",
+      "detail": "GOOGLE_API_KEY or GEMINI_API_KEY is not configured",
+      "remedy": "optional: set GOOGLE_API_KEY or GEMINI_API_KEY in the environment or in the user config file to make the Google Gemini API an image route (Gemini image models)"
+    },
+    {
+      "id": "media.api.xai",
+      "status": "MISSING",
+      "detail": "XAI_API_KEY is not configured",
+      "remedy": "optional: set XAI_API_KEY in the environment or in the user config file to make the xAI API an image and video route (Grok Imagine)"
+    },
+    {
+      "id": "media.api.byteplus",
+      "status": "MISSING",
+      "detail": "ARK_API_KEY is not configured",
+      "remedy": "optional: set ARK_API_KEY in the environment or in the user config file to make the BytePlus ModelArk API an image and video route (Seedream, Seedance)"
+    },
+    {
+      "id": "media.api.fal",
+      "status": "MISSING",
+      "detail": "FAL_KEY is not configured",
+      "remedy": "optional: set FAL_KEY in the environment or in the user config file to make the fal.ai API a reference-edit and video route (Kling, Veo, Luma, MiniMax, Wan, Vidu, LTX)"
+    },
+    {
+      "id": "cli.grok",
+      "status": "MISSING",
+      "detail": "Grok Build CLI not found on PATH or in $GROK_HOME/bin",
+      "remedy": "optional: install the Grok Build CLI and sign in, then verify a route"
+    },
+    {
+      "id": "route.codex-cli:image_gen",
+      "status": "UNKNOWN",
+      "detail": "PRESENT: no proof for this version",
+      "remedy": "nothing to do: the route's first successful route_media.py run records the proof; to verify ahead of time (one quota call; repeat after a CLI update): python \"<skill-dir>/scripts/forge_doctor.py\" --verify-route codex-cli --execute"
+    }
+  ],
+  "prohibited_operations_performed": {
+    "build": false,
+    "windows_game_launch": false,
+    "unity_play": false,
+    "gui": false,
+    "auth_model_or_key_change": false,
+    "remote_push": false
+  },
+  "pending": [
+    "All 19 gear and 7 parts images",
+    "UI panel/button/slot/windowframe textures",
+    "6 biome surfaces",
+    "wild shrubs and crops",
+    "12 building rooftop symbols",
+    "weather, sparks, muzzle, impact, explosion visual FX",
+    "real image sources / atlas.json / alpha-grid-spill QA",
+    "Main reviewer listening and integration"
+  ],
+  "resource_files": [
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/amb_machine_loop.wav",
+      "bytes": 352844,
+      "sha256": "d0ce2a47401e9dbd129219c6566aac8b49d57d36f8dc677109046c0ab47fb5e8"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/amb_rain_loop.wav",
+      "bytes": 529244,
+      "sha256": "e59fde3f8229cecda34060ef14805a90fd5fa38b8b53ac66b200518caa0684f3"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/amb_wind_loop.wav",
+      "bytes": 529244,
+      "sha256": "d67a1af470b6dc4bece00e5e478648802740aec79e1bb99d78fcaa3810106d4a"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/audio_manifest.json",
+      "bytes": 16941,
+      "sha256": "b2e687f7fe8145570976684ed1845a8097b132d812080fcd929684d0ba2a7b98"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/farm_harvest.wav",
+      "bytes": 51200,
+      "sha256": "8852c57a3a26283e1c250b0b2b7c28ff5148bacdcf8680e3fe70d3f14e876767"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/farm_sow.wav",
+      "bytes": 40616,
+      "sha256": "60fece4ddb87f3f9a2ec40dacc5e139b3752379e17263bcbdb5f675f6d0bc08f"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/farm_water.wav",
+      "bytes": 88244,
+      "sha256": "5a2d426aafaadf3c0f76e5da415f44160ce48fca803088c8eae9c3c9c8b027d1"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/footstep_grit.wav",
+      "bytes": 24740,
+      "sha256": "0be4ad9e3556fdc6b5b4bd4012403b0f98ea964736b62ca0adc9515052b4b0fa"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/fx_electric_spark.wav",
+      "bytes": 30032,
+      "sha256": "b716606feebc49d3ed70220518a742f59bcdb6d8f2675c10e7f1884e0c814727"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/fx_explosion.wav",
+      "bytes": 132344,
+      "sha256": "9c1c6df5b65852148682ae23706b936b08a407f429419d20884494bd867115ee"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/gather_ore.wav",
+      "bytes": 57374,
+      "sha256": "799a492850ec93189c3d15b9e8314aa6bdd016c09b8718cea3ae878f1751148d"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/gather_wood.wav",
+      "bytes": 42380,
+      "sha256": "9dd714bef53995721d184472af04c8be797ec30ecd50d8ffbd3f2a20f90b0b2b"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/gear_equip.wav",
+      "bytes": 33560,
+      "sha256": "7f29f716fedb8434c78bd8042e97e27561a8fffd3fd5063d79b6f9f29440c8ff"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/gear_unequip.wav",
+      "bytes": 37088,
+      "sha256": "19bf4e95b1111224c62d11e606ce9c13701ed18c37b2566514bd8b54994d441b"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/hit_flesh.wav",
+      "bytes": 28268,
+      "sha256": "7793b06a4081ad0e7c27845a43285b43b9c39267eab343e07aac573b2d045c70"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/hit_metal.wav",
+      "bytes": 57374,
+      "sha256": "d622c3698a67254cd559f72fbb82afb06ba7dfc98f7ce7fcc324a155f27b98fd"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/hit_wood.wav",
+      "bytes": 37088,
+      "sha256": "543099e967adfd1ad513960609b57e9430ce20eb734758cdf6254fadb94a6d74"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/item_pickup.wav",
+      "bytes": 40616,
+      "sha256": "39163043d6d38527d80317b49eb947093ab8113eb047b2792cd544f05b996bb4"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/reload_complete.wav",
+      "bytes": 42380,
+      "sha256": "e27bd395d3ed01eeec37e14dac28e1c0f69b89b6bfbe532eace4436222e58068"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/reload_start.wav",
+      "bytes": 54728,
+      "sha256": "9ea7ef89546134b77d0f10e4849091723eeef3baff1a719cdb7d3db2e6c012be"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/ui_click_01.wav",
+      "bytes": 7542,
+      "sha256": "5e543b02dd615264c86d1659e39c28bc2d223c102adbdc5b0db5c24e7cfa5b96"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/ui_click_02.wav",
+      "bytes": 7542,
+      "sha256": "aefd15138a63d74acb31a56e5b705d290e9e294b7893d3aaf1b5ee251acb07e6"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/ui_close.wav",
+      "bytes": 26504,
+      "sha256": "455a90c59ac78656a76b4a1b6d9572683ef059649930c67c3463d5de152a09e3"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/ui_denied.wav",
+      "bytes": 35324,
+      "sha256": "960e80a01106a992fa79d17679a91be03a7cfd29052c2f00d17b655002745b13"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/ui_open.wav",
+      "bytes": 31796,
+      "sha256": "74052bd60fb5f1e66544d156214df20a5ea648bed862192827c96e0489ef0f4f"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/weapon_knife_swing.wav",
+      "bytes": 31796,
+      "sha256": "deadd251f8343835ef1e4e7fc9d6e7e5675f1dbcdbeee1242bdb788465b15626"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/weapon_pistol.wav",
+      "bytes": 44144,
+      "sha256": "b2bdbd10a299ae10486dba632150202a564415c097c0bd975533997eed78867e"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/weapon_rifle.wav",
+      "bytes": 40616,
+      "sha256": "f7abd0f3d86cc8f953b0c949b0e236a2ab181a2daf48540e1b2955d699ac47a1"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/weapon_shotgun.wav",
+      "bytes": 75014,
+      "sha256": "63380659c59fa083b10fa3248e1f34590fa5562c0cac52e54dd8accf873cbba4"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/weapon_sniper.wav",
+      "bytes": 104120,
+      "sha256": "ba769012af6f1f8ff13ac034a3ef8996e584bf2cd8fa2b9c796a79343ba61801"
+    },
+    {
+      "path": "Assets/DeadCircuit/Resources/Audio/Expansion/weather_thunder.wav",
+      "bytes": 396944,
+      "sha256": "39bed8b981f74d61c742b4eeca7094a50ac4ca810e8f0d70e785aaa3dcb58ac0"
+    }
+  ]
+}

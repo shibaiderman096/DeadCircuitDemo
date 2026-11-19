@@ -1,0 +1,35 @@
+{
+  "purpose": "Read-only order snapshot, not delivered image assets",
+  "source": "Assets/DeadCircuit/Scripts/Core/EquipmentCatalog.cs",
+  "source_sha256": "e58464e0483a43b1223fa7c8b3d63eb67a51074e7fb649c2e407683297172245",
+  "GearNames": [
+    "石斧",
+    "石镐",
+    "钢斧",
+    "钢镐",
+    "扳手",
+    "战术刀",
+    "9mm手枪",
+    "霰弹枪",
+    "突击步枪",
+    "精密步枪",
+    "布头巾",
+    "皮夹克",
+    "工装裤",
+    "工装靴",
+    "钢盔",
+    "防弹背心",
+    "战术头盔",
+    "战术背心",
+    "战术靴"
+  ],
+  "PartNames": [
+    "红点瞄具",
+    "四倍瞄具",
+    "消音器",
+    "制退器",
+    "扩容弹匣",
+    "人体工学握把",
+    "精密枪管"
+  ]
+}

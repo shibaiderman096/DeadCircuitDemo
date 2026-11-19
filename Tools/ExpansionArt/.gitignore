@@ -1,0 +1,5 @@
+__pycache__/
+.forge/
+Logs/ExpansionArt/temp/
+Logs/ExpansionArt/state/
+Logs/ExpansionArt/codex/
