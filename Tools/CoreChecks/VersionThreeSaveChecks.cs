@@ -9,7 +9,19 @@ static partial class Checks
         var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,10,10);reactor.temperature=440;reactor.fuel=3;reactor.progress=.4f;reactor.items[(int)ItemKind.NuclearFuel]=2;reactor.items[(int)ItemKind.Coolant]=8;
         var processor=Add(state,BuildKind.NuclearProcessor,20,10);processor.recipe=90;processor.items[(int)ItemKind.UraniumOre]=2;processor.items[(int)ItemKind.Steel]=1;
         Add(state,BuildKind.Transformer,25,10).setting=1;state.produced[(int)ItemKind.NuclearWaste]=7;
-        var sim=new WorldSimulator(state);Builder(sim);return Saved(sim.State);
+        var sim=new WorldSimulator(state);Builder(sim);return AsVersionThree(Saved(sim.State));
+    }
+    // Actual pre-equipment JSON: 21 slots and no v4 equipment fields, never a v4
+    // graph relabeled as v3 with 25-slot inventories. Preserve the caller graph.
+    static WorldState AsVersionThree(WorldState source)
+    {
+        var state=Saved(source);state.version=3;state.produced=state.produced.Take(21).ToArray();
+        foreach(var b in state.buildings)b.items=b.items.Take(21).ToArray();
+        foreach(var p in state.players)p.items=p.items.Take(21).ToArray();
+        var root=JsonNode.Parse(Dump(state)).AsObject();
+        foreach(var p in root["players"].AsArray())
+            foreach(string field in new[] { "gear","parts","weaponId","toolId","activeSlot","armorIds","selectedAmmo","reloadRemaining","reloadingGearId","recoil","aiming","moving" })p.AsObject().Remove(field);
+        return JsonSerializer.Deserialize<WorldState>(root.ToJsonString(),Json);
     }
     static WorldState LegacyFixture(int version)
     {
@@ -22,6 +34,8 @@ static partial class Checks
         state.players.Add(new PlayerState { id="legacy",name="Legacy",seat=0,x=32,y=35,level=3,xp=10,attributePoints=4,skillPoints=2,attributes=new[] { 2,0,0,0,0 },skills=new[] { 1,0,0 },items=new[] { 11,12,13,14,15,16,17 } });
         state.cargo.Add(new CargoState { id=state.nextId++,fromId=belt.id,toId=chest.id,item=(int)ItemKind.Ammo,fromX=14,fromY=10,toX=15,toY=10,progress=.5f,duration=.4f });
         var root=JsonNode.Parse(Dump(state)).AsObject();root.Remove("era");root.Remove("produced");root.Remove("powerNetworks");
+        foreach(var p in root["players"].AsArray())
+            foreach(string field in new[] { "gear","parts","weaponId","toolId","activeSlot","armorIds","selectedAmmo","reloadRemaining","reloadingGearId","recoil","aiming","moving" })p.AsObject().Remove(field);
         foreach(var node in root["buildings"].AsArray())
         {
             foreach(string field in new[] { "recipe","setting","temperature","tripped","networkId","powerRatio","powerDemand","powerGeneration" })node.AsObject().Remove(field);
@@ -36,7 +50,7 @@ static partial class Checks
             Run($"v{version} seven-slot migration keeps layout inventory cargo and personal points and infers old solar as MV", () =>
             {
                 var legacy=LegacyFixture(version);var original=Dump(legacy);var oldCargo=JsonSerializer.Serialize(legacy.cargo,Json);var sim=new WorldSimulator(legacy);var restored=sim.State;
-                Require(restored.version==3 && restored.era==TechEra.MediumVoltage,"legacy solar did not infer MV in v3");Require(Dump(legacy)==original,"migration mutated caller-owned legacy data");
+                Require(restored.version==4 && restored.era==TechEra.MediumVoltage,"legacy solar did not infer MV in v4");Require(Dump(legacy)==original,"migration mutated caller-owned legacy data");
                 Require(restored.buildings.Count==legacy.buildings.Count,"migration dropped old buildings");
                 Require(restored.ground==legacy.ground,"migration changed old terrain");
                 foreach(var oldNode in legacy.nodes)
@@ -47,15 +61,15 @@ static partial class Checks
                 {
                     var old=legacy.buildings[i];var current=restored.buildings.Single(b=>b.id==old.id);
                     Require(current.kind==old.kind && current.x==old.x && current.y==old.y && current.rotation==old.rotation && current.footprintVersion==old.footprintVersion,"legacy layout changed");
-                    Require(current.items.Length==21 && current.items.Take(7).SequenceEqual(old.items) && current.items.Skip(7).All(n=>n==0),"legacy building inventory lost or invented items");
+                    Require(current.items.Length==25 && current.items.Take(7).SequenceEqual(old.items) && current.items.Skip(7).All(n=>n==0),"legacy building inventory lost or invented items");
                 }
                 var p=restored.players.Single();var source=legacy.players.Single();
-                Require(p.items.Length==21 && p.items.Take(7).SequenceEqual(source.items) && p.items.Skip(7).All(n=>n==0),"legacy player inventory migration");
+                Require(p.items.Length==25 && p.items.Take(7).SequenceEqual(source.items) && p.items.Skip(7).All(n=>n==0),"legacy player inventory migration");
                 Require(p.level==source.level && p.xp==source.xp && p.attributePoints==4 && p.skillPoints==2 && p.attributes.SequenceEqual(source.attributes) && p.skills.SequenceEqual(source.skills),"migration changed personal progression");
                 Require(JsonSerializer.Serialize(restored.cargo,Json)==oldCargo,"migration lost in-flight identity or timing");
                 var cargo=restored.cargo.Single();var sink=Building(sim,cargo.toId);int ammo=sink.items[(int)ItemKind.Ammo];var totals=ItemTotals(restored);
                 for(int tick=0;tick<6;tick++){sim.Step(WorldSimulator.FixedStep);Conserved(restored,totals);}Require(sink.items[(int)ItemKind.Ammo]==ammo+1,"migrated packet was not delivered exactly once");
-                var again=new WorldSimulator(Saved(restored));Require(again.State.era==TechEra.MediumVoltage && again.State.players[0].items.SequenceEqual(p.items),"migrated v3 second restore lost research or inventory");
+                var again=new WorldSimulator(Saved(restored));Require(again.State.version==4 && again.State.era==TechEra.MediumVoltage && again.State.players[0].items.SequenceEqual(p.items),"migrated v4 second restore lost research or inventory");
             });
         }
         Run("v3 restore isolates production research thermal recipe setting and player state", () =>
@@ -104,12 +118,12 @@ static partial class Checks
         Run("v3 validation rejects a selected recipe from an unresearched era", () =>
         {
             var state=Flat(era:TechEra.Primitive);var furnace=Add(state,BuildKind.StoneFurnace,10,10);furnace.recipe=13;furnace.items[(int)ItemKind.CrushedOre]=1;
-            Reject(state,"v3 primitive save accepted the locked Water recipe 13");
+            Reject(AsVersionThree(state),"v3 primitive save accepted the locked Water recipe 13");
         });
         Run("v3 validation rejects an HV converter setting saved before HV research", () =>
         {
             var state=Flat(era:TechEra.MediumVoltage);Add(state,BuildKind.Transformer,10,10).setting=1;
-            Reject(state,"v3 MV save accepted the locked HV-to-MV converter setting");
+            Reject(AsVersionThree(state),"v3 MV save accepted the locked HV-to-MV converter setting");
         });
         Run("v3 validation rejects invalid power tier summaries and newly invalid cargo items", () =>
         {
@@ -117,7 +131,7 @@ static partial class Checks
             {var invalid=VersionThreeFixture();Require(invalid.powerNetworks.Count>0,"power-corruption fixture has no network");corrupt(invalid.powerNetworks[0]);Reject(invalid,"corrupt energy summary accepted");}
             var state=Flat(era:TechEra.Nuclear);var from=Add(state,BuildKind.Belt,10,10);from.items[20]=1;var to=Add(state,BuildKind.Chest,11,10);var sim=new WorldSimulator(state);AwaitCargo(sim,from.id,to.id);
             var valid=new WorldSimulator(Saved(sim.State));Require(valid.State.cargo.Single().item==20,"valid new tin cargo rejected by v3");
-            foreach(int item in new[] { -1,21,int.MaxValue }){var invalid=Saved(sim.State);invalid.cargo[0].item=item;Reject(invalid,"invalid v3 cargo item accepted");}
+            foreach(int item in new[] { -1,21,int.MaxValue }){var invalid=AsVersionThree(sim.State);invalid.cargo[0].item=item;Reject(invalid,"invalid v3 cargo item accepted");}
         });
     }
 }

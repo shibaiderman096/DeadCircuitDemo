@@ -10,12 +10,13 @@ namespace DeadCircuit
         private static WorldState CopyAndValidate(WorldState source)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
-            SaveCheck(source.version >= 1 && source.version <= 3, "unsupported version");
+            SaveCheck(source.version >= 1 && source.version <= 4, "unsupported version");
             bool legacy=source.version<3;
+            int itemCount=legacy ? 7 : source.version==3 ? 21 : DemoCatalog.ItemCount;
             if(!legacy)
             {
                 SaveCheck((int)source.era>=0 && (int)source.era<=6, "technology era");
-                SaveCheck(source.produced!=null && source.produced.Length==DemoCatalog.ItemCount, "production counters length");
+                SaveCheck(source.produced!=null && source.produced.Length==itemCount, "production counters length");
                 foreach(int n in source.produced) SaveCheck(n>=0, "production counter");
                 SaveCheck(source.powerNetworks!=null && source.powerNetworks.Count<=MaxBuildings, "power networks");
                 foreach(var n in source.powerNetworks)
@@ -42,7 +43,7 @@ namespace DeadCircuit
             SaveCheck(source.announcement != null && source.announcement.Length <= 512, "announcement");
             var s = new WorldState
             {
-                version = 3, era = legacy ? TechEra.Primitive : source.era, produced = legacy ? new int[DemoCatalog.ItemCount] : (int[])source.produced.Clone(), seed = source.seed, width = source.width, height = source.height,
+                version = 4, era = legacy ? TechEra.Primitive : source.era, produced = legacy ? new int[DemoCatalog.ItemCount] : CopyItems(source.produced,int.MaxValue,"production counters",itemCount), seed = source.seed, width = source.width, height = source.height,
                 nextId = source.nextId, wave = source.wave, tick = source.tick, elapsed = source.elapsed,
                 nextWaveAt = source.nextWaveAt, dayLength = source.dayLength, ground = source.ground,
                 announcement = source.announcement, announcementUntil = source.announcementUntil,
@@ -89,7 +90,7 @@ namespace DeadCircuit
                     if(r!=null) SaveRange(b.progress,0f,r.duration,"recipe progress");
                     if(b.kind==BuildKind.Reactor) SaveRange(b.progress,0f,1.001f,"reactor coolant reserve");
                 }
-                int[] items=CopyItems(b.items,BufferLimit,"machine inventory",legacy);
+                int[] items=CopyItems(b.items,BufferLimit,"machine inventory",itemCount);
                 SaveCheck(b.kind!=BuildKind.Belt || TotalItems(items)<=2,"belt capacity");
                 for(int i=0;i<DemoCatalog.ItemCount;i++) if(items[i]!=0) SaveCheck(TechCatalog.Stores(b.kind,i),"incompatible machine inventory");
                 s.buildings.Add(new BuildingState { id=b.id,x=b.x,y=b.y,kind=b.kind,rotation=b.rotation,footprintVersion=b.footprintVersion,hp=b.hp,progress=b.progress,fuel=b.fuel,items=items,recipe=legacy ? 0 : b.recipe,setting=legacy ? 0 : b.setting,temperature=legacy ? 20f : b.temperature,tripped=!legacy && b.tripped });
@@ -106,7 +107,7 @@ namespace DeadCircuit
             if (source.cargo != null) foreach (CargoState c in source.cargo)
             {
                 SaveCheck(c != null, "null cargo"); CheckEntityId(c.id, entityIds, ref highestId);
-                SaveCheck(c.item >= 0 && c.item < (legacy ? 7 : DemoCatalog.ItemCount) && c.fromId != c.toId && sources.Add(c.fromId), "cargo item/source");
+                SaveCheck(c.item >= 0 && c.item < itemCount && c.fromId != c.toId && sources.Add(c.fromId), "cargo item/source");
                 BuildingState from, to;
                 SaveCheck(byId.TryGetValue(c.fromId, out from) && byId.TryGetValue(c.toId, out to), "cargo endpoints");
                 to = byId[c.toId]; from = byId[c.fromId];
@@ -156,8 +157,9 @@ namespace DeadCircuit
                     attributePoints = p.attributePoints, skillPoints = p.skillPoints, deaths = p.deaths, connected = p.connected,
                     x = p.x, y = p.y, aimX = 1f, aimY = 0f, hp = p.hp, hunger = p.hunger, stamina = p.stamina,
                     attackCooldown = p.attackCooldown, interactCooldown = p.interactCooldown, noticeUntil = p.noticeUntil, lastDamageAt = p.lastDamageAt,
-                    items = CopyItems(p.items, InventoryLimit, "player inventory",legacy), attributes = attributes, skills = skills
+                    items = CopyItems(p.items, InventoryLimit, "player inventory",itemCount), attributes = attributes, skills = skills
                 };
+                if(source.version==4) CopyEquipment(p,clone,entityIds,ref highestId);
                 Aim(clone, p.aimX, p.aimY); s.players.Add(clone);
             }
             foreach (ZombieState z in source.zombies)
@@ -178,8 +180,15 @@ namespace DeadCircuit
                 if (t.until > source.elapsed) s.traces.Add(new TraceState { x = t.x, y = t.y, endX = t.endX, endY = t.endY, until = t.until, hostile = t.hostile });
             }
             SaveCheck(source.nextId > 0 && source.nextId < int.MaxValue - 1 && highestId < int.MaxValue - 2, "next entity id");
+            if(source.version==4) SaveCheck(source.nextId>highestId,"next entity id must exceed all equipment and world ids");
             s.nextId = Math.Max(source.nextId, highestId + 1);
             if(legacy) EnsureMigratedResources(s);
+            if(source.version<4) foreach(PlayerState p in s.players)
+            {
+                GiveStartingGear(s,p,true);
+                p.notice="旧存档已迁移：物资与成长保留；补发空匣基础手枪，请装备后装填原9mm弹。";
+                p.noticeUntil=s.elapsed+12f;
+            }
             return s;
         }
 
@@ -188,12 +197,63 @@ namespace DeadCircuit
         private static void CheckCell(int x, int y) { SaveCheck(x >= 0 && x < 64 && y >= 0 && y < 64, "entity cell"); }
         private static void CheckPosition(float x, float y) { SaveRange(x, -0.49f, 63.49f, "entity x"); SaveRange(y, -0.49f, 63.49f, "entity y"); }
         private static void CheckEntityId(int id, HashSet<int> ids, ref int highest) { SaveCheck(id > 0 && id < int.MaxValue - 2 && ids.Add(id), "duplicate/invalid entity id"); highest = Math.Max(highest, id); }
-        private static int[] CopyItems(int[] items,int maximum,string label,bool legacy)
+        private static int[] CopyItems(int[] items,int maximum,string label,int itemCount)
         {
-            SaveCheck(items!=null && (items.Length==DemoCatalog.ItemCount || (legacy && items.Length==7)),label+" length");
+            SaveCheck(items!=null && items.Length==itemCount,label+" length");
             var result=new int[DemoCatalog.ItemCount];
             for(int i=0;i<items.Length;i++) { SaveCheck(items[i]>=0 && items[i]<=maximum,label+" value"); result[i]=items[i]; }
             return result;
+        }
+        private static void CopyEquipment(PlayerState source,PlayerState target,HashSet<int> ids,ref int highestId)
+        {
+            SaveCheck(source.gear!=null && source.gear.Count<=EquipmentCatalog.MaxGear,"gear list");
+            target.parts=CopyStats(source.parts,EquipmentCatalog.PartNames.Length,InventoryLimit,"part inventory");
+            foreach(GearState g in source.gear)
+            {
+                SaveCheck(g!=null,"null gear"); CheckEntityId(g.id,ids,ref highestId);
+                SaveCheck((int)g.kind>=0 && (int)g.kind<EquipmentCatalog.GearNames.Length,"gear kind");
+                SaveCheck(g.durability>=0 && g.durability<=100,"gear durability");
+                SaveCheck(g.attachments!=null && g.attachments.Length==EquipmentCatalog.SlotNames.Length,"attachment slots");
+                for(int i=0;i<g.attachments.Length;i++)
+                {
+                    int part=g.attachments[i];
+                    SaveCheck(part>=-1 && part<EquipmentCatalog.PartNames.Length,"attachment kind");
+                    if(part>=0) SaveCheck((int)EquipmentCatalog.Part((PartKind)part).slot==i && EquipmentCatalog.PartCompatible(g.kind,(PartKind)part),"attachment compatibility/slot");
+                }
+                bool gun=EquipmentCatalog.IsGun(g.kind);
+                SaveCheck(g.magazine>=0 && g.magazine<=EquipmentCatalog.Stats(g).magazine,"magazine capacity");
+                SaveCheck(gun ? EquipmentCatalog.AmmoCompatible(g.kind,g.loadedAmmo) : g.loadedAmmo==ItemKind.Ammo && g.magazine==0,"loaded ammunition");
+                target.gear.Add(new GearState { id=g.id,kind=g.kind,durability=g.durability,magazine=g.magazine,loadedAmmo=g.loadedAmmo,attachments=(int[])g.attachments.Clone() });
+            }
+            SaveCheck(source.activeSlot>=0 && source.activeSlot<=2 && source.weaponId>=0 && source.toolId>=0,"equipped slots");
+            GearState weapon=EquipmentCatalog.Find(target,source.weaponId), tool=EquipmentCatalog.Find(target,source.toolId);
+            SaveCheck(source.weaponId==0 || weapon!=null && !EquipmentCatalog.Gear(weapon.kind).tool && !EquipmentCatalog.IsArmor(weapon.kind),"weapon ownership/type");
+            SaveCheck(source.toolId==0 || tool!=null && EquipmentCatalog.Gear(tool.kind).tool,"tool ownership/type");
+            SaveCheck(source.armorIds!=null && source.armorIds.Length==4,"armor slots");
+            var worn=new HashSet<int>();
+            for(int i=0;i<source.armorIds.Length;i++)
+            {
+                int id=source.armorIds[i];
+                SaveCheck(id>=0,"negative armor id");
+                if(id==0) continue;
+                GearState armor=EquipmentCatalog.Find(target,id);
+                SaveCheck(worn.Add(id) && armor!=null && EquipmentCatalog.ArmorSlot(armor.kind)==i,"armor ownership/duplicate/slot");
+            }
+            target.armorIds=(int[])source.armorIds.Clone();
+            SaveCheck(EquipmentCatalog.IsAmmo(source.selectedAmmo),"selected ammunition");
+            SaveRange(source.recoil,0f,1f,"recoil"); SaveRange(source.reloadRemaining,0f,5f,"reload timer");
+            target.weaponId=source.weaponId; target.toolId=source.toolId; target.activeSlot=source.activeSlot; target.selectedAmmo=source.selectedAmmo;
+            target.recoil=source.recoil; target.aiming=source.aiming; target.moving=source.moving;
+            SaveCheck(source.reloadingGearId>=0,"reload gear id");
+            if(source.reloadingGearId==0) SaveCheck(source.reloadRemaining==0f,"orphaned reload timer");
+            else
+            {
+                GearState loading=EquipmentCatalog.Equipped(target);
+                SaveCheck(source.connected && source.hp>0f && loading!=null && loading.id==source.reloadingGearId && EquipmentCatalog.IsGun(loading.kind) && loading.durability>0,"reload ownership/active gear");
+                SaveCheck(EquipmentCatalog.AmmoCompatible(loading.kind,source.selectedAmmo) && (loading.magazine==0 || loading.loadedAmmo==source.selectedAmmo),"reload ammunition");
+                SaveCheck(loading.magazine<EquipmentCatalog.Stats(loading).magazine && source.reloadRemaining>0f && source.reloadRemaining<=EquipmentCatalog.Stats(loading).reload+.001f,"reload state");
+            }
+            target.reloadRemaining=source.reloadRemaining; target.reloadingGearId=source.reloadingGearId;
         }
         private static int[] CopyStats(int[] values, int length, int maximum, string label)
         {

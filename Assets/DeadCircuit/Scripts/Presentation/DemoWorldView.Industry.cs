@@ -9,7 +9,9 @@ namespace DeadCircuit
         void CreateIndustryArt()
         {
             const int size = 64, columns = 7, atlasWidth = size * columns;
-            var pixels = new Color32[atlasWidth * size * 5];
+            int tiles = (int)BuildKind.CoolingTower - (int)BuildKind.Workbench + 1 + DemoCatalog.ItemCount - 7;
+            int rows = (tiles + columns - 1) / columns;
+            var pixels = new Color32[atlasWidth * size * rows];
             var ink = new Color32(23, 36, 36, 255);
             var edge = new Color32(91, 113, 105, 255);
             var metal = new Color32(139, 157, 148, 255);
@@ -171,7 +173,7 @@ namespace DeadCircuit
                     if(canister && (y==24 || y==25 || y==38 || y==39)) pixels[(by+y)*atlasWidth+bx+x]=metal;
                 }
             }
-            industryTexture=new Texture2D(atlasWidth,size*5,TextureFormat.RGBA32,false)
+            industryTexture=new Texture2D(atlasWidth,size*rows,TextureFormat.RGBA32,false)
             {name="DeadCircuit industrial pixels",filterMode=FilterMode.Point,wrapMode=TextureWrapMode.Clamp};
             industryTexture.SetPixels32(pixels); industryTexture.Apply(false,true);
             tile=0;

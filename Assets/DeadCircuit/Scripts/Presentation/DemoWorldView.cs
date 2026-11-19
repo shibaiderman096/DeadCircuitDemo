@@ -86,7 +86,9 @@ namespace DeadCircuit
             new Color(.65f,.73f,.78f), new Color(.29f,.72f,.53f), new Color(.86f,.86f,.74f),
             new Color(.45f,.66f,.90f), new Color(.59f,.82f,.32f), new Color(.84f,.92f,.28f),
             new Color(.32f,.80f,.92f), new Color(.70f,.66f,.25f), new Color(.64f,.62f,.55f),
-            new Color(.57f,.67f,.73f), new Color(.79f,.85f,.84f)
+            new Color(.57f,.67f,.73f), new Color(.79f,.85f,.84f),
+            new Color(.88f,.72f,.36f), new Color(.80f,.30f,.24f),
+            new Color(.65f,.83f,.92f), new Color(.64f,.80f,.40f)
         };
         static readonly Color32[] MapColors =
         {
@@ -106,7 +108,7 @@ namespace DeadCircuit
         Volume volume;
         VolumeProfile volumeProfile;
         readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>();
-        readonly Sprite[] itemSprites = new Sprite[21];
+        readonly Sprite[] itemSprites = new Sprite[DemoCatalog.ItemCount];
         readonly Dictionary<int, Visual> nodes = new Dictionary<int, Visual>();
         readonly Dictionary<int, Visual> buildings = new Dictionary<int, Visual>();
         readonly Dictionary<int, Visual> zombies = new Dictionary<int, Visual>();
@@ -408,6 +410,7 @@ namespace DeadCircuit
             foreach (var pair in players) if (pair.Value.stamp != stamp) removePlayers.Add(pair.Key);
             foreach (var key in removePlayers) { Release(players[key]); players.Remove(key); }
             DrawTraces(world);
+            DrawWeaponReticle(local);
             DrawPreview(world, local);
             DrawPowerLinks();
             DrawCargo(world);
@@ -903,6 +906,7 @@ namespace DeadCircuit
             observedWorld=null; observedTick=-1; observedElapsed=-1; observedAt=0; visualTime=0;
             ghost.enabled=ghostArrow.enabled=footprint.enabled=ghostRange.enabled=ghostLinkRange.enabled=hoverFootprint.enabled=hoverRing.enabled=false;
             foreach (var p in particles) p.sprite.enabled=false;
+            foreach (var line in weaponReticle) if (line != null) line.enabled=false;
             damagePulse=0;
         }
 

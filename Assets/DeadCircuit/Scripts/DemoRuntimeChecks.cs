@@ -13,7 +13,7 @@ using UnityEngine.UI;
 namespace DeadCircuit
 {
     // Opt-in native runtime checks. No desktop control or always-on command server.
-    public sealed class DemoRuntimeChecks : MonoBehaviour
+    public sealed partial class DemoRuntimeChecks : MonoBehaviour
     {
         string output;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -133,6 +133,7 @@ namespace DeadCircuit
             yield return null;
             yield return Capture("inventory-industrial");
             Click("Close Inventory");
+            yield return VerifyEquipment(bridge);
             // A deterministic factory fixture verifies the new technology gates did not
             // regress powered production, footprint interaction or smooth cargo rendering.
             PrepareQaPlot(bridge.World, true);
@@ -187,6 +188,15 @@ namespace DeadCircuit
             yield return Capture("machine");
             yield return PointAtWorld(32, 34);
             Require(!Active("Mouse Inspector"), "empty ground hides inspector");
+            p.x=32; p.y=29;
+            bridge.Send(new PlayerCommand { action="recipe",x=31,y=30,arg=52 });
+            yield return new WaitForSecondsRealtime(.3f);
+            bridge.Send(new PlayerCommand { action="interact",x=31,y=30 });
+            float ammoDeadline=Time.realtimeSinceStartup+9f;
+            while(chest.items[(int)ItemKind.RifleAmmo]==0 && Time.realtimeSinceStartup<ammoDeadline) yield return null;
+            Require(chest.items[(int)ItemKind.RifleAmmo]>0,"new rifle ammunition is manufactured and physically transported into storage");
+            yield return PointAtWorld(32,34);
+            yield return Capture("ammunition-production");
             Click("Open Session");
             yield return null;
             Require(Active("Session Modal") && bridge.GetComponent<DemoHud>().CapturesInput, "session menu consumes world input");
@@ -199,10 +209,11 @@ namespace DeadCircuit
             Click("Load Game");
             yield return new WaitForSecondsRealtime(.5f);
             Require(bridge.IsRunning && bridge.World.era == TechEra.Nuclear && bridge.LocalPlayer.items.Length == DemoCatalog.ItemNames.Length && bridge.LocalPlayer.attributes[1] == 1 && bridge.LocalPlayer.skills[0] == 1 && bridge.World.buildings.Count == buildings, "load game button restores world technology, materials, personal growth and factory");
+            VerifyRestoredEquipment(bridge.LocalPlayer);
             yield return PointAtWorld(32, 34);
             RequireDefaultHud();
             yield return Capture("restored");
-            Debug.Log("DEMO_RUNTIME_QA_PASS menu=compactHud=inventory=help=keyboard=growth=technology=sevenEras=researchGates=build=inspection=factory=powerGrid=footprints=smoothCargo=save=load=true");
+            Debug.Log("DEMO_RUNTIME_QA_PASS menu=compactHud=inventory=help=keyboard=growth=technology=sevenEras=researchGates=build=inspection=factory=powerGrid=footprints=smoothCargo=equipment=attachments=reload=weaponDamage=save=load=true");
             Application.Quit(0);
         }
         static BuildKind[] QaPrerequisites(TechEra era)

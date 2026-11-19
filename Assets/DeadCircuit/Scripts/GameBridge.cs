@@ -30,6 +30,7 @@ namespace DeadCircuit
         public string PlayerName { get; set; } = "幸存者";
         public BuildKind? BuildSelection { get; set; }
         public int BuildRotation { get; set; }
+        public bool WorldInputBlocked => hud != null && hud.CapturesInput;
         public string SavePath => Path.Combine(Application.persistentDataPath, smokeHost || smokeClient ? "smoke-world-v1.json" : qaRun ? "qa-world-v1.json" : "world-v1.json");
         public Vector2 MouseWorld
         {
@@ -58,6 +59,8 @@ namespace DeadCircuit
         bool qaRun;
         float smokeStarted, smokeFirstX, smokePeerFirstX = float.NaN;
         bool smokeMoved, smokeSawPeer, smokeSawGrid, smokeSawCargo, smokeSawResearch, smokeResearchSent;
+        bool smokeSawEquipment;
+        int smokeEquipmentStage;
         long lastSnapshotTick = -1;
 #if DEADCIRCUIT_NETCODE
         NetworkManager network;
@@ -182,6 +185,7 @@ namespace DeadCircuit
         {
             accumulator = snapshotClock = inputClock = autoSaveClock = 0;
             smokeMoved = smokeSawPeer = smokeSawGrid = smokeSawCargo = smokeSawResearch = smokeResearchSent = false;
+            smokeSawEquipment = false; smokeEquipmentStage = 0;
             smokeFirstX = LocalPlayer?.x ?? 0;
         }
 
@@ -198,7 +202,7 @@ namespace DeadCircuit
                 using (var writer = new FastBufferWriter(4096, Allocator.Temp))
                 {
                     writer.WriteValueSafe(json);
-                    network.CustomMessagingManager.SendNamedMessage("dc.cmd.v3", NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableSequenced);
+                    network.CustomMessagingManager.SendNamedMessage("dc.cmd.v4", NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableSequenced);
                 }
             }
 #endif
@@ -248,7 +252,13 @@ namespace DeadCircuit
                 var hotbar = TechCatalog.Hotbar(World.era);
                 for (int i = 0; i < keys.Length && i < hotbar.Length; i++)
                     if (keys[i].wasPressedThisFrame && TechCatalog.IsUnlocked(World, hotbar[i])) BuildSelection = hotbar[i];
-                if (keyboard.rKey.wasPressedThisFrame) BuildRotation = (BuildRotation + 1) % 4;
+                if (keyboard.rKey.wasPressedThisFrame)
+                {
+                    if (BuildSelection.HasValue) BuildRotation = (BuildRotation + 1) % 4;
+                    else Action("reload");
+                }
+                if (keyboard.qKey.wasPressedThisFrame && !BuildSelection.HasValue)
+                    Action("switch", player.activeSlot == 0 ? 1 : 0);
                 if (mouse.rightButton.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame) BuildSelection = null;
                 if (keyboard.eKey.wasPressedThisFrame) Action("interact");
                 if (keyboard.fKey.wasPressedThisFrame) Action("eat");
@@ -267,7 +277,8 @@ namespace DeadCircuit
             }
             if (inputClock >= StepSeconds)
             {
-                Send(new PlayerCommand { moveX = move.x, moveY = move.y, aimX = aim.x, aimY = aim.y, sprint = !blocked && keyboard.leftShiftKey.isPressed });
+                Send(new PlayerCommand { moveX = move.x, moveY = move.y, aimX = aim.x, aimY = aim.y, sprint = !blocked && keyboard.leftShiftKey.isPressed,
+                    aiming = !blocked && !BuildSelection.HasValue && mouse.rightButton.isPressed });
                 inputClock = 0;
             }
         }
@@ -276,7 +287,8 @@ namespace DeadCircuit
         {
             Vector2 point = MouseWorld;
             Send(new PlayerCommand { action = action, x = Mathf.RoundToInt(point.x), y = Mathf.RoundToInt(point.y), arg = arg,
-                rotation = BuildRotation, aimX = point.x - (LocalPlayer?.x ?? 0), aimY = point.y - (LocalPlayer?.y ?? 0) });
+                rotation = BuildRotation, aimX = point.x - (LocalPlayer?.x ?? 0), aimY = point.y - (LocalPlayer?.y ?? 0),
+                aiming = !BuildSelection.HasValue && Mouse.current != null && Mouse.current.rightButton.isPressed });
         }
 
         public void Save() => SaveInternal(true);
@@ -342,7 +354,7 @@ namespace DeadCircuit
         void OnApplicationQuit() { if (IsHost) SaveInternal(false); }
 
 #if DEADCIRCUIT_NETCODE
-        [Serializable] sealed class JoinTicket { public int version = 3; public string id, name; }
+        [Serializable] sealed class JoinTicket { public int version = 4; public string id, name; }
         byte[] TicketBytes() => Encoding.UTF8.GetBytes(JsonUtility.ToJson(new JoinTicket { id = profileId, name = CleanName(PlayerName) }));
         void SetupNetwork()
         {
@@ -357,8 +369,8 @@ namespace DeadCircuit
         }
         void RegisterMessages()
         {
-            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.cmd.v3", ReceiveCommand);
-            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.world.v3", ReceiveWorld);
+            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.cmd.v4", ReceiveCommand);
+            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.world.v4", ReceiveWorld);
         }
         void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
@@ -368,14 +380,18 @@ namespace DeadCircuit
             {
                 if (request.Payload == null || request.Payload.Length > 512) throw new InvalidDataException("加入资料无效");
                 var ticket = JsonUtility.FromJson<JoinTicket>(Encoding.UTF8.GetString(request.Payload));
-                if (ticket == null || ticket.version != 3 || !Guid.TryParse(ticket.id, out var guid)) throw new InvalidDataException("Demo 版本不一致");
+                if (ticket == null || ticket.version != 4 || !Guid.TryParse(ticket.id, out var guid)) throw new InvalidDataException("Demo 版本不一致");
                 string id = guid.ToString("N");
                 if (request.ClientNetworkId != NetworkManager.ServerClientId && peers.Values.Contains(id)) throw new InvalidDataException("此角色已在游戏中，请关闭重复连接");
                 if (peers.Count >= 4) throw new InvalidDataException("房间已满（最多4人）");
                 if (World.players.Count >= WorldSimulator.MaxPlayers && World.players.All(p => p.id != id)) throw new InvalidDataException("此世界已有8个存档角色，请新建世界");
                 peers[request.ClientNetworkId] = id;
                 var joined = simulator.AddPlayer(id, CleanName(ticket.name));
-                if (smokeHost) for (int i = 0; i < joined.items.Length; i++) joined.items[i] = 60;
+                if (smokeHost)
+                {
+                    for (int i = 0; i < joined.items.Length; i++) joined.items[i] = 60;
+                    joined.x = 25; joined.y = 27;
+                }
                 response.Approved = true;
             }
             catch (Exception e) { response.Approved = false; response.Reason = e.Message; }
@@ -444,7 +460,7 @@ namespace DeadCircuit
                         output.Write(buffer, 0, read);
                     }
                     var next = JsonUtility.FromJson<WorldState>(Encoding.UTF8.GetString(output.ToArray()));
-                    if (next == null || next.version != 3 || next.tick < lastSnapshotTick || next.width != 64 || next.height != 64 || next.ground?.Length != 4096) return;
+                    if (next == null || next.version != 4 || next.tick < lastSnapshotTick || next.width != 64 || next.height != 64 || next.ground?.Length != 4096) return;
                     lastSnapshotTick = next.tick;
                     World = next;
                     if (!IsRunning) { IsRunning = true; connecting = false; ResetClocks(); }
@@ -472,7 +488,7 @@ namespace DeadCircuit
                 writer.WriteBytesSafe(bytes);
                 foreach (ulong client in network.ConnectedClientsIds)
                     if (client != NetworkManager.ServerClientId)
-                        network.CustomMessagingManager.SendNamedMessage("dc.world.v3", client, writer, NetworkDelivery.ReliableFragmentedSequenced);
+                        network.CustomMessagingManager.SendNamedMessage("dc.world.v4", client, writer, NetworkDelivery.ReliableFragmentedSequenced);
             }
 #endif
         }
@@ -524,11 +540,12 @@ namespace DeadCircuit
             if (IsRunning && LocalPlayer != null)
             {
                 if (World.players.Count(p => p.connected) >= 2) smokeSawPeer = true;
-                if (World.version == 3 && World.powerNetworks != null && World.powerNetworks.Count > 0 &&
+                if (World.version == 4 && World.powerNetworks != null && World.powerNetworks.Count > 0 &&
                     World.buildings.Any(b => b.kind == BuildKind.Assembler && DemoCatalog.Width(b) == 3 && b.powerRatio > 0)) smokeSawGrid = true;
                 if (World.cargo != null && World.cargo.Any(c => c.progress > 0 && c.progress < 1)) smokeSawCargo = true;
                 if (World.era >= TechEra.MediumVoltage) smokeSawResearch = true;
-                if (smokeClient && age > 4 && !smokeResearchSent)
+                if (smokeClient) SmokeEquipment(age);
+                if (smokeClient && age > 7 && !smokeResearchSent && LocalPlayer.interactCooldown <= 0)
                 {
                     smokeResearchSent = true;
                     Send(new PlayerCommand { action = "research", arg = (int)TechEra.MediumVoltage });
@@ -538,21 +555,55 @@ namespace DeadCircuit
                     var peer = World.players.Find(p => p.id == "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
                     if (peer != null)
                     {
+                        if (HasSmokeEquipment(peer)) smokeSawEquipment = true;
                         if (float.IsNaN(smokePeerFirstX)) smokePeerFirstX = peer.x;
                         else if (Mathf.Abs(peer.x - smokePeerFirstX) > .5f) smokeMoved = true;
                     }
                 }
-                if (smokeClient && age < 8 && inputClock >= StepSeconds)
+                if (smokeClient && age > 10 && age < 14 && inputClock >= StepSeconds)
                 { Send(new PlayerCommand { moveX = 1, aimX = 1 }); inputClock = 0; }
                 if (Mathf.Abs(LocalPlayer.x - smokeFirstX) > .5f) smokeMoved = true;
-                if (smokeClient && age >= 8 && age < 8.2f) Send(new PlayerCommand());
-                if (smokeHost && age > 10 && age < 10.2f) SaveInternal(false);
+                if (smokeClient && age >= 14 && age < 14.2f) Send(new PlayerCommand());
+                if (smokeHost && age > 16 && age < 16.2f) SaveInternal(false);
             }
             if (age < (smokeHost ? 26 : 18)) return;
-            bool passed = IsRunning && smokeSawPeer && World.tick > 100 && smokeMoved && smokeSawGrid && smokeSawCargo && smokeSawResearch;
-            Debug.Log((passed ? "DEMO_SMOKE_PASS" : "DEMO_SMOKE_FAIL") + " role=" + (smokeHost ? "host" : "client") + " tick=" + World?.tick + " peers=" + World?.players.Count + " moved=" + smokeMoved + " grid=" + smokeSawGrid + " cargo=" + smokeSawCargo + " sharedResearch=" + smokeSawResearch + (passed ? "" : " status=" + Status));
+            bool passed = IsRunning && smokeSawPeer && World.tick > 100 && smokeMoved && smokeSawGrid && smokeSawCargo && smokeSawResearch && smokeSawEquipment;
+            Debug.Log((passed ? "DEMO_SMOKE_PASS" : "DEMO_SMOKE_FAIL") + " role=" + (smokeHost ? "host" : "client") + " tick=" + World?.tick + " peers=" + World?.players.Count + " moved=" + smokeMoved + " grid=" + smokeSawGrid + " cargo=" + smokeSawCargo + " sharedResearch=" + smokeSawResearch + " equipment=" + smokeSawEquipment + (passed ? "" : " equipmentStage=" + smokeEquipmentStage + " notice=" + LocalPlayer?.notice + " status=" + Status));
             smokeFinished = true;
             Application.Quit(passed ? 0 : 10);
+        }
+
+        static bool HasSmokeEquipment(PlayerState p)
+        {
+            var gun = EquipmentCatalog.Find(p, p.weaponId);
+            var helmet = EquipmentCatalog.Find(p, p.armorIds[0]);
+            return gun != null && gun.kind == GearKind.Pistol && gun.magazine > 0 &&
+                gun.attachments[(int)AttachmentSlot.Optic] == (int)PartKind.RedDot &&
+                helmet != null && helmet.kind == GearKind.ClothHood;
+        }
+
+        void SmokeEquipment(float age)
+        {
+            var p = LocalPlayer;
+            var gun = p.gear?.FirstOrDefault(g => g.kind == GearKind.Pistol);
+            var helmet = p.gear?.FirstOrDefault(g => g.kind == GearKind.ClothHood);
+            // Advance only after a snapshot acknowledges the prior command. A local
+            // cooldown of zero can still belong to the pre-command snapshot.
+            if (smokeEquipmentStage == 0 && age > 1 && p.interactCooldown <= 0)
+            { Send(new PlayerCommand { action="gearcraft",arg=(int)GearKind.Pistol }); smokeEquipmentStage=1; }
+            else if (smokeEquipmentStage == 1 && gun != null && p.interactCooldown <= 0)
+            { Send(new PlayerCommand { action="equip",arg=gun.id }); smokeEquipmentStage=2; }
+            else if (smokeEquipmentStage == 2 && gun != null && p.weaponId == gun.id && p.interactCooldown <= 0)
+            { Send(new PlayerCommand { action="partcraft",arg=(int)PartKind.RedDot }); smokeEquipmentStage=3; }
+            else if (smokeEquipmentStage == 3 && gun != null && p.parts[(int)PartKind.RedDot] > 0 && p.interactCooldown <= 0)
+            { Send(new PlayerCommand { action="attach",arg=gun.id,x=(int)PartKind.RedDot }); smokeEquipmentStage=4; }
+            else if (smokeEquipmentStage == 4 && gun != null && gun.attachments[(int)AttachmentSlot.Optic] == (int)PartKind.RedDot && p.interactCooldown <= 0)
+            { Send(new PlayerCommand { action="reload" }); smokeEquipmentStage=5; }
+            else if (smokeEquipmentStage == 5 && gun != null && gun.magazine > 0 && p.interactCooldown <= 0)
+            { Send(new PlayerCommand { action="gearcraft",arg=(int)GearKind.ClothHood }); smokeEquipmentStage=6; }
+            else if (smokeEquipmentStage == 6 && helmet != null && p.interactCooldown <= 0)
+            { Send(new PlayerCommand { action="equip",arg=helmet.id }); smokeEquipmentStage=7; }
+            if (HasSmokeEquipment(p)) smokeSawEquipment=true;
         }
     }
 }

@@ -38,12 +38,16 @@ namespace DeadCircuit
                 NodeState n = NodeAt(x, y);
                 if (n == null) { Notice(p, "靠近树、矿、废料堆或补给箱，瞄准后按 E。"); return; }
                 int item = NodeItem(n.kind);
-                int amount = Math.Min(n.stock, Math.Min(InventoryLimit - p.items[item], 3 + p.attributes[0] / 3 + (p.skills[2] >= 1 ? p.skills[2] : 0)));
+                GearState tool=EquipmentCatalog.Equipped(p);
+                int bonus=HarvestBonus(tool,n.kind);
+                int amount = Math.Min(n.stock, Math.Min(InventoryLimit - p.items[item], 3 + p.attributes[0] / 3 + (p.skills[2] >= 1 ? p.skills[2] : 0) + bonus));
                 if (amount <= 0) { Notice(p, "背包已满。"); return; }
                 n.stock -= amount; p.items[item] += amount;
+                if(tool!=null && EquipmentCatalog.Gear(tool.kind).tool && tool.durability>0) tool.durability--;
                 State.gathered = SaturatingAdd(State.gathered, amount);
                 GainXp(p, amount * 2);
                 p.interactCooldown = 0.4f * (1f - p.attributes[0] * 0.025f);
+                if(bonus>0) p.interactCooldown*=bonus>=5 ? .5f : .75f;
                 if (n.stock == 0) RemoveNode(n);
                 Notice(p, "采集 " + DemoCatalog.ItemNames[item] + " +" + amount);
                 return;

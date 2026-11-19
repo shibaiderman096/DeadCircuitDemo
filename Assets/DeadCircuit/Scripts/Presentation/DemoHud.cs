@@ -15,7 +15,7 @@ namespace DeadCircuit
 {
     /// <summary>Presentation only. World mutations go through GameBridge.Send.</summary>
     [DefaultExecutionOrder(-100)]
-    public sealed class DemoHud : MonoBehaviour
+    public sealed partial class DemoHud : MonoBehaviour
     {
         static readonly Color Ink = new Color32(225, 237, 231, 255);
         static readonly Color Muted = new Color32(154, 177, 170, 255);
@@ -105,7 +105,6 @@ namespace DeadCircuit
         TextMeshProUGUI machineRecipe, machineRecipeFlow, machineSafety;
         readonly TextMeshProUGUI[] vitalTexts = new TextMeshProUGUI[3];
         readonly RectTransform[] vitalFills = new RectTransform[3];
-        readonly TextMeshProUGUI[] inventoryCounts = new TextMeshProUGUI[21];
         readonly UiButton[] slots = new UiButton[10];
         readonly UiButton[] attributeButtons = new UiButton[5];
         readonly TextMeshProUGUI[] attributeValues = new TextMeshProUGUI[5];
@@ -278,6 +277,7 @@ namespace DeadCircuit
             Place(goals, 18, 134, 242, 48);
             objectives = Label("Objectives Text", goals, "", 0, 0, 242, 48, 14, Accent);
             eraText = Label("Current Technology Era", game, "", 18, 188, 242, 24, 13, Muted);
+            MakeEquipmentSummary();
             RectTransform world = Box("World Status", game, 0, 18, 228, 60, HudSurface);
             // The minimap owns right 18 / top 18 / 144 square. Leave an 18 px gap.
             TopRight(world, 180, 18, 228, 60);
@@ -321,52 +321,6 @@ namespace DeadCircuit
             growthButton = Button("Open Growth", shortcuts, "成长 Tab", 123, 38, 115, 30, () => SetGrowth(true));
             Button("Open Help", shortcuts, "帮助 H", 0, 76, 115, 30, () => SetPanel(help, true));
             Button("Open Session", shortcuts, "菜单 Esc", 123, 76, 115, 30, () => SetPanel(session, true));
-        }
-
-        void MakeInventory(RectTransform root)
-        {
-            inventory = Backdrop("Inventory Panel", root, new Color32(4, 10, 11, 170));
-            RectTransform card = Box("Inventory Card", inventory, 0, 0, 1000, 594, Panel, true);
-            Center(card, 1000, 594);
-            Label("Inventory Heading", card, "随身库存与手工制作", 22, 16, 730, 36, 25, Ink, FontStyles.Bold);
-            Button("Close Inventory", card, "关闭 B / Esc", 862, 18, 116, 32, () => SetPanel(inventory, false));
-            Label("Inventory List Heading", card, "物品 / 持有数量", 24, 66, 282, 26, 16, Accent);
-            RectTransform stock = ScrollContent("Inventory Scroll View", card, 22, 100, 294, 360, out _);
-            for (int i = 0; i < inventoryCounts.Length; i++)
-            {
-                RectTransform row = FlowRow("Inventory Item " + i, stock, 270, 30);
-                Label("Item " + i, row, DemoCatalog.ItemNames[i], 4, 0, 178, 30, 16, Muted);
-                inventoryCounts[i] = Label("Quantity " + i, row, "0", 184, 0, 78, 30, 17, Ink);
-                inventoryCounts[i].alignment = TextAlignmentOptions.MidlineRight;
-            }
-            eatButton = Button("Eat", card, "吃食 F", 22, 476, 294, 36, () => Send("eat"));
-            Label("Craft Heading", card, "手工配方 · 滚轮 / 拖动列表", 338, 66, 640, 26, 16, Accent);
-            workbenchHint = Label("Workbench Requirement", card, "", 338, 98, 640, 44, 14, Muted);
-            RectTransform recipes = ScrollContent("Craft Scroll View", card, 338, 154, 640, 358, out _);
-            // Core keeps the original portable recipes 0/1 outside its machine recipe table.
-            var handcraft = new List<RecipeDefinition>
-            {
-                new RecipeDefinition { id = 0, name = "手工燃料", era = TechEra.Primitive, building = BuildKind.Workbench, duration = .5f,
-                    inputs = DemoCatalog.Materials(ItemKind.Wood, 3), outputs = DemoCatalog.Materials(ItemKind.Fuel, 2) },
-                new RecipeDefinition { id = 1, name = "手工弹药", era = TechEra.Primitive, building = BuildKind.Workbench, duration = .5f,
-                    inputs = DemoCatalog.Materials(ItemKind.Iron, 1), outputs = DemoCatalog.Materials(ItemKind.Ammo, 4) }
-            };
-            foreach (RecipeDefinition recipe in TechCatalog.Recipes)
-                if (recipe.building == BuildKind.Workbench && recipe.id > 1) handcraft.Add(recipe);
-            foreach (RecipeDefinition recipe in handcraft)
-            {
-                if (recipe.building != BuildKind.Workbench) continue;
-                RecipeDefinition entry = recipe;
-                RectTransform row = FlowRow("Craft Recipe " + entry.id, recipes, 616, 108);
-                UiButton craft = Button(entry.id == 0 ? "Craft Fuel" : entry.id == 1 ? "Craft Ammo" : "Craft Recipe Button " + entry.id,
-                    row, entry.name, 4, 6, 152, 38, () => CraftRecipe(entry.id));
-                TextMeshProUGUI details = Label("Craft Recipe Details", row, "", 170, 2, 432, 102, 14, Ink);
-                details.enableAutoSizing = false;
-                details.alignment = TextAlignmentOptions.TopLeft;
-                manualRecipes.Add(new RecipeRow { recipe = entry, craft = craft, details = details });
-            }
-            inventoryNotice = Label("Inventory Feedback", card, "", 22, 532, 956, 46, 14, Amber);
-            inventory.gameObject.SetActive(false);
         }
 
         void MakeTechnology(RectTransform root)
@@ -433,8 +387,8 @@ namespace DeadCircuit
             Button("Close Help", card, "关闭 H / Esc", 640, 18, 116, 32, () => SetPanel(help, false));
             Label("Controls Title", card, "操作速查", 24, 72, 732, 26, 18, Accent, FontStyles.Bold);
             Label("Controls Text", card,
-                "WASD 移动 · Shift 冲刺 · 滚轮缩放\nE 交互 / 采集 · 左键攻击 / 放置 · 右键取消建造\n1–0 选择当前快捷栏槽位 · R 旋转 · T 科技 / 全设备\nX 拆除 · G 修理 · F 吃食 · C 燃料 · Ctrl+C 弹药\nB 背包 / 手工 · Tab 成长 · H 帮助 · Esc 关闭 / 会话 · F5 保存",
-                24, 104, 732, 138, 17, Ink);
+                "WASD 移动 · Shift 冲刺 · 滚轮缩放 · E 交互 / 采集\n左键攻击 / 放置 · 右键瞄准（建造时取消）\nR 装填（建造时旋转）· Q 切换武器 / 工具\n1–0 建造快捷栏 · T 科技 / 全设备 · X 拆除 · G 修理\nF 吃食 · C 燃料 · Ctrl+C 弹药 · B 背包 / 装备 / 制作\nTab 成长 · H 帮助 · Esc 关闭 / 会话 · F5 保存",
+                24, 104, 732, 138, 16, Ink);
             Label("Tutorial Title", card, "从原始到核工业", 24, 254, 732, 26, 18, Accent, FontStyles.Bold);
             Label("Production Tutorial", card,
                 "开局采集木材、矿石与废料；建工作台和石炉，按 T 查看下一阶材料。\n原始 → 水力 → 蒸汽 → 低压 → 中压 → 高压 → 核工业，按顺序研究。\n水车 / 轴传机械动力；锅炉 / 管传蒸汽；电网按低、中、高压分开。\n设备须匹配动力与电压；变压器逐级降压。核反应堆需冷却并监测温度。",
@@ -564,7 +518,7 @@ namespace DeadCircuit
             RefreshBuild(player);
             RefreshInspector(world, player);
             RefreshFeedback(world, player);
-            if (inventory.gameObject.activeSelf) RefreshCrafting(world, player);
+            if (inventory.gameObject.activeSelf) RefreshInventory(world, player);
             if (technology.gameObject.activeSelf) RefreshTechnology(world, player);
             if (growth.gameObject.activeSelf) RefreshGrowth(player);
             if (dead)
@@ -603,7 +557,7 @@ namespace DeadCircuit
             Set(growthButton.label, "成长 Tab" + (points > 0 ? " ·" + points : ""));
             growthButton.label.color = player.attributePoints + player.skillPoints > 0 ? Accent : Ink;
             growthButton.button.interactable = player.hp > 0f;
-            for (int i = 0; i < inventoryCounts.Length; i++) Set(inventoryCounts[i], Count(player.items, i).ToString(CultureInfo.InvariantCulture));
+            RefreshEquipmentSummary(player);
             eatButton.button.interactable = player.hp > 0f && player.hunger < 99f && Count(player.items, 6) > 0;
             int era = Mathf.Clamp((int)world.era, 0, eraButtons.Length - 1);
             if (observedEra != era)
@@ -722,32 +676,6 @@ namespace DeadCircuit
                 float height = Mathf.Max(88, technologyBuildCosts[i].GetPreferredValues(technologyBuildCosts[i].text, 564, float.PositiveInfinity).y + 12);
                 technologyBuildCosts[i].rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height - 8);
                 technologyBuildRows[i].GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = height;
-            }
-        }
-
-        void RefreshCrafting(WorldState world, PlayerState player)
-        {
-            bool bench = NearWorkbench(world, player);
-            Set(workbenchHint, bench ? "工作台在 2.4 格范围内，需视线畅通 · 燃料 C / 弹药 Ctrl+C" :
-                "进阶配方需靠近工作台 2.4 格且视线畅通；燃料 / 弹药可随身制作。");
-            workbenchHint.color = bench ? Accent : Muted;
-            foreach (RecipeRow row in manualRecipes)
-            {
-                RecipeDefinition recipe = row.recipe;
-                bool era = (int)recipe.era <= (int)world.era;
-                bool needsBench = recipe.id > 1;
-                bool materials = CanAfford(player.items, recipe.inputs);
-                bool space = HasRecipeSpace(player.items, recipe);
-                string state = !era ? "需" + TechCatalog.EraName(recipe.era) : needsBench && !bench ? "需靠近工作台" :
-                    !materials ? "缺少材料" : !space ? "产物背包已满" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
-                row.craft.button.interactable = player.hp > 0f && era && (!needsBench || bench) && materials && space && player.interactCooldown <= 0f;
-                Set(row.craft.label, recipe.name + "\n" + (recipe.id == 0 ? "燃料 C" : recipe.id == 1 ? "弹药 Ctrl+C" : state));
-                Set(row.details, "输入：" + MaterialText(recipe.inputs, player.items, true) + "\n产出：" + MaterialText(recipe.outputs) +
-                    "\n" + TechCatalog.EraName(recipe.era) + " · " + state);
-                row.details.color = era ? Ink : Muted;
-                float height = Mathf.Max(108, row.details.GetPreferredValues(row.details.text, 432, float.PositiveInfinity).y + 12);
-                row.details.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height - 8);
-                row.details.transform.parent.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = height;
             }
         }
 
@@ -1368,7 +1296,7 @@ namespace DeadCircuit
         }
 
         RectTransform ScrollContent(string name, Transform parent, float x, float top, float width, float height,
-            out UnityEngine.UI.ScrollRect scroll)
+            out UnityEngine.UI.ScrollRect scroll, bool inventoryGrid = false)
         {
             RectTransform root = Box(name, parent, x, top, width, height, new Color32(12, 23, 24, 255), true);
             scroll = root.gameObject.AddComponent<UnityEngine.UI.ScrollRect>();
@@ -1386,13 +1314,26 @@ namespace DeadCircuit
             content.pivot = new Vector2(.5f, 1);
             content.anchoredPosition = Vector2.zero;
             content.sizeDelta = Vector2.zero;
-            var layout = content.gameObject.AddComponent<UnityEngine.UI.VerticalLayoutGroup>();
-            layout.padding = new RectOffset(6, 6, 6, 6);
-            layout.spacing = 8;
-            layout.childAlignment = TextAnchor.UpperLeft;
-            layout.childControlWidth = layout.childControlHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
+            if (inventoryGrid)
+            {
+                var layout = content.gameObject.AddComponent<UnityEngine.UI.GridLayoutGroup>();
+                layout.padding = new RectOffset(6, 6, 6, 6);
+                layout.cellSize = new Vector2(166, 84);
+                layout.spacing = new Vector2(8, 8);
+                layout.constraint = UnityEngine.UI.GridLayoutGroup.Constraint.FixedColumnCount;
+                layout.constraintCount = 3;
+                layout.childAlignment = TextAnchor.UpperLeft;
+            }
+            else
+            {
+                var layout = content.gameObject.AddComponent<UnityEngine.UI.VerticalLayoutGroup>();
+                layout.padding = new RectOffset(6, 6, 6, 6);
+                layout.spacing = 8;
+                layout.childAlignment = TextAnchor.UpperLeft;
+                layout.childControlWidth = layout.childControlHeight = true;
+                layout.childForceExpandWidth = true;
+                layout.childForceExpandHeight = false;
+            }
             var fitter = content.gameObject.AddComponent<UnityEngine.UI.ContentSizeFitter>();
             fitter.horizontalFit = UnityEngine.UI.ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;

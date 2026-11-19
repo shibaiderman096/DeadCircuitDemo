@@ -67,6 +67,7 @@ namespace DeadCircuit
             if (!FindSpawn(out sx, out sy)) throw new InvalidOperationException("No safe spawn cell available.");
             var p = new PlayerState { id = id, name = CleanName(name), seat = FirstFreeSeat(), x = sx, y = sy };
             p.items = DemoCatalog.Materials(ItemKind.Wood,12, ItemKind.Scrap,4, ItemKind.Food,6);
+            GiveStartingGear(State,p,false);
             State.players.Add(p);
             inputs.Add(id, new HeldInput { protectionUntil = State.elapsed + 4f });
             Notice(p, "原始开局：采矿、3木材制2燃料，石炉炼铁铜锡。水车保底岸位(25,25)，科技全队共享。");
@@ -81,6 +82,7 @@ namespace DeadCircuit
             p.connected = connected;
             HeldInput input = inputs[p.id];
             input.x = input.y = 0f; input.sprint = false;
+            CancelReload(p); p.aiming=false; p.moving=false;
             flowRevision = -1;
         }
 
@@ -99,6 +101,8 @@ namespace DeadCircuit
                 Normalize(ref mx, ref my, false);
                 input.x = p.hp > 0f ? mx : 0f; input.y = p.hp > 0f ? my : 0f;
                 input.sprint = cmd.sprint && p.hp > 0f;
+                p.aiming=cmd.aiming && p.hp>0f;
+                p.moving=input.x!=0f || input.y!=0f;
                 Aim(p, cmd.aimX, cmd.aimY);
                 return;
             }
@@ -114,7 +118,20 @@ namespace DeadCircuit
                 case "attack":
                     if (!Finite(cmd.aimX) || !Finite(cmd.aimY)) return;
                     Aim(p, cmd.aimX, cmd.aimY);
+                    p.aiming=cmd.aiming;
                     Attack(p); return;
+                case "gearcraft": CraftGear(p,cmd.arg); return;
+                case "partcraft": CraftPart(p,cmd.arg); return;
+                case "equip": EquipGear(p,cmd.arg); return;
+                case "unequip": UnequipGear(p,cmd.arg); return;
+                case "switch": SwitchGear(p,cmd.arg); return;
+                case "attach": AttachPart(p,cmd.arg,cmd.x); return;
+                case "detach": DetachPart(p,cmd.arg,cmd.x); return;
+                case "reload": StartReload(p); return;
+                case "ammoselect": SelectAmmo(p,cmd.arg); return;
+                case "unload": UnloadGear(p,cmd.arg); return;
+                case "gearrepair": RepairGear(p,cmd.arg); return;
+                case "gearsalvage": SalvageGear(p,cmd.arg); return;
                 case "attribute": UpgradeAttribute(p, cmd.arg); return;
                 case "skill": UpgradeSkill(p, cmd.arg); return;
                 case "eat":
@@ -178,12 +195,16 @@ namespace DeadCircuit
         {
             p.attackCooldown = Math.Max(0f, p.attackCooldown - FixedStep);
             p.interactCooldown = Math.Max(0f, p.interactCooldown - FixedStep);
+            UpdateEquipment(p);
             if (!p.connected || p.hp <= 0f) return;
             HeldInput input = inputs[p.id];
             bool moving = input.x != 0f || input.y != 0f;
-            bool sprinting = moving && input.sprint && p.stamina >= 1.5f && p.hunger > 0f;
+            p.moving=moving;
+            bool sprinting = moving && input.sprint && !p.aiming && p.stamina >= 1.5f && p.hunger > 0f;
             float speed = 3.2f + p.attributes[2] * 0.09f + (p.skills[2] >= 2 ? 0.25f : 0f);
             if (sprinting) speed *= 1.6f;
+            if (p.aiming) speed *= .6f;
+            speed*=1f-EquipmentCatalog.MovementPenalty(p);
             if (p.hunger <= 0f) speed *= 0.7f;
             MoveCircle(ref p.x, ref p.y, input.x * speed * FixedStep, input.y * speed * FixedStep, 0.28f);
             p.stamina = Clamp(p.stamina + (sprinting ? -19f : 13f + p.skills[2] * 2f) * FixedStep, 0f, PlayerMaxStamina(p));
@@ -228,7 +249,9 @@ namespace DeadCircuit
             int material = b.kind == BuildKind.Wall ? (int)ItemKind.Wood : (int)ItemKind.Scrap;
             if (p.items[material] < 1) { Notice(p, "修理需要 1 " + DemoCatalog.ItemNames[material]); return; }
             p.items[material]--;
-            b.hp = Math.Min(BuildingMaxHealth(b.kind), b.hp + 32f + p.attributes[4] * 2f + p.skills[0] * 8f);
+            GearState wrench=EquippedWrench(p);
+            b.hp = Math.Min(BuildingMaxHealth(b.kind), b.hp + 32f + p.attributes[4] * 2f + p.skills[0] * 8f + (wrench!=null ? 20f : 0f));
+            if(wrench!=null) wrench.durability--;
             Notice(p, "已修理。");
         }
 
@@ -239,6 +262,8 @@ namespace DeadCircuit
             int[] cost = DemoCatalog.BuildCost(b.kind);
             var returned = new int[DemoCatalog.ItemCount];
             float refund = p.skills[0] >= 3 ? 1f : p.skills[0] >= 2 ? 0.75f : 0.5f;
+            GearState wrench=EquippedWrench(p);
+            if(wrench!=null) refund=Math.Min(1f,refund+.25f);
             float health = Clamp(b.hp / BuildingMaxHealth(b.kind), 0f, 1f);
             for (int i = 0; i < DemoCatalog.ItemCount; i++)
             {
@@ -250,6 +275,7 @@ namespace DeadCircuit
             for (int i = 0; i < DemoCatalog.ItemCount; i++) p.items[i] += returned[i];
             State.cargo.RemoveAll(c => c.fromId == b.id || c.toId == b.id);
             State.buildings.Remove(b); RefreshSpatial(); RefreshPower(false); flowRevision = -1;
+            if(wrench!=null) wrench.durability--;
             Notice(p, "已拆除；库存全额收回，建材按耐久和工程专精返还，已点燃燃料不返还。");
         }
 
@@ -260,8 +286,7 @@ namespace DeadCircuit
             {
                 RecipeDefinition r = TechCatalog.Recipe(arg);
                 if (r == null || r.building != BuildKind.Workbench || State.era < r.era) return;
-                bool bench = State.buildings.Exists(b => b.hp > 0f && b.kind == BuildKind.Workbench &&
-                    DistSq(p.x,p.y,DemoCatalog.CenterX(b),DemoCatalog.CenterY(b)) <= Reach * Reach && LineClear(p.x,p.y,b.x,b.y,b.x,b.y));
+                bool bench = EquipmentCatalog.HasWorkbench(State,p);
                 if (!bench) { Notice(p, "请靠近工作台。"); return; }
                 if (!CanRunRecipe(p.items,r,InventoryLimit,null)) { Notice(p, "配方材料不足或背包已满。"); return; }
                 Pay(p.items,r.inputs);

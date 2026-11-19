@@ -21,7 +21,7 @@ static partial class Checks
         Run("v3 appended ordinals harvest the right new minerals", () =>
         {
             var items=new[] { ItemKind.Wood,ItemKind.Ore,ItemKind.Iron,ItemKind.Scrap,ItemKind.Fuel,ItemKind.Ammo,ItemKind.Food,ItemKind.CopperOre,ItemKind.Copper,ItemKind.Bronze,ItemKind.Steel,ItemKind.Circuit,ItemKind.Polymer,ItemKind.AdvancedCircuit,ItemKind.UraniumOre,ItemKind.NuclearFuel,ItemKind.Coolant,ItemKind.NuclearWaste,ItemKind.CrushedOre,ItemKind.TinOre,ItemKind.Tin };
-            Require(items.Length==21 && DemoCatalog.ItemCount==21,"item contract length");
+            Require(items.Length==21 && DemoCatalog.ItemCount==25,"legacy ordinals and v4 item contract length");
             for(int i=0;i<items.Length;i++) Require((int)items[i]==i,$"saved item {items[i]} was renumbered");
             var appended=new[] { BuildKind.Workbench,BuildKind.StoneFurnace,BuildKind.Waterwheel,BuildKind.Shaft,BuildKind.MechanicalCrusher,BuildKind.Boiler,BuildKind.SteamPipe,BuildKind.SteamMiner,BuildKind.SteamFurnace,BuildKind.SteamTurbine,BuildKind.CircuitAssembler,BuildKind.DieselGenerator,BuildKind.ChemicalPlant,BuildKind.MediumPole,BuildKind.Transformer,BuildKind.HighGenerator,BuildKind.HighPole,BuildKind.PrecisionAssembler,BuildKind.NuclearProcessor,BuildKind.Reactor,BuildKind.CoolingTower };
             for(int i=0;i<appended.Length;i++) Require((int)appended[i]==10+i,$"saved building {appended[i]} was renumbered");
@@ -36,8 +36,8 @@ static partial class Checks
         });
         Run("fresh primitive world has no free modern factory or research", () =>
         {
-            var sim=New(out var p);Require(sim.State.era==TechEra.Primitive && sim.State.version==3,"new world skipped progression");
-            Require(sim.State.produced.Length==21 && sim.State.produced.All(n=>n==0),"new world fabricated production history");
+            var sim=New(out var p);Require(sim.State.era==TechEra.Primitive && sim.State.version==4,"new world skipped progression");
+            Require(sim.State.produced.Length==25 && sim.State.produced.All(n=>n==0),"new world fabricated production history");
             Require(sim.State.buildings.All(b=>TechCatalog.RequiredEra(b.kind)==TechEra.Primitive),"prebuilt modern factory");
             foreach(var kind in new[] { NodeKind.Ore,NodeKind.CopperOre,NodeKind.TinOre,NodeKind.UraniumOre })Require(sim.State.nodes.Any(n=>n.kind==kind && n.stock>0),$"new world lacks {kind}");
             Array.Fill(p.items,100);sim.Apply(Command(p,"research",arg:6));Require(sim.State.era==TechEra.Primitive,"funded malicious research jumped to Nuclear");
@@ -48,7 +48,7 @@ static partial class Checks
             Run($"research {target} requires materials and a live built prerequisite and charges once for both players", () =>
             {
                 var sim=new WorldSimulator(Flat(era:previous));var a=Builder(sim,"a","A");var b=Builder(sim,"b","B");
-                var cost=TechCatalog.ResearchCost(target);Require(cost.Length==21 && cost.Any(v=>v>0),"research has no material cost");
+                var cost=TechCatalog.ResearchCost(target);Require(cost.Length==25 && cost.Any(v=>v>0),"research has no material cost");
                 var before=Copy(a.items);var partner=Copy(b.items);
                 Require(!TechCatalog.CanResearch(sim.State,a,target) && TechCatalog.ResearchRequirement(sim.State,target).Length>0,"unbuilt prerequisite accepted");
                 sim.Apply(Command(a,"research",arg:(int)target));Inventory(a.items,before,"missing-prerequisite research charged");Require(sim.State.era==previous,"missing-prerequisite research unlocked");

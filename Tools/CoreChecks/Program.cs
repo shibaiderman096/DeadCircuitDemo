@@ -31,7 +31,7 @@ static partial class Checks
     // Legacy spatial/logistics fixtures explicitly opt into LV. A seeded new world must stay Primitive.
     static WorldState Flat(float elapsed = 0, TechEra era = TechEra.LowVoltage) => new()
     {
-        version = 3, era = era, seed = 73149, ground = new string('4', 4096), elapsed = elapsed,
+        version = 4, era = era, seed = 73149, ground = new string('4', 4096), elapsed = elapsed,
         tick = (long)Math.Round(elapsed / WorldSimulator.FixedStep), nextWaveAt = elapsed + 180f
     };
     static PlayerState Builder(WorldSimulator sim, string id = "p", string name = "P")
@@ -97,7 +97,7 @@ static partial class Checks
     {
         filters = args;
         CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); CargoChecks(); SaveAndCombatChecks();
-        TechnologyChecks(); EraEnergyChecks(); EraProductionChecks(); VersionThreeSaveChecks();
+        TechnologyChecks(); EraEnergyChecks(); EraProductionChecks(); VersionThreeSaveChecks(); EquipmentChecks();
         if (selected == 0) { Console.Error.WriteLine("No check names matched the supplied filters."); return 2; }
         Console.WriteLine($"CORE_CHECKS_{(failed == 0 ? "PASS" : "FAIL")} suites={selected} passed={passed} failed={failed}");
         return failed == 0 ? 0 : 1;
@@ -142,7 +142,7 @@ static partial class Checks
             for (int seed = -12; seed < 12; seed++)
             {
                 var sim = new WorldSimulator(seed); var p = sim.AddPlayer("p", "P");
-                Require(sim.State.version == 3 && sim.State.ground.Length == 4096, "new world version/map length"); Require(!sim.IsBlocked((int)p.x, (int)p.y), "blocked spawn");
+                Require(sim.State.version == 4 && sim.State.ground.Length == 4096, "new world version/map length"); Require(!sim.IsBlocked((int)p.x, (int)p.y), "blocked spawn");
                 var cells = new HashSet<(int, int)>();
                 foreach (var n in sim.State.nodes) Require(n.x >= 0 && n.x < 64 && n.y >= 0 && n.y < 64 && n.stock > 0 && cells.Add((n.x, n.y)), "invalid/overlapping node");
                 foreach (var b in sim.State.buildings)
@@ -503,14 +503,14 @@ static partial class Checks
             saved.powerNetworks[0].generation = -1; saved.buildings[0].fuel = 0; Near(restored.State.powerNetworks[0].generation,120,"caller mutated network summary"); Advance(restored,.05f);
             Require(restored.State.buildings.Single(b => b.kind == BuildKind.Smelter).powered, "saved network lost power");
         });
-        Run("v1 JSON keeps old single cells alongside newly built v3 footprints", () =>
+        Run("v1 JSON keeps old single cells alongside newly built v4 footprints", () =>
         {
             var state = Flat(); state.version = 1; Add(state,BuildKind.Assembler,10,10,footprintVersion:0); Add(state,BuildKind.Belt,11,10,footprintVersion:0);
             foreach(var building in state.buildings) building.items = new int[7];
             var root = JsonNode.Parse(Dump(state)).AsObject(); root.Remove("cargo"); root.Remove("powerNetworks");
             foreach (var node in root["buildings"].AsArray()) foreach (string field in new[] { "footprintVersion","networkId","powerRatio","powerDemand","powerGeneration" }) node.AsObject().Remove(field);
             var legacy = JsonSerializer.Deserialize<WorldState>(root.ToJsonString(),Json); var sim = new WorldSimulator(legacy);
-            Require(sim.State.version == 3 && sim.State.buildings.All(b => b.footprintVersion == 0), "v1 migration expanded buildings or did not upgrade version"); Require(sim.IsBlocked(10,10) && !sim.IsBlocked(10,11), "legacy assembler does not remain one cell");
+            Require(sim.State.version == 4 && sim.State.buildings.All(b => b.footprintVersion == 0), "v1 migration expanded buildings or did not upgrade version"); Require(sim.IsBlocked(10,10) && !sim.IsBlocked(10,11), "legacy assembler does not remain one cell");
             var p = Builder(sim); p.x = 8; p.y = 11; sim.Apply(Command(p,"build",10,11,(int)BuildKind.Generator)); var built = sim.State.buildings.Single(b => b.kind == BuildKind.Generator);
             Require(built.footprintVersion == 1 && sim.IsBlocked(11,12), "new building in migrated save is not multi-cell"); var restored = new WorldSimulator(Saved(sim.State));
             Require(restored.State.buildings.Count == 3 && restored.State.buildings.Count(b => b.footprintVersion == 0) == 2 && DemoCatalog.Width(Building(restored,built.id)) == 2, "mixed-footprint roundtrip changed dimensions");
@@ -521,12 +521,12 @@ static partial class Checks
             var overlap = Flat(); Add(overlap,BuildKind.Generator,10,10); Add(overlap,BuildKind.Wall,11,11); Reject(overlap,"overlapping saved subcells accepted");
             var nodeOverlap = Flat(); Add(nodeOverlap,BuildKind.Generator,10,10); Ore(nodeOverlap,11,11); Reject(nodeOverlap,"node inside saved footprint accepted");
             var water = Flat(); Add(water,BuildKind.Generator,10,10); var tiles = water.ground.ToCharArray(); tiles[11+11*64] = '2'; water.ground = new string(tiles); Reject(water,"saved footprint water subcell accepted");
-            var future = Flat(); future.version = 4; Reject(future,"unknown future version accepted"); var format = Flat(); Add(format,BuildKind.Generator,10,10,footprintVersion:2); Reject(format,"unknown footprint version accepted"); Reject(new WorldState { width = 4096 },"malformed world accepted");
+            var future = Flat(); future.version = 5; Reject(future,"unknown future version accepted"); var format = Flat(); Add(format,BuildKind.Generator,10,10,footprintVersion:2); Reject(format,"unknown footprint version accepted"); Reject(new WorldState { width = 4096 },"malformed world accepted");
         });
         Run("save validation rejects corrupt flight timing, item and duplicate id", () =>
         {
             var state = Flat(); var a = Add(state,BuildKind.Belt,10,10); a.items[(int)ItemKind.Ore] = 1; var b = Add(state,BuildKind.Chest,11,10); var sim = new WorldSimulator(state); AwaitCargo(sim,a.id,b.id);
-            foreach (var corrupt in new Action<CargoState>[] { c => c.duration = 0, c => c.duration = float.NaN, c => c.progress = -.01f, c => c.progress = 1.01f, c => c.fromX = float.PositiveInfinity, c => c.item = 21 })
+            foreach (var corrupt in new Action<CargoState>[] { c => c.duration = 0, c => c.duration = float.NaN, c => c.progress = -.01f, c => c.progress = 1.01f, c => c.fromX = float.PositiveInfinity, c => c.item = 25 })
             { var invalid = Saved(sim.State); corrupt(invalid.cargo[0]); Reject(invalid,"corrupt cargo accepted"); }
             var duplicate = Saved(sim.State); duplicate.cargo.Add(Saved(sim.State).cargo[0]); Reject(duplicate,"duplicate cargo id accepted");
         });

@@ -7,11 +7,23 @@ namespace DeadCircuit
     public enum TechEra { Primitive = 0, Water = 1, Steam = 2, LowVoltage = 3, MediumVoltage = 4, HighVoltage = 5, Nuclear = 6 }
     public enum NodeKind { Tree, Ore, Scrap, Crate, Wall, CopperOre = 5, TinOre = 6, UraniumOre = 7 }
     public enum BuildKind { Wall, Generator, Miner, Belt, Smelter, Assembler, Turret, Chest, PowerPole, SolarPanel, Workbench = 10, StoneFurnace, Waterwheel, Shaft, MechanicalCrusher, Boiler, SteamPipe, SteamMiner, SteamFurnace, SteamTurbine, CircuitAssembler, DieselGenerator, ChemicalPlant, MediumPole, Transformer, HighGenerator, HighPole, PrecisionAssembler, NuclearProcessor, Reactor, CoolingTower }
-    public enum ItemKind { Wood, Ore, Iron, Scrap, Fuel, Ammo, Food, CopperOre = 7, Copper, Bronze, Steel, Circuit, Polymer, AdvancedCircuit, UraniumOre, NuclearFuel, Coolant, NuclearWaste, CrushedOre, TinOre, Tin }
+    public enum ItemKind { Wood, Ore, Iron, Scrap, Fuel, Ammo, Food, CopperOre = 7, Copper, Bronze, Steel, Circuit, Polymer, AdvancedCircuit, UraniumOre, NuclearFuel, Coolant, NuclearWaste, CrushedOre, TinOre, Tin, RifleAmmo = 21, Shell = 22, PrecisionAmmo = 23, ArmorPiercingAmmo = 24 }
+    public enum GearKind { StoneAxe = 0, StonePickaxe = 1, SteelAxe = 2, SteelPickaxe = 3, Wrench = 4, Knife = 5, Pistol = 6, Shotgun = 7, AssaultRifle = 8, PrecisionRifle = 9, ClothHood = 10, LeatherJacket = 11, WorkPants = 12, WorkBoots = 13, SteelHelmet = 14, ArmorVest = 15, TacticalHelmet = 16, TacticalVest = 17, TacticalBoots = 18 }
+    public enum PartKind { RedDot = 0, Scope4x = 1, Suppressor = 2, MuzzleBrake = 3, ExtendedMag = 4, ErgonomicGrip = 5, MatchBarrel = 6 }
+    public enum AttachmentSlot { Optic = 0, Muzzle = 1, Magazine = 2, Grip = 3, Barrel = 4 }
+
+    [Serializable] public sealed class GearState
+    {
+        public int id;
+        public GearKind kind;
+        public int durability = 100, magazine;
+        public ItemKind loadedAmmo = ItemKind.Ammo;
+        public int[] attachments = { -1, -1, -1, -1, -1 };
+    }
 
     [Serializable] public sealed class WorldState
     {
-        public int version = 3, seed, width = 64, height = 64, nextId = 1, wave;
+        public int version = 4, seed, width = 64, height = 64, nextId = 1, wave;
         public TechEra era = TechEra.Primitive;
         public int[] produced = new int[DemoCatalog.ItemCount];
         public long tick;
@@ -36,6 +48,14 @@ namespace DeadCircuit
         public float x, y, aimX = 1f, aimY, hp = 100f, hunger = 100f, stamina = 100f;
         public float attackCooldown, interactCooldown, noticeUntil, lastDamageAt;
         public int[] items = new int[DemoCatalog.ItemCount], attributes = new int[5], skills = new int[3];
+        public List<GearState> gear = new List<GearState>();
+        public int[] parts = new int[7];
+        public int weaponId, toolId, activeSlot;
+        public int[] armorIds = new int[4];
+        public ItemKind selectedAmmo = ItemKind.Ammo;
+        public float reloadRemaining, recoil;
+        public int reloadingGearId;
+        public bool aiming, moving;
     }
 
     [Serializable] public sealed class NodeState
@@ -87,13 +107,13 @@ namespace DeadCircuit
         public string playerId = "", action = "";
         public float moveX, moveY, aimX = 1f, aimY;
         public int x, y, arg, rotation;
-        public bool sprint;
+        public bool sprint, aiming;
     }
 
     public static class DemoCatalog
     {
-        public const int ItemCount = 21;
-        public static readonly string[] ItemNames = { "木材", "铁矿", "铁锭", "废料", "燃料", "弹药", "食物", "铜矿", "铜锭", "青铜", "钢", "电路", "聚合物", "高级电路", "铀矿", "核燃料", "冷却液", "核废料", "碎铁矿", "锡矿", "锡锭" };
+        public const int ItemCount = 25;
+        public static readonly string[] ItemNames = { "木材", "铁矿", "铁锭", "废料", "燃料", "9mm弹", "食物", "铜矿", "铜锭", "青铜", "钢", "电路", "聚合物", "高级电路", "铀矿", "核燃料", "冷却液", "核废料", "碎铁矿", "锡矿", "锡锭", "步枪弹", "霰弹", "精密弹", "穿甲弹" };
         public static readonly string[] BuildNames = { "防护墙", "燃料发电机", "采矿机", "传送带", "熔炉", "装配机", "机枪塔", "储物箱", "电线杆", "太阳能板", "工作台", "石炉", "水车", "传动轴", "机械粉碎机", "锅炉", "蒸汽管", "蒸汽采矿机", "蒸汽高炉", "蒸汽轮机", "电路装配机", "柴油发电机", "化工厂", "中压电杆", "变压器", "高压发电机", "高压电杆", "精密装配机", "核燃料处理机", "核反应堆", "冷却塔" };
         public static readonly string[] AttributeNames = { "力量", "体质", "敏捷", "感知", "智力" };
         public static readonly string[] SkillNames = { "工程专精", "战斗专精", "生存专精" };
