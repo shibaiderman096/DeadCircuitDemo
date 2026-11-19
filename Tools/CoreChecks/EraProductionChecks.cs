@@ -1,0 +1,120 @@
+using DeadCircuit;
+
+static partial class Checks
+{
+    static void EraProductionChecks()
+    {
+        // Fixed independent cases keep coverage from silently shrinking if a recipe is removed.
+        foreach(var (id,era) in new[]
+        {
+            (2,TechEra.Water),(3,TechEra.Primitive),(10,TechEra.Primitive),(11,TechEra.Primitive),(12,TechEra.Primitive),
+            (13,TechEra.Water),(20,TechEra.Water),(30,TechEra.Steam),(31,TechEra.Steam),(32,TechEra.Steam),(33,TechEra.Steam),
+            (40,TechEra.LowVoltage),(41,TechEra.LowVoltage),(42,TechEra.LowVoltage),(43,TechEra.LowVoltage),(50,TechEra.LowVoltage),(60,TechEra.LowVoltage),
+            (70,TechEra.MediumVoltage),(71,TechEra.MediumVoltage),(80,TechEra.HighVoltage),(90,TechEra.Nuclear),(91,TechEra.MediumVoltage)
+        })
+        {
+            Run($"era {era} recipe {id} consumes inputs and completes a real output batch", () =>
+            {
+                var r=TechCatalog.Recipe(id);Require(r!=null && r.era==era,$"required {era} recipe {id} missing or moved to a different era");
+                var state=Flat(era:r.era);var machine=Add(state,r.building,10,10);machine.recipe=r.building==BuildKind.Workbench?0:r.id;
+                if(r.building==BuildKind.Workbench)
+                {
+                    var manual=new WorldSimulator(state);var p=manual.AddPlayer("p","P");p.x=8;p.y=10;p.items=Copy(r.inputs);manual.Apply(Command(p,"craft",arg:r.id));Inventory(p.items,r.outputs,$"manual recipe {r.id}");return;
+                }
+                machine.items=Copy(r.inputs);
+                if(r.building==BuildKind.StoneFurnace)machine.items[(int)ItemKind.Fuel]=1;else AddRecipePower(state,machine);
+                if(r.building==BuildKind.ChemicalPlant || r.building==BuildKind.CoolingTower)Water(state,10,12);
+                var sim=new WorldSimulator(state);var m=Building(sim,machine.id);Advance(sim,r.duration+.15f);
+                for(int i=0;i<21;i++)
+                {
+                    Require(m.items[i]==r.outputs[i],$"recipe {r.id} item {i}: expected {r.outputs[i]}, got {m.items[i]}");
+                    Require(sim.State.produced[i]==r.outputs[i],$"recipe {r.id} production history mismatch for {i}");
+                }
+                if(r.building==BuildKind.StoneFurnace)Require(m.fuel>0,"stone furnace produced without lighting fuel");
+            });
+        }
+        Run("machine recipes preserve scarce inputs when their output buffer is full", () =>
+        {
+            foreach(var r in TechCatalog.Recipes.Where(r=>r.building!=BuildKind.Workbench))
+            {
+                var state=Flat(era:r.era);var m=Add(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);
+                for(int i=0;i<21;i++)if(r.outputs[i]>0)m.items[i]=WorldSimulator.BufferLimit;
+                if(m.kind==BuildKind.StoneFurnace)m.items[(int)ItemKind.Fuel]=1;else AddRecipePower(state,m);
+                if(m.kind==BuildKind.ChemicalPlant || m.kind==BuildKind.CoolingTower)Water(state,10,12);
+                var before=Copy(m.items);var sim=new WorldSimulator(state);Advance(sim,r.duration+1);m=Building(sim,m.id);
+                for(int i=0;i<21;i++)if(i!=(int)ItemKind.Fuel || m.kind!=BuildKind.StoneFurnace)Require(m.items[i]==before[i],$"blocked recipe {r.id} lost/created item {i}");
+                Require(sim.State.produced.All(v=>v==0),$"blocked recipe {r.id} counted phantom production");
+            }
+        });
+        Run("every non-free machine recipe stalls with one required input missing", () =>
+        {
+            foreach(var r in TechCatalog.Recipes.Where(r=>r.building!=BuildKind.Workbench && r.inputs.Any(v=>v>0)))
+            {
+                var state=Flat(era:r.era);var m=Add(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);int missing=Array.FindIndex(r.inputs,v=>v>0);m.items[missing]--;
+                if(m.kind==BuildKind.StoneFurnace)m.items[(int)ItemKind.Fuel]=1;else AddRecipePower(state,m);
+                if(m.kind==BuildKind.ChemicalPlant)Water(state,10,12);
+                var sim=new WorldSimulator(state);Advance(sim,r.duration+1);m=Building(sim,m.id);
+                for(int i=0;i<21;i++)if(r.outputs[i]>0)Require(m.items[i]==0,$"recipe {r.id} manufactured without all inputs");
+                Require(sim.State.produced.All(v=>v==0),"missing input fabricated production history");
+            }
+        });
+        Run("all 21 item types travel as conserved real cargo", () =>
+        {
+            for(int item=0;item<21;item++)
+            {
+                var state=Flat(era:TechEra.Nuclear);var from=Add(state,BuildKind.Belt,10,10);from.items[item]=1;var to=Add(state,BuildKind.Chest,11,10);
+                var sim=new WorldSimulator(state);var expected=ItemTotals(sim.State);var flight=AwaitCargo(sim,from.id,to.id);Require(flight.item==item,$"wrong cargo item for {item}");
+                for(int n=0;n<20;n++){sim.Step(WorldSimulator.FixedStep);Conserved(sim.State,expected);}
+                Require(Building(sim,to.id).items[item]==1 && Building(sim,from.id).items[item]==0,$"new item {item} failed delivery");
+            }
+        });
+        Run("every machine recipe exports its declared output through its real port", () =>
+        {
+            foreach(var r in TechCatalog.Recipes.Where(r=>r.building!=BuildKind.Workbench))
+            {
+                var state=Flat(era:r.era);var source=Add(state,r.building,10,10);source.recipe=r.id;source.items=Copy(r.outputs);
+                var target=Add(state,BuildKind.Chest,DemoCatalog.OutputX(source),DemoCatalog.OutputY(source));var sim=new WorldSimulator(state);var expected=ItemTotals(sim.State);
+                for(int n=0;n<65;n++){sim.Step(WorldSimulator.FixedStep);Conserved(sim.State,expected);}
+                Inventory(Building(sim,target.id).items,r.outputs,$"recipe {r.id} export");
+            }
+        });
+        Run("mechanical crushing then primitive smelting improves one real ore to two iron", () =>
+        {
+            var state=Flat(era:TechEra.Water);var crusher=Add(state,BuildKind.MechanicalCrusher,10,10);crusher.items[(int)ItemKind.Ore]=1;AddRecipePower(state,crusher);
+            var belt=Add(state,BuildKind.Belt,12,10);var furnace=Add(state,BuildKind.StoneFurnace,13,10);furnace.recipe=13;furnace.items[(int)ItemKind.Fuel]=1;
+            var chest=Add(state,BuildKind.Chest,15,10);var sim=new WorldSimulator(state);Advance(sim,8);
+            Require(Building(sim,chest.id).items[(int)ItemKind.Iron]==2,"water-era chain did not produce two iron from one ore");
+            Require(sim.State.buildings.Sum(b=>b.items[(int)ItemKind.Ore]+b.items[(int)ItemKind.CrushedOre])==0 && sim.State.cargo.Count==0,"chain did not consume and deliver all intermediate material");
+            Require(sim.State.produced[(int)ItemKind.CrushedOre]==1 && sim.State.produced[(int)ItemKind.Iron]==2,"chain production counters lost a stage");
+        });
+        Run("electric mining preserves copper tin and uranium identity through logistics", () =>
+        {
+            foreach(var (node,item) in new[] { (NodeKind.CopperOre,ItemKind.CopperOre),(NodeKind.TinOre,ItemKind.TinOre),(NodeKind.UraniumOre,ItemKind.UraniumOre) })
+            {
+                var state=Flat(era:TechEra.Nuclear);state.nodes.Add(new NodeState { id=state.nextId++,kind=node,x=12,y=11,stock=2 });var miner=Add(state,BuildKind.Miner,10,10);Add(state,BuildKind.Generator,7,7).items[(int)ItemKind.Fuel]=1;
+                Add(state,BuildKind.Belt,12,10);var chest=Add(state,BuildKind.Chest,13,10);var sim=new WorldSimulator(state);Advance(sim,8);
+                Require(Building(sim,chest.id).items[(int)item]==2 && sim.State.gathered==2,$"{node} mining lost its item identity");Require(sim.State.nodes.Count==0 && sim.State.cargo.Count==0,"mineral chain did not exhaust and deliver two ore");
+            }
+        });
+        Run("nuclear processor and cooling tower feed a reactor which exports real waste", () =>
+        {
+            var state=Flat(era:TechEra.Nuclear);var processor=Add(state,BuildKind.NuclearProcessor,10,10);processor.recipe=90;processor.items[(int)ItemKind.UraniumOre]=2;processor.items[(int)ItemKind.Steel]=1;
+            Add(state,BuildKind.HighGenerator,7,7).items[(int)ItemKind.Fuel]=1;var reactor=Add(state,BuildKind.Reactor,13,10);var waste=Add(state,BuildKind.Chest,16,10);
+            var tower=Add(state,BuildKind.CoolingTower,13,7);Water(state,13,6);Add(state,BuildKind.DieselGenerator,10,4).items[(int)ItemKind.Fuel]=1;
+            Add(state,BuildKind.Belt,16,7,1);Add(state,BuildKind.Belt,16,8,1);Add(state,BuildKind.Belt,16,9,2);Add(state,BuildKind.Belt,15,9,1);
+            var sim=new WorldSimulator(state);Advance(sim,12);reactor=Building(sim,reactor.id);
+            Require(reactor.powerGeneration>0 && reactor.fuel>0,"delivered nuclear fuel/coolant did not start the reactor");Require(Building(sim,waste.id).items[(int)ItemKind.NuclearWaste]==1,"reactor failed to export its real nuclear waste");
+            Require(sim.State.produced[(int)ItemKind.NuclearFuel]==1 && sim.State.produced[(int)ItemKind.Coolant]>=4 && sim.State.produced[(int)ItemKind.NuclearWaste]==1,"nuclear chain fabricated or omitted a production stage");
+            Require(Building(sim,processor.id).items[(int)ItemKind.UraniumOre]==0 && Building(sim,processor.id).items[(int)ItemKind.Steel]==0,"nuclear processing did not debit ore/steel");
+        });
+    }
+
+    static void AddRecipePower(WorldState state, BuildingState machine)
+    {
+        int tier=TechCatalog.EnergyTier(machine.kind);
+        var kind=tier==0?BuildKind.Waterwheel:tier==1?BuildKind.Boiler:tier==2?BuildKind.Generator:tier==3?BuildKind.DieselGenerator:BuildKind.HighGenerator;
+        var source=Add(state,kind,tier==4?6:7,10);
+        if(tier<=1){Water(state,7,12);Add(state,tier==0?BuildKind.Shaft:BuildKind.SteamPipe,9,10);}
+        if(TechCatalog.IsFuelBurner(kind))source.items[(int)ItemKind.Fuel]=4;
+    }
+}
