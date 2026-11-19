@@ -33,6 +33,7 @@ namespace DeadCircuit
         public const string Crates = "FMATEBSK";
         public static readonly IReadOnlyList<SiteBlueprint> All = Array.AsReadOnly(CreateDefinitions());
         public static SiteBlueprint Get(SiteKind kind) => (int)kind >= 0 && (int)kind < All.Count ? All[(int)kind] : null;
+        public static SiteBlueprint Get(SiteState site) => site == null ? null : FloorWorld.GetPlan(site);
         public static int Width(SiteBlueprint plan, int rotation) => (rotation & 1) == 0 ? plan.Width : plan.Height;
         public static int Height(SiteBlueprint plan, int rotation) => (rotation & 1) == 0 ? plan.Height : plan.Width;
         public static char At(SiteBlueprint plan, int rotation, int x, int y)
@@ -47,18 +48,21 @@ namespace DeadCircuit
         }
         public static char At(SiteState site, int x, int y)
         {
-            var plan = site == null ? null : Get(site.kind);
+            var plan = Get(site);
             if (site == null || site.layoutVersion != LayoutVersion || plan == null ||
                 x < site.x || y < site.y || x >= site.x + site.width || y >= site.y + site.height) return ' ';
             return At(plan, site.rotation, x - site.x, y - site.y);
         }
         public static bool ValidMetadata(SiteState site)
         {
-            if (site.layoutVersion == 0) return site.rotation == 0 && (int)site.kind < WorldGeneration.LegacySiteCount;
-            var plan = Get(site.kind);
+            if (site == null || site.parentSiteId < 0 || (site.parentSiteId == 0) != (site.level == 0)) return false;
+            if (site.layoutVersion == 0) return site.parentSiteId == 0 && site.rotation == 0 && (int)site.kind < WorldGeneration.LegacySiteCount;
+            var plan = Get(site);
             return site.layoutVersion == LayoutVersion && site.rotation >= 0 && site.rotation < 4 && plan != null &&
                 site.width == Width(plan, site.rotation) && site.height == Height(plan, site.rotation) &&
-                At(site, site.doorX, site.doorY) == '+';
+                (site.parentSiteId == 0 ? At(site, site.doorX, site.doorY) == '+' :
+                    site.doorX >= site.x && site.doorX < site.x + site.width &&
+                    site.doorY >= site.y && site.doorY < site.y + site.height);
         }
         public static char CrateAt(WorldState world, int x, int y)
         {

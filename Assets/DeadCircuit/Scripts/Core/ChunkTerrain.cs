@@ -29,6 +29,7 @@ namespace DeadCircuit
                 throw new ArgumentException("World does not use sparse chunk generation.", nameof(world));
             if (!ChunkStreaming.InsideChunk(chunkX, chunkY))
                 throw new ArgumentOutOfRangeException(nameof(chunkX));
+            if (world.generatorVersion >= 5 && FloorWorld.IsReservedChunk(chunkX, chunkY)) return false;
             if (WorldTiles.TryChunk(world, chunkX, chunkY, out _)) return false;
             if (world.chunks.records.Count >= ChunkStreaming.MaxRecords || world.chunks.revision == int.MaxValue) return false;
             var ground = new char[Size * Size];
@@ -86,6 +87,7 @@ namespace DeadCircuit
 
         private static bool Street(Region r, int x, int y)
         {
+            if (r.world.generatorVersion >= 5) return SettlementCatalog.Street(r.world, x, y);
             // Two world-coordinate arterials align with the old tutorial cross.
             if (x == 32 || x == 33 || y == 32 || y == 33) return true;
             int streetX = x - WorldTiles.FloorDiv(x, 32) * 32;

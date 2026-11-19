@@ -11,10 +11,12 @@ static partial class Checks
 
     static void LandmarkChecks()
     {
-        Run("landmarks generator3 terrain matches committed v8 golden fingerprint", () =>
+        Run("landmarks generators 3 and 4 keep their committed terrain fingerprints", () =>
         {
-            // Independently compiled from d94b656 before adding this assertion.
-            var world=TerrainBlank(11,WorldPreset.Urban,2); world.generatorVersion=3;
+            // Compiled from d94b656 and 9cc7b4d, independently of generator 5.
+            foreach (int version in new[] { 3, 4 })
+            {
+            var world=TerrainBlank(11,WorldPreset.Urban,2); world.generatorVersion=version;
             for(int x=-8;x<8;x++) ChunkTerrain.Generate(world,x,-5);
             var text=new System.Text.StringBuilder();
             foreach(var c in world.chunks.records) text.Append($"{c.x},{c.y}:{c.ground}:{c.biomes};");
@@ -22,7 +24,10 @@ static partial class Checks
             foreach(var b in world.buildings) text.Append($"B{b.id},{b.x},{b.y},{(int)b.kind},{b.rotation};");
             foreach(var s in world.sites) text.Append($"S{s.id},{s.x},{s.y},{(int)s.kind},{(int)s.district},{s.width},{s.height},{s.doorX},{s.doorY};");
             string hash=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text.ToString())));
-            Require(hash=="51BC357C6091249E71EDB53FF82B25B1AD6F467C8B0B16D36DBD0E1A659AAD91","v8 terrain, resources, layouts or id order changed");
+            string expected = version == 3 ? "51BC357C6091249E71EDB53FF82B25B1AD6F467C8B0B16D36DBD0E1A659AAD91" :
+                "BEBB24B7400782FDE36341ACEE3C032FB1EE10A25FFE6A2696780B6E96F0AE59";
+            Require(hash==expected,$"generator {version} terrain, resources, layouts or id order changed");
+            }
         });
         Run("landmarks all 32 kinds generate as reachable rotated real geometry", () =>
         {
@@ -74,7 +79,7 @@ static partial class Checks
             old.version = 8; old.generatorVersion = 3;
             var source = Saved(old); string before = Dump(source);
             var restored = new WorldSimulator(source).State;
-            Require(restored.version == 9 && restored.generatorVersion == 3 && Dump(source) == before, "v8 migration changed generation or caller");
+            Require(restored.version == WorldSimulator.SaveVersion && restored.generatorVersion == 3 && Dump(source) == before, "v8 migration changed generation or caller");
             for(int x=-8;x<8;x++) { ChunkTerrain.Generate(old,x,-5); ChunkTerrain.Generate(restored,x,-5); }
             Require(restored.sites.Any(s=>s.y<0) && restored.sites.All(s=>s.layoutVersion==0 && (int)s.kind<12), "legacy world received new plans");
             Require(TerrainEntityDump(old)==TerrainEntityDump(restored) && TerrainMapDump(old)==TerrainMapDump(restored), "legacy future generation changed after version migration");
@@ -152,6 +157,7 @@ static partial class Checks
     {
         var found=LandmarkFind(profile);
         var world=WorldGeneration.Generate(new WorldGenerationSettings {seed=found.seed,chunked=true,preset=WorldPreset.Urban,cityDensity=2});
+        world.generatorVersion=4; // LandmarkFind searches the frozen gen4 layouts.
         Require(!ChunkStreaming.IsGenerated(world,found.cx*16,found.cy*16),"fixture falls in tutorial");
         ChunkTerrain.Generate(world,found.cx,found.cy);
         var sim=new WorldSimulator(world); player=sim.AddPlayer("landmark-looter","探索者");

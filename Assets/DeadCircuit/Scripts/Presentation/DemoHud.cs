@@ -706,7 +706,7 @@ namespace DeadCircuit
                         (needsPower ? " · 产能 " + (building.powerRatio * 100f).ToString("0") + "%" : "");
                 if (grid != null) power += "\n" + EnergyName(grid.tier) + "网 " + grid.id + " · " +
                     grid.generation.ToString("0.#") + " / " + grid.demand.ToString("0.#") + (grid.tier < 2 ? " 功率" : " kW");
-                Set(machineTitle, InspectedMachineName(building) + "  (" + building.x + "," + building.y + ")");
+                Set(machineTitle, InspectedMachineName(building) + "  " + CellLocationText(world, building.x, building.y));
                 machineTitle.color = needsPower && building.powerRatio < .99f ? Amber : Accent;
                 SetFlowText(machineInfo, "耐久 " + Mathf.CeilToInt(building.hp) + " / " + WorldSimulator.BuildingMaxHealth(building.kind).ToString("0") +
                     " · " + DemoCatalog.Width(building) + "×" + DemoCatalog.Height(building) + "格\n" + power + "\n" + MachineFlow(building));
@@ -761,7 +761,7 @@ namespace DeadCircuit
             machineSafety.gameObject.SetActive(false);
             machineCluster.gameObject.SetActive(false);
             machineTitle.color = Accent;
-            Set(machineTitle, Nodes[(int)node.kind] + "  (" + inspectedX + "," + inspectedY + ")");
+            Set(machineTitle, Nodes[(int)node.kind] + "  " + CellLocationText(world, inspectedX, inspectedY));
             SetFlowText(machineInfo, "资源余量：" + node.stock);
             SetFlowText(machineContents, "资源耐久：" + Mathf.CeilToInt(node.hp));
             SetFlowText(machineHint, "靠近后按 E 采集 / 交互。\n采矿机需紧邻未耗尽的矿脉。");
@@ -838,7 +838,14 @@ namespace DeadCircuit
             else if (status && bridge.Status.Contains("已保存")) { message = bridge.Status; color = Accent; }
             else if (announcement) message = world.announcement;
             message = Clean(message);
-            Set(feedback, !AnyPanelOpen() && player.hp > 0f ? message : "");
+            bool showWorldFeedback = !AnyPanelOpen() && player.hp > 0f;
+            string worldFeedback = showWorldFeedback ? message : "";
+            if (showWorldFeedback && Mouse.current != null && !CapturesInput)
+            {
+                string stair = StairTargetHint(world, player);
+                if (stair.Length > 0) worldFeedback = message.Length == 0 ? stair : message + "\n" + stair;
+            }
+            Set(feedback, worldFeedback);
             feedback.color = color;
             Set(inventoryNotice, inventory.gameObject.activeSelf ? message : "");
             inventoryNotice.color = color;
@@ -852,6 +859,16 @@ namespace DeadCircuit
             Set(technologyNotice, technology.gameObject.activeSelf ?
                 (message.Length > 0 ? message : "研究由全队共享；只消耗发起者背包中的材料。") : "");
             technologyNotice.color = color;
+        }
+
+        string StairTargetHint(WorldState world, PlayerState player)
+        {
+            Vector2 point = bridge.MouseWorld;
+            int x = Mathf.RoundToInt(point.x), y = Mathf.RoundToInt(point.y);
+            if (!FloorWorld.TryStair(world, x, y, out var stair)) return "";
+            if ((new Vector2(player.x - x, player.y - y)).sqrMagnitude > 2.4f * 2.4f)
+                return "靠近楼梯 · 通往" + FloorWorld.LevelName(stair.targetLevel);
+            return (stair.Glyph == '<' ? "E 上楼 · " : "E 下楼 · ") + FloorWorld.LevelName(stair.targetLevel);
         }
 
         static bool IsIntroNotice(string value) => !string.IsNullOrEmpty(value) &&

@@ -190,6 +190,7 @@ namespace DeadCircuit
                 if (t.until > source.elapsed) s.traces.Add(new TraceState { x = t.x, y = t.y, endX = t.endX, endY = t.endY, until = t.until, hostile = t.hostile, effect = source.version >= 6 ? t.effect : 0 });
             }
             CopyExploration(source, s, entityIds, ref highestId);
+            ValidateFloors(s, occupied);
             CopySurvival(source, s, entityIds, ref highestId);
             SaveCheck(source.nextId > 0 && source.nextId < int.MaxValue - 1 && highestId < int.MaxValue - 2, "next entity id");
             if(source.version>=4) SaveCheck(source.nextId>highestId,"next entity id must exceed all equipment and world ids");

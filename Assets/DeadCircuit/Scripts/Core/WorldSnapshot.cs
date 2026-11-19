@@ -22,6 +22,11 @@ namespace DeadCircuit
             result.nodes=source.nodes.FindAll(n=>nearby(n.x,n.y));
             result.buildings=source.buildings.FindAll(b=>nearby(b.x,b.y));
             result.sites=source.sites.FindAll(s=>nearby(s.x,s.y));
+            // A floor snapshot carries its ground identity for labels and stairs,
+            // without sending that remote location's terrain or live entities.
+            var rootIds=new HashSet<int>();
+            foreach(var site in result.sites) if(site.parentSiteId>0) rootIds.Add(site.parentSiteId);
+            foreach(var site in source.sites) if(rootIds.Contains(site.id) && !result.sites.Contains(site)) result.sites.Add(site);
             result.zombies=source.zombies.FindAll(z=>nearby((int)Math.Floor(z.x+.5f),(int)Math.Floor(z.y+.5f)));
             var ids=new HashSet<int>();foreach(var b in result.buildings) ids.Add(b.id);
             result.cargo=source.cargo.FindAll(c=>ids.Contains(c.fromId) && ids.Contains(c.toId));

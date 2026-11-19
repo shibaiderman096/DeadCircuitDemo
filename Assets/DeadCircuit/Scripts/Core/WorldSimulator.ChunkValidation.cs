@@ -13,7 +13,7 @@ namespace DeadCircuit
                 return;
             }
             var chunks=source.chunks;
-            SaveCheck(source.generatorVersion==3 || source.generatorVersion==4 && source.version>=9,"chunk generator");
+            SaveCheck(source.generatorVersion==3 || source.generatorVersion==4 && source.version>=9 || source.generatorVersion==5 && source.version>=10,"chunk generator");
             SaveCheck(chunks.records!=null && chunks.records.Count>=16 && chunks.records.Count<=65536 && chunks.revision>=0 && string.IsNullOrEmpty(chunks.generated),"chunk metadata");
             var keys=new HashSet<long>();var result=new ChunkWorldState {enabled=true,revision=chunks.revision};
             foreach(var chunk in chunks.records)
@@ -21,8 +21,13 @@ namespace DeadCircuit
                 SaveCheck(chunk!=null && chunk.x>=-65536 && chunk.x<65536 && chunk.y>=-65536 && chunk.y<65536 && WorldTiles.Inside(source,chunk.x*16,chunk.y*16) && WorldTiles.Inside(source,chunk.x*16+15,chunk.y*16+15),"chunk coordinates");
                 SaveCheck(keys.Add(WorldTiles.Key(chunk.x,chunk.y)),"duplicate chunk");
                 SaveCheck(chunk.ground!=null && chunk.ground.Length==256 && chunk.biomes!=null && chunk.biomes.Length==256,"chunk tile length");
-                for(int i=0;i<256;i++) SaveCheck(chunk.ground[i]>='0' && chunk.ground[i]<='4' && chunk.biomes[i]>='0' && chunk.biomes[i]<='5',"chunk tile kind");
-                result.records.Add(new WorldChunkState {x=chunk.x,y=chunk.y,ground=chunk.ground,biomes=chunk.biomes});
+                bool interior = chunk.interiorSiteId > 0;
+                bool reserved = source.generatorVersion >= 5 && FloorWorld.IsReservedChunk(chunk.x, chunk.y);
+                SaveCheck(chunk.interiorSiteId >= 0 && (!interior || source.version >= 10 && reserved), "interior chunk marker");
+                SaveCheck(!reserved || interior, "natural chunk in interior reserve");
+                for(int i=0;i<256;i++) SaveCheck(interior && chunk.ground[i]=='?' && chunk.biomes[i]=='?' ||
+                    chunk.ground[i]>='0' && chunk.ground[i]<='4' && chunk.biomes[i]>='0' && chunk.biomes[i]<='5',"chunk tile kind");
+                result.records.Add(new WorldChunkState {x=chunk.x,y=chunk.y,ground=chunk.ground,biomes=chunk.biomes,interiorSiteId=chunk.interiorSiteId});
             }
             // A normal save always contains its intact original tutorial footprint.
             for(int cy=0;cy<4;cy++) for(int cx=0;cx<4;cx++) SaveCheck(keys.Contains(WorldTiles.Key(cx,cy)),"missing initial chunk");

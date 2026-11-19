@@ -24,7 +24,7 @@ namespace DeadCircuit
     [Serializable] public sealed class WorldState
     {
         internal WorldState SnapshotCopy() => (WorldState)MemberwiseClone();
-        public int version = 9, seed, width = 64, height = 64, nextId = 1, wave;
+        public int version = 10, seed, width = 64, height = 64, nextId = 1, wave;
         public ChunkWorldState chunks = new ChunkWorldState();
         public WorldGenerationSettings generation;
         public int generatorVersion;

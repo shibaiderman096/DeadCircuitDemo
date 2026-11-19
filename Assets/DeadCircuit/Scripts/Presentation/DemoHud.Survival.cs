@@ -353,12 +353,14 @@ namespace DeadCircuit
         void RefreshSurvivalTargets(WorldState world, PlayerState player)
         {
             int cx = Mathf.FloorToInt(player.x + .5f), cy = Mathf.FloorToInt(player.y + .5f);
+            bool onFloor = FloorWorld.IsInterior(world, cx, cy);
             if (!survivalHasTarget) { survivalX = cx; survivalY = cy; survivalHasTarget = true; }
             for (int i = 0; i < survivalCells.Length; i++)
             {
                 int x = cx + i % 5 - 2, y = cy + 2 - i / 5;
                 bool inside = SurvivalInside(world, x, y);
-                string title = inside ? x + "," + y : "边界";
+                string title = "边界";
+                if (inside) title = onFloor ? (x == cx && y == cy ? "此处" : Signed(x - cx) + "," + Signed(y - cy)) : x + "," + y;
                 if (inside && SurvivalGround(world, x, y) == '2') title += " 水";
                 else if (inside && FindSurvivalPlot(world, x, y) != null) title += " 田";
                 Set(survivalCells[i].label, title);
@@ -366,8 +368,10 @@ namespace DeadCircuit
                 Tint(survivalCells[i], x == survivalX && y == survivalY ? Selected : Raised);
                 survivalCells[i].label.color = SurvivalInReach(world, player, x, y) ? Ink : Muted;
             }
-            Set(survivalTargetText, "所选：(" + survivalX + ", " + survivalY + ") · " +
-                (SurvivalInside(world, survivalX, survivalY) ? SurvivalGroundName(SurvivalGround(world, survivalX, survivalY)) : "地图外") +
+            string target = SurvivalInside(world, survivalX, survivalY)
+                ? CellLocationText(world, survivalX, survivalY) + " · " + SurvivalGroundName(SurvivalGround(world, survivalX, survivalY))
+                : "地图外";
+            Set(survivalTargetText, "所选：" + target +
                 "\n距离 " + Vector2.Distance(new Vector2(player.x, player.y), new Vector2(survivalX, survivalY)).ToString("0.0") + " / 2.4 格");
             string reason;
             if (!SurvivalInReach(world, player, survivalX, survivalY)) reason = "目标超出 2.4 格或视线受阻；请关闭面板走近。";
@@ -395,7 +399,7 @@ namespace DeadCircuit
                 cost.Append(" · 燃料 ").Append(Count(player.items, (int)ItemKind.Fuel)).Append('/').Append(recipe == null ? 1 : recipe.fuel);
                 Set(row.text, (recipe == null ? "原水煮沸 → 净水 ×1" : recipe.name + " → " + SurvivalCatalog.Food((int)recipe.output).name + " ×" + recipe.quantity) +
                     "\n" + cost + "\n" + (kind == BuildKind.Workbench ? "工作台" : "石炉") +
-                    (station ? " (" + x + "," + y + ")" : " · 无附近合法工作站") + (can ? " · 就绪" : " · " + reason));
+                    (station ? " " + CellLocationText(world, x, y) : " · 无附近合法工作站") + (can ? " · 就绪" : " · " + reason));
                 row.action.button.interactable = station && can;
             }
         }
@@ -421,7 +425,7 @@ namespace DeadCircuit
                 row.root.gameObject.SetActive(plot != null);
                 if (plot == null) continue;
                 row.id = plot.id;
-                Set(row.text, "(" + plot.x + "," + plot.y + ") " + SurvivalPlotDescription(plot));
+                Set(row.text, CellLocationText(world, plot.x, plot.y) + " " + SurvivalPlotDescription(plot));
                 SetHudArt(row.icon, plot.crop < 0 ? null : "crop_" + plot.crop + (plot.growth >= 1 ? "_1" : "_0"));
             }
         }
@@ -436,7 +440,9 @@ namespace DeadCircuit
                 row.root.gameObject.SetActive(true); row.id = c.id;
                 var d = SurvivalCatalog.Creatures[(int)c.kind];
                 bool can = SurvivalPermit("butcher", c.id, 0, 0, out string reason);
-                Set(row.text, d.name + "尸体 (" + c.x.ToString("0.0") + "," + c.y.ToString("0.0") + ") · 距离 " +
+                int x = Mathf.FloorToInt(c.x + .5f), y = Mathf.FloorToInt(c.y + .5f);
+                string location = CellLocationText(world, x, y);
+                Set(row.text, d.name + "尸体 " + location + " · 距离 " +
                     Vector2.Distance(new Vector2(player.x, player.y), new Vector2(c.x, c.y)).ToString("0.0") + " 格" +
                     "\n" + SurvivalCatalog.Food((int)d.food).name + " ×" + c.meatLeft + " · " + (can ? "可分解" : reason));
                 SetHudArt(row.icon, "creature_" + (int)c.kind);

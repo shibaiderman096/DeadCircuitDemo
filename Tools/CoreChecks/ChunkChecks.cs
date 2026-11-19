@@ -55,8 +55,13 @@ static partial class Checks
             Require(sim.State.chunks.records.Count==16,"new world pre-generated distant land");
             Near(p.x,32,"original tutorial spawn x");Near(p.y,35,"original tutorial spawn y");
             Require(!sim.IsBlocked((int)p.x,(int)p.y) && sim.IsBlocked(-1000,-1000),"spawn or unknown collision");
-            foreach(var coord in new[] {(-300,400),(1000,-2000),(-3000,-4000),(4000,5000)})
+            foreach(var coord in new[] {(-300,400),(1000,-2000),(-3000,-4000),(-3000,-5000),(4000,5000)})
             {
+                if(FloorWorld.IsReservedChunk(coord.Item1,coord.Item2))
+                {
+                    Require(!ChunkStreaming.GenerateChunk(sim.State,coord.Item1,coord.Item2),"outdoor generation entered the indoor reserve");
+                    continue;
+                }
                 Require(ChunkStreaming.GenerateChunk(sim.State,coord.Item1,coord.Item2),"distant generation blocked by finite map");
                 Require(ChunkStreaming.IsGenerated(sim.State,coord.Item1*16,coord.Item2*16),"distant chunk not recorded");
                 Require(WorldTiles.Ground(sim.State,coord.Item1*16,coord.Item2*16)!='?',"distant terrain missing");

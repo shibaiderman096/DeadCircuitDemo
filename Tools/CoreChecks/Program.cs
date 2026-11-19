@@ -99,6 +99,9 @@ static partial class Checks
         filters = args;
         SiteBlueprintDefinitionChecks();
         LandmarkChecks();
+        SettlementChecks();
+        FloorChecks();
+        FloorIntegrationChecks();
         ChunkChecks();
         ChunkTerrainChecks();
         InfiniteRoomChecks();

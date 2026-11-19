@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 9;
+        public const int SaveVersion = 10;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -230,6 +230,7 @@ namespace DeadCircuit
             if (State.buildings.Count >= MaxBuildings) { Notice(p, "设备数量已达上限。"); return; }
             for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
             {
+                if (FloorWorld.IsProtectedCell(State, x, y)) { Notice(p, "楼梯和落点须保持畅通。"); return; }
                 if (SurvivalOccupiesCell(x, y)) { Notice(p, "设备占地内有农田或生物。"); return; }
                 if (BlockedAt(x, y) || BuildingAt(x, y) != null) { Notice(p, "完整占地内有障碍、水域或其他设备。"); return; }
                 if (NearSpawn(x, y)) { Notice(p, "出生救援区不可建造。"); return; }

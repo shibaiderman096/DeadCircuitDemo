@@ -33,7 +33,7 @@ namespace DeadCircuit
         }
         public static bool IsVisible(WorldState world,PlayerState player,int x,int y)
         {
-            if(player==null || !player.connected || player.hp<=0 || !ChunkStreaming.IsGenerated(world,x,y)) return false;
+            if(player==null || !player.connected || player.hp<=0 || !ChunkStreaming.IsGenerated(world,x,y) || WorldTiles.Ground(world,x,y)=='?') return false;
             float dx=x-player.x,dy=y-player.y; int r=Radius(world);
             return dx*dx+dy*dy<=r*r;
         }
@@ -54,7 +54,7 @@ namespace DeadCircuit
         }
         public static bool IsExplored(WorldState world,PlayerState player,int x,int y)
         {
-            if(player==null || !ChunkStreaming.IsGenerated(world,x,y)) return false;
+            if(player==null || !ChunkStreaming.IsGenerated(world,x,y) || WorldTiles.Ground(world,x,y)=='?') return false;
             string bits;int cell;
             if(ChunkStreaming.Enabled(world))
             {

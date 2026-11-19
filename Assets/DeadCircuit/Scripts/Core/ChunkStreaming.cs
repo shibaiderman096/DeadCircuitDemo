@@ -7,6 +7,7 @@ namespace DeadCircuit
     {
         // Global chunk coordinates. Each map is a local 16 x 16 string.
         public int x, y;
+        public int interiorSiteId;
         public string ground = "", biomes = "";
     }
 
@@ -46,7 +47,9 @@ namespace DeadCircuit
             int cx = WorldTiles.FloorDiv(x, ChunkSize), cy = WorldTiles.FloorDiv(y, ChunkSize);
             foreach (var player in world.players)
                 if (PlayerChunk(world, player, out int px, out int py) &&
-                    Math.Abs(cx - px) <= LoadRadius && Math.Abs(cy - py) <= LoadRadius) return true;
+                    (FloorWorld.IsInterior(world, px * ChunkSize, py * ChunkSize)
+                        ? cx == px && cy == py
+                        : Math.Abs(cx - px) <= LoadRadius && Math.Abs(cy - py) <= LoadRadius)) return true;
             return false;
         }
 
@@ -96,10 +99,12 @@ namespace DeadCircuit
             foreach (var player in world.players)
             {
                 if (!PlayerChunk(world, player, out int px, out int py)) continue;
+                if (FloorWorld.IsInterior(world, px * ChunkSize, py * ChunkSize)) continue;
                 for (int cy = py - LoadRadius; cy <= py + LoadRadius; cy++)
                 for (int cx = px - LoadRadius; cx <= px + LoadRadius; cx++)
                 {
-                    if (!InsideChunk(cx, cy) || WorldTiles.TryChunk(world, cx, cy, out _)) continue;
+                    if (!InsideChunk(cx, cy) || world.generatorVersion >= 5 && FloorWorld.IsReservedChunk(cx, cy) ||
+                        WorldTiles.TryChunk(world, cx, cy, out _)) continue;
                     int dx = cx - px, dy = cy - py, d = dx * dx + dy * dy;
                     if (!found || d < distance || (d == distance && (cy < bestY || (cy == bestY && cx < bestX))))
                     { found = true; bestX = cx; bestY = cy; distance = d; }

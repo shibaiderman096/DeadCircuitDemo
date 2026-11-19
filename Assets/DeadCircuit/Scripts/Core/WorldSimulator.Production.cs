@@ -32,6 +32,7 @@ namespace DeadCircuit
 
         private void Interact(PlayerState p, int x, int y, int arg)
         {
+            if (TryFloorInteraction(p, x, y)) return;
             BuildingState b = BuildingAt(x, y);
             if (b == null)
             {

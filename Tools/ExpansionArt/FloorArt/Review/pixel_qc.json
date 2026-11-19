@@ -1,0 +1,36 @@
+{
+  "status": "pass",
+  "art_source": "code",
+  "renderer": "resvg_py 0.5.0",
+  "atlasSize": [
+    72,
+    36
+  ],
+  "atlasSha256": "7030dddf6c98144e72f389e3c40ca537aee45d22f87a054dabe9e511da27841e",
+  "gutterPerCell": 2,
+  "spillPixels": 0,
+  "partialAlphaPixels": 0,
+  "offPalettePixels": 0,
+  "sprites": [
+    {
+      "name": "floor_stairs_up",
+      "bounds": [
+        4,
+        3,
+        28,
+        29
+      ],
+      "opaquePixels": 608
+    },
+    {
+      "name": "floor_stairs_down",
+      "bounds": [
+        4,
+        3,
+        28,
+        29
+      ],
+      "opaquePixels": 608
+    }
+  ]
+}

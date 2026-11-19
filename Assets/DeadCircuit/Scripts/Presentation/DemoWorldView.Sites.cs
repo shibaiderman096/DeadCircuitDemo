@@ -9,6 +9,7 @@ namespace DeadCircuit
         // All authored decorations stay below players, live walls, doors, crates
         // and later construction. They never acquire colliders or interaction.
         const int SiteFloorOrder = -17999;
+        const int SiteStairOrder = SiteFloorOrder + 1;
         const int SitePropOrder = -17000;
         const int SiteSignOrder = -16999;
         const string SitePropCells = "bsthnmpkglruvodfwea";
@@ -32,24 +33,23 @@ namespace DeadCircuit
 
         static bool SitePlan(SiteState site, out SiteBlueprint plan)
         {
-            plan = site == null || site.layoutVersion != 1 ? null : SiteBlueprintCatalog.Get(site.kind);
+            plan = site == null || site.layoutVersion != 1 ? null : FloorWorld.GetPlan(site);
             return plan != null && site.rotation >= 0 && site.rotation < 4 &&
                 site.width == SiteBlueprintCatalog.Width(plan, site.rotation) &&
                 site.height == SiteBlueprintCatalog.Height(plan, site.rotation);
         }
 
-        internal string SiteNameAt(WorldState world, int x, int y)
+        internal static SiteState SiteAt(WorldState world, int x, int y)
         {
-            if (world?.sites == null) return "";
+            if (world?.sites == null) return null;
             foreach (var site in world.sites)
             {
                 if (!SitePlan(site, out var plan) || x < site.x || y < site.y ||
                     x >= site.x + site.width || y >= site.y + site.height ||
                     SiteBlueprintCatalog.At(plan, site.rotation, x - site.x, y - site.y) == ' ') continue;
-                int kind = (int)site.kind;
-                return kind >= 0 && kind < WorldGenerationCatalog.Sites.Count ? WorldGenerationCatalog.Sites[kind].name : "";
+                return site;
             }
-            return "";
+            return null;
         }
 
         static ulong SiteHash(ulong hash, int value)
@@ -63,6 +63,8 @@ namespace DeadCircuit
             hash = SiteHash(hash, site.x); hash = SiteHash(hash, site.y);
             hash = SiteHash(hash, site.width); hash = SiteHash(hash, site.height);
             hash = SiteHash(hash, site.rotation); hash = SiteHash(hash, site.layoutVersion);
+            hash = SiteHash(hash, site.id); hash = SiteHash(hash, site.parentSiteId);
+            hash = SiteHash(hash, site.level);
             hash = SiteHash(hash, site.doorX); return SiteHash(hash, site.doorY);
         }
 
@@ -91,6 +93,7 @@ namespace DeadCircuit
                 unchecked { sites += SiteGeometrySignature(site); }
             }
             ulong hash = SiteHash(sites ^ chunks, visibleSites.Count);
+            hash = SiteHash(hash, world.generatorVersion);
             hash = SiteHash(hash, siteMinX); hash = SiteHash(hash, siteMinY);
             hash = SiteHash(hash, siteMaxX); return SiteHash(hash, siteMaxY);
         }
@@ -110,7 +113,7 @@ namespace DeadCircuit
             drawnSiteSignature = signature; sitesDrawn = true; siteArtPending = false;
             usedSiteSprites = 0;
             foreach (var batch in siteFloors.Values) { batch.data.Clear(); batch.renderer.enabled = false; }
-            foreach (var site in visibleSites) DrawSite(site);
+            foreach (var site in visibleSites) DrawSite(world, site);
             foreach (var batch in siteFloors.Values)
             {
                 var data = batch.data;
@@ -123,10 +126,11 @@ namespace DeadCircuit
             siteArtRetryAt = Time.unscaledTime + 1f;
         }
 
-        void DrawSite(SiteState site)
+        void DrawSite(WorldState world, SiteState site)
         {
             if (!SitePlan(site, out var plan)) return;
             Sprite floor = DemoArt.Get(plan.floorArt);
+            bool floorsEnabled = FloorWorld.Enabled(world);
             int minX = Mathf.Max(site.x, siteMinX), minY = Mathf.Max(site.y, siteMinY);
             int maxX = Mathf.Min(site.x + site.width - 1, siteMaxX), maxY = Mathf.Min(site.y + site.height - 1, siteMaxY);
             for (int y = minY; y <= maxY; y++) for (int x = minX; x <= maxX; x++)
@@ -138,12 +142,17 @@ namespace DeadCircuit
                 if (cell == ' ' || cell == ',') continue;
                 if (floor != null) AddSiteFloor(floor, x, y);
                 else siteArtPending = true;
-                if (SitePropCells.IndexOf(cell) >= 0)
+                char stair = floorsEnabled && (cell == '.' || cell == '<' || cell == '>')
+                    ? FloorWorld.StairGlyph(site, x, y) : '\0';
+                if (stair == '<' || stair == '>')
+                    AddSiteSprite(DemoArt.Get(stair == '<' ? "floor_stairs_up" : "floor_stairs_down"),
+                        x, y, 1f, SiteStairOrder, 0);
+                else if (SitePropCells.IndexOf(cell) >= 0)
                     AddSiteSprite(DemoArt.Get("landmark_prop_" + cell), x, y, .875f, SitePropOrder, site.rotation);
                 // #, + and uppercase crate cells receive only a floor beneath
                 // their live entities, never a second wall, door or container.
             }
-            DrawSiteSign(site, plan);
+            if (site.parentSiteId == 0 && site.level == 0) DrawSiteSign(site, plan);
         }
 
         void EnsureSitesRoot()

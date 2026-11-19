@@ -9,23 +9,50 @@ namespace DeadCircuit
         TextMeshProUGUI machineCluster;
         DemoWorldView roomWorldView;
 
+        static string CellLocationText(WorldState world, int x, int y)
+        {
+            string floor = FloorWorld.Location(world, x, y);
+            if (!string.IsNullOrEmpty(floor)) return floor;
+            if (FloorWorld.IsInterior(world, x, y)) return "未知室内位置";
+            return "(" + x + "," + y + ")";
+        }
+
+        static string OutdoorRegionText(WorldState world, int x, int y)
+        {
+            int biome = WorldTiles.Biome(world, x, y) - '0';
+            var biomes = WorldGenerationCatalog.Biomes;
+            string ecology = biome >= 0 && biome < biomes.Count ? biomes[biome].name : "";
+            if (world.generatorVersion < 5) return ecology;
+            string settlement = SettlementCatalog.Get(SettlementGeneration.Sample(world, x, y)).name;
+            return ecology.Length == 0 ? settlement : settlement + " · " + ecology;
+        }
+
         string RoomLocation(WorldState world, PlayerState player)
         {
-            if (player == null) return "";
-            if (roomWorldView == null) roomWorldView = bridge.GetComponent<DemoWorldView>();
-            if (roomWorldView == null) return "";
+            if (world == null || player == null) return "";
             int x = Mathf.FloorToInt(player.x + .5f), y = Mathf.FloorToInt(player.y + .5f);
-            string siteName = roomWorldView.SiteNameAt(world, x, y);
-            string siteLocation = string.IsNullOrEmpty(siteName) ? "" : siteName + " · ";
-            var room = roomWorldView.RoomAt(world, x, y);
-            if (room == null && world.buildings != null) foreach (var door in world.buildings)
+            string floor = FloorWorld.Location(world, x, y);
+            if (!string.IsNullOrEmpty(floor)) return "\n位置：" + floor;
+            if (FloorWorld.IsInterior(world, x, y)) return "\n位置：未知室内位置";
+            if (roomWorldView == null) roomWorldView = bridge.GetComponent<DemoWorldView>();
+            var site = DemoWorldView.SiteAt(world, x, y);
+            string siteLocation = site == null ? "" : WorldGenerationCatalog.Sites[(int)site.kind].name + " · ";
+            var room = roomWorldView?.RoomAt(world, x, y);
+            if (roomWorldView != null && room == null && world.buildings != null) foreach (var door in world.buildings)
             {
                 if (door == null || door.hp <= 0 || door.kind != BuildKind.Door || !DemoCatalog.Contains(door, x, y)) continue;
                 room = roomWorldView.RoomAt(world, x + 1, y) ?? roomWorldView.RoomAt(world, x - 1, y) ??
                     roomWorldView.RoomAt(world, x, y + 1) ?? roomWorldView.RoomAt(world, x, y - 1);
                 break;
             }
-            return room == null ? "\n位置：" + siteLocation + "户外" : "\n位置：" + siteLocation + "室内 " +
+            if (room == null)
+            {
+                string region = OutdoorRegionText(world, x, y);
+                return "\n位置：" + siteLocation + "户外" + (region.Length == 0 ? "" : " · " + region);
+            }
+            string ground = FloorWorld.LevelName(0) + " · ";
+            if (site != null) ground += "(" + (x - site.x) + "," + (y - site.y) + ") · ";
+            return "\n位置：" + siteLocation + ground + "室内 " +
                 (room.cellKeys != null && room.cellKeys.Length > 0 ? room.cellKeys.Length : room.cells?.Length ?? 0) +
                 " 格 · 出入口 " + (room.doorIds?.Length ?? 0);
         }

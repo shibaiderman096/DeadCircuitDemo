@@ -35,6 +35,9 @@ namespace DeadCircuit
         public int id, x, y, width, height, doorX, doorY;
         public SiteKind kind;
         public DistrictKind district;
+        public SettlementKind settlement;
+        // Ground sites have parentSiteId=level=0; destruction never removes identity.
+        public int parentSiteId, level;
         // Metadata only: saved entities are never reconstructed from this plan.
         public int layoutVersion, rotation;
     }
@@ -132,7 +135,7 @@ namespace DeadCircuit
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 4;
+        public const int CurrentGeneratorVersion = 5;
         public const int LegacySiteCount = 12;
         private const int Size = 64;
 
