@@ -131,21 +131,21 @@ namespace DeadCircuit
             new SurvivalCropDefinition(CropKind.Beans, "豆", FoodKind.Beans, 160, .09f, 8, 32, 5, 3),
             new SurvivalCropDefinition(CropKind.Herb, "药草", FoodKind.Herb, 110, .05f, 3, 28, 3, 2)
         });
-        // Masks use generation biome char ordinals: meadow=0, deciduous=1, conifer=2, desert=3, wetland=4, tundra=5.
+        // Masks use the stable ordinals from WorldGeneration.BiomeKind.
         public static readonly IReadOnlyList<SurvivalCreatureDefinition> Creatures = Array.AsReadOnly(new[]
         {
-            new SurvivalCreatureDefinition(CreatureKind.Hare, "野兔", CreatureTemperament.Timid, 18, 3.9f, 7, 0, 0, 39, 1, FoodKind.RawMeat),
-            new SurvivalCreatureDefinition(CreatureKind.Deer, "鹿", CreatureTemperament.Timid, 65, 3.6f, 8, 0, 0, 7, 5, FoodKind.RawMeat),
-            new SurvivalCreatureDefinition(CreatureKind.Boar, "野猪", CreatureTemperament.Defensive, 95, 2.5f, 4, 14, 2.8f, 19, 5, FoodKind.RawMeat),
-            new SurvivalCreatureDefinition(CreatureKind.Chicken, "野鸡", CreatureTemperament.Timid, 14, 2.2f, 5, 0, 0, 3, 2, FoodKind.RawPoultry),
-            new SurvivalCreatureDefinition(CreatureKind.Wolf, "狼", CreatureTemperament.Predator, 72, 3.1f, 0, 12, 8, 38, 3, FoodKind.RawMeat),
-            new SurvivalCreatureDefinition(CreatureKind.Bear, "熊", CreatureTemperament.Predator, 240, 2.1f, 0, 25, 5, 6, 10, FoodKind.RawMeat),
-            new SurvivalCreatureDefinition(CreatureKind.Fox, "狐", CreatureTemperament.Predator, 32, 3.4f, 7, 6, 0, 47, 2, FoodKind.RawMeat, true),
-            new SurvivalCreatureDefinition(CreatureKind.Goat, "山羊", CreatureTemperament.Timid, 52, 3.0f, 6, 0, 0, 45, 4, FoodKind.RawMeat),
-            new SurvivalCreatureDefinition(CreatureKind.Cattle, "野牛", CreatureTemperament.Defensive, 180, 1.9f, 3, 19, 2.0f, 17, 9, FoodKind.RawMeat),
-            new SurvivalCreatureDefinition(CreatureKind.Sheep, "羊", CreatureTemperament.Docile, 48, 2.3f, 4, 0, 0, 37, 4, FoodKind.RawMeat),
-            new SurvivalCreatureDefinition(CreatureKind.Duck, "野鸭", CreatureTemperament.Timid, 16, 2.6f, 5, 0, 0, 16, 2, FoodKind.RawPoultry),
-            new SurvivalCreatureDefinition(CreatureKind.Pheasant, "雉", CreatureTemperament.Timid, 22, 2.9f, 6, 0, 0, 11, 2, FoodKind.RawPoultry)
+            new SurvivalCreatureDefinition(CreatureKind.Hare, "野兔", CreatureTemperament.Timid, 18, 3.9f, 7, 0, 0, 39 | 1 << 8 | 1 << 9, 1, FoodKind.RawMeat),
+            new SurvivalCreatureDefinition(CreatureKind.Deer, "鹿", CreatureTemperament.Timid, 65, 3.6f, 8, 0, 0, 7 | 1 << 8 | 1 << 9, 5, FoodKind.RawMeat),
+            new SurvivalCreatureDefinition(CreatureKind.Boar, "野猪", CreatureTemperament.Defensive, 95, 2.5f, 4, 14, 2.8f, 19 | 1 << 6 | 1 << 9, 5, FoodKind.RawMeat),
+            new SurvivalCreatureDefinition(CreatureKind.Chicken, "野鸡", CreatureTemperament.Timid, 14, 2.2f, 5, 0, 0, 3 | 1 << 8 | 1 << 9, 2, FoodKind.RawPoultry),
+            new SurvivalCreatureDefinition(CreatureKind.Wolf, "狼", CreatureTemperament.Predator, 72, 3.1f, 0, 12, 8, 38 | 1 << 7 | 1 << 8 | 1 << 9, 3, FoodKind.RawMeat),
+            new SurvivalCreatureDefinition(CreatureKind.Bear, "熊", CreatureTemperament.Predator, 240, 2.1f, 0, 25, 5, 6 | 1 << 6 | 1 << 7 | 1 << 9, 10, FoodKind.RawMeat),
+            new SurvivalCreatureDefinition(CreatureKind.Fox, "狐", CreatureTemperament.Predator, 32, 3.4f, 7, 6, 0, 47 | 1 << 6 | 1 << 8 | 1 << 9, 2, FoodKind.RawMeat, true),
+            new SurvivalCreatureDefinition(CreatureKind.Goat, "山羊", CreatureTemperament.Timid, 52, 3.0f, 6, 0, 0, 45 | 1 << 7, 4, FoodKind.RawMeat),
+            new SurvivalCreatureDefinition(CreatureKind.Cattle, "野牛", CreatureTemperament.Defensive, 180, 1.9f, 3, 19, 2.0f, 17 | 1 << 6 | 1 << 9, 9, FoodKind.RawMeat),
+            new SurvivalCreatureDefinition(CreatureKind.Sheep, "羊", CreatureTemperament.Docile, 48, 2.3f, 4, 0, 0, 37 | 1 << 7, 4, FoodKind.RawMeat),
+            new SurvivalCreatureDefinition(CreatureKind.Duck, "野鸭", CreatureTemperament.Timid, 16, 2.6f, 5, 0, 0, 16 | 1 << 6 | 1 << 9, 2, FoodKind.RawPoultry),
+            new SurvivalCreatureDefinition(CreatureKind.Pheasant, "雉", CreatureTemperament.Timid, 22, 2.9f, 6, 0, 0, 11 | 1 << 8, 2, FoodKind.RawPoultry)
         });
 
         public static SurvivalFoodDefinition Food(int id) => id >= 0 && id < FoodCount ? Foods[id] : null;

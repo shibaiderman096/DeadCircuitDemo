@@ -17,7 +17,7 @@ namespace DeadCircuit
                 p.needs.foods.Length != SurvivalCatalog.FoodCount || p.needs.seeds == null ||
                 p.needs.seeds.Length != SurvivalCatalog.CropCount) return "";
             int biome = WorldTiles.Biome(State, n.x, n.y) - '0';
-            if (biome < 0 || biome > 5) return "";
+            if (biome < 0 || biome >= WorldGeneration.BiomeCount) return "";
             var foodsBefore = (int[])p.needs.foods.Clone();
             var seedsBefore = (int[])p.needs.seeds.Clone();
             int waterBefore = p.needs.waterClean;
@@ -29,10 +29,10 @@ namespace DeadCircuit
             if (n.kind == NodeKind.Tree)
             {
                 // Depleting a tree includes gathering its undergrowth. No new/free forage action.
-                // Meadow/broadleaf: fruit; conifer/wetland/tundra: mushrooms; desert: sparse berries.
+                // Meadow/broadleaf/sakura: fruit; wet ground and cold biomes: mushrooms.
                 AddForageStack(p.needs.foods, (int)FoodKind.Berries, biome == 3 ? 1 : 1 + (int)(loot % 3));
-                if (biome == 0 || biome == 1) AddForageStack(p.needs.foods, (int)FoodKind.Apple, 1 + (int)((loot >> 4) % 2));
-                if (biome == 2 || biome == 4 || biome == 5) AddForageStack(p.needs.foods, (int)FoodKind.Mushroom, 1 + (int)((loot >> 6) % 3));
+                if (biome == 0 || biome == 1 || biome == (int)BiomeKind.SakuraGrove || biome == (int)BiomeKind.RiverValley) AddForageStack(p.needs.foods, (int)FoodKind.Apple, 1 + (int)((loot >> 4) % 2));
+                if (biome == 2 || biome == 4 || biome == 5 || biome == (int)BiomeKind.Swamp || biome == (int)BiomeKind.SnowMountain) AddForageStack(p.needs.foods, (int)FoodKind.Mushroom, 1 + (int)((loot >> 6) % 3));
                 if ((loot & 3u) == 0) AddForageStack(p.needs.seeds, (int)((loot >> 10) % SurvivalCatalog.CropCount), 1);
             }
             else if (AwardSiteForage(p, n, loot)) { }

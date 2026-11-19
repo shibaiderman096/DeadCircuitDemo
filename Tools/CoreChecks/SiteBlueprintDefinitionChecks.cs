@@ -48,7 +48,7 @@ static partial class Checks
                 categories |= 1 << (int)plan.category;
                 Require(!string.IsNullOrWhiteSpace(plan.description), $"{plan.kind}: missing structural description");
                 Require(plan.floorArt == "landmark_floor_" + (int)plan.category, $"{plan.kind}: wrong category floor art");
-                Require(plan.biomeMask != 0 && (plan.biomeMask & ~63) == 0,
+                Require(plan.biomeMask != 0 && (plan.biomeMask & ~WorldGeneration.AllBiomeMask) == 0,
                     $"{plan.kind}: no eligible natural biome or unknown biome bits");
             }
             Require(categories == 63, "the definitions must cover all six site categories");

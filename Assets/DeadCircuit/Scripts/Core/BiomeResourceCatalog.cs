@@ -28,7 +28,11 @@ namespace DeadCircuit
             new BiomeResourceDefinition(BiomeKind.ConiferousForest, "木材、石材、铁矿与锡矿较多", 50, 10, 65, 16, 40, 6),
             new BiomeResourceDefinition(BiomeKind.Desert, "石材、铜矿与铀矿较多；缺木，沿岸找黏土", 100, 3, 24, 65, 12, 16),
             new BiomeResourceDefinition(BiomeKind.Wetland, "黏土、锡矿与铜矿较多", 12, 95, 12, 45, 60, 3),
-            new BiomeResourceDefinition(BiomeKind.Tundra, "石材、铁矿与铀矿较多；木材稀少", 90, 6, 70, 18, 14, 20)
+            new BiomeResourceDefinition(BiomeKind.Tundra, "石材、铁矿与铀矿较多；木材稀少", 90, 6, 70, 18, 14, 20),
+            new BiomeResourceDefinition(BiomeKind.Swamp, "原水、黏土、菌类和药草丰富；金属埋在泥地中", 18, 120, 10, 35, 72, 2),
+            new BiomeResourceDefinition(BiomeKind.SnowMountain, "裸岩、铁矿和铀矿较多；木材与耕地稀少", 115, 4, 92, 20, 12, 24),
+            new BiomeResourceDefinition(BiomeKind.SakuraGrove, "木材、果实、药草和景观采集物丰富", 20, 24, 18, 18, 16, 3),
+            new BiomeResourceDefinition(BiomeKind.RiverValley, "沿河黏土、原水和肥沃土地较多；适合聚落运输", 24, 70, 20, 25, 20, 4)
         });
 
         public static BiomeResourceDefinition Get(BiomeKind kind) =>

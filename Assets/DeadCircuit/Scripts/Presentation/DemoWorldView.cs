@@ -589,7 +589,8 @@ namespace DeadCircuit
                     state.kind == NodeKind.Clay ? new Color(1f,.55f,.32f) : Color.white;
                 if (state.kind == NodeKind.Stone || state.kind == NodeKind.Clay)
                     v.root.name = state.kind == NodeKind.Stone ? "石料堆 / Stone" : "黏土矿床 / Clay";
-                v.body.color = DamageColor(v,mineral); v.body.color = new Color(v.body.color.r,v.body.color.g,v.body.color.b,canopy);
+                Color ecology = state.kind == NodeKind.Tree && world.generatorVersion >= 8 ? BiomeTint(world,state.x,state.y) : Color.white;
+                v.body.color = DamageColor(v,mineral * ecology); v.body.color = new Color(v.body.color.r,v.body.color.g,v.body.color.b,canopy);
                 v.shadow.transform.localScale = state.kind == NodeKind.Tree ? new Vector3(1.4f,.9f,1) : Vector3.one;
                 float sway = state.kind == NodeKind.Tree ? Mathf.Sin(Time.unscaledTime*.9f+state.id)*.8f : 0;
                 v.body.transform.localRotation = Quaternion.Euler(0,0,sway);

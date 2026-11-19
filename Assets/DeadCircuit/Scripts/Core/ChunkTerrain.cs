@@ -36,7 +36,11 @@ namespace DeadCircuit
             var biomes = new char[ground.Length];
             int startX = chunkX * Size, startY = chunkY * Size;
             for (int y = 0; y < Size; y++) for (int x = 0; x < Size; x++)
-                Sample(world.seed, startX + x, startY + y, out ground[x + y * Size], out biomes[x + y * Size]);
+            {
+                if (world.generatorVersion >= 8)
+                    SampleContinuous(world.seed, startX + x, startY + y, out ground[x + y * Size], out biomes[x + y * Size]);
+                else Sample(world.seed, startX + x, startY + y, out ground[x + y * Size], out biomes[x + y * Size]);
+            }
             var region = new Region { world = world, settings = world.generation ?? new WorldGenerationSettings(),
                 x = startX, y = startY, ground = ground, biomes = biomes };
             for (int y = 0; y < Size; y++) for (int x = 0; x < Size; x++)

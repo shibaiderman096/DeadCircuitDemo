@@ -13,7 +13,7 @@ namespace DeadCircuit
                 return;
             }
             var chunks=source.chunks;
-            SaveCheck(source.generatorVersion==3 || source.generatorVersion==4 && source.version>=9 || source.generatorVersion==5 && source.version>=10 || (source.generatorVersion==6 || source.generatorVersion==7) && source.version>=11,"chunk generator");
+            SaveCheck(source.generatorVersion==3 || source.generatorVersion==4 && source.version>=9 || source.generatorVersion==5 && source.version>=10 || (source.generatorVersion>=6 && source.generatorVersion<=WorldGeneration.CurrentGeneratorVersion) && source.version>=11,"chunk generator");
             SaveCheck(chunks.records!=null && chunks.records.Count>=16 && chunks.records.Count<=65536 && chunks.revision>=0 && string.IsNullOrEmpty(chunks.generated),"chunk metadata");
             var keys=new HashSet<long>();var result=new ChunkWorldState {enabled=true,revision=chunks.revision};
             foreach(var chunk in chunks.records)
@@ -26,7 +26,7 @@ namespace DeadCircuit
                 SaveCheck(chunk.interiorSiteId >= 0 && (!interior || source.version >= 10 && reserved), "interior chunk marker");
                 SaveCheck(!reserved || interior, "natural chunk in interior reserve");
                 for(int i=0;i<256;i++) SaveCheck(interior && chunk.ground[i]=='?' && chunk.biomes[i]=='?' ||
-                    chunk.ground[i]>='0' && chunk.ground[i]<='4' && chunk.biomes[i]>='0' && chunk.biomes[i]<='5',"chunk tile kind");
+                    chunk.ground[i]>='0' && chunk.ground[i]<='4' && chunk.biomes[i]>='0' && chunk.biomes[i] < '0' + WorldGeneration.BiomeCount,"chunk tile kind");
                 result.records.Add(new WorldChunkState {x=chunk.x,y=chunk.y,ground=chunk.ground,biomes=chunk.biomes,interiorSiteId=chunk.interiorSiteId});
             }
             // A normal save always contains its intact original tutorial footprint.

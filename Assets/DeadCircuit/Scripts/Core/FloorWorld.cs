@@ -192,7 +192,7 @@ namespace DeadCircuit
             // The always-present stair toward ground is the metadata doorway.
             if (!FindStair(site, level > 0 ? '>' : '<', out site.doorX, out site.doorY)) return false;
             char biome = WorldTiles.Biome(world, root.doorX, root.doorY);
-            if (biome < '0' || biome > '5') return false;
+            if (biome < '0' || biome >= '0' + WorldGeneration.BiomeCount) return false;
             var ground = new char[256]; var biomes = new char[256];
             for (int i = 0; i < ground.Length; i++) ground[i] = biomes[i] = '?';
             var result = new Staged { site = site };

@@ -241,7 +241,10 @@ namespace DeadCircuit
         private float SurvivalAmbientTemperature(float x, float y)
         {
             int biome = WorldTiles.Biome(State, RoundCell(x), RoundCell(y)) - '0';
-            float offset = biome == 3 ? 8 : biome == 5 ? -13 : biome == 2 ? -4 : biome == 4 ? -1 : 0;
+            float offset = biome == (int)BiomeKind.Desert ? 8 :
+                biome == (int)BiomeKind.SnowMountain ? -22 : biome == (int)BiomeKind.Tundra ? -13 :
+                biome == (int)BiomeKind.ConiferousForest ? -4 : biome == (int)BiomeKind.Swamp ? -2 :
+                biome == (int)BiomeKind.Wetland ? -1 : biome == (int)BiomeKind.SakuraGrove ? 1 : 0;
             float cycle = (float)Math.Sin(State.tick * .05 * (Math.PI * 2) / State.dayLength) * 3;
             // Keep saved weather endpoints/interpolation intact. This derived climate offset reaches
             // both player exposure and crops (temperature gates, frost/heat damage, evaporation).
@@ -361,7 +364,7 @@ namespace DeadCircuit
                     int y = 2 + (int)(SurvivalRandom(ref s.creatureRandomState) % 60);
                     int biome = WorldTiles.Biome(world, x, y) - '0';
                     char ground = WorldTiles.Ground(world, x, y);
-                    if (biome < 0 || biome > 5 || (definition.biomeMask & (1 << biome)) == 0 || (ground != '0' && ground != '1') ||
+                    if (biome < 0 || biome >= WorldGeneration.BiomeCount || (definition.biomeMask & (1 << biome)) == 0 || (ground != '0' && ground != '1') ||
                         !SurvivalWorldCellFree(world, x, y) || DistSq(x, y, 32, 35) < 144) continue;
                     bool occupied = false;
                     foreach (var c in s.creatures) if (DistSq(c.x, c.y, x, y) < 2.25f) { occupied = true; break; }

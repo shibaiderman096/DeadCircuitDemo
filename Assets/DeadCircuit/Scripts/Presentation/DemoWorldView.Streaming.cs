@@ -155,10 +155,11 @@ namespace DeadCircuit
                 if (kind == 0)
                 {
                     AddSpriteQuad(biomeMesh.vertices, biomeMesh.uv, biomeMesh.triangles, biomeMesh.colors,
-                        DemoArt.Get("terrain_" + BiomeAt(world, x, y)), new Vector2(x, y), 1, new Color(tint, tint, tint, 1));
+                        DemoArt.Get("terrain_" + BiomeArtIndex(BiomeAt(world, x, y))), new Vector2(x, y), 1, new Color(tint, tint, tint, 1));
                     if (world.generatorVersion > 0 && h % 43 == 0)
                         AddSpriteQuad(biomeMesh.vertices, biomeMesh.uv, biomeMesh.triangles, biomeMesh.colors,
-                            DemoArt.Get("biome_" + BiomeAt(world, x, y)), new Vector2(x, y), .68f, Color.white);
+                            DemoArt.Get("biome_" + BiomeArtIndex(BiomeAt(world, x, y))), new Vector2(x, y), .68f,
+                            BiomeTint(world, x, y));
                 }
                 for (int side = 0; side < 4; side++)
                 {
@@ -169,7 +170,9 @@ namespace DeadCircuit
                     if (edge) AddQuad(groundMesh.vertices, groundMesh.uv, groundMesh.triangles, groundMesh.colors,
                         x - .5f, y - .5f, 1, 1, TerrainUV(40 + kind * 4 + side), Color.white);
                 }
-                string prop = kind == 0 && h % 19 == 0 ? "tuft" : (kind == 1 || kind == 4) && h % 41 == 0 ? "rubble" : null;
+                int biome = BiomeAt(world, x, y);
+                string prop = kind == 0 && (h % (biome == (int)BiomeKind.SakuraGrove ? 11 : 19)) == 0 ? "tuft" :
+                    (kind == 1 || kind == 4 || biome == (int)BiomeKind.Swamp || biome == (int)BiomeKind.RiverValley) && h % 41 == 0 ? "rubble" : null;
                 if (prop != null) AddSpriteQuad(detailMesh.vertices, detailMesh.uv, detailMesh.triangles, detailMesh.colors,
                     Art(prop), new Vector2(x + ((h >> 8) % 9 - 4f) * .03f, y), .7f, Color.white);
             }

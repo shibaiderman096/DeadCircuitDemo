@@ -6,7 +6,12 @@ using System.Security.Cryptography;
 namespace DeadCircuit
 {
     public enum WorldPreset { Balanced = 0, Wilderness = 1, Urban = 2 }
-    public enum BiomeKind { Meadow = 0, DeciduousForest = 1, ConiferousForest = 2, Desert = 3, Wetland = 4, Tundra = 5 }
+    public enum BiomeKind
+    {
+        Meadow = 0, DeciduousForest = 1, ConiferousForest = 2, Desert = 3,
+        Wetland = 4, Tundra = 5, Swamp = 6, SnowMountain = 7,
+        SakuraGrove = 8, RiverValley = 9
+    }
     public enum DistrictKind { Wilderness = 0, Suburb = 1, Urban = 2, Industrial = 3 }
     public enum SiteKind
     {
@@ -94,7 +99,11 @@ namespace DeadCircuit
             new BiomeDefinition(BiomeKind.ConiferousForest, "针叶林", 32, 410),
             new BiomeDefinition(BiomeKind.Desert, "荒漠", 92, 18),
             new BiomeDefinition(BiomeKind.Wetland, "湿地", 40, 160),
-            new BiomeDefinition(BiomeKind.Tundra, "冻原", 65, 45)
+            new BiomeDefinition(BiomeKind.Tundra, "冻原", 65, 45),
+            new BiomeDefinition(BiomeKind.Swamp, "沼泽", 52, 210),
+            new BiomeDefinition(BiomeKind.SnowMountain, "雪山", 78, 105),
+            new BiomeDefinition(BiomeKind.SakuraGrove, "樱花林", 28, 440),
+            new BiomeDefinition(BiomeKind.RiverValley, "河谷", 24, 300)
         });
         public static readonly IReadOnlyList<SiteDefinition> Sites = Array.AsReadOnly(new[]
         {
@@ -135,7 +144,9 @@ namespace DeadCircuit
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 7;
+        public const int CurrentGeneratorVersion = 8;
+        public const int BiomeCount = 10;
+        public const int AllBiomeMask = (1 << BiomeCount) - 1;
         public const int LegacySiteCount = 12;
         private const int Size = 64;
 
@@ -204,28 +215,12 @@ namespace DeadCircuit
             }
         }
 
-        // Row-major biome digits 0..5; city preset/density never enter this natural layer.
+        // New worlds sample climate and water in global tile coordinates.
         private static string GenerateBiomes(int seed)
         {
-            var random = new StableRandom(seed, 0xb10be001u);
-            var centersX = new int[6]; var centersY = new int[6]; var kinds = new int[6];
-            for (int i = 0; i < 6; i++)
-            {
-                centersX[i] = 10 + (i % 3) * 21 + random.Next(-5, 6);
-                centersY[i] = 14 + (i / 3) * 33 + random.Next(-6, 7); kinds[i] = i;
-            }
-            for (int i = 5; i > 0; i--) { int j = random.Next(0, i + 1), k = kinds[i]; kinds[i] = kinds[j]; kinds[j] = k; }
             var result = new char[Size * Size];
             for (int y = 0; y < Size; y++) for (int x = 0; x < Size; x++)
-            {
-                int nearest = 0, distance = int.MaxValue;
-                for (int i = 0; i < 6; i++)
-                {
-                    int dx = x - centersX[i], dy = y - centersY[i], d = dx * dx + dy * dy;
-                    if (d < distance) { nearest = i; distance = d; }
-                }
-                result[x + y * Size] = (char)('0' + kinds[nearest]);
-            }
+                result[x + y * Size] = (char)('0' + (int)ChunkTerrain.SampleBiome(seed, x, y));
             return new string(result);
         }
 
@@ -233,13 +228,25 @@ namespace DeadCircuit
 
         private static void GenerateTerrain(WorldState state, char[] ground)
         {
+            if (state.generatorVersion >= 8)
+            {
+                for (int y = 0; y < Size; y++) for (int x = 0; x < Size; x++)
+                {
+                    ChunkTerrain.SampleContinuous(state.seed, x, y, out ground[x + y * Size], out _);
+                    // Keep the finite tutorial map's outer edge traversable;
+                    // sparse chunks continue to follow the unmodified world field.
+                    if (x == 0 || y == 0 || x == Size - 1 || y == Size - 1) ground[x + y * Size] = '0';
+                }
+                return;
+            }
             var random = new StableRandom(state.seed, 0x7e22a001u);
             for (int c = 0; c < ground.Length; c++)
                 ground[c] = random.Next(0, 100) < WorldGenerationCatalog.Biomes[state.biomes[c] - '0'].dirtPercent ? '1' : '0';
             for (int n = 0; n < 16; n++)
             {
                 int cx = random.Next(6, 58), cy = random.Next(6, 58);
-                int r = state.biomes[cx + cy * Size] == (char)('0' + (int)BiomeKind.Wetland) ? random.Next(3, 5) : random.Next(1, 4);
+                int r = state.biomes[cx + cy * Size] == (char)('0' + (int)BiomeKind.Wetland) ||
+                    state.biomes[cx + cy * Size] == (char)('0' + (int)BiomeKind.Swamp) ? random.Next(3, 5) : random.Next(1, 4);
                 for (int y = cy - r; y <= cy + r; y++) for (int x = cx - r; x <= cx + r; x++)
                 {
                     int dx = x - cx, dy = y - cy;
@@ -263,6 +270,7 @@ namespace DeadCircuit
             for (int y = 22; y <= 42; y++) for (int x = 22; x <= 42; x++) reserved[x + y * Size] = true;
             for (int y = 26; y <= 39; y++) for (int x = 23; x <= 40; x++) ground[x + y * Size] = '4';
             for (int y = 24; y <= 29; y++) for (int x = 23; x <= 24; x++) ground[x + y * Size] = '2';
+            for (int y = 25; y <= 26; y++) for (int x = 25; x <= 26; x++) ground[x + y * Size] = '0';
             AddNode(state, occupied, 24, 30, NodeKind.Ore, 3000);
             AddNode(state, occupied, 24, 34, NodeKind.CopperOre, 1600);
             AddNode(state, occupied, 24, 37, NodeKind.TinOre, 1000);
@@ -464,7 +472,7 @@ namespace DeadCircuit
                 (!string.IsNullOrWhiteSpace(state.generation.seedText) && WorldSeed.Resolve(state.generation.seedText) != state.seed))
                 throw new ArgumentException("Generation seed does not match world seed.", nameof(state));
             if (state.biomes == null || state.biomes.Length != Size * Size) throw new ArgumentException("Invalid biome map length.", nameof(state));
-            foreach (char c in state.biomes) if (c < '0' || c > '5') throw new ArgumentException("Invalid biome kind.", nameof(state));
+            foreach (char c in state.biomes) if (c < '0' || c >= '0' + BiomeCount) throw new ArgumentException("Invalid biome kind.", nameof(state));
             if (state.sites == null || state.sites.Count > 32 || (state.generatorVersion == 0 && state.sites.Count != 0))
                 throw new ArgumentException("Invalid site list. Legacy generation has no sites.", nameof(state));
             var ids = new HashSet<int>(); var cells = new HashSet<int>();

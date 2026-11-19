@@ -38,13 +38,19 @@ namespace DeadCircuit
         static readonly Color[] BiomeTints =
         {
             Color.white, new Color(.76f,.94f,.76f), new Color(.68f,.83f,.81f),
-            new Color(1.24f,1.13f,.78f), new Color(.76f,.91f,.84f), new Color(1.08f,1.18f,1.28f)
+            new Color(1.24f,1.13f,.78f), new Color(.76f,.91f,.84f), new Color(1.08f,1.18f,1.28f),
+            new Color(.61f,.77f,.58f), new Color(.83f,.94f,1.12f),
+            new Color(1.10f,.72f,.91f), new Color(.72f,.91f,.94f)
         };
         static int BiomeAt(WorldState world,int x,int y)
         {
             char biome = WorldTiles.Biome(world, x, y);
-            return biome >= '0' && biome <= '5' ? biome - '0' : 0;
+            return biome >= '0' && biome < '0' + WorldGeneration.BiomeCount ? biome - '0' : 0;
         }
+        static int BiomeArtIndex(int biome) => biome == (int)BiomeKind.Swamp ? (int)BiomeKind.Wetland :
+            biome == (int)BiomeKind.SnowMountain ? (int)BiomeKind.Tundra :
+            biome == (int)BiomeKind.SakuraGrove ? (int)BiomeKind.DeciduousForest :
+            biome == (int)BiomeKind.RiverValley ? (int)BiomeKind.Meadow : biome;
         static Color BiomeTint(WorldState world,int x,int y) => world.generatorVersion>0 ? BiomeTints[BiomeAt(world,x,y)] : Color.white;
         Material ExpansionGroundMaterial()
         {

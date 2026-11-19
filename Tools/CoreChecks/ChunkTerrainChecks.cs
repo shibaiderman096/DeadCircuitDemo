@@ -26,7 +26,7 @@ static partial class Checks
             for (int y = -16; y < 0; y++) for (int x = -16; x < 0; x++)
             {
                 Require(WorldTiles.Ground(world, x, y) >= '0' && WorldTiles.Ground(world, x, y) <= '4', "ground has unknown local cells");
-                Require(WorldTiles.Biome(world, x, y) >= '0' && WorldTiles.Biome(world, x, y) <= '5', "biome has unknown local cells");
+                Require(WorldTiles.Biome(world, x, y) >= '0' && WorldTiles.Biome(world, x, y) < '0' + WorldGeneration.BiomeCount, "biome has unknown local cells");
             }
             Require(WorldTiles.Ground(world, -17, -1) == '?' && WorldTiles.Ground(world, 0, 0) == '?', "generation filled an unrequested neighbor");
             TerrainChunkContract(world, -1, -1);
@@ -157,9 +157,9 @@ static partial class Checks
             Require(!ChunkStreaming.GenerateChunk(world, chosen.Item1, chosen.Item2) && !ChunkTerrain.Generate(world, chosen.Item1, chosen.Item2), "duplicate generation was not idempotent");
             Require(TerrainSerialize(world) == before, "revisit replenished resources or reset machines/IDs");
         });
-        Run("sparse chunk world coordinates retain smooth seeded water and all six biomes", () =>
+        Run("sparse chunk world coordinates retain smooth seeded water and all ten biomes", () =>
         {
-            var world = TerrainBlank(73149); TerrainPopulate(world);
+            var world = TerrainBlank(73149); world.generatorVersion = WorldGeneration.CurrentGeneratorVersion; TerrainPopulate(world);
             var biomes = new HashSet<char>();
             int water = 0, land = 0, seamChanges = 0, seamPairs = 0, innerChanges = 0, innerPairs = 0;
             for (int y = -128; y < 128; y++) for (int x = -128; x < 128; x++)
@@ -176,10 +176,10 @@ static partial class Checks
                     else { innerPairs++; if (change) innerChanges++; }
                 }
             }
-            Require(water > 1000 && land > 10000 && biomes.Count == 6, "continuous terrain lacks water land or six biomes");
+            Require(water > 1000 && land > 10000 && biomes.Count == WorldGeneration.BiomeCount, "continuous terrain lacks water land or all ten biomes: " + string.Join(",", biomes.OrderBy(c => c)));
             Require((double)innerChanges / innerPairs < .18, "biomes became per-cell random patches");
             Require((double)seamChanges / seamPairs <= (double)innerChanges / innerPairs * 1.8 + .015, "signed chunk seams concentrate biome discontinuities");
-            var other = TerrainBlank(-73149); ChunkTerrain.Generate(other, -2, -2);
+            var other = TerrainBlank(-73149); other.generatorVersion = WorldGeneration.CurrentGeneratorVersion; ChunkTerrain.Generate(other, -2, -2);
             Require(TerrainTileDump(world, -2, -2) != TerrainTileDump(other, -2, -2), "seed changes metadata only");
             Console.WriteLine($"  signed terrain sample: {water} water, {land} land, {biomes.Count} biomes");
         });
@@ -206,6 +206,16 @@ static partial class Checks
                 Require(ids.SequenceEqual(Enumerable.Range(10000000, ids.Length)) && a.nextId == 10000000 + ids.Length, "generated entities did not consume sequential nextId");
                 foreach (var c in chunks) TerrainChunkContract(a, c.Item1, c.Item2);
             }
+        });
+        Run("sparse generator eight biome geometry is invariant to signed chunk visit order", () =>
+        {
+            var first = TerrainBlank(-491, WorldPreset.Wilderness, 0); first.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
+            var second = TerrainBlank(-491, WorldPreset.Wilderness, 0); second.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
+            var cells = new[] { (-9, 5), (11, -7), (6, 6), (-2, -3), (32, 0), (-32, -32) };
+            foreach (var cell in cells) Require(ChunkTerrain.Generate(first, cell.Item1, cell.Item2), "forward current chunk refused");
+            foreach (var cell in cells.Reverse()) Require(ChunkTerrain.Generate(second, cell.Item1, cell.Item2), "reverse current chunk refused");
+            Require(TerrainMapDump(first) == TerrainMapDump(second) && TerrainEntityDump(first) == TerrainEntityDump(second),
+                "generator eight biome geometry/resources depend on chunk visit order");
         });
         Run("sparse chunk terrain ignores unknown and edited neighbors", () =>
         {

@@ -75,10 +75,14 @@ namespace DeadCircuit
         {
             if (wave < All[variant].unlockWave) return 0;
             int weight = variant == 0 ? 50 : variant == 1 ? 28 : variant == 2 ? 16 : variant == 3 || variant == 4 ? 8 : variant == 5 ? 7 : variant == 6 || variant == 9 ? 6 : variant == 7 || variant == 8 ? 5 : variant == 10 ? 4 : 3;
-            if (variant == 3 && (biome == BiomeKind.DeciduousForest || biome == BiomeKind.ConiferousForest)) weight += 8;
+            if (variant == 3 && (biome == BiomeKind.DeciduousForest || biome == BiomeKind.ConiferousForest || biome == BiomeKind.RiverValley)) weight += 8;
             if ((variant == 4 || variant == 8) && biome == BiomeKind.Wetland) weight += 12;
+            if ((variant == 4 || variant == 8) && biome == BiomeKind.Swamp) weight += 16;
+            if ((variant == 4 || variant == 8) && biome == BiomeKind.RiverValley) weight += 10;
             if (variant == 6 && biome == BiomeKind.Desert) weight += 12;
             if (variant == 9 && biome == BiomeKind.Tundra) weight += 16;
+            if ((variant == 5 || variant == 9) && biome == BiomeKind.SnowMountain) weight += 18;
+            if (variant == 3 && biome == BiomeKind.SakuraGrove) weight += 12;
             if (district == DistrictKind.Industrial && (variant == 5 || variant == 10)) weight += 12;
             if (district == DistrictKind.Urban && (variant == 7 || variant == 8)) weight += 10;
             if (variant == 11) weight = night ? weight + (district == DistrictKind.Urban ? 12 : 6) : 1;

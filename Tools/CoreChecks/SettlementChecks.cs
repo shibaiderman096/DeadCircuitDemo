@@ -130,7 +130,7 @@ static partial class Checks
             foreach (var plan in SiteBlueprintCatalog.All)
             {
                 bool reachable = false;
-                for (int k = 1; k <= 5; k++) for (int b = 0; b < 6; b++)
+                for (int k = 1; k <= 5; k++) for (int b = 0; b < WorldGeneration.BiomeCount; b++)
                 {
                     int actual = SettlementGeneration.BlueprintWeight((SettlementKind)k, plan.kind, (BiomeKind)b);
                     Require(actual >= 0 && ((plan.biomeMask & (1 << b)) != 0 || actual == 0), "natural biome eligibility bypassed");
@@ -139,13 +139,13 @@ static partial class Checks
                 Require(reachable, "building permanently excluded from gen5: " + plan.kind);
             }
             Require(SettlementGeneration.BlueprintWeight(SettlementKind.Unspecified, SiteKind.Shop, BiomeKind.Meadow) == 0 &&
-                SettlementGeneration.BlueprintWeight(SettlementKind.Rural, SiteKind.Shop, (BiomeKind)6) == 0 &&
+                SettlementGeneration.BlueprintWeight(SettlementKind.Rural, SiteKind.Shop, (BiomeKind)WorldGeneration.BiomeCount) == 0 &&
                 SettlementGeneration.BlueprintWeight(SettlementKind.Rural, (SiteKind)(-1), BiomeKind.Meadow) == 0, "invalid weighted request accepted");
         });
-        Run("settlement weighted blueprints are deterministic and honor all thirty biome zone combinations", () =>
+        Run("settlement weighted blueprints are deterministic and honor all fifty biome zone combinations", () =>
         {
             var a = SettlementWorld(); var b = SettlementWorld();
-            for (int k = 1; k <= 5; k++) for (int biome = 0; biome < 6; biome++)
+            for (int k = 1; k <= 5; k++) for (int biome = 0; biome < WorldGeneration.BiomeCount; biome++)
             {
                 var selected = new SiteKind[512];
                 for (int i = 0; i < selected.Length; i++)
@@ -160,7 +160,7 @@ static partial class Checks
                 Require(selected.Distinct().Count() >= 4, "weighted selector degenerates to a single building");
             }
             Require(SettlementGeneration.SelectBlueprint(a, 0, 0, SettlementKind.Unspecified, BiomeKind.Meadow) == null &&
-                SettlementGeneration.SelectBlueprint(a, 0, 0, SettlementKind.Rural, (BiomeKind)6) == null, "empty weighted pool did not return null");
+                    SettlementGeneration.SelectBlueprint(a, 0, 0, SettlementKind.Rural, (BiomeKind)WorldGeneration.BiomeCount) == null, "empty weighted pool did not return null");
             int apartments = 0, residences = 0, hospitals = 0, ruralAgriculture = 0, ruralShops = 0;
             for (int i = 0; i < 8192; i++)
             {

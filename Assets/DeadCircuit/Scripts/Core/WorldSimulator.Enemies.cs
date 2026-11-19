@@ -140,7 +140,7 @@ namespace DeadCircuit
             if (State.generatorVersion <= 0 || State.wave < 2) return legacyVariant;
             BiomeKind biome = BiomeKind.Meadow;
             int encoded = WorldTiles.Biome(State, x, y) - '0';
-            if (encoded >= 0 && encoded <= 5) biome = (BiomeKind)encoded;
+            if (encoded >= 0 && encoded < WorldGeneration.BiomeCount) biome = (BiomeKind)encoded;
             DistrictKind district = DistrictKind.Wilderness; float nearest = 100f; int nearestId = int.MaxValue;
             if (State.sites != null) foreach (SiteState site in State.sites)
             {

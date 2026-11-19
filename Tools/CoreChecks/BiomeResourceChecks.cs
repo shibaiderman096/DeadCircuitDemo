@@ -35,7 +35,7 @@ static partial class Checks
             Require(Rate(BiomeKind.Wetland, NodeKind.Clay) > Rate(BiomeKind.ConiferousForest, NodeKind.Clay) * 2, "wetland lacks a visible clay advantage");
             Require(Rate(BiomeKind.ConiferousForest, NodeKind.Ore) > Rate(BiomeKind.Wetland, NodeKind.Ore) * 1.8, "conifer forest lacks an iron advantage");
             double expected = 0; int actual = 0, banks = 0;
-            for (int biome = 0; biome < 6; biome++)
+            for (int biome = 0; biome < WorldGeneration.BiomeCount; biome++)
             {
                 Require(bankArea[biome, 0] > 0, "missing inland survey");
                 expected += bankArea[biome, 1] * bankClay[biome, 0] / (double)bankArea[biome, 0];
@@ -81,7 +81,7 @@ static partial class Checks
                 sim.Apply(Command(p, "interact", 27, 34));
                 Require(p.items[(int)ItemKind.Stone] == before + 1 && sim.State.nodes.All(n => n.id != stone.id), "stone did not deplete once");
                 var source = Saved(sim.State); string frozen = Dump(source); var restored = new WorldSimulator(source).State;
-                Require(restored.generatorVersion == generator && restored.version == 11, "save changed the distribution or schema");
+                Require(restored.generatorVersion == generator && restored.version == WorldSimulator.SaveVersion, "save changed the distribution or schema");
                 Require(restored.nodes.All(n => n.x != 27 || n.y != 34) && !ChunkStreaming.GenerateChunk(restored, 1, 2), "save replenished a harvested chunk");
                 Require(ChunkTerrain.Generate(sim.State, -9, 5) && ChunkTerrain.Generate(restored, -9, 5), "future chunk refused");
                 Require(TerrainEntityDump(sim.State, -9, 5) == TerrainEntityDump(restored, -9, 5) &&

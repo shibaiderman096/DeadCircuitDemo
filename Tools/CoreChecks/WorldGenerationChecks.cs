@@ -33,6 +33,7 @@ static partial class Checks
         Run("world generation 100 seeds deterministic varied complete and reachable", () =>
         {
             var kinds = new HashSet<SiteKind>();
+            int biomesSeen = 0;
             for (int i = 0; i < 100; i++)
             {
                 var settings = new WorldGenerationSettings { seed = i - 50, preset = (WorldPreset)(i % 3), cityDensity = i / 3 % 3 };
@@ -44,10 +45,12 @@ static partial class Checks
                 Require(a.ground != c.ground || a.biomes != c.biomes, $"seed {settings.seed} changes metadata only");
                 Require(!ReferenceEquals(settings, a.generation) && settings.seed == i - 50, "generation mutates or owns caller settings");
                 GenerationMapContract(a);
+                foreach (char biome in a.biomes) biomesSeen |= 1 << (biome - '0');
                 GenerationTutorialContract(a);
                 foreach (var site in a.sites) kinds.Add(site.kind);
             }
             Require(kinds.Count == 12, "100 seeds did not exercise every declared site type");
+            Require(biomesSeen == WorldGeneration.AllBiomeMask, "100 new worlds did not exercise all ten natural biomes: " + biomesSeen.ToString("X"));
         });
         Run("world generation city presets vary construction independently of natural biomes", () =>
         {
@@ -162,8 +165,8 @@ static partial class Checks
             foreach (Action<WorldState> corrupt in new Action<WorldState>[]
             {
                 s => s.generation = null, s => s.generation.seed++, s => s.generation.seedText = "different seed",
-                s => s.biomes = null, s => s.biomes = "0", s => s.biomes = new string('6', 4096),
-                s => s.generatorVersion = -1, s => s.generatorVersion = WorldGeneration.CurrentGeneratorVersion + 1, s => s.generatorVersion = 0,
+                s => s.biomes = null, s => s.biomes = "0", s => s.biomes = new string((char)('0' + WorldGeneration.BiomeCount), 4096),
+                s => s.generatorVersion = -1, s => s.generatorVersion = WorldGeneration.CurrentGeneratorVersion + 1,
                 s => s.sites = null, s => s.sites.Add(null), s => s.sites.Add(s.sites[0]),
                 s => s.sites[0].kind = (SiteKind)12, s => s.sites[0].district = (DistrictKind)4,
                 s => s.sites[0].width = int.MaxValue, s => s.sites[0].x = int.MaxValue,
@@ -189,7 +192,8 @@ static partial class Checks
         Require(state.version == WorldSimulator.SaveVersion && state.generatorVersion == WorldGeneration.CurrentGeneratorVersion && state.width == 64 && state.height == 64, "generation version/dimensions");
         Require(state.generation != null && state.generation.seed == state.seed, "missing/resolved seed metadata");
         Require(state.ground.Length == 4096 && state.ground.All(c => c >= '0' && c <= '4'), "invalid terrain");
-        Require(state.biomes.Length == 4096 && state.biomes.All(c => c >= '0' && c <= '5') && state.biomes.Distinct().Count() == 6, "missing or invalid biome layer");
+        Require(state.biomes.Length == 4096 && state.biomes.All(c => c >= '0' && c < '0' + WorldGeneration.BiomeCount) &&
+            state.biomes.Distinct().Count() >= 6, "missing or invalid biome layer");
         Require(state.nodes.Count <= 1400 && state.sites.Count > 0 && state.sites.Count <= 32, "entity limits");
         var occupied = new HashSet<int>(); var ids = new HashSet<int>();
         foreach (var n in state.nodes)

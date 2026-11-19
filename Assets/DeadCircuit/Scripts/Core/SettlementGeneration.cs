@@ -136,7 +136,7 @@ namespace DeadCircuit
 
         public static int BlueprintWeight(SettlementKind settlement, SiteKind kind, BiomeKind biome)
         {
-            if ((int)settlement < 1 || (int)settlement > 5 || (int)biome < 0 || (int)biome >= 6 ||
+            if ((int)settlement < 1 || (int)settlement > 5 || (int)biome < 0 || (int)biome >= WorldGeneration.BiomeCount ||
                 (int)kind < 0 || (int)kind >= Weights.GetLength(0)) return 0;
             var plan = SiteBlueprintCatalog.Get(kind);
             return plan != null && (plan.biomeMask & (1 << (int)biome)) != 0 ? Weights[(int)kind, (int)settlement - 1] : 0;

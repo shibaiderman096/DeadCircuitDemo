@@ -19,7 +19,7 @@ namespace DeadCircuit
             SaveCheck(source.generation.seed == source.seed, "world settings seed");
             SaveCheck(string.IsNullOrEmpty(source.generation.seedText) || WorldSeed.Resolve(source.generation.seedText) == source.seed, "world seed text");
             SaveCheck(source.biomes != null && source.biomes.Length == source.width*source.height, "biome map length");
-            for(int i=0;i<source.biomes.Length;i++) SaveCheck(source.ground[i]=='?' ? source.biomes[i]=='?' : source.biomes[i]>='0' && source.biomes[i]<='5', "biome kind");
+            for(int i=0;i<source.biomes.Length;i++) SaveCheck(source.ground[i]=='?' ? source.biomes[i]=='?' : source.biomes[i]>='0' && source.biomes[i] < '0' + WorldGeneration.BiomeCount, "biome kind");
             SaveCheck(source.sites != null && source.sites.Count <= (ChunkStreaming.Enabled(source) ? MaxSites : 64), "site list");
             SaveCheck(source.generation.chunked==ChunkStreaming.Enabled(source),"world chunk settings");
             var cells = new HashSet<long>();

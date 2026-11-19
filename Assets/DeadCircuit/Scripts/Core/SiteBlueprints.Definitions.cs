@@ -10,7 +10,7 @@ namespace DeadCircuit
             {
                 // 00 Residence: 起居室连通侧卧，南侧门厅入户。
                 new SiteBlueprint(SiteKind.Residence, SiteCategory.Residential,
-                    "起居室连通侧卧，南侧门厅入户。", "landmark_floor_0", 63,
+                    "起居室连通侧卧，南侧门厅入户。", "landmark_floor_0", 1023,
                     "########",
                     "#t.h#b.#",
                     "#...+.K#",
@@ -21,7 +21,7 @@ namespace DeadCircuit
 
                 // 01 Shop: 前厅货架、收银柜台与后部储物间。
                 new SiteBlueprint(SiteKind.Shop, SiteCategory.Commercial,
-                    "前厅货架、收银柜台与后部储物间。", "landmark_floor_1", 63,
+                    "前厅货架、收银柜台与后部储物间。", "landmark_floor_1", 1023,
                     "#######",
                     "#F.s#T#",
                     "#...+.#",
@@ -31,7 +31,7 @@ namespace DeadCircuit
 
                 // 02 Warehouse: 双侧货架分列，中央通道接北侧装卸门。
                 new SiteBlueprint(SiteKind.Warehouse, SiteCategory.Industrial,
-                    "双侧货架分列，中央通道接北侧装卸门。", "landmark_floor_3", 63,
+                    "双侧货架分列，中央通道接北侧装卸门。", "landmark_floor_3", 1023,
                     "####+####",
                     "#B.....T#",
                     "#ss...ss#",
@@ -43,7 +43,7 @@ namespace DeadCircuit
 
                 // 03 Workshop: 折角车间设机床区与带门工具间。
                 new SiteBlueprint(SiteKind.Workshop, SiteCategory.Industrial,
-                    "折角车间设机床区与带门工具间。", "landmark_floor_3", 63,
+                    "折角车间设机床区与带门工具间。", "landmark_floor_3", 1023,
                     "######## ",
                     "#m.t#T.# ",
                     "#...+..# ",
@@ -54,7 +54,7 @@ namespace DeadCircuit
 
                 // 04 Clinic: 候诊座椅临接诊台，后方分隔两床诊室。
                 new SiteBlueprint(SiteKind.Clinic, SiteCategory.Civic,
-                    "候诊座椅临接诊台，后方分隔两床诊室。", "landmark_floor_2", 63,
+                    "候诊座椅临接诊台，后方分隔两床诊室。", "landmark_floor_2", 1023,
                     "#########",
                     "#d.M#d.f#",
                     "#...+...#",
@@ -66,7 +66,7 @@ namespace DeadCircuit
 
                 // 05 Farmhouse: 带侧院的农舍，寝室与灶台间以内门相连。
                 new SiteBlueprint(SiteKind.Farmhouse, SiteCategory.Rural,
-                    "带侧院的农舍，寝室与灶台间以内门相连。", "landmark_floor_4", 3,
+                    "带侧院的农舍，寝室与灶台间以内门相连。", "landmark_floor_4", 771,
                     "########,,",
                     "#b.K#S.#,,",
                     "#...+a.#,,",
@@ -78,7 +78,7 @@ namespace DeadCircuit
 
                 // 06 GasStation: 北侧商店与收银台面向南侧双泵前场。
                 new SiteBlueprint(SiteKind.GasStation, SiteCategory.Commercial,
-                    "北侧商店与收银台面向南侧双泵前场。", "landmark_floor_1", 63,
+                    "北侧商店与收银台面向南侧双泵前场。", "landmark_floor_1", 1023,
                     "#########",
                     "#F.s#E.f#",
                     "+...+...#",
@@ -90,7 +90,7 @@ namespace DeadCircuit
 
                 // 07 PoliceStation: 南部接待厅通向办公室及带门拘留室。
                 new SiteBlueprint(SiteKind.PoliceStation, SiteCategory.Civic,
-                    "南部接待厅通向办公室及带门拘留室。", "landmark_floor_2", 63,
+                    "南部接待厅通向办公室及带门拘留室。", "landmark_floor_2", 1023,
                     "##########",
                     "#t.A#b..##",
                     "#...+...##",
@@ -102,7 +102,7 @@ namespace DeadCircuit
 
                 // 08 School: 两间课室以门接入中央走廊，东侧设书架。
                 new SiteBlueprint(SiteKind.School, SiteCategory.Civic,
-                    "两间课室以门接入中央走廊，东侧设书架。", "landmark_floor_2", 63,
+                    "两间课室以门接入中央走廊，东侧设书架。", "landmark_floor_2", 1023,
                     "###########",
                     "#t.t#.#t.t#",
                     "#h.h+.+h.h#",
@@ -113,7 +113,7 @@ namespace DeadCircuit
 
                 // 09 Apartment: 共用走廊连接三户独立寝居空间。
                 new SiteBlueprint(SiteKind.Apartment, SiteCategory.Residential,
-                    "共用走廊连接三户独立寝居空间。", "landmark_floor_0", 63,
+                    "共用走廊连接三户独立寝居空间。", "landmark_floor_0", 1023,
                     "###########",
                     "#b.F#.#b.K#",
                     "#...+.+...#",
@@ -125,7 +125,7 @@ namespace DeadCircuit
 
                 // 10 Greenhouse: 长条种植槽环绕中央过道，南端留育苗台。
                 new SiteBlueprint(SiteKind.Greenhouse, SiteCategory.Rural,
-                    "长条种植槽环绕中央过道，南端留育苗台。", "landmark_floor_4", 23,
+                    "长条种植槽环绕中央过道，南端留育苗台。", "landmark_floor_4", 855,
                     "#######",
                     "#g.S.g#",
                     "#g...g#",
@@ -138,7 +138,7 @@ namespace DeadCircuit
 
                 // 11 Substation: 围墙内分列配电柜，西侧小室存放电路。
                 new SiteBlueprint(SiteKind.Substation, SiteCategory.Industrial,
-                    "围墙内分列配电柜，西侧小室存放电路。", "landmark_floor_3", 63,
+                    "围墙内分列配电柜，西侧小室存放电路。", "landmark_floor_3", 1023,
                     "########",
                     "#E.#u.u#",
                     "#..+...#",
@@ -149,7 +149,7 @@ namespace DeadCircuit
 
                 // 12 Restaurant: 后厨连通用餐厅，内墙隔出柜台备餐区。
                 new SiteBlueprint(SiteKind.Restaurant, SiteCategory.Commercial,
-                    "后厨连通用餐厅，内墙隔出柜台备餐区。", "landmark_floor_1", 63,
+                    "后厨连通用餐厅，内墙隔出柜台备餐区。", "landmark_floor_1", 1023,
                     "##########",
                     "#o.a.F#k.#",
                     "#t....+..#",
@@ -161,7 +161,7 @@ namespace DeadCircuit
 
                 // 13 Pharmacy: 前厅药架接柜台，后部为双侧药品储间。
                 new SiteBlueprint(SiteKind.Pharmacy, SiteCategory.Commercial,
-                    "前厅药架接柜台，后部为双侧药品储间。", "landmark_floor_1", 63,
+                    "前厅药架接柜台，后部为双侧药品储间。", "landmark_floor_1", 1023,
                     "########",
                     "#M.s#M.#",
                     "#...+s.#",
@@ -173,7 +173,7 @@ namespace DeadCircuit
 
                 // 14 HardwareStore: L形营业厅设工具货架，侧间存放建材。
                 new SiteBlueprint(SiteKind.HardwareStore, SiteCategory.Commercial,
-                    "L形营业厅设工具货架，侧间存放建材。", "landmark_floor_1", 63,
+                    "L形营业厅设工具货架，侧间存放建材。", "landmark_floor_1", 1023,
                     "##########",
                     "#T.ss#B..#",
                     "#....+...#",
@@ -184,7 +184,7 @@ namespace DeadCircuit
 
                 // 15 Supermarket: 三列货架与两条过道构成卖场，北侧设仓间。
                 new SiteBlueprint(SiteKind.Supermarket, SiteCategory.Commercial,
-                    "三列货架与两条过道构成卖场，北侧设仓间。", "landmark_floor_1", 63,
+                    "三列货架与两条过道构成卖场，北侧设仓间。", "landmark_floor_1", 1023,
                     "############",
                     "#F.ss#K.ss.#",
                     "#....+.....#",
@@ -198,7 +198,7 @@ namespace DeadCircuit
 
                 // 16 Library: 折角阅览厅北接带门藏书室。
                 new SiteBlueprint(SiteKind.Library, SiteCategory.Civic,
-                    "折角阅览厅北接带门藏书室。", "landmark_floor_2", 63,
+                    "折角阅览厅北接带门藏书室。", "landmark_floor_2", 1023,
                     " #########",
                     " #l.l.K.l#",
                     " #.......#",
@@ -211,7 +211,7 @@ namespace DeadCircuit
 
                 // 17 FireStation: 西侧车库连装备间，东侧值班室设床与桌椅。
                 new SiteBlueprint(SiteKind.FireStation, SiteCategory.Civic,
-                    "西侧车库连装备间，东侧值班室设床与桌椅。", "landmark_floor_2", 63,
+                    "西侧车库连装备间，东侧值班室设床与桌椅。", "landmark_floor_2", 1023,
                     "###########",
                     "#...T#b.K.#",
                     "#....+..t.#",
@@ -223,7 +223,7 @@ namespace DeadCircuit
 
                 // 18 Hospital: 中央通廊串联三间病房及南侧分诊大厅。
                 new SiteBlueprint(SiteKind.Hospital, SiteCategory.Civic,
-                    "中央通廊串联三间病房及南侧分诊大厅。", "landmark_floor_2", 63,
+                    "中央通廊串联三间病房及南侧分诊大厅。", "landmark_floor_2", 1023,
                     "############",
                     "#d.d.M#d.d.#",
                     "#.....+..M.#",
@@ -237,7 +237,7 @@ namespace DeadCircuit
 
                 // 19 ResearchLab: 折线通道连接实验台、仪器室与终端间。
                 new SiteBlueprint(SiteKind.ResearchLab, SiteCategory.Special,
-                    "折线通道连接实验台、仪器室与终端间。", "landmark_floor_5", 63,
+                    "折线通道连接实验台、仪器室与终端间。", "landmark_floor_5", 1023,
                     "##########",
                     "#t.M#e.E.#",
                     "#...+....#",
@@ -249,7 +249,7 @@ namespace DeadCircuit
 
                 // 20 PowerPlant: 双机组大厅接南侧控制室，东侧留设备通道。
                 new SiteBlueprint(SiteKind.PowerPlant, SiteCategory.Industrial,
-                    "双机组大厅接南侧控制室，东侧留设备通道。", "landmark_floor_3", 63,
+                    "双机组大厅接南侧控制室，东侧留设备通道。", "landmark_floor_3", 1023,
                     "###########",
                     "#u.u#u.u..#",
                     "#...+.....#",
@@ -261,7 +261,7 @@ namespace DeadCircuit
 
                 // 21 WaterTreatment: 泵罐分区经折廊连接控制室。
                 new SiteBlueprint(SiteKind.WaterTreatment, SiteCategory.Industrial,
-                    "泵罐分区经折廊连接控制室。", "landmark_floor_3", 19,
+                    "泵罐分区经折廊连接控制室。", "landmark_floor_3", 851,
                     "##########",
                     "#p.k#p.k.#",
                     "#...+....#",
@@ -274,7 +274,7 @@ namespace DeadCircuit
 
                 // 22 RadioStation: T形台站以值班厅连接电台室和设备侧翼。
                 new SiteBlueprint(SiteKind.RadioStation, SiteCategory.Special,
-                    "T形台站以值班厅连接电台室和设备侧翼。", "landmark_floor_5", 63,
+                    "T形台站以值班厅连接电台室和设备侧翼。", "landmark_floor_5", 1023,
                     "###########",
                     "#r.e#u.E..#",
                     "#...+.....#",
@@ -286,7 +286,7 @@ namespace DeadCircuit
 
                 // 23 Bunker: 厚壁折入口通向物资厅，内门后设双床休息间。
                 new SiteBlueprint(SiteKind.Bunker, SiteCategory.Special,
-                    "厚壁折入口通向物资厅，内门后设双床休息间。", "landmark_floor_5", 63,
+                    "厚壁折入口通向物资厅，内门后设双床休息间。", "landmark_floor_5", 1023,
                     "#########",
                     "##b.b.F##",
                     "##.....##",
@@ -300,7 +300,7 @@ namespace DeadCircuit
 
                 // 24 LumberMill: 北部锯机房向南侧木料堆场开门，东侧独立工具室。
                 new SiteBlueprint(SiteKind.LumberMill, SiteCategory.Industrial,
-                    "北部锯机房向南侧木料堆场开门，东侧独立工具室。", "landmark_floor_3", 6,
+                    "北部锯机房向南侧木料堆场开门，东侧独立工具室。", "landmark_floor_3", 774,
                     "###########",
                     "#m.m#T.f..#",
                     "+...+.....#",
@@ -312,7 +312,7 @@ namespace DeadCircuit
 
                 // 25 MineOffice: 阶梯外墙内设登记桌、档案柜及器材隔间。
                 new SiteBlueprint(SiteKind.MineOffice, SiteCategory.Industrial,
-                    "阶梯外墙内设登记桌、档案柜及器材隔间。", "landmark_floor_3", 44,
+                    "阶梯外墙内设登记桌、档案柜及器材隔间。", "landmark_floor_3", 940,
                     "#######  ",
                     "#t.h.f#  ",
                     "#.....###",
@@ -324,7 +324,7 @@ namespace DeadCircuit
 
                 // 26 TrainDepot: 候车厅与票务间沿北侧排列，南接开放长月台。
                 new SiteBlueprint(SiteKind.TrainDepot, SiteCategory.Civic,
-                    "候车厅与票务间沿北侧排列，南接开放长月台。", "landmark_floor_2", 63,
+                    "候车厅与票务间沿北侧排列，南接开放长月台。", "landmark_floor_2", 1023,
                     "############",
                     "#h.h.h#n.T.#",
                     "#.....+....+",
@@ -335,7 +335,7 @@ namespace DeadCircuit
 
                 // 27 Barn: 双侧栏位以门接中央通道，南侧设饲料与工具区。
                 new SiteBlueprint(SiteKind.Barn, SiteCategory.Rural,
-                    "双侧栏位以门接中央通道，南侧设饲料与工具区。", "landmark_floor_4", 7,
+                    "双侧栏位以门接中央通道，南侧设饲料与工具区。", "landmark_floor_4", 775,
                     "#########",
                     "#S.#.#F.#",
                     "#..+.+..#",
@@ -348,7 +348,7 @@ namespace DeadCircuit
 
                 // 28 HuntingCabin: 带前廊的林间小屋，独立卧室接炉灶起居间。
                 new SiteBlueprint(SiteKind.HuntingCabin, SiteCategory.Residential,
-                    "带前廊的林间小屋，独立卧室接炉灶起居间。", "landmark_floor_0", 6,
+                    "带前廊的林间小屋，独立卧室接炉灶起居间。", "landmark_floor_0", 774,
                     "####### ",
                     "#b.K#w# ",
                     "#...+.# ",
@@ -360,7 +360,7 @@ namespace DeadCircuit
 
                 // 29 RangerStation: 折角站房以前台连接寝室和电台侧翼。
                 new SiteBlueprint(SiteKind.RangerStation, SiteCategory.Rural,
-                    "折角站房以前台连接寝室和电台侧翼。", "landmark_floor_4", 38,
+                    "折角站房以前台连接寝室和电台侧翼。", "landmark_floor_4", 934,
                     "    ####",
                     "    #rE#",
                     "#####+.#",
@@ -373,7 +373,7 @@ namespace DeadCircuit
 
                 // 30 Motel: 三间带床客房各自开门朝向南侧室外长廊。
                 new SiteBlueprint(SiteKind.Motel, SiteCategory.Residential,
-                    "三间带床客房各自开门朝向南侧室外长廊。", "landmark_floor_0", 63,
+                    "三间带床客房各自开门朝向南侧室外长廊。", "landmark_floor_0", 1023,
                     "############",
                     "#b.F#b.M#bK#",
                     "+...#...#..#",
@@ -384,7 +384,7 @@ namespace DeadCircuit
 
                 // 31 RecyclingYard: 北侧分拣棚接南侧开放回收场，侧间存放电路。
                 new SiteBlueprint(SiteKind.RecyclingYard, SiteCategory.Industrial,
-                    "北侧分拣棚接南侧开放回收场，侧间存放电路。", "landmark_floor_3", 63,
+                    "北侧分拣棚接南侧开放回收场，侧间存放电路。", "landmark_floor_3", 1023,
                     "##########",
                     "#m.K#E.f.#",
                     "+...+....#",
