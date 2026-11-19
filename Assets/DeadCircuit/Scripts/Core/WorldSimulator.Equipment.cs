@@ -207,7 +207,7 @@ namespace DeadCircuit
         {
             if(g==null || g.durability<=0) return 0;
             if(node==NodeKind.Tree) return g.kind==GearKind.StoneAxe ? 2 : g.kind==GearKind.SteelAxe ? 5 : 0;
-            if(node==NodeKind.Stone || node==NodeKind.Clay || node==NodeKind.Ore || node==NodeKind.CopperOre || node==NodeKind.TinOre || node==NodeKind.UraniumOre)
+            if(EquipmentCatalog.UsesPickaxe(node))
                 return g.kind==GearKind.StonePickaxe ? 2 : g.kind==GearKind.SteelPickaxe ? 5 : 0;
             return g.kind==GearKind.Wrench && (node==NodeKind.Scrap || node==NodeKind.Wall) ? 3 : 0;
         }

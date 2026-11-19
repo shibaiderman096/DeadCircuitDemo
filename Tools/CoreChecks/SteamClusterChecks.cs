@@ -349,7 +349,7 @@ static partial class Checks
             }
         });
 
-        Run("steam cluster legacy v6 boilers keep independent combustion and never lend their modules", () =>
+        RunHistorical("steam cluster legacy v6 boilers keep independent combustion and never lend their modules", () =>
         {
             var state = SteamClusterWorld();
             state.version = 6;

@@ -519,6 +519,12 @@ namespace DeadCircuit
             state.era = TechEra.LowVoltage;
             // The opt-in LAN fixture starts at LV without pretending it ran a water factory.
             state.waterVersion = 0;
+            // Synthetic progression belongs only to the opt-in LV transport fixture.
+            // It is not a gameplay unlock or evidence of a completed industrial playthrough.
+            state.primitiveResearch = 255;
+            state.steamResearch = 255;
+            state.steamCoked = 6; state.steamRefractory = 8; state.steamPigIron = 6;
+            state.steamSteel = 4; state.steamPlates = 4; state.steamFittings = 4; state.steamDriven = 4;
             state.buildings.Clear(); state.cargo.Clear(); state.powerNetworks.Clear();
             state.nodes.RemoveAll(n => n.x >= 23 && n.x <= 39 && n.y >= 25 && n.y <= 33);
             char[] ground = state.ground.ToCharArray();

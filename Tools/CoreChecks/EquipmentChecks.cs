@@ -68,7 +68,7 @@ static partial class Checks
         {
             var sim = New(out var p);
             Require(sim.State.version == WorldSimulator.SaveVersion, "new world must use save version 4");
-            Require(DemoCatalog.ItemCount == 32 && p.items.Length == DemoCatalog.ItemCount && sim.State.produced.Length == DemoCatalog.ItemCount, "equipment inventory does not include the water-era materials");
+            Require(DemoCatalog.ItemCount == 40 && p.items.Length == DemoCatalog.ItemCount && sim.State.produced.Length == DemoCatalog.ItemCount, "equipment inventory does not include the steam-era materials");
         });
         Run("equipment preserves old ammo and appends four caliber ordinals", () =>
         {
@@ -195,7 +195,7 @@ static partial class Checks
     static void EquipmentSaveChecks()
     {
         foreach (int version in new[] { 1, 2, 3 })
-            Run($"equipment v{version} migration preserves real legacy slots and grants an empty basic pistol once", () =>
+            RunHistorical($"equipment v{version} migration preserves real legacy slots and grants an empty basic pistol once", () =>
             {
                 var source = version == 3 ? VersionThreeFixture() : LegacyFixture(version);
                 Require(source.version == version && source.players.Single().items.Length == (version == 3 ? 21 : 7), "not a genuine legacy inventory fixture");

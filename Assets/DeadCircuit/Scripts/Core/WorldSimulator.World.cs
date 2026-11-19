@@ -136,7 +136,8 @@ namespace DeadCircuit
             for (int y = b.y - 1; y <= b.y + DemoCatalog.Height(b); y++) for (int x = b.x - 1; x <= b.x + DemoCatalog.Width(b); x++)
             {
                 NodeState n = NodeAt(x, y);
-                bool mineral=n!=null && (n.kind==NodeKind.Ore || (b.kind!=BuildKind.SteamMiner && (n.kind==NodeKind.CopperOre || n.kind==NodeKind.TinOre || n.kind==NodeKind.UraniumOre)));
+                bool mineral=n!=null && (b.kind==BuildKind.SteamMiner ? EquipmentCatalog.UsesPickaxe(n.kind) :
+                    n.kind==NodeKind.Ore || n.kind==NodeKind.CopperOre || n.kind==NodeKind.TinOre || n.kind==NodeKind.UraniumOre);
                 if (mineral && n.stock > 0 && (best == null || n.id < best.id)) best = n;
             }
             return best;

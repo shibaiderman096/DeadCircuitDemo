@@ -27,7 +27,7 @@ namespace DeadCircuit
         static readonly Color Amber = new Color32(242, 187, 98, 255);
         static readonly Color Danger = new Color32(244, 128, 113, 255);
         static readonly string[] Directions = { "东 →", "北 ↑", "西 ←", "南 ↓" };
-        static readonly string[] Nodes = { "树木", "铁矿脉", "废料堆", "补给箱", "障碍墙", "铜矿脉", "锡矿脉", "铀矿脉", "石料堆", "黏土矿床" };
+        static readonly string[] Nodes = { "树木", "铁矿脉", "废料堆", "补给箱", "障碍墙", "铜矿脉", "锡矿脉", "铀矿脉", "石料堆", "黏土矿床", "煤矿露头", "石灰石矿床", "耐火黏土矿床" };
         static readonly string[] AttributeHelp =
         {
             "强化近战与采集能力", "每点生命上限 +15", "每点体力上限 +8、移速 +0.09",

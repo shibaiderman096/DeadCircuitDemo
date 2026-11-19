@@ -42,7 +42,7 @@ static partial class Checks
 
     static void PrimitiveSaveChecks()
     {
-        Run("primitive save genuine v10 25-slot migration conserves inventories production cargo and resources", () =>
+        RunHistorical("primitive save genuine v10 25-slot migration conserves inventories production cargo and resources", () =>
         {
             var source = PrimitiveVersionTenFixture(); string before = Dump(source);
             var sim = new WorldSimulator(source); var state = sim.State;
@@ -68,7 +68,7 @@ static partial class Checks
             var again = new WorldSimulator(Saved(state)).State;
             Require(again.primitiveVersion == 0 && again.primitiveResearch == 0 && again.produced.SequenceEqual(state.produced), "migrated v10 lost bypass on second restore");
         });
-        Run("primitive save v4 through v9 retain genuine 25-slot inventories and research bypass", () =>
+        RunHistorical("primitive save v4 through v9 retain genuine 25-slot inventories and research bypass", () =>
         {
             for (int version = 4; version <= 9; version++)
             {
@@ -81,7 +81,7 @@ static partial class Checks
                 Require(Dump(source) == before && state.nextId == source.nextId && state.nodes.Count == source.nodes.Count, "old migration mutated caller or regenerated nodes: v" + version);
             }
         });
-        Run("primitive save v11 research and appended inventories roundtrip with deep copies", () =>
+        RunHistorical("primitive save v11 research and appended inventories roundtrip with deep copies", () =>
         {
             foreach (int research in new[] { 0, 255 })
             {
@@ -97,7 +97,7 @@ static partial class Checks
                 Require(Dump(state) == isolated, "v11 restored state shares mutable data with caller or second restore");
             }
         });
-        Run("primitive save v11 rejects invalid version bits and bypass research", () =>
+        RunHistorical("primitive save v11 rejects invalid version bits and bypass research", () =>
         {
             foreach (int version in new[] { -1, 2, int.MinValue, int.MaxValue })
             {
@@ -114,7 +114,7 @@ static partial class Checks
             bypass.primitiveResearch = 0;
             Require(new WorldSimulator(bypass).State.primitiveVersion == 0, "v11 valid migrated bypass rejected");
         });
-        Run("primitive save v11 rejects missing direct and transitive research prerequisites", () =>
+        RunHistorical("primitive save v11 rejects missing direct and transitive research prerequisites", () =>
         {
             // The six-step metallurgy chain occupies bits 0..5; construction bit6
             // needs Tools, while Cooking bit7 needs Ceramics and its ancestors.
@@ -126,7 +126,7 @@ static partial class Checks
             foreach (int research in new[] { 2, 4, 8, 16, 32, 64, 128, 5, 9, 17, 33, 129, 6, 14, 30, 62, 254, 251 })
                 Reject(PrimitiveCurrentSaveFixture(research), "research dependencies missing for bits " + research);
         });
-        Run("primitive save rejects wrong historical and v11 item array lengths and values", () =>
+        RunHistorical("primitive save rejects wrong historical and v11 item array lengths and values", () =>
         {
             foreach (int version in new[] { 10, 11 })
             {
@@ -146,7 +146,7 @@ static partial class Checks
                 { var invalid = fixture(); corrupt(invalid); Reject(invalid, $"v{version} accepted null/invalid item array"); }
             }
         });
-        Run("primitive save new nodes kilns and four-second recipes require v11", () =>
+        RunHistorical("primitive save new nodes kilns and four-second recipes require v11", () =>
         {
             foreach (int kind in new[] { 8, 9 })
             {

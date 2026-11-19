@@ -245,9 +245,12 @@ static partial class Checks
             sim.State.buildings.Single(b=>b.kind==BuildKind.Shaft).hp=0;float proof=sim.State.waterIrrigated;Advance(sim,2);
             Require(sim.State.waterIrrigated==proof,"disconnected pump created irrigation proof");
         });
-        Run("water fresh world opts in and genuine v11 saves migrate without materials evidence or locks",()=>
+        Run("water fresh world opts into independent water research",()=>
         {
             var fresh=new WorldSimulator(73149);Require(fresh.State.waterVersion==1 && fresh.State.waterResearch==0,"new world omitted water research");
+        });
+        RunHistorical("water genuine v11 saves migrate without materials evidence or locks",()=>
+        {
             var old=PrimitiveCurrentSaveFixture();string before=Dump(old);var restored=new WorldSimulator(old);
             Require(restored.State.version==12 && restored.State.waterVersion==0 && restored.State.waterResearch==0 && restored.State.waterPressed==0,"legacy save gained water locks/evidence");
             Require(restored.State.produced.Skip(29).All(n=>n==0) && restored.State.players[0].items.Skip(29).All(n=>n==0) && Dump(old)==before,"legacy migration gifted or mutated inventory");

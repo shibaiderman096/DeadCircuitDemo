@@ -4,10 +4,10 @@ namespace DeadCircuit
 {
     public static partial class ChunkTerrain
     {
-        // Pure gen7 sampling shared by the finite tutorial map and sparse chunks.
+        // Pure world-space sampling shared by the finite tutorial map and sparse chunks.
         // Callers check local ground/occupancy and supply their own shoreline flag.
         internal static bool SampleResource(int seed, int x, int y, BiomeKind biome,
-            WorldGenerationSettings settings, bool shoreline, out NodeKind kind, out int stock)
+            WorldGenerationSettings settings, bool shoreline, out NodeKind kind, out int stock, int generatorVersion)
         {
             kind = NodeKind.Tree; stock = 0;
             var rule = BiomeResourceCatalog.Get(biome);
@@ -18,6 +18,11 @@ namespace DeadCircuit
             double vein = .15 + Math.Max(0, Noise(seed, x, y, 8, 0x0ae1u) - .4) * 5;
             if ((roll -= rule.clayPermille + (shoreline ? BiomeResourceCatalog.ShoreClayBonusPermille : 0)) < 0) kind = NodeKind.Clay;
             else if ((roll -= rule.stonePermille) < 0) kind = NodeKind.Stone;
+            // These exposed deposits need no industrial unlock. Every natural
+            // biome has a background supply even outside its favored geology.
+            else if (generatorVersion >= 8 && (roll -= rule.coalPermille) < 0) kind = NodeKind.Coal;
+            else if (generatorVersion >= 8 && (roll -= rule.limestonePermille) < 0) kind = NodeKind.Limestone;
+            else if (generatorVersion >= 8 && (roll -= rule.fireClayPermille) < 0) kind = NodeKind.FireClay;
             else if ((roll -= rule.ironPermille * vein) < 0) kind = NodeKind.Ore;
             else if ((roll -= rule.copperPermille * vein) < 0) kind = NodeKind.CopperOre;
             else if ((roll -= rule.tinPermille * vein) < 0) kind = NodeKind.TinOre;
@@ -36,7 +41,7 @@ namespace DeadCircuit
                 kind = NodeKind.Scrap; stock = 10 + (int)(Hash(seed, x, y, 0x570eu) % 15);
                 return true;
             }
-            stock = kind == NodeKind.Stone || kind == NodeKind.Clay
+            stock = kind == NodeKind.Stone || kind == NodeKind.Clay || kind == NodeKind.Limestone || kind == NodeKind.FireClay
                 ? 60 + (int)(Hash(seed, x, y, 0x6a52u) % 101)
                 : (kind == NodeKind.UraniumOre ? 40 : 80) + (int)(Hash(seed, x, y, 0x570du) % 81);
             return true;

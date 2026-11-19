@@ -127,7 +127,7 @@ static partial class Checks
             var current = WorldGeneration.Generate(null); string currentBefore = Dump(current); WorldGeneration.LegacyMetadata(current);
             Require(Dump(current) == currentBefore, "metadata helper overwrote current generator state");
         });
-        Run("world generation generator one saves retain their existing open entrances", () =>
+        RunHistorical("world generation generator one saves retain their existing open entrances", () =>
         {
             var legacy = WorldGeneration.Generate(new WorldGenerationSettings { seed = -991 });
             legacy.buildings.RemoveAll(b => b.kind == BuildKind.Door);

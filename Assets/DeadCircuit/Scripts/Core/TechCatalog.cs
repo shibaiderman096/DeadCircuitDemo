@@ -26,6 +26,7 @@ namespace DeadCircuit
                 case BuildKind.BlastFurnace: case BuildKind.MechanicalPress: case BuildKind.MechanicalWorkshop:
                 case BuildKind.WaterMill: case BuildKind.IrrigationPump: case BuildKind.MechanicalHopper: return TechEra.Water;
                 case BuildKind.CombustionChamber: case BuildKind.Chimney: case BuildKind.FeedwaterPump: case BuildKind.SteamEngine:
+                case BuildKind.CokeOven: case BuildKind.RefractoryKiln: case BuildKind.IronBlastFurnace: case BuildKind.RefiningForge: case BuildKind.MachineTool:
                 case BuildKind.Boiler: case BuildKind.SteamPipe: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return TechEra.Steam;
                 case BuildKind.Generator: case BuildKind.Miner: case BuildKind.Smelter: case BuildKind.Assembler: case BuildKind.Turret: case BuildKind.PowerPole: case BuildKind.SteamTurbine: case BuildKind.CircuitAssembler: return TechEra.LowVoltage;
                 case BuildKind.SolarPanel: case BuildKind.DieselGenerator: case BuildKind.ChemicalPlant: case BuildKind.MediumPole: case BuildKind.Transformer: case BuildKind.CoolingTower: return TechEra.MediumVoltage;
@@ -34,7 +35,7 @@ namespace DeadCircuit
                 default: return TechEra.Nuclear;
             }
         }
-        public static bool IsUnlocked(WorldState s, BuildKind kind) => s != null && (int)kind >= 0 && (int)kind < DemoCatalog.BuildNames.Length && s.era >= RequiredEra(kind) && PrimitiveCatalog.IsBuildUnlocked(s,kind) && WaterCatalog.IsBuildUnlocked(s,kind);
+        public static bool IsUnlocked(WorldState s, BuildKind kind) => s != null && (int)kind >= 0 && (int)kind < DemoCatalog.BuildNames.Length && s.era >= RequiredEra(kind) && PrimitiveCatalog.IsBuildUnlocked(s,kind) && WaterCatalog.IsBuildUnlocked(s,kind) && SteamCatalog.IsBuildUnlocked(s,kind);
         public static int EnergyTier(BuildingState b) => b==null ? -1 : b.kind==BuildKind.Transformer ? 2+b.setting : EnergyTier(b.kind);
         public static float LinkRange(BuildKind kind) => EnergyTier(kind) >= 2 ? DemoCatalog.LinkRange : 0f;
         public static float SupplyRadius(BuildKind kind) => EnergyTier(kind) >= 2 ? DemoCatalog.SupplyRadius : 0f;
@@ -81,6 +82,7 @@ namespace DeadCircuit
             switch (kind)
             {
                 case BuildKind.SteamEngine: case BuildKind.Waterwheel: case BuildKind.Shaft: case BuildKind.MechanicalCrusher:
+                case BuildKind.IronBlastFurnace: case BuildKind.RefiningForge: case BuildKind.MachineTool:
                 case BuildKind.BlastFurnace: case BuildKind.MechanicalPress: case BuildKind.MechanicalWorkshop:
                 case BuildKind.WaterMill: case BuildKind.IrrigationPump: case BuildKind.MechanicalHopper: return 0;
                 case BuildKind.Boiler: case BuildKind.SteamPipe: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return 1;
@@ -115,6 +117,11 @@ namespace DeadCircuit
             {
                 string water = WaterCatalog.SteamRequirement(s);
                 if (water.Length > 0) return water;
+            }
+            if (target == TechEra.LowVoltage)
+            {
+                string steam = SteamCatalog.LowVoltageRequirement(s);
+                if (steam.Length > 0) return steam;
             }
             BuildKind required = target == TechEra.Water ? BuildKind.Workbench : target == TechEra.Steam ? BuildKind.MechanicalCrusher : target == TechEra.LowVoltage ? BuildKind.SteamFurnace : target == TechEra.MediumVoltage ? BuildKind.CircuitAssembler : target == TechEra.HighVoltage ? BuildKind.ChemicalPlant : BuildKind.PrecisionAssembler;
             return s.buildings.Exists(b => b != null && b.kind == required && b.hp > 0f) ? "" : "需要已建设备：" + DemoCatalog.BuildName(required);
@@ -151,7 +158,7 @@ namespace DeadCircuit
             R(12,"石炉炼锡",TechEra.Primitive,BuildKind.StoneFurnace,3f,DemoCatalog.Materials(ItemKind.TinOre,1),DemoCatalog.Materials(ItemKind.Tin,1)),
             R(13,"富集碎矿炼铁",TechEra.Water,BuildKind.StoneFurnace,3f,DemoCatalog.Materials(ItemKind.CrushedOre,1),DemoCatalog.Materials(ItemKind.Iron,2)),
             R(20,"机械粉碎铁矿",TechEra.Water,BuildKind.MechanicalCrusher,2f,DemoCatalog.Materials(ItemKind.Ore,1),DemoCatalog.Materials(ItemKind.CrushedOre,1)),
-            R(30,"蒸汽炼钢",TechEra.Steam,BuildKind.SteamFurnace,4f,DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Fuel,1),DemoCatalog.Materials(ItemKind.Steel,1)),
+            R(30,"蒸汽炼钢",TechEra.Steam,BuildKind.SteamFurnace,4f,DemoCatalog.Materials(ItemKind.PigIron,3,ItemKind.Limestone,1),DemoCatalog.Materials(ItemKind.Steel,3)),
             R(31,"蒸汽碎矿冶炼",TechEra.Steam,BuildKind.SteamFurnace,2f,DemoCatalog.Materials(ItemKind.CrushedOre,1),DemoCatalog.Materials(ItemKind.Iron,2)),
             R(32,"蒸汽炼铜",TechEra.Steam,BuildKind.SteamFurnace,2f,DemoCatalog.Materials(ItemKind.CopperOre,1),DemoCatalog.Materials(ItemKind.Copper,1)),
             R(33,"蒸汽炼锡",TechEra.Steam,BuildKind.SteamFurnace,2f,DemoCatalog.Materials(ItemKind.TinOre,1),DemoCatalog.Materials(ItemKind.Tin,1)),
@@ -177,7 +184,13 @@ namespace DeadCircuit
             R(112,"鼓风炼锡",TechEra.Water,BuildKind.BlastFurnace,3f,DemoCatalog.Materials(ItemKind.TinOre,2,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Tin,3)),
             R(113,"机械压制铁板",TechEra.Water,BuildKind.MechanicalPress,2f,DemoCatalog.Materials(ItemKind.Iron,1),DemoCatalog.Materials(ItemKind.IronPlate,1)),
             R(114,"机械加工齿轮",TechEra.Water,BuildKind.MechanicalWorkshop,3f,DemoCatalog.Materials(ItemKind.IronPlate,1,ItemKind.Bronze,1),DemoCatalog.Materials(ItemKind.Gear,2)),
-            R(115,"机械加工轴承",TechEra.Water,BuildKind.MechanicalWorkshop,3f,DemoCatalog.Materials(ItemKind.Bronze,2,ItemKind.Iron,1),DemoCatalog.Materials(ItemKind.Bearing,2))
+            R(115,"机械加工轴承",TechEra.Water,BuildKind.MechanicalWorkshop,3f,DemoCatalog.Materials(ItemKind.Bronze,2,ItemKind.Iron,1),DemoCatalog.Materials(ItemKind.Bearing,2)),
+            R(120,"煤炭焦化",TechEra.Steam,BuildKind.CokeOven,4f,DemoCatalog.Materials(ItemKind.Coal,4,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Coke,3)),
+            R(121,"耐火砖烧制",TechEra.Steam,BuildKind.RefractoryKiln,4f,DemoCatalog.Materials(ItemKind.FireClay,3,ItemKind.Stone,1,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.RefractoryBrick,4)),
+            R(122,"高炉炼生铁",TechEra.Steam,BuildKind.IronBlastFurnace,4f,DemoCatalog.Materials(ItemKind.CrushedOre,2,ItemKind.Coke,2,ItemKind.Limestone,1),DemoCatalog.Materials(ItemKind.PigIron,3)),
+            R(123,"精炼钢材",TechEra.Steam,BuildKind.RefiningForge,4f,DemoCatalog.Materials(ItemKind.PigIron,3,ItemKind.Limestone,1,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Steel,2)),
+            R(124,"机械压制钢板",TechEra.Steam,BuildKind.MechanicalPress,3f,DemoCatalog.Materials(ItemKind.Steel,1),DemoCatalog.Materials(ItemKind.SteelPlate,1)),
+            R(125,"耐压管件加工",TechEra.Steam,BuildKind.MachineTool,3f,DemoCatalog.Materials(ItemKind.SteelPlate,1,ItemKind.Bronze,1),DemoCatalog.Materials(ItemKind.PipeFitting,2))
         };
         public static RecipeDefinition Recipe(int id) { foreach(var r in Recipes) if(r.id==id) return r; return null; }
         public static RecipeDefinition DefaultRecipe(BuildKind kind) { foreach(var r in Recipes) if(r.building==kind && kind!=BuildKind.Workbench) return r; return null; }
@@ -187,10 +200,11 @@ namespace DeadCircuit
         {
             if(item<0 || item>=DemoCatalog.ItemCount) return false;
             if(kind==BuildKind.Chest || kind==BuildKind.Belt || kind==BuildKind.MechanicalHopper) return true;
+            if(kind==BuildKind.CombustionChamber && (item==(int)ItemKind.Coal || item==(int)ItemKind.Coke)) return true;
             if(IsFuelBurner(kind) && item==(int)ItemKind.Fuel) return true;
             if(kind==BuildKind.StoneFurnace && item==(int)ItemKind.Charcoal) return true;
             if(kind==BuildKind.Miner) return item==(int)ItemKind.Ore || item==(int)ItemKind.CopperOre || item==(int)ItemKind.TinOre || item==(int)ItemKind.UraniumOre;
-            if(kind==BuildKind.SteamMiner) return item==(int)ItemKind.Ore;
+            if(kind==BuildKind.SteamMiner) return item==(int)ItemKind.Ore || item==(int)ItemKind.CopperOre || item==(int)ItemKind.TinOre || item==(int)ItemKind.UraniumOre || item==(int)ItemKind.Stone || item==(int)ItemKind.Clay || item==(int)ItemKind.Coal || item==(int)ItemKind.Limestone || item==(int)ItemKind.FireClay;
             if(kind==BuildKind.Turret) return item==(int)ItemKind.Ammo;
             if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearFuel || item==(int)ItemKind.Coolant || item==(int)ItemKind.NuclearWaste;
             foreach(var r in Recipes) if(r.building==kind && kind!=BuildKind.Workbench && (r.inputs[item]>0 || r.outputs[item]>0)) return true;

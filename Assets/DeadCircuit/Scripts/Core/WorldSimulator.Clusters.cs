@@ -103,6 +103,8 @@ namespace DeadCircuit
                 BuildingState b = members[i];
                 cluster.buildingIds[i] = b.id;
                 b.clusterId = cluster.id;
+                if (b.kind == BuildKind.Boiler) b.powerGeneration = 0f;
+                if (!SteamCatalog.IsBuildUnlocked(State, b.kind)) continue;
                 switch (b.kind)
                 {
                     case BuildKind.Boiler: cluster.boilers++; break;
@@ -135,7 +137,7 @@ namespace DeadCircuit
             foreach (BuildingState b in members)
             {
                 if (slots == 0) break;
-                if (b.kind != BuildKind.CombustionChamber || BurnFuel(b, false, 120f, 20f) <= 0f) continue;
+                if (b.kind != BuildKind.CombustionChamber || !SteamCatalog.IsBuildUnlocked(State, b.kind) || BurnFuel(b, false, 120f, 20f) <= 0f) continue;
                 cluster.output += BurnFuel(b, consume, 120f, 20f);
                 // A final partial tick occupies one 120-unit slot. Starting another full
                 // chamber to top it up would discard heat while charging a whole tick.
@@ -143,7 +145,7 @@ namespace DeadCircuit
             }
             cluster.status = cluster.output > 0f ? "运行" : "无燃料";
             foreach (BuildingState b in members)
-                if (b.kind == BuildKind.Boiler) b.powerGeneration = cluster.output / cluster.boilers;
+                if (b.kind == BuildKind.Boiler && SteamCatalog.IsBuildUnlocked(State, b.kind)) b.powerGeneration = cluster.output / cluster.boilers;
         }
     }
 }

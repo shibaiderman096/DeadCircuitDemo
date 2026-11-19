@@ -94,12 +94,15 @@ static partial class Checks
                 Require(EquipmentCatalog.MovementPenalty(p)<=.25f,"armor movement penalty exceeded cap");
             }
         });
-        Run("equipment armor save deep copies slot identities and keeps migrated legacy slots empty",()=>
+        Run("equipment armor current save deep copies slot identities",()=>
         {
             var sim=EquipmentFixture(out var p,GearKind.Pistol,arrange:(state,player)=>{foreach(var kind in ArmorSet)AddArmorFixture(state,player,kind);});
             var source=Saved(sim.State);var restored=new WorldSimulator(source).State.players[0];
             Require(!ReferenceEquals(source.players[0].armorIds,restored.armorIds) && restored.armorIds.SequenceEqual(p.armorIds),"armor slots alias or changed on restore");
             source.players[0].armorIds[0]=0;Require(restored.armorIds[0]!=0,"caller mutation crossed armor slot boundary");
+        });
+        RunHistorical("equipment armor historical save keeps migrated slots empty",()=>
+        {
             foreach(int version in new[] { 1,2,3 })
             {
                 var legacy=version==3?VersionThreeFixture():LegacyFixture(version);var migrated=new WorldSimulator(legacy).State.players[0];

@@ -155,7 +155,7 @@ static partial class Checks
             Require((p.x, p.y) == ((float)upper.doorX, (float)upper.doorY) && next == restored.State.nextId && records == restored.State.chunks.records.Count &&
                 !restored.State.nodes.Any(n => (n.x, n.y) == (wall.x, wall.y) || (n.x, n.y) == (crate.x, crate.y)), "save or reentry replenished a damaged instance");
         });
-        Run("floors generator4 save keeps ground landmarks and ordinary reserved-band terrain", () =>
+        RunHistorical("floors generator4 save keeps ground landmarks and ordinary reserved-band terrain", () =>
         {
             var sim = FloorFixture(out var root, out var p, gen: 4); var stair = FloorStair(root, '<');
             Require(FloorWorld.StairGlyph(sim.State, stair.x, stair.y) == '\0', "old generator exposed a stair");
@@ -168,7 +168,7 @@ static partial class Checks
         });
     }
 
-    private static WorldSimulator FloorFixture(out SiteState root, out PlayerState player, int rotation = 0, int gen = 5)
+    private static WorldSimulator FloorFixture(out SiteState root, out PlayerState player, int rotation = 0, int gen = WorldGeneration.CurrentGeneratorVersion)
     {
         var world = WorldGeneration.Generate(new WorldGenerationSettings { seed = 73149, chunked = true });
         world.generatorVersion = gen;
@@ -181,7 +181,7 @@ static partial class Checks
         world.sites.Add(site);
         world.chunks.records.Add(new WorldChunkState { x = 10, y = 10, ground = new string('4', 256), biomes = new string('2', 256) });
         world.chunks.revision++;
-        PrepareLegacySaveFixture(world, gen < 5 ? 9 : 10, gen);
+        if(gen<WorldGeneration.CurrentGeneratorVersion) PrepareLegacySaveFixture(world, gen < 5 ? 9 : 10, gen);
         var sim = new WorldSimulator(world); root = sim.State.sites.Single(s => s.id == site.id);
         player = sim.AddPlayer("floor-a", "A"); return sim;
     }

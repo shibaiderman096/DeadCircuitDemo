@@ -49,7 +49,7 @@ static partial class Checks
     {
         foreach(int version in new[] { 1,2 })
         {
-            Run($"v{version} seven-slot migration keeps layout inventory cargo and personal points and infers old solar as MV", () =>
+            RunHistorical($"v{version} seven-slot migration keeps layout inventory cargo and personal points and infers old solar as MV", () =>
             {
                 var legacy=LegacyFixture(version);var original=Dump(legacy);var oldCargo=JsonSerializer.Serialize(legacy.cargo,Json);var sim=new WorldSimulator(legacy);var restored=sim.State;
                 Require(restored.version==WorldSimulator.SaveVersion && restored.era==TechEra.MediumVoltage,"legacy solar did not infer MV in v4");Require(Dump(legacy)==original,"migration mutated caller-owned legacy data");

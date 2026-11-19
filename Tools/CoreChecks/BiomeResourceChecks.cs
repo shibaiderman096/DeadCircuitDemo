@@ -9,7 +9,7 @@ static partial class Checks
         Run("biome resources favor desert stone wetland clay and conifer iron in generated chunks", () =>
         {
             int biomeCount = WorldGenerationCatalog.Biomes.Count;
-            var area = new int[biomeCount]; var counts = new int[biomeCount, 12];
+            var area = new int[biomeCount]; var counts = new int[biomeCount, Enum.GetValues<NodeKind>().Length];
             var bankArea = new int[biomeCount, 2]; var bankClay = new int[biomeCount, 2];
             for (int cy = -18; cy <= 18; cy += 2) for (int cx = -18; cx <= 18; cx += 2)
             {

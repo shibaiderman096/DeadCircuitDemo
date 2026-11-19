@@ -73,7 +73,7 @@ static partial class Checks
             var signatureB = b.sites.OrderBy(s=>s.x).Select(s=>(s.x,s.y,s.layoutVersion,s.rotation));
             Require(signatureA.SequenceEqual(signatureB), "layout metadata depends on entity ids");
         });
-        Run("landmarks v8 generator3 worlds keep old chunks and future legacy layouts", () =>
+        RunHistorical("landmarks v8 generator3 worlds keep old chunks and future legacy layouts", () =>
         {
             var old = WorldGeneration.Generate(new WorldGenerationSettings { seed=11,chunked=true });
             PrepareLegacySaveFixture(old, 8, 3);

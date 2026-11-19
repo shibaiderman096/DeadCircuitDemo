@@ -38,12 +38,10 @@ namespace DeadCircuit
 
         static string ResourceToolText(NodeKind kind)
         {
+            if (EquipmentCatalog.UsesPickaxe(kind)) return "镐（提高采集效率）";
             switch (kind)
             {
                 case NodeKind.Tree: return "斧（提高采集效率）";
-                case NodeKind.Stone: case NodeKind.Clay:
-                case NodeKind.Ore: case NodeKind.CopperOre: case NodeKind.TinOre: case NodeKind.UraniumOre:
-                    return "镐（提高采集效率）";
                 case NodeKind.Scrap: case NodeKind.Wall: return "扳手（提高采集效率）";
                 default: return "手工即可";
             }
@@ -52,9 +50,14 @@ namespace DeadCircuit
         static string ResourceCollectionHint(WorldState world, PlayerState player, NodeState node)
         {
             string hint = "靠近并瞄准后按 E；空手也可采集。";
-            if (node.kind == NodeKind.Ore || node.kind == NodeKind.CopperOre ||
-                node.kind == NodeKind.TinOre || node.kind == NodeKind.UraniumOre)
-                hint += "\n采矿机需紧邻矿脉并供能；蒸汽矿机仅采铁。";
+            switch (node.kind)
+            {
+                case NodeKind.Coal: hint += "\n煤层多见于针叶林与冻原；出生区(37,35)有露头保障。"; break;
+                case NodeKind.Limestone: hint += "\n石灰石多见于河谷、荒漠与雪山；出生区(38,37)有矿床保障。"; break;
+                case NodeKind.FireClay: hint += "\n耐火黏土多见于湿地、沼泽与河谷沉积层；出生区(39,35)有矿床保障。"; break;
+            }
+            if (EquipmentCatalog.UsesPickaxe(node.kind))
+                hint += "\n蒸汽矿机可采集这类矿床，需紧邻矿床并接通蒸汽；LV采矿机目前采铁、铜、锡、铀。";
             if (node.kind == NodeKind.Tree && world.generatorVersion >= 1 &&
                 world.generatorVersion <= WorldGeneration.CurrentGeneratorVersion &&
                 world.survival != null && world.survival.enabled && player?.needs != null && player.needs.initialized)

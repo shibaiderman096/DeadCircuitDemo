@@ -194,7 +194,7 @@ namespace DeadCircuit
                 bool shoreline = r.ground[cell - 1] == '2' || r.ground[cell + 1] == '2' ||
                     r.ground[cell - Size] == '2' || r.ground[cell + Size] == '2';
                 return SampleResource(r.world.seed, r.x + cell % Size, r.y + cell / Size,
-                    (BiomeKind)(r.biomes[cell] - '0'), r.settings, shoreline, out kind, out stock);
+                    (BiomeKind)(r.biomes[cell] - '0'), r.settings, shoreline, out kind, out stock, r.world.generatorVersion);
             }
             int x = r.x + cell % Size, y = r.y + cell / Size, seed = r.world.seed;
             var biome = (BiomeKind)(r.biomes[cell] - '0');

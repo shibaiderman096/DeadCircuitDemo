@@ -46,7 +46,7 @@ static partial class Checks
             using(var stream=File.Create(archive.PathFor(huge)))stream.SetLength(WorldArchive.MaxBytes+1L);
             bool oversized=false;try{archive.Read(huge);}catch(InvalidDataException){oversized=true;}Require(oversized,"oversized JSON read into memory");
         });
-        Run("world archive migration leaves legacy file untouched",()=>
+        RunHistorical("world archive migration leaves legacy file untouched",()=>
         {
             var archive=ArchiveFixture(out string root);Directory.CreateDirectory(root);string old=Path.Combine(root,"legacy-input.json");
             string json=Dump(LegacyFixture(2));File.WriteAllText(old,json);

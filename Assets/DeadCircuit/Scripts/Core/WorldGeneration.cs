@@ -283,6 +283,14 @@ namespace DeadCircuit
                 AddNode(state, occupied, 27, 34, NodeKind.Stone, 600);
                 AddNode(state, occupied, 27, 36, NodeKind.Clay, 600);
             }
+            if (state.generatorVersion >= 8)
+            {
+                // Exposed finite deposits on the reserved, dry tutorial floor;
+                // no crate loot, research or random biome roll gates steam.
+                AddNode(state, occupied, 37, 35, NodeKind.Coal, 600);
+                AddNode(state, occupied, 38, 37, NodeKind.Limestone, 600);
+                AddNode(state, occupied, 39, 35, NodeKind.FireClay, 600);
+            }
             AddNode(state, occupied, 36, 34, NodeKind.Scrap, 60);
             AddNode(state, occupied, 35, 35, NodeKind.Crate, 16);
             AddNode(state, occupied, 36, 37, NodeKind.Crate, 16);
@@ -407,7 +415,7 @@ namespace DeadCircuit
                 bool shoreline = ground[cell - 1] == '2' || ground[cell + 1] == '2' ||
                     ground[cell - Size] == '2' || ground[cell + Size] == '2';
                 if (!ChunkTerrain.SampleResource(state.seed, x, y, (BiomeKind)(state.biomes[cell] - '0'),
-                    state.generation, shoreline, out NodeKind kind, out int stock)) continue;
+                    state.generation, shoreline, out NodeKind kind, out int stock, state.generatorVersion)) continue;
                 int[] parents = ResourcePaths(ground, blocked);
                 if (parents[cell] < 0) continue;
                 AddNode(state, occupied, x, y, kind, stock);

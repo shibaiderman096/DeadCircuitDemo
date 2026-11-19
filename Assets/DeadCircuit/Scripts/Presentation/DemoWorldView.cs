@@ -572,7 +572,7 @@ namespace DeadCircuit
                 {
                     case NodeKind.Tree: art = "tree_" + state.id % 3; break;
                     case NodeKind.Ore: case NodeKind.CopperOre: case NodeKind.TinOre: case NodeKind.UraniumOre:
-                    case NodeKind.Stone: case NodeKind.Clay: art = "node_ore"; break;
+                    case NodeKind.Stone: case NodeKind.Clay: case NodeKind.Coal: case NodeKind.Limestone: case NodeKind.FireClay: art = "node_ore"; break;
                     case NodeKind.Scrap: art = state.id % 5 == 0 ? "car" : "node_scrap"; break;
                     case NodeKind.Crate: art = "node_crate"; break;
                     default: art = "node_wall"; break;
@@ -589,9 +589,14 @@ namespace DeadCircuit
                     state.kind == NodeKind.TinOre ? new Color(.68f,.84f,1f) :
                     state.kind == NodeKind.UraniumOre ? new Color(.72f,1f,.35f) :
                     state.kind == NodeKind.Stone ? new Color(.75f,.79f,.75f) :
-                    state.kind == NodeKind.Clay ? new Color(1f,.55f,.32f) : Color.white;
+                    state.kind == NodeKind.Clay ? new Color(1f,.55f,.32f) :
+                    state.kind == NodeKind.Coal ? new Color(.3f,.34f,.4f) :
+                    state.kind == NodeKind.Limestone ? new Color(.92f,.9f,.72f) :
+                    state.kind == NodeKind.FireClay ? new Color(.83f,.48f,.37f) : Color.white;
                 if (state.kind == NodeKind.Stone || state.kind == NodeKind.Clay)
                     v.root.name = state.kind == NodeKind.Stone ? "石料堆 / Stone" : "黏土矿床 / Clay";
+                if (state.kind == NodeKind.Coal || state.kind == NodeKind.Limestone || state.kind == NodeKind.FireClay)
+                    v.root.name = (state.kind == NodeKind.Coal ? "煤" : state.kind == NodeKind.Limestone ? "石灰石" : "耐火黏土") + "矿床";
                 Color ecology = state.kind == NodeKind.Tree && world.generatorVersion >= 8 ? BiomeTint(world,state.x,state.y) : Color.white;
                 v.body.color = DamageColor(v,mineral * ecology); v.body.color = new Color(v.body.color.r,v.body.color.g,v.body.color.b,canopy);
                 v.shadow.transform.localScale = state.kind == NodeKind.Tree ? new Vector3(1.4f,.9f,1) : Vector3.one;
@@ -1310,7 +1315,8 @@ namespace DeadCircuit
             {
                 bool ore = false;
                 if (world.nodes != null) foreach (var n in world.nodes)
-                    if ((n.kind==NodeKind.Ore || n.kind==NodeKind.CopperOre || n.kind==NodeKind.TinOre || n.kind==NodeKind.UraniumOre) && n.hp > 0 && n.stock > 0 && n.x >= b.x - 1 && n.x <= b.x + w && n.y >= b.y - 1 && n.y <= b.y + h)
+                    if ((b.kind==BuildKind.SteamMiner ? EquipmentCatalog.UsesPickaxe(n.kind) :
+                        n.kind==NodeKind.Ore || n.kind==NodeKind.CopperOre || n.kind==NodeKind.TinOre || n.kind==NodeKind.UraniumOre) && n.hp > 0 && n.stock > 0 && n.x >= b.x - 1 && n.x <= b.x + w && n.y >= b.y - 1 && n.y <= b.y + h)
                     { ore = true; break; }
                 if (!ore) return false;
             }

@@ -17,7 +17,7 @@
 
 1. 世界状态以 `WorldSimulator` 为唯一权威。玩家操作通过 `GameBridge.Send` 和模拟器指令处理；HUD 与世界视图读取状态并呈现，通过桥接请求改变世界。
 2. 保持模拟核心的 Unity 无关性；纯规则、状态和算法优先落在 `Core/`，UI 与 Unity API 留在桥接或表现层。
-3. `BuildKind`、`ItemKind` 等枚举整数值会进入检查或存档契约。增加成员时保留旧序号。当前 v12 存档恢复兼容 v1–v11，并须通过校验和深拷贝；物品数组为32槽，v11历史数组为29槽。新世界开启原始及水力研究，旧v1–v11世界保留水力研究旁路；实际水车＋轴系加工与到货计数由权威模拟记录。新世界使用 generator7 的群系资源规则，generator3、4、5、6 保持各自的区块生成规则，不重生成已探索资源。原始／水力研究与资源生产链见 DEVELOPMENT_OUTLINE.md；聚落和楼层见 LANDMARK_BUILDINGS.md、SETTLEMENTS.md 和 FLOORS.md。
+3. `BuildKind`、`ItemKind` 等枚举整数值保留已有序号。当前保存格式v13、工业物品40槽、建筑目录49项；新世界启用原始、水力及蒸汽研究，generator8生成含煤、石灰石与耐火黏土的群系资源。按用户2026-11-20指示，后续开发不考虑旧存档：不为新阶段新增迁移、历史研究旁路或旧世界补矿；验证新世界与当前格式的校验、深拷贝和恢复。既有历史代码不在本次主动清理范围。原始／水力／蒸汽研究与生产链见 DEVELOPMENT_OUTLINE.md；聚落和楼层见 LANDMARK_BUILDINGS.md、SETTLEMENTS.md 和 FLOORS.md。
 4. 保持整数全局格坐标与固定 50 毫秒 tick。新世界每区块16×16，使用 WorldTiles 查询地形/生态、64位全局键与负坐标向下取整；width/height=64仅代表原教程元数据，不能作为区块世界边界。旧世界维持64×64。设备占地、旋转、供电覆盖及物流须覆盖跨区块、负坐标和守恒行为；详见 SEASONS_CHUNKS.md。
 5. 需要重生成图集时运行 `python Tools/generate_art.py`；脚本会写入 `Assets/DeadCircuit/Resources/Art/`。编辑生成素材时同步维护生成脚本。
 6. 默认使用 PowerShell 7 处理 Windows 命令；任务开始时重新核验编辑器、命令行、Git 和运行时状态。Unity Editor 命令需明确指定目标项目。

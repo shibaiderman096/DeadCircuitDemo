@@ -158,7 +158,7 @@ static partial class Checks
             Require(System.Text.Encoding.UTF8.GetByteCount(Dump(second))<1024*1024,"local snapshot exceeds budget");
             Require(second.players.Find(q=>q.id==p.id).exploredChunks.Count==0,"other player's fog leaked");
         });
-        Run("old v7 save retains original cells and acquires no distant world", () =>
+        RunHistorical("old v7 save retains original cells and acquires no distant world", () =>
         {
             var original=new WorldSimulator(55);original.AddPlayer("p","P");var old=Saved(original.State);PrepareLegacySaveFixture(old,7,2);
             string ground=old.ground;int next=old.nextId;var sim=new WorldSimulator(old);

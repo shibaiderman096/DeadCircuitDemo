@@ -44,6 +44,11 @@ namespace DeadCircuit
         public static readonly string[] SlotNames = { "瞄具", "枪口", "弹匣", "握把", "枪管" };
         public static readonly string[] ArmorSlotNames = { "头部", "躯干", "腿部", "脚部" };
 
+        public static bool UsesPickaxe(NodeKind kind) =>
+            kind == NodeKind.Stone || kind == NodeKind.Clay || kind == NodeKind.Ore ||
+            kind == NodeKind.CopperOre || kind == NodeKind.TinOre || kind == NodeKind.UraniumOre ||
+            kind == NodeKind.Coal || kind == NodeKind.Limestone || kind == NodeKind.FireClay;
+
         public static GearDefinition Gear(GearKind kind)
         {
             if ((int)kind < 0 || (int)kind >= GearNames.Length) throw new ArgumentOutOfRangeException(nameof(kind));
