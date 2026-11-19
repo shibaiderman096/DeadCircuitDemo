@@ -1,0 +1,906 @@
+{
+  "status": "pass",
+  "count": 60,
+  "commands": [
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\floor_tiling_review.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\floor_tiling_review.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_floor_0.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_floor_0.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_floor_1.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_floor_1.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_floor_2.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_floor_2.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_floor_3.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_floor_3.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_floor_4.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_floor_4.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_floor_5.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_floor_5.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_a.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_a.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_b.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_b.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_d.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_d.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_e.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_e.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_f.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_f.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_g.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_g.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_h.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_h.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_k.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_k.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_l.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_l.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_m.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_m.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_n.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_n.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_o.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_o.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_p.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_p.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_r.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_r.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_s.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_s.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_t.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_t.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_u.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_u.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_v.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_v.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_prop_w.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_prop_w.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_0.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_0.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_1.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_1.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_10.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_10.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_11.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_11.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_12.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_12.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_13.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_13.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_14.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_14.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_15.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_15.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_16.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_16.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_17.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_17.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_18.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_18.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_19.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_19.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_2.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_2.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_20.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_20.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_21.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_21.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_22.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_22.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_23.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_23.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_24.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_24.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_25.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_25.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_26.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_26.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_27.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_27.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_28.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_28.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_29.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_29.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_3.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_3.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_30.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_30.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_31.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_31.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_4.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_4.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_5.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_5.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_6.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_6.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_7.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_7.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_8.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_8.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmark_sign_9.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmark_sign_9.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmarks.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmarks.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "C:\\Users\\man\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "C:\\Users\\man\\.codex\\skills\\codeart2d\\scripts\\svg_render.py",
+        "lint",
+        "--svg",
+        "D:\\unity\\DeadCircuitDemo\\Tools\\ExpansionArt\\LandmarkArt\\Sources\\landmarks_review.svg",
+        "--profile",
+        "pixel"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\": \"pass\", \"svg\": \"D:\\\\unity\\\\DeadCircuitDemo\\\\Tools\\\\ExpansionArt\\\\LandmarkArt\\\\Sources\\\\landmarks_review.svg\", \"profile\": \"pixel\", \"compiled\": false, \"problems\": []}\n",
+      "stderr": ""
+    }
+  ]
+}

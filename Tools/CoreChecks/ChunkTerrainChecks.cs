@@ -67,7 +67,7 @@ static partial class Checks
             Require(world.width == 64 && world.height == 64 && world.ground.Length == 4096 && world.biomes.Length == 4096, "tutorial storage expanded");
             Require(world.ground == legacy.ground && world.biomes == legacy.biomes && TerrainEntityDump(world) == TerrainEntityDump(legacy), "tutorial terrain or entity geometry shifted");
             Require(TerrainSerialize(world.zombies) == TerrainSerialize(legacy.zombies) && TerrainSerialize(world.survival.creatures) == TerrainSerialize(legacy.survival.creatures), "tutorial enemies/creatures moved");
-            Require(world.version == 8 && world.generatorVersion == 3 && world.generation.chunked && world.chunks.enabled, "new world version contract");
+            Require(world.version == WorldSimulator.SaveVersion && world.generatorVersion == WorldGeneration.CurrentGeneratorVersion && world.generation.chunked && world.chunks.enabled, "new world version contract");
             Require(world.chunks.records.Count == 16 && world.chunks.generated == "", "tutorial did not become exactly sixteen records");
             for (int y = 0; y < 64; y++) for (int x = 0; x < 64; x++)
                 Require(WorldTiles.Ground(world, x, y) == legacy.ground[x + y * 64] && WorldTiles.Biome(world, x, y) == legacy.biomes[x + y * 64], "tutorial chunk split changed bytes");

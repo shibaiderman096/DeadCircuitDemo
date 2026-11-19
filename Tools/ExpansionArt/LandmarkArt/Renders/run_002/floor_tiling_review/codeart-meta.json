@@ -1,0 +1,165 @@
+{
+  "schema": "codeart2d.codeart_meta.v1",
+  "art_source": "code",
+  "placeholder": false,
+  "disclosure": "code-drawn, no image model",
+  "generator": "svg_render.py",
+  "spec_sha256": "8263d5ec1f87b6f6507e49d8a943dfd5beac212951549a05745f53eaeb12a89f",
+  "renderer": {
+    "backend": "resvg_py",
+    "name": "resvg-py",
+    "version": "0.5.0",
+    "engine": "resvg 0.48.1",
+    "zoom": 1,
+    "size": [
+      312,
+      208
+    ]
+  },
+  "palette": {
+    "colors": {
+      "0": "#192829",
+      "1": "#253b3b",
+      "2": "#344a43",
+      "3": "#536a68",
+      "4": "#8ba39a",
+      "5": "#ddd5ac",
+      "6": "#eee9d3",
+      "7": "#503e32",
+      "8": "#76533b",
+      "9": "#aa8054",
+      "10": "#c4ab75",
+      "11": "#9b5338",
+      "12": "#e59a50",
+      "13": "#edc566",
+      "14": "#b75446",
+      "15": "#d68169",
+      "16": "#527445",
+      "17": "#739650",
+      "18": "#81824a",
+      "19": "#80d8bc",
+      "20": "#4c9e9b",
+      "21": "#aed5d2",
+      "22": "#497b86",
+      "23": "#796175"
+    },
+    "variants": {}
+  },
+  "outputs": [
+    {
+      "path": "base/floor_tiling_review.svg",
+      "sha256": "c795f95825570b77e2a7cbd32bd24c0cedfe176f94da660a06e073beb28a6cd8",
+      "bytes": 80648
+    },
+    {
+      "path": "base/floor_tiling_review.png",
+      "sha256": "638e8ffa3e2aac3b25365ed748076cb69b5465d7ec40472bd2420ba76b9cab3d",
+      "bytes": 3376
+    },
+    {
+      "path": "base/floor_tiling_review@4x.png",
+      "sha256": "e3ea877ce4cb9c3cd85e6102618fbcaefa4bf6f82464da6906a30f9e8553e5bd",
+      "bytes": 11721
+    }
+  ],
+  "qa": {
+    "status": "pass",
+    "method": "svg_render.py render: every variant's compiled SVG passed codeart_core.lint_portable_svg (pixel profile) before rasterizing; every 1x PNG was read back and measured with codeart_core.qa_pixels (alpha census, exact palette lookup), and the @Nx copies are integer nearest upscales of it",
+    "notProven": [
+      "Appearance, readability and appeal; look at the PNGs at game size.",
+      "Agreement with other renderers on this machine; run svg_render.py doctor (renders are bit-exact only for the recorded renderer version).",
+      "That the art matches the brief and the intent of the SVG."
+    ],
+    "checks": [
+      {
+        "id": "lint",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0,
+        "profile": "pixel"
+      },
+      {
+        "id": "partial_alpha",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0
+      },
+      {
+        "id": "off_palette",
+        "status": "pass",
+        "value": 0,
+        "threshold": 0
+      }
+    ],
+    "inputs": [
+      {
+        "path": "../../../Sources/floor_tiling_review.svg",
+        "sha256": "8263d5ec1f87b6f6507e49d8a943dfd5beac212951549a05745f53eaeb12a89f",
+        "bytes": 80760
+      }
+    ],
+    "outputs": [
+      {
+        "path": "base/floor_tiling_review.svg",
+        "sha256": "c795f95825570b77e2a7cbd32bd24c0cedfe176f94da660a06e073beb28a6cd8",
+        "bytes": 80648
+      },
+      {
+        "path": "base/floor_tiling_review.png",
+        "sha256": "638e8ffa3e2aac3b25365ed748076cb69b5465d7ec40472bd2420ba76b9cab3d",
+        "bytes": 3376
+      },
+      {
+        "path": "base/floor_tiling_review@4x.png",
+        "sha256": "e3ea877ce4cb9c3cd85e6102618fbcaefa4bf6f82464da6906a30f9e8553e5bd",
+        "bytes": 11721
+      }
+    ],
+    "tool": {
+      "name": "svg_render.py render",
+      "version": "0.4.0"
+    }
+  },
+  "svg": {
+    "mode": "crisp",
+    "profile": "pixel",
+    "zoom": 4,
+    "canvas": [
+      312,
+      208
+    ],
+    "anchor_px": null,
+    "palette_source": "svg-colours",
+    "variants": {
+      "base": "base"
+    },
+    "images": [
+      {
+        "variant": "base",
+        "file": "base/floor_tiling_review.png",
+        "scale": 1,
+        "size": [
+          312,
+          208
+        ],
+        "anchor_px": null,
+        "visible": 55296,
+        "partial_alpha": 0,
+        "off_palette": 0,
+        "colors": 13
+      },
+      {
+        "variant": "base",
+        "file": "base/floor_tiling_review@4x.png",
+        "scale": 4,
+        "size": [
+          1248,
+          832
+        ],
+        "anchor_px": null,
+        "from": "base/floor_tiling_review.png",
+        "method": "integer nearest"
+      }
+    ]
+  }
+}

@@ -27,6 +27,7 @@ namespace DeadCircuit
             {
                 SaveCheck(site != null, "null site"); CheckEntityId(site.id, ids, ref highest);
                 SaveCheck((int)site.kind >= 0 && (int)site.kind < WorldGenerationCatalog.Sites.Count, "site kind");
+                SaveCheck(SiteBlueprintCatalog.ValidMetadata(site) && (site.layoutVersion == 0 || source.version >= 9 && source.generatorVersion >= 4), "site layout");
                 SaveCheck((int)site.district >= 0 && (int)site.district <= 3, "site district");
                 SaveCheck(site.width >= 3 && site.width <= 12 && site.height >= 3 && site.height <= 12, "site size");
                 SaveCheck(WorldTiles.Inside(source,site.x,site.y) && WorldTiles.Inside(source,site.x+site.width-1,site.y+site.height-1), "site bounds");
@@ -35,7 +36,7 @@ namespace DeadCircuit
                     (site.doorX == site.x || site.doorX == site.x + site.width - 1 || site.doorY == site.y || site.doorY == site.y + site.height - 1), "site doorway");
                 for (int y = site.y; y < site.y + site.height; y++) for (int x = site.x; x < site.x + site.width; x++)
                     SaveCheck(cells.Add(WorldTiles.Key(x,y)) && WorldTiles.Ground(source,x,y)!='?', "overlapping/unknown sites");
-                target.sites.Add(new SiteState { id=site.id,kind=site.kind,district=site.district,x=site.x,y=site.y,width=site.width,height=site.height,doorX=site.doorX,doorY=site.doorY });
+                target.sites.Add(new SiteState { id=site.id,kind=site.kind,district=site.district,x=site.x,y=site.y,width=site.width,height=site.height,doorX=site.doorX,doorY=site.doorY,layoutVersion=site.layoutVersion,rotation=site.rotation });
             }
             target.generatorVersion = source.generatorVersion;
             target.generation = WorldGeneration.CloneSettings(source.generation);

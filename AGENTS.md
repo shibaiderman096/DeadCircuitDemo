@@ -17,7 +17,7 @@
 
 1. 世界状态以 `WorldSimulator` 为唯一权威。玩家操作通过 `GameBridge.Send` 和模拟器指令处理；HUD 与世界视图读取状态并呈现，通过桥接请求改变世界。
 2. 保持模拟核心的 Unity 无关性；纯规则、状态和算法优先落在 `Core/`，UI 与 Unity API 留在桥接或表现层。
-3. `BuildKind`、`ItemKind` 等枚举整数值会进入检查或存档契约；增加成员时保留旧序号，不随意重排。当前 v8 存档恢复兼容 v1–v7，并须通过校验和深拷贝。
+3. `BuildKind`、`ItemKind` 等枚举整数值会进入检查或存档契约；增加成员时保留旧序号，不随意重排。当前 v9 存档恢复兼容 v1–v8，并须通过校验和深拷贝；新世界 generator4，旧 generator3 保持生成规则。独特建筑见 LANDMARK_BUILDINGS.md。
 4. 保持整数全局格坐标与固定 50 毫秒 tick。新世界每区块16×16，使用 WorldTiles 查询地形/生态、64位全局键与负坐标向下取整；width/height=64仅代表原教程元数据，不能作为区块世界边界。旧世界维持64×64。设备占地、旋转、供电覆盖及物流须覆盖跨区块、负坐标和守恒行为；详见 SEASONS_CHUNKS.md。
 5. 需要重生成图集时运行 `python Tools/generate_art.py`；脚本会写入 `Assets/DeadCircuit/Resources/Art/`。编辑生成素材时同步维护生成脚本。
 6. 默认使用 PowerShell 7 处理 Windows 命令；任务开始时重新核验编辑器、命令行、Git 和运行时状态。Unity Editor 命令需明确指定目标项目。

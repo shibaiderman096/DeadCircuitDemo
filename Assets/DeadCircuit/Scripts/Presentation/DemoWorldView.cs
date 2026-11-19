@@ -413,6 +413,7 @@ namespace DeadCircuit
             viewMax = center + new Vector2(halfWidth, halfHeight);
             UpdateAmbient(world, local);
             DrawRooms(world);
+            DrawSites(world);
             DrawNodes(world, local);
             DrawBuildings(world);
             DrawActors(world, local);

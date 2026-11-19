@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 8;
+        public const int SaveVersion = 9;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;

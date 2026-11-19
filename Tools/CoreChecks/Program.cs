@@ -95,7 +95,10 @@ static partial class Checks
     }
     static int Main(string[] args)
     {
+        if(args.Length==2 && args[0]=="--export-landmarks") { ExportLandmarks(args[1]); return 0; }
         filters = args;
+        SiteBlueprintDefinitionChecks();
+        LandmarkChecks();
         ChunkChecks();
         ChunkTerrainChecks();
         InfiniteRoomChecks();

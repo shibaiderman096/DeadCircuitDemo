@@ -71,8 +71,8 @@ namespace DeadCircuit
             }
             world.generation = WorldGeneration.CloneSettings(options);
             world.generation.chunked = true;
-            world.version = 8;
-            world.generatorVersion = 3;
+            world.version = WorldSimulator.SaveVersion;
+            world.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
             world.nextId = Math.Max(world.nextId, DynamicIdStart);
             world.announcement = "区块世界：出生点(32,35)，工作台(29,35)、石炉(28,37)、水车岸位(25,25)。四向探索会逐块生成地形。";
             return world;

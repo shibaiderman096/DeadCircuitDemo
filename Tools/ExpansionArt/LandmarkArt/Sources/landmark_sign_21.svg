@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" shape-rendering="crispEdges" data-codeart="code">
+<style>.c-ink{fill:#192829}.c-dark{fill:#253b3b}.c-shadow{fill:#344a43}.c-steel{fill:#536a68}.c-light{fill:#8ba39a}.c-cream{fill:#ddd5ac}.c-white{fill:#eee9d3}.c-soil{fill:#503e32}.c-brown{fill:#76533b}.c-tan{fill:#aa8054}.c-sand{fill:#c4ab75}.c-rust{fill:#9b5338}.c-amber{fill:#e59a50}.c-gold{fill:#edc566}.c-red{fill:#b75446}.c-rose{fill:#d68169}.c-leaf{fill:#527445}.c-green{fill:#739650}.c-olive{fill:#81824a}.c-teal{fill:#80d8bc}.c-cyan{fill:#4c9e9b}.c-ice{fill:#aed5d2}.c-blue{fill:#497b86}.c-purple{fill:#796175}</style>
+<g id="landmark_sign_21">
+<rect x="2" y="9" width="7" height="5" class="c-ink"/>
+<rect x="2" y="10" width="7" height="3" class="c-steel"/>
+<rect x="3" y="10" width="6" height="1" class="c-light"/>
+<rect x="7" y="6" width="18" height="22" class="c-ink"/>
+<rect x="8" y="7" width="16" height="20" class="c-steel"/>
+<rect x="8" y="7" width="16" height="1" class="c-light"/>
+<rect x="9" y="12" width="14" height="12" class="c-blue"/>
+<rect x="9" y="12" width="5" height="2" class="c-ice"/>
+<rect x="14" y="14" width="6" height="2" class="c-ice"/>
+<rect x="20" y="12" width="3" height="2" class="c-ice"/>
+<rect x="9" y="18" width="7" height="2" class="c-cyan"/>
+<rect x="16" y="20" width="7" height="2" class="c-cyan"/>
+<rect x="25" y="19" width="5" height="6" class="c-ink"/>
+<rect x="25" y="20" width="5" height="3" class="c-light"/>
+<rect x="28" y="23" width="2" height="5" class="c-ice"/>
+<rect x="11" y="3" width="10" height="3" class="c-light"/>
+<rect x="14" y="2" width="4" height="2" class="c-cream"/>
+</g>
+</svg>

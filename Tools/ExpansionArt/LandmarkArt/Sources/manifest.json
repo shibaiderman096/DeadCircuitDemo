@@ -1,0 +1,804 @@
+{
+  "schema": "deadcircuit.landmark_art.v1",
+  "art_source": "code",
+  "disclosure": "code-drawn, no image model",
+  "placeholder": false,
+  "canvas": [
+    32,
+    32
+  ],
+  "atlas": [
+    288,
+    288
+  ],
+  "pitch": 36,
+  "gutter": 2,
+  "columns": 8,
+  "rowOrigin": "top-left",
+  "rotation": false,
+  "trim": false,
+  "runtimeJson": "width,height,sprites[{name,x,y,w,h}]",
+  "categories": {
+    "sign": 32,
+    "floor": 6,
+    "prop": 19
+  },
+  "buildingOrder": [
+    "Residence",
+    "Shop",
+    "Warehouse",
+    "Workshop",
+    "Clinic",
+    "Farmhouse",
+    "GasStation",
+    "PoliceStation",
+    "School",
+    "Apartment",
+    "Greenhouse",
+    "Substation",
+    "Restaurant",
+    "Pharmacy",
+    "HardwareStore",
+    "Supermarket",
+    "Library",
+    "FireStation",
+    "Hospital",
+    "ResearchLab",
+    "PowerPlant",
+    "WaterTreatment",
+    "RadioStation",
+    "Bunker",
+    "LumberMill",
+    "MineOffice",
+    "TrainDepot",
+    "Barn",
+    "HuntingCabin",
+    "RangerStation",
+    "Motel",
+    "RecyclingYard"
+  ],
+  "propCharacterOrder": "bsthnmpkglruvodfwea",
+  "sprites": [
+    {
+      "name": "landmark_sign_0",
+      "label": "Residence",
+      "role": "sign",
+      "motif": "House-shaped key plaque; brass key and door",
+      "index": 0,
+      "row": 0,
+      "column": 0,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_1",
+      "label": "Shop",
+      "role": "sign",
+      "motif": "Striped canopy and stocked shopping basket",
+      "index": 1,
+      "row": 0,
+      "column": 1,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_2",
+      "label": "Warehouse",
+      "role": "sign",
+      "motif": "Three shipping crates on a loading pallet",
+      "index": 2,
+      "row": 0,
+      "column": 2,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_3",
+      "label": "Workshop",
+      "role": "sign",
+      "motif": "Open-jaw wrench, socket and workbench",
+      "index": 3,
+      "row": 0,
+      "column": 3,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_4",
+      "label": "Clinic",
+      "role": "sign",
+      "motif": "Low medical cross plaque with pulse blocks",
+      "index": 4,
+      "row": 0,
+      "column": 4,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_5",
+      "label": "Farmhouse",
+      "role": "sign",
+      "motif": "Wheat sheaf and pitched timber farm plaque",
+      "index": 5,
+      "row": 0,
+      "column": 5,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_6",
+      "label": "GasStation",
+      "role": "sign",
+      "motif": "Freestanding fuel pump, meter and hanging hose",
+      "index": 6,
+      "row": 0,
+      "column": 6,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_7",
+      "label": "PoliceStation",
+      "role": "sign",
+      "motif": "Stepped blue shield with brass badge",
+      "index": 7,
+      "row": 0,
+      "column": 7,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_8",
+      "label": "School",
+      "role": "sign",
+      "motif": "Open exercise book and school bell",
+      "index": 8,
+      "row": 1,
+      "column": 0,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_9",
+      "label": "Apartment",
+      "role": "sign",
+      "motif": "Tall brick intercom with six apartment windows",
+      "index": 9,
+      "row": 1,
+      "column": 1,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_10",
+      "label": "Greenhouse",
+      "role": "sign",
+      "motif": "Stepped glasshouse frame and climbing seedling",
+      "index": 10,
+      "row": 1,
+      "column": 2,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_11",
+      "label": "Substation",
+      "role": "sign",
+      "motif": "Twin ceramic insulators and live busbar",
+      "index": 11,
+      "row": 1,
+      "column": 3,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_12",
+      "label": "Restaurant",
+      "role": "sign",
+      "motif": "Dinner plate between fork and knife",
+      "index": 12,
+      "row": 1,
+      "column": 4,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_13",
+      "label": "Pharmacy",
+      "role": "sign",
+      "motif": "Green pharmacy cross and two-tone capsule",
+      "index": 13,
+      "row": 1,
+      "column": 5,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_14",
+      "label": "HardwareStore",
+      "role": "sign",
+      "motif": "Claw hammer, loose nut and hardware pegboard",
+      "index": 14,
+      "row": 1,
+      "column": 6,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_15",
+      "label": "Supermarket",
+      "role": "sign",
+      "motif": "Wheeled trolley containing three groceries",
+      "index": 15,
+      "row": 1,
+      "column": 7,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_16",
+      "label": "Library",
+      "role": "sign",
+      "motif": "Open folio below three upright library books",
+      "index": 16,
+      "row": 2,
+      "column": 0,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_17",
+      "label": "FireStation",
+      "role": "sign",
+      "motif": "Fire helmet and nozzle on red equipment board",
+      "index": 17,
+      "row": 2,
+      "column": 1,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_18",
+      "label": "Hospital",
+      "role": "sign",
+      "motif": "Tall freestanding hospital cross and stretcher",
+      "index": 18,
+      "row": 2,
+      "column": 2,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_19",
+      "label": "ResearchLab",
+      "role": "sign",
+      "motif": "Laboratory flask and orthogonal molecular bonds",
+      "index": 19,
+      "row": 2,
+      "column": 3,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_20",
+      "label": "PowerPlant",
+      "role": "sign",
+      "motif": "Cooling stacks and stepped high-voltage bolt",
+      "index": 20,
+      "row": 2,
+      "column": 4,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_21",
+      "label": "WaterTreatment",
+      "role": "sign",
+      "motif": "Water clarification tank, inlet and clean outlet",
+      "index": 21,
+      "row": 2,
+      "column": 5,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_22",
+      "label": "RadioStation",
+      "role": "sign",
+      "motif": "Broadcast mast with two pairs of stepped radio waves",
+      "index": 22,
+      "row": 2,
+      "column": 6,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_23",
+      "label": "Bunker",
+      "role": "sign",
+      "motif": "Riveted armoured hatch, view slit and locking wheel",
+      "index": 23,
+      "row": 2,
+      "column": 7,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_24",
+      "label": "LumberMill",
+      "role": "sign",
+      "motif": "Two cut log ends over a toothed mill blade",
+      "index": 24,
+      "row": 3,
+      "column": 0,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_25",
+      "label": "MineOffice",
+      "role": "sign",
+      "motif": "Mine headframe, winding pulley and ore trolley",
+      "index": 25,
+      "row": 3,
+      "column": 1,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_26",
+      "label": "TrainDepot",
+      "role": "sign",
+      "motif": "Parallel rails, sleepers and red-green semaphore",
+      "index": 26,
+      "row": 3,
+      "column": 2,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_27",
+      "label": "Barn",
+      "role": "sign",
+      "motif": "Red timber barn face, hayloft and hay bale",
+      "index": 27,
+      "row": 3,
+      "column": 3,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_28",
+      "label": "HuntingCabin",
+      "role": "sign",
+      "motif": "Antler trophy above a brass camping lantern",
+      "index": 28,
+      "row": 3,
+      "column": 4,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_29",
+      "label": "RangerStation",
+      "role": "sign",
+      "motif": "Three stepped pines and forest trail marker",
+      "index": 29,
+      "row": 3,
+      "column": 5,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_30",
+      "label": "Motel",
+      "role": "sign",
+      "motif": "Roadside bed pictogram and separate vacancy lamp",
+      "index": 30,
+      "row": 3,
+      "column": 6,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_sign_31",
+      "label": "RecyclingYard",
+      "role": "sign",
+      "motif": "Recycling skip with three orthogonal chasing arrows",
+      "index": 31,
+      "row": 3,
+      "column": 7,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_floor_0",
+      "label": "住宅木地板",
+      "role": "floor",
+      "motif": "Seamless 32px top-down surface",
+      "index": 32,
+      "row": 4,
+      "column": 0,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_floor_1",
+      "label": "商业瓷砖",
+      "role": "floor",
+      "motif": "Seamless 32px top-down surface",
+      "index": 33,
+      "row": 4,
+      "column": 1,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_floor_2",
+      "label": "公共灰地砖",
+      "role": "floor",
+      "motif": "Seamless 32px top-down surface",
+      "index": 34,
+      "row": 4,
+      "column": 2,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_floor_3",
+      "label": "工业格栅",
+      "role": "floor",
+      "motif": "Seamless 32px top-down surface",
+      "index": 35,
+      "row": 4,
+      "column": 3,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_floor_4",
+      "label": "乡村旧木泥地",
+      "role": "floor",
+      "motif": "Seamless 32px top-down surface",
+      "index": 36,
+      "row": 4,
+      "column": 4,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_floor_5",
+      "label": "特殊金属",
+      "role": "floor",
+      "motif": "Seamless 32px top-down surface",
+      "index": 37,
+      "row": 4,
+      "column": 5,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_b",
+      "label": "床",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 38,
+      "row": 4,
+      "column": 6,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_s",
+      "label": "货架",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 39,
+      "row": 4,
+      "column": 7,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_t",
+      "label": "桌",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 40,
+      "row": 5,
+      "column": 0,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_h",
+      "label": "椅",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 41,
+      "row": 5,
+      "column": 1,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_n",
+      "label": "柜台",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 42,
+      "row": 5,
+      "column": 2,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_m",
+      "label": "机器",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 43,
+      "row": 5,
+      "column": 3,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_p",
+      "label": "泵",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 44,
+      "row": 5,
+      "column": 4,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_k",
+      "label": "罐",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 45,
+      "row": 5,
+      "column": 5,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_g",
+      "label": "种植槽",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 46,
+      "row": 5,
+      "column": 6,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_l",
+      "label": "书架",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 47,
+      "row": 5,
+      "column": 7,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_r",
+      "label": "无线电",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 48,
+      "row": 6,
+      "column": 0,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_u",
+      "label": "发电机",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 49,
+      "row": 6,
+      "column": 1,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_v",
+      "label": "面板",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 50,
+      "row": 6,
+      "column": 2,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_o",
+      "label": "炉灶",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 51,
+      "row": 6,
+      "column": 3,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_d",
+      "label": "病床",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 52,
+      "row": 6,
+      "column": 4,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_f",
+      "label": "橱柜",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 53,
+      "row": 6,
+      "column": 5,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_w",
+      "label": "武器架",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 54,
+      "row": 6,
+      "column": 6,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_e",
+      "label": "终端",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 55,
+      "row": 6,
+      "column": 7,
+      "content": [
+        32,
+        32
+      ]
+    },
+    {
+      "name": "landmark_prop_a",
+      "label": "水槽",
+      "role": "prop",
+      "motif": "Top-down furniture; north/top lighting",
+      "index": 56,
+      "row": 7,
+      "column": 0,
+      "content": [
+        32,
+        32
+      ]
+    }
+  ]
+}

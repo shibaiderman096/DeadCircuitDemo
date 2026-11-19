@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" shape-rendering="crispEdges" data-codeart="code">
+<style>.c-ink{fill:#192829}.c-dark{fill:#253b3b}.c-shadow{fill:#344a43}.c-steel{fill:#536a68}.c-light{fill:#8ba39a}.c-cream{fill:#ddd5ac}.c-white{fill:#eee9d3}.c-soil{fill:#503e32}.c-brown{fill:#76533b}.c-tan{fill:#aa8054}.c-sand{fill:#c4ab75}.c-rust{fill:#9b5338}.c-amber{fill:#e59a50}.c-gold{fill:#edc566}.c-red{fill:#b75446}.c-rose{fill:#d68169}.c-leaf{fill:#527445}.c-green{fill:#739650}.c-olive{fill:#81824a}.c-teal{fill:#80d8bc}.c-cyan{fill:#4c9e9b}.c-ice{fill:#aed5d2}.c-blue{fill:#497b86}.c-purple{fill:#796175}</style>
+<g id="landmark_prop_e">
+<rect x="5" y="3" width="22" height="18" class="c-ink"/>
+<rect x="6" y="4" width="20" height="16" class="c-steel"/>
+<rect x="6" y="4" width="20" height="1" class="c-light"/>
+<rect x="8" y="6" width="16" height="12" class="c-ink"/>
+<rect x="9" y="7" width="14" height="10" class="c-ink"/>
+<rect x="9" y="7" width="14" height="1" class="c-light"/>
+<rect x="10" y="8" width="8" height="2" class="c-teal"/>
+<rect x="10" y="12" width="11" height="1" class="c-cyan"/>
+<rect x="10" y="15" width="5" height="1" class="c-green"/>
+<rect x="12" y="21" width="8" height="2" class="c-dark"/>
+<rect x="4" y="23" width="24" height="6" class="c-ink"/>
+<rect x="5" y="24" width="22" height="4" class="c-steel"/>
+<rect x="5" y="24" width="22" height="1" class="c-light"/>
+<rect x="7" y="25" width="2" height="1" class="c-light"/>
+<rect x="7" y="27" width="2" height="1" class="c-dark"/>
+<rect x="10" y="25" width="2" height="1" class="c-light"/>
+<rect x="10" y="27" width="2" height="1" class="c-dark"/>
+<rect x="13" y="25" width="2" height="1" class="c-light"/>
+<rect x="13" y="27" width="2" height="1" class="c-dark"/>
+<rect x="16" y="25" width="2" height="1" class="c-light"/>
+<rect x="16" y="27" width="2" height="1" class="c-dark"/>
+<rect x="19" y="25" width="2" height="1" class="c-light"/>
+<rect x="19" y="27" width="2" height="1" class="c-dark"/>
+<rect x="22" y="25" width="2" height="1" class="c-light"/>
+<rect x="22" y="27" width="2" height="1" class="c-dark"/>
+</g>
+</svg>

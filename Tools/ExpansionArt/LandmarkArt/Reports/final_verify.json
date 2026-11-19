@@ -1,0 +1,418 @@
+{
+  "status": "pass",
+  "art_source": "code",
+  "disclosure": "code-drawn, no image model",
+  "spriteCount": 57,
+  "categories": {
+    "sign": 32,
+    "floor": 6,
+    "prop": 19
+  },
+  "dimensions": [
+    288,
+    288
+  ],
+  "svgCount": 60,
+  "rectCount": 1075,
+  "paletteColors": 24,
+  "partialAlphaPixels": 0,
+  "offPalettePixels": 0,
+  "sourcePixelMismatches": 0,
+  "gutterSpillPixels": 0,
+  "transparentGutterAndEmptyPixels": 24576,
+  "uniqueSprites": 57,
+  "floorSeamChecks": [
+    {
+      "name": "landmark_floor_0",
+      "leftRightMismatches": 0,
+      "topBottomMismatches": 0
+    },
+    {
+      "name": "landmark_floor_1",
+      "leftRightMismatches": 0,
+      "topBottomMismatches": 0
+    },
+    {
+      "name": "landmark_floor_2",
+      "leftRightMismatches": 0,
+      "topBottomMismatches": 0
+    },
+    {
+      "name": "landmark_floor_3",
+      "leftRightMismatches": 0,
+      "topBottomMismatches": 0
+    },
+    {
+      "name": "landmark_floor_4",
+      "leftRightMismatches": 0,
+      "topBottomMismatches": 0
+    },
+    {
+      "name": "landmark_floor_5",
+      "leftRightMismatches": 0,
+      "topBottomMismatches": 0
+    }
+  ],
+  "floorTilingPlacements": 54,
+  "protectedFiles": 81,
+  "protectedHashChanges": 0,
+  "metadata": {
+    "guids": [
+      "5b396a250f7d573c96569d7a15156188",
+      "bc7299b61b80525cb872ab4c5f71ed6c"
+    ],
+    "nearestFilter": true,
+    "mipmaps": false,
+    "compression": false
+  },
+  "pngSHA256": "5444d58afdd723a8164c7f8e4ab6afdcb7ce4cfac3adc1f4885d7abebec40be6",
+  "svgSHA256": "1cddb8f2b481fd36bb4dc63905815a37dea5b4cff2240fbdf0d1d07a25ca87c1",
+  "layoutSHA256": "951c7057b3595fe1eaf38bec8218f30789c1f577038fd5a4f79e4fd0153804ab",
+  "spriteStats": [
+    {
+      "name": "landmark_sign_0",
+      "opaquePixels": 552,
+      "rectangles": 16,
+      "pixelSHA256": "1dddbd51d9f36ba95a43076b5207e1864e3fa51548ba97e0047b3226cdce6e92"
+    },
+    {
+      "name": "landmark_sign_1",
+      "opaquePixels": 430,
+      "rectangles": 19,
+      "pixelSHA256": "6bf690871f8a563bb148f90a44d9301061a363d1185a725a0d41a62829f23212"
+    },
+    {
+      "name": "landmark_sign_2",
+      "opaquePixels": 486,
+      "rectangles": 30,
+      "pixelSHA256": "6e43ef2487ff41389101525630ca30d19cd2c4569c50595e6902e9b87dbada5b"
+    },
+    {
+      "name": "landmark_sign_3",
+      "opaquePixels": 646,
+      "rectangles": 17,
+      "pixelSHA256": "f879f012585179a8c61032c2596fac23fce320cbde5fdf75d10dc6156a52a3b6"
+    },
+    {
+      "name": "landmark_sign_4",
+      "opaquePixels": 494,
+      "rectangles": 13,
+      "pixelSHA256": "3647adde0d9937832e043333067ffa1c4cc77c7af10a53d207bc741c7394e209"
+    },
+    {
+      "name": "landmark_sign_5",
+      "opaquePixels": 540,
+      "rectangles": 18,
+      "pixelSHA256": "064318c0d492b2573e9a19c08511199b29fc71873e2e57322ccfa408fad11fd2"
+    },
+    {
+      "name": "landmark_sign_6",
+      "opaquePixels": 510,
+      "rectangles": 16,
+      "pixelSHA256": "835973a3ec0ea95e1ed8e66b059e38ad39efc51834922d822bbc4a862b4f1180"
+    },
+    {
+      "name": "landmark_sign_7",
+      "opaquePixels": 486,
+      "rectangles": 12,
+      "pixelSHA256": "07355ea99b1a985bd6834af22abf0a0c64de6395345355b15a325472c7ff26e4"
+    },
+    {
+      "name": "landmark_sign_8",
+      "opaquePixels": 480,
+      "rectangles": 14,
+      "pixelSHA256": "711dd5925039d86c6cd7b005386075b187defe67f62cdfe9a6c272701dbf8814"
+    },
+    {
+      "name": "landmark_sign_9",
+      "opaquePixels": 560,
+      "rectangles": 26,
+      "pixelSHA256": "9ecfdbbfd53d936d81979b4b6cb5cb8989a8aad6155cb05616cf1723234db4c1"
+    },
+    {
+      "name": "landmark_sign_10",
+      "opaquePixels": 576,
+      "rectangles": 14,
+      "pixelSHA256": "3cdfe69734fa775711d80b94bf4d96e651f642739d0ede8ccba74c27aae40863"
+    },
+    {
+      "name": "landmark_sign_11",
+      "opaquePixels": 363,
+      "rectangles": 23,
+      "pixelSHA256": "b245b39f4644a5609a1dc6772cb64181487b17e26228fc4acea0a4da959e4bfa"
+    },
+    {
+      "name": "landmark_sign_12",
+      "opaquePixels": 452,
+      "rectangles": 15,
+      "pixelSHA256": "0d1b35be2d8b8e29b703704d0ababce8e845d9381f6d53c5e710419659de98e8"
+    },
+    {
+      "name": "landmark_sign_13",
+      "opaquePixels": 374,
+      "rectangles": 12,
+      "pixelSHA256": "8a8d4af98b9f89f8d0a4f8396d62247ab8ec3e259761be281dff9b6efbfd7012"
+    },
+    {
+      "name": "landmark_sign_14",
+      "opaquePixels": 600,
+      "rectangles": 23,
+      "pixelSHA256": "0c05ef20791a303c1e1b3aefe084f0ceebc7dd1801280c4a4161774c32a5993a"
+    },
+    {
+      "name": "landmark_sign_15",
+      "opaquePixels": 423,
+      "rectangles": 18,
+      "pixelSHA256": "25bc863ba5a390c97206dc3d1218a239cc110ef30ae4cef453400b808e03118b"
+    },
+    {
+      "name": "landmark_sign_16",
+      "opaquePixels": 495,
+      "rectangles": 19,
+      "pixelSHA256": "75f2e83406df8b14eb6c81b88c0aeae78b73e3f2f565bec86d5fe4a030d00b1e"
+    },
+    {
+      "name": "landmark_sign_17",
+      "opaquePixels": 598,
+      "rectangles": 17,
+      "pixelSHA256": "b1f3b3072a2fa18756d2d0c65affd70251b76dcb728e256b58aa31e7b89a6ef2"
+    },
+    {
+      "name": "landmark_sign_18",
+      "opaquePixels": 583,
+      "rectangles": 12,
+      "pixelSHA256": "9b058a263253f5b9b25abc8634c8d9143ad34d6b0e7703a45ddf6fc2ff3f3b51"
+    },
+    {
+      "name": "landmark_sign_19",
+      "opaquePixels": 700,
+      "rectangles": 17,
+      "pixelSHA256": "41fcd653c39dc39a3e3f8aa86aa2b05f2c0396f7b726694a4516c17996821d5c"
+    },
+    {
+      "name": "landmark_sign_20",
+      "opaquePixels": 524,
+      "rectangles": 15,
+      "pixelSHA256": "6e6563f3b375d1b3f607c828a15cb19e1f61824460b12e9555d7b87845e4824a"
+    },
+    {
+      "name": "landmark_sign_21",
+      "opaquePixels": 491,
+      "rectangles": 17,
+      "pixelSHA256": "3d0a61e5a9ec09ef181896f6bfb452e6a61f4f918aec1553a64e7cc1b7aa0268"
+    },
+    {
+      "name": "landmark_sign_22",
+      "opaquePixels": 310,
+      "rectangles": 14,
+      "pixelSHA256": "6a22ad588139671d9c0c738ad46f0ce25a86fc33507087659981ad43e716a976"
+    },
+    {
+      "name": "landmark_sign_23",
+      "opaquePixels": 702,
+      "rectangles": 19,
+      "pixelSHA256": "928ac1c82b620dc7833688a1994c36cf89bd4f254195636a9f75763a6fe39f09"
+    },
+    {
+      "name": "landmark_sign_24",
+      "opaquePixels": 499,
+      "rectangles": 27,
+      "pixelSHA256": "05dd4edbfacc5abf941ec69ac4385500763adf46cb582947c9f602e6d2931ac0"
+    },
+    {
+      "name": "landmark_sign_25",
+      "opaquePixels": 409,
+      "rectangles": 15,
+      "pixelSHA256": "96c3f9da4a0da37fe56fc5c80bcaead79612ebfefd9d2207e9b9b95fb3f1fa38"
+    },
+    {
+      "name": "landmark_sign_26",
+      "opaquePixels": 454,
+      "rectangles": 17,
+      "pixelSHA256": "2184f8b02e5157157a8fc273e8f4c75e437566cf1b2ab5438dfd7a8271f4481d"
+    },
+    {
+      "name": "landmark_sign_27",
+      "opaquePixels": 582,
+      "rectangles": 16,
+      "pixelSHA256": "837957498acfe286e3202adb2b24029ed14e16305ca43f0af3b7d4c5094da3df"
+    },
+    {
+      "name": "landmark_sign_28",
+      "opaquePixels": 272,
+      "rectangles": 16,
+      "pixelSHA256": "61b8917a86d10b07f8444e65d58c189dff804fdf0c0331ff404e3163c2dacc03"
+    },
+    {
+      "name": "landmark_sign_29",
+      "opaquePixels": 398,
+      "rectangles": 18,
+      "pixelSHA256": "7cac273da3f586e696729d276ce0f5ea36103d24332225a04e44a5624503682b"
+    },
+    {
+      "name": "landmark_sign_30",
+      "opaquePixels": 598,
+      "rectangles": 14,
+      "pixelSHA256": "4bc4ef0160b2fdfbd028dcaaf06994f04ccf27ae8ea559d497502fcefae54140"
+    },
+    {
+      "name": "landmark_sign_31",
+      "opaquePixels": 494,
+      "rectangles": 17,
+      "pixelSHA256": "be8d0c98114af8379decea210305f0461afb6ef364a719eefb985d3d4abaf6a5"
+    },
+    {
+      "name": "landmark_floor_0",
+      "opaquePixels": 1024,
+      "rectangles": 29,
+      "pixelSHA256": "9061d2c1ae4caf7220b8481b62c06df6d214a6f8d41b5ba533af0e8bb93af52d"
+    },
+    {
+      "name": "landmark_floor_1",
+      "opaquePixels": 1024,
+      "rectangles": 13,
+      "pixelSHA256": "e8ff2f3190c92914b396782369618102e84821fa0064c812bf5f7d9eaa0c0d61"
+    },
+    {
+      "name": "landmark_floor_2",
+      "opaquePixels": 1024,
+      "rectangles": 36,
+      "pixelSHA256": "01c18ed874bd5e633892c0420c0e7d3127e52733fb5462245cad77d662eac51b"
+    },
+    {
+      "name": "landmark_floor_3",
+      "opaquePixels": 1024,
+      "rectangles": 26,
+      "pixelSHA256": "a4b736720971579e0e12398d5b0fd531c9f963df3f91ea0e52eb73f0329b6666"
+    },
+    {
+      "name": "landmark_floor_4",
+      "opaquePixels": 1024,
+      "rectangles": 21,
+      "pixelSHA256": "534afb3ed192c6d36a3aa5d54123e94d3ccce11675aa7b379b037e2502e2c831"
+    },
+    {
+      "name": "landmark_floor_5",
+      "opaquePixels": 1024,
+      "rectangles": 18,
+      "pixelSHA256": "f78ff780599f3232833d44364770f9f2882baa36064a78290f2197261c9cf199"
+    },
+    {
+      "name": "landmark_prop_b",
+      "opaquePixels": 486,
+      "rectangles": 10,
+      "pixelSHA256": "729f788103a48bc0115111fb16c145e4f7d61080d6d45f0fc548761a8d3090b2"
+    },
+    {
+      "name": "landmark_prop_s",
+      "opaquePixels": 598,
+      "rectangles": 29,
+      "pixelSHA256": "35050c64b68c7050525ced7244657f6dcd4c35f11cd42582d7fdeb144a213c88"
+    },
+    {
+      "name": "landmark_prop_t",
+      "opaquePixels": 502,
+      "rectangles": 10,
+      "pixelSHA256": "0cf4cf4c588047851cdda211b476520eb5dfbc4f0e62f6afc9b565bba7f5395c"
+    },
+    {
+      "name": "landmark_prop_h",
+      "opaquePixels": 401,
+      "rectangles": 12,
+      "pixelSHA256": "2e466f44bb0f53eaa67f0d6fe401e68630b0236fdc12e5b398ea569bb812ffd4"
+    },
+    {
+      "name": "landmark_prop_n",
+      "opaquePixels": 624,
+      "rectangles": 14,
+      "pixelSHA256": "4e327dd2644377a9e97b198b9584c7ee37d06c196c663dc39e57a71374be2605"
+    },
+    {
+      "name": "landmark_prop_m",
+      "opaquePixels": 598,
+      "rectangles": 19,
+      "pixelSHA256": "d978d134a9e15971aa51ba26ebacf2ee6e22bc3cf713d79062afaa7f88d52505"
+    },
+    {
+      "name": "landmark_prop_p",
+      "opaquePixels": 408,
+      "rectangles": 15,
+      "pixelSHA256": "62bc473f163062f8442f8d89d1e40697a23c34e106d068710427ce9f9aae7ce5"
+    },
+    {
+      "name": "landmark_prop_k",
+      "opaquePixels": 593,
+      "rectangles": 16,
+      "pixelSHA256": "e0c40d14506a12ffc069b1650f414578bfbc54c6740f8cee7dfa9af1c30136be"
+    },
+    {
+      "name": "landmark_prop_g",
+      "opaquePixels": 588,
+      "rectangles": 18,
+      "pixelSHA256": "be06cf41fa74e9a10f5774107aabd54f2646be0b2373df94134105a497a6fd0a"
+    },
+    {
+      "name": "landmark_prop_l",
+      "opaquePixels": 648,
+      "rectangles": 66,
+      "pixelSHA256": "06ea1509c076205b9e58ee9f9e9b566ea7e29fff542ffc93a95d7ade1fc3886b"
+    },
+    {
+      "name": "landmark_prop_r",
+      "opaquePixels": 548,
+      "rectangles": 19,
+      "pixelSHA256": "fc7773cddf1762fd3a7ddd8e75992829d4c52a8b9526e8af6f192c6ae7fc1122"
+    },
+    {
+      "name": "landmark_prop_u",
+      "opaquePixels": 625,
+      "rectangles": 22,
+      "pixelSHA256": "fdb93804aae6781a4beb9a72f71cec22a0bf269a8600649b6abc01744c84ab0a"
+    },
+    {
+      "name": "landmark_prop_v",
+      "opaquePixels": 616,
+      "rectangles": 19,
+      "pixelSHA256": "46f87abc30bc2c942d3ae458348d351d59225c4242f23ec168020d7d5832a71e"
+    },
+    {
+      "name": "landmark_prop_o",
+      "opaquePixels": 624,
+      "rectangles": 23,
+      "pixelSHA256": "957be290c0865da65e339a6d891367d6a8bd936a090f562d431f429cae9edb7a"
+    },
+    {
+      "name": "landmark_prop_d",
+      "opaquePixels": 638,
+      "rectangles": 15,
+      "pixelSHA256": "0bc6a048f1a36650d5c0c35c51669104682a978012503326f0d205d1b4dcdda6"
+    },
+    {
+      "name": "landmark_prop_f",
+      "opaquePixels": 624,
+      "rectangles": 12,
+      "pixelSHA256": "50df7a5809ff78165523aa740cf7db5bf3c75c5df32f31bb212a9dbcc02b7708"
+    },
+    {
+      "name": "landmark_prop_w",
+      "opaquePixels": 576,
+      "rectangles": 17,
+      "pixelSHA256": "ac0963a4e70dcc4c156f67c68df7f84ac954c6aea4c0cf47762a5bd6c36d893f"
+    },
+    {
+      "name": "landmark_prop_e",
+      "opaquePixels": 556,
+      "rectangles": 25,
+      "pixelSHA256": "5b2417ed2b61f8f0d765521069133920388c768dd3d5bb784688e9989f53450a"
+    },
+    {
+      "name": "landmark_prop_a",
+      "opaquePixels": 624,
+      "rectangles": 15,
+      "pixelSHA256": "dbe732db8436c4ea3b601e301baf8e1231f9b9887e8958191561d6e54ca38475"
+    }
+  ],
+  "warnings": [],
+  "failures": [],
+  "limits": "Offline SVG/raster/metadata verification only; no Unity import, Play, build or in-game validation."
+}

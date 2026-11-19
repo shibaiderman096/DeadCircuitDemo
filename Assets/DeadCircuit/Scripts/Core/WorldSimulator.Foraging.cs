@@ -31,6 +31,7 @@ namespace DeadCircuit
                 if (biome == 2 || biome == 4 || biome == 5) AddForageStack(p.needs.foods, (int)FoodKind.Mushroom, 1 + (int)((loot >> 6) % 3));
                 if ((loot & 3u) == 0) AddForageStack(p.needs.seeds, (int)((loot >> 10) % SurvivalCatalog.CropCount), 1);
             }
+            else if (AwardSiteForage(p, n, loot)) { }
             else
             {
                 // Finite wilderness supply crates and building/site provisions share NodeKind.Crate.
@@ -42,7 +43,45 @@ namespace DeadCircuit
                 AddForageStack(p.needs.seeds, (int)((loot >> 12) % SurvivalCatalog.CropCount), 1 + (int)((loot >> 17) & 1u));
             }
             // Capacity overflow is discarded when the source is exhausted, never banked for replay.
-            // No industrial item, node stock, weather/wildlife PRNG or new save field is changed.
+            // No node stock or weather/wildlife PRNG is changed.
+        }
+
+        // Profiles belong only to immutable version-one plans. Legacy crates,
+        // trees and loose wilderness supplies retain their exact old yields.
+        private int SiteCrateItem(NodeState node)
+        {
+            switch (SiteBlueprintCatalog.CrateAt(State, node.x, node.y))
+            {
+                case 'A': return (int)ItemKind.Ammo;
+                case 'T': return (int)ItemKind.Scrap;
+                case 'E': return (int)ItemKind.Circuit;
+                case 'B': return (int)ItemKind.Wood;
+                case 'M': case 'K': return (int)ItemKind.Polymer;
+                default: return (int)ItemKind.Food;
+            }
+        }
+
+        private bool AwardSiteForage(PlayerState player, NodeState node, uint loot)
+        {
+            char profile = SiteBlueprintCatalog.CrateAt(State, node.x, node.y);
+            if (profile == '\0') return false;
+            if (profile == 'F')
+            {
+                AddForageStack(player.needs.foods, (int)FoodKind.Bread, 2 + (int)(loot % 3));
+                AddForageStack(player.needs.foods, (int)FoodKind.Apple, 1 + (int)((loot >> 4) % 3));
+            }
+            else if (profile == 'M')
+            {
+                AddForageStack(player.needs.foods, (int)FoodKind.Herb, 3 + (int)(loot % 4));
+                player.needs.waterClean += Math.Min(SurvivalCatalog.StackLimit - player.needs.waterClean, 2);
+            }
+            else if (profile == 'S')
+            {
+                int crop = (int)(loot % SurvivalCatalog.CropCount);
+                AddForageStack(player.needs.seeds, crop, 3 + (int)((loot >> 4) % 3));
+                AddForageStack(player.needs.seeds, (crop + 1) % SurvivalCatalog.CropCount, 2);
+            }
+            return true;
         }
 
         private static uint ForageHash(int seed, int nodeId, int biome)

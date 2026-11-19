@@ -1,0 +1,15 @@
+{
+  "art_source": "code",
+  "placeholder": false,
+  "disclosure": "code-drawn, no image model",
+  "source": "Sources/landmarks.svg",
+  "sourceSHA256": "1cddb8f2b481fd36bb4dc63905815a37dea5b4cff2240fbdf0d1d07a25ca87c1",
+  "manifest": "Sources/manifest.json",
+  "rendererMetadata": [
+    "Renders/run_002/landmarks/codeart-meta.json",
+    "Renders/run_002/landmarks_review/codeart-meta.json",
+    "Renders/run_002/floor_tiling_review/codeart-meta.json"
+  ],
+  "verification": "Reports/latest_verify.json",
+  "limits": "Offline SVG/raster/metadata verification only; no Unity import, Play, build or in-game validation."
+}

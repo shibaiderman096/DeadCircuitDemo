@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" shape-rendering="crispEdges" data-codeart="code">
+<style>.c-ink{fill:#192829}.c-dark{fill:#253b3b}.c-shadow{fill:#344a43}.c-steel{fill:#536a68}.c-light{fill:#8ba39a}.c-cream{fill:#ddd5ac}.c-white{fill:#eee9d3}.c-soil{fill:#503e32}.c-brown{fill:#76533b}.c-tan{fill:#aa8054}.c-sand{fill:#c4ab75}.c-rust{fill:#9b5338}.c-amber{fill:#e59a50}.c-gold{fill:#edc566}.c-red{fill:#b75446}.c-rose{fill:#d68169}.c-leaf{fill:#527445}.c-green{fill:#739650}.c-olive{fill:#81824a}.c-teal{fill:#80d8bc}.c-cyan{fill:#4c9e9b}.c-ice{fill:#aed5d2}.c-blue{fill:#497b86}.c-purple{fill:#796175}</style>
+<g id="landmark_floor_0">
+<rect x="0" y="0" width="32" height="32" class="c-soil"/>
+<rect x="0" y="1" width="32" height="6" class="c-brown"/>
+<rect x="0" y="1" width="32" height="1" class="c-tan"/>
+<rect x="8" y="2" width="1" height="5" class="c-soil"/>
+<rect x="3" y="4" width="3" height="1" class="c-brown"/>
+<rect x="26" y="5" width="3" height="1" class="c-soil"/>
+<rect x="6" y="3" width="1" height="1" class="c-sand"/>
+<rect x="10" y="5" width="1" height="1" class="c-soil"/>
+<rect x="0" y="9" width="32" height="6" class="c-tan"/>
+<rect x="0" y="9" width="32" height="1" class="c-tan"/>
+<rect x="23" y="10" width="1" height="5" class="c-soil"/>
+<rect x="3" y="12" width="3" height="1" class="c-brown"/>
+<rect x="26" y="13" width="3" height="1" class="c-soil"/>
+<rect x="21" y="11" width="1" height="1" class="c-sand"/>
+<rect x="25" y="13" width="1" height="1" class="c-soil"/>
+<rect x="0" y="17" width="32" height="6" class="c-brown"/>
+<rect x="0" y="17" width="32" height="1" class="c-tan"/>
+<rect x="8" y="18" width="1" height="5" class="c-soil"/>
+<rect x="3" y="20" width="3" height="1" class="c-brown"/>
+<rect x="26" y="21" width="3" height="1" class="c-soil"/>
+<rect x="6" y="19" width="1" height="1" class="c-sand"/>
+<rect x="10" y="21" width="1" height="1" class="c-soil"/>
+<rect x="0" y="25" width="32" height="6" class="c-brown"/>
+<rect x="0" y="25" width="32" height="1" class="c-tan"/>
+<rect x="23" y="26" width="1" height="5" class="c-soil"/>
+<rect x="3" y="28" width="3" height="1" class="c-brown"/>
+<rect x="26" y="29" width="3" height="1" class="c-soil"/>
+<rect x="21" y="27" width="1" height="1" class="c-sand"/>
+<rect x="25" y="29" width="1" height="1" class="c-soil"/>
+</g>
+</svg>

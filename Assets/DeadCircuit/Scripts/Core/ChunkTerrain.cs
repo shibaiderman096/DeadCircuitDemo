@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace DeadCircuit
 {
-    public static class ChunkTerrain
+    public static partial class ChunkTerrain
     {
         private const int Size = ChunkStreaming.ChunkSize;
         public const int MaxNodesPerChunk = 75, MaxResourcesPerChunk = 40;
@@ -50,7 +50,8 @@ namespace DeadCircuit
                 for (int y = Math.Max(startY, b.y); y < Math.Min(startY + Size, b.y + DemoCatalog.Height(b)); y++)
                     for (int x = Math.Max(startX, b.x); x < Math.Min(startX + Size, b.x + DemoCatalog.Width(b)); x++)
                         MarkExisting(region, x, y, b.kind != BuildKind.Door);
-            AddSite(region, chunkX, chunkY);
+            if (world.generatorVersion >= 4) AddBlueprintSite(region, chunkX, chunkY);
+            else AddSite(region, chunkX, chunkY);
             AddResources(region);
             if (region.nodes.Count > MaxNodesPerChunk ||
                 (long)world.nodes.Count + region.nodes.Count > WorldSimulator.MaxNodes ||
@@ -167,7 +168,7 @@ namespace DeadCircuit
             int count = 0;
             foreach (int cell in candidates)
             {
-                if (count == MaxResourcesPerChunk) break;
+                if (count == MaxResourcesPerChunk || r.nodes.Count >= MaxNodesPerChunk) break;
                 if (r.reserved[cell] || r.occupied[cell] || r.ground[cell] == '2') continue;
                 NodeKind kind; int stock;
                 if (!Resource(r, cell, out kind, out stock)) continue;

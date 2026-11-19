@@ -37,7 +37,7 @@ namespace DeadCircuit
             {
                 NodeState n = NodeAt(x, y);
                 if (n == null) { Notice(p, "靠近树、矿、废料堆或补给箱，瞄准后按 E。"); return; }
-                int item = NodeItem(n.kind);
+                int item = n.kind == NodeKind.Crate ? SiteCrateItem(n) : NodeItem(n.kind);
                 GearState tool=EquipmentCatalog.Equipped(p);
                 int bonus=HarvestBonus(tool,n.kind);
                 int amount = Math.Min(n.stock, Math.Min(InventoryLimit - p.items[item], 3 + p.attributes[0] / 3 + (p.skills[2] >= 1 ? p.skills[2] : 0) + bonus));

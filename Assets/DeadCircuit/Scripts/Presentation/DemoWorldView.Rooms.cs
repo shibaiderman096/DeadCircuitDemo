@@ -185,6 +185,7 @@ namespace DeadCircuit
 
         void ResetRooms()
         {
+            ResetSites();
             roomLayout = drawnRoomLayout = null; roomTopology = 0; roomGround = null;
             drawnRoomChunkX = drawnRoomChunkY = int.MinValue;
             roomBoundaryCells.Clear(); roomFloorCells.Clear();
@@ -193,6 +194,7 @@ namespace DeadCircuit
 
         void DisposeRooms()
         {
+            DisposeSites();
             if (roomFloorMesh != null) Destroy(roomFloorMesh);
             if (roomFloorMaterial != null) Destroy(roomFloorMaterial);
         }

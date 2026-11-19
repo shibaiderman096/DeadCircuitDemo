@@ -1,0 +1,405 @@
+{
+  "width": 288,
+  "height": 288,
+  "sprites": [
+    {
+      "name": "landmark_sign_0",
+      "x": 2,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_1",
+      "x": 38,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_2",
+      "x": 74,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_3",
+      "x": 110,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_4",
+      "x": 146,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_5",
+      "x": 182,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_6",
+      "x": 218,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_7",
+      "x": 254,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_8",
+      "x": 2,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_9",
+      "x": 38,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_10",
+      "x": 74,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_11",
+      "x": 110,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_12",
+      "x": 146,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_13",
+      "x": 182,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_14",
+      "x": 218,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_15",
+      "x": 254,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_16",
+      "x": 2,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_17",
+      "x": 38,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_18",
+      "x": 74,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_19",
+      "x": 110,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_20",
+      "x": 146,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_21",
+      "x": 182,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_22",
+      "x": 218,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_23",
+      "x": 254,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_24",
+      "x": 2,
+      "y": 110,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_25",
+      "x": 38,
+      "y": 110,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_26",
+      "x": 74,
+      "y": 110,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_27",
+      "x": 110,
+      "y": 110,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_28",
+      "x": 146,
+      "y": 110,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_29",
+      "x": 182,
+      "y": 110,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_30",
+      "x": 218,
+      "y": 110,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_sign_31",
+      "x": 254,
+      "y": 110,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_floor_0",
+      "x": 2,
+      "y": 146,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_floor_1",
+      "x": 38,
+      "y": 146,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_floor_2",
+      "x": 74,
+      "y": 146,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_floor_3",
+      "x": 110,
+      "y": 146,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_floor_4",
+      "x": 146,
+      "y": 146,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_floor_5",
+      "x": 182,
+      "y": 146,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_b",
+      "x": 218,
+      "y": 146,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_s",
+      "x": 254,
+      "y": 146,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_t",
+      "x": 2,
+      "y": 182,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_h",
+      "x": 38,
+      "y": 182,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_n",
+      "x": 74,
+      "y": 182,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_m",
+      "x": 110,
+      "y": 182,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_p",
+      "x": 146,
+      "y": 182,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_k",
+      "x": 182,
+      "y": 182,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_g",
+      "x": 218,
+      "y": 182,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_l",
+      "x": 254,
+      "y": 182,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_r",
+      "x": 2,
+      "y": 218,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_u",
+      "x": 38,
+      "y": 218,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_v",
+      "x": 74,
+      "y": 218,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_o",
+      "x": 110,
+      "y": 218,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_d",
+      "x": 146,
+      "y": 218,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_f",
+      "x": 182,
+      "y": 218,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_w",
+      "x": 218,
+      "y": 218,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_e",
+      "x": 254,
+      "y": 218,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "landmark_prop_a",
+      "x": 2,
+      "y": 254,
+      "w": 32,
+      "h": 32
+    }
+  ]
+}

@@ -15,6 +15,8 @@ namespace DeadCircuit
             if (roomWorldView == null) roomWorldView = bridge.GetComponent<DemoWorldView>();
             if (roomWorldView == null) return "";
             int x = Mathf.FloorToInt(player.x + .5f), y = Mathf.FloorToInt(player.y + .5f);
+            string siteName = roomWorldView.SiteNameAt(world, x, y);
+            string siteLocation = string.IsNullOrEmpty(siteName) ? "" : siteName + " · ";
             var room = roomWorldView.RoomAt(world, x, y);
             if (room == null && world.buildings != null) foreach (var door in world.buildings)
             {
@@ -23,7 +25,7 @@ namespace DeadCircuit
                     roomWorldView.RoomAt(world, x, y + 1) ?? roomWorldView.RoomAt(world, x, y - 1);
                 break;
             }
-            return room == null ? "\n位置：户外" : "\n位置：室内 " +
+            return room == null ? "\n位置：" + siteLocation + "户外" : "\n位置：" + siteLocation + "室内 " +
                 (room.cellKeys != null && room.cellKeys.Length > 0 ? room.cellKeys.Length : room.cells?.Length ?? 0) +
                 " 格 · 出入口 " + (room.doorIds?.Length ?? 0);
         }

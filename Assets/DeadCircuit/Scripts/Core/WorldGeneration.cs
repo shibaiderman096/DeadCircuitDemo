@@ -11,7 +11,11 @@ namespace DeadCircuit
     public enum SiteKind
     {
         Residence = 0, Shop = 1, Warehouse = 2, Workshop = 3, Clinic = 4, Farmhouse = 5,
-        GasStation = 6, PoliceStation = 7, School = 8, Apartment = 9, Greenhouse = 10, Substation = 11
+        GasStation = 6, PoliceStation = 7, School = 8, Apartment = 9, Greenhouse = 10, Substation = 11,
+        Restaurant = 12, Pharmacy = 13, HardwareStore = 14, Supermarket = 15, Library = 16,
+        FireStation = 17, Hospital = 18, ResearchLab = 19, PowerPlant = 20, WaterTreatment = 21,
+        RadioStation = 22, Bunker = 23, LumberMill = 24, MineOffice = 25, TrainDepot = 26,
+        Barn = 27, HuntingCabin = 28, RangerStation = 29, Motel = 30, RecyclingYard = 31
     }
 
     [Serializable] public sealed class WorldGenerationSettings
@@ -31,6 +35,8 @@ namespace DeadCircuit
         public int id, x, y, width, height, doorX, doorY;
         public SiteKind kind;
         public DistrictKind district;
+        // Metadata only: saved entities are never reconstructed from this plan.
+        public int layoutVersion, rotation;
     }
 
     public static class WorldSeed
@@ -100,13 +106,34 @@ namespace DeadCircuit
             new SiteDefinition(SiteKind.School, "学校", 7, 6, 3),
             new SiteDefinition(SiteKind.Apartment, "公寓", 7, 7, 3),
             new SiteDefinition(SiteKind.Greenhouse, "温室", 5, 7, 1),
-            new SiteDefinition(SiteKind.Substation, "变电站", 5, 5, 1)
+            new SiteDefinition(SiteKind.Substation, "变电站", 5, 5, 1),
+            new SiteDefinition(SiteKind.Restaurant, "餐馆", 9, 8, 2),
+            new SiteDefinition(SiteKind.Pharmacy, "药房", 8, 7, 2),
+            new SiteDefinition(SiteKind.HardwareStore, "五金店", 9, 8, 2),
+            new SiteDefinition(SiteKind.Supermarket, "超市", 11, 10, 4),
+            new SiteDefinition(SiteKind.Library, "图书馆", 10, 9, 2),
+            new SiteDefinition(SiteKind.FireStation, "消防站", 10, 9, 3),
+            new SiteDefinition(SiteKind.Hospital, "医院", 12, 11, 4),
+            new SiteDefinition(SiteKind.ResearchLab, "研究所", 11, 10, 3),
+            new SiteDefinition(SiteKind.PowerPlant, "发电厂", 12, 10, 3),
+            new SiteDefinition(SiteKind.WaterTreatment, "净水站", 11, 10, 3),
+            new SiteDefinition(SiteKind.RadioStation, "广播站", 9, 9, 2),
+            new SiteDefinition(SiteKind.Bunker, "地下掩体入口", 10, 9, 3),
+            new SiteDefinition(SiteKind.LumberMill, "伐木场", 11, 10, 3),
+            new SiteDefinition(SiteKind.MineOffice, "矿场办公室", 9, 8, 2),
+            new SiteDefinition(SiteKind.TrainDepot, "铁路货运站", 12, 9, 3),
+            new SiteDefinition(SiteKind.Barn, "谷仓", 9, 9, 3),
+            new SiteDefinition(SiteKind.HuntingCabin, "猎人小屋", 7, 7, 2),
+            new SiteDefinition(SiteKind.RangerStation, "护林站", 9, 8, 2),
+            new SiteDefinition(SiteKind.Motel, "汽车旅馆", 12, 9, 4),
+            new SiteDefinition(SiteKind.RecyclingYard, "回收站", 11, 10, 3)
         });
     }
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 3;
+        public const int CurrentGeneratorVersion = 4;
+        public const int LegacySiteCount = 12;
         private const int Size = 64;
 
         public static WorldState Generate(WorldGenerationSettings settings)
@@ -268,12 +295,12 @@ namespace DeadCircuit
             for (int i = lots.Count - 1; i > 0; i--) { int j = random.Next(0, i + 1), v = lots[i]; lots[i] = lots[j]; lots[j] = v; }
             int target = state.generation.preset == WorldPreset.Wilderness ? 6 + state.generation.cityDensity * 4 :
                 state.generation.preset == WorldPreset.Urban ? 18 + state.generation.cityDensity * 5 : 12 + state.generation.cityDensity * 6;
-            int kindOffset = random.Next(0, WorldGenerationCatalog.Sites.Count);
+            int kindOffset = random.Next(0, LegacySiteCount);
             foreach (int lot in lots)
             {
                 if (state.sites.Count >= target) break;
                 int col = lot % 6, row = lot / 6;
-                var definition = WorldGenerationCatalog.Sites[(state.sites.Count + kindOffset) % WorldGenerationCatalog.Sites.Count];
+                var definition = WorldGenerationCatalog.Sites[(state.sites.Count + kindOffset) % LegacySiteCount];
                 int width = Math.Min(definition.width, ends[col] - starts[col] + 1);
                 int height = Math.Min(definition.height, ends[row] - starts[row] + 1);
                 int sx = starts[col] + random.Next(0, ends[col] - starts[col] - width + 2);

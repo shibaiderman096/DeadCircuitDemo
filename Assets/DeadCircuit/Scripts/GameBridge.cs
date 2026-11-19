@@ -211,7 +211,7 @@ namespace DeadCircuit
                 using (var writer = new FastBufferWriter(4096, Allocator.Temp))
                 {
                     writer.WriteValueSafe(json);
-                    network.CustomMessagingManager.SendNamedMessage("dc.cmd.v8", NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableSequenced);
+                    network.CustomMessagingManager.SendNamedMessage("dc.cmd.v9", NetworkManager.ServerClientId, writer, NetworkDelivery.ReliableSequenced);
                 }
             }
 #endif
@@ -382,8 +382,8 @@ namespace DeadCircuit
         }
         void RegisterMessages()
         {
-            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.cmd.v8", ReceiveCommand);
-            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.world.v8", ReceiveWorld);
+            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.cmd.v9", ReceiveCommand);
+            network.CustomMessagingManager.RegisterNamedMessageHandler("dc.world.v9", ReceiveWorld);
         }
         void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
@@ -506,7 +506,7 @@ namespace DeadCircuit
                 {
                     writer.WriteValueSafe(bytes.Length);
                     writer.WriteBytesSafe(bytes);
-                    network.CustomMessagingManager.SendNamedMessage("dc.world.v8", client, writer, NetworkDelivery.ReliableFragmentedSequenced);
+                    network.CustomMessagingManager.SendNamedMessage("dc.world.v9", client, writer, NetworkDelivery.ReliableFragmentedSequenced);
                 }
             }
 #endif
