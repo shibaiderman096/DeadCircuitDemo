@@ -208,14 +208,14 @@ namespace DeadCircuit
             if (!running && keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
                 if (settingsPanel.gameObject.activeSelf) CloseSettings();
+                else if (appearancePanel != null && appearancePanel.gameObject.activeSelf) CloseAppearance();
                 else ShowMenuPage(MenuPage.Home);
             }
             if (running && player != null && player.hp > 0f && keyboard != null)
             {
                 if (keyboard.escapeKey.wasPressedThisFrame)
                 {
-                    if (appearancePanel != null && appearancePanel.gameObject.activeSelf) CloseAppearance();
-                    else if (AnyPanelOpen()) SetPanel(null, false);
+                    if (AnyPanelOpen()) SetPanel(null, false);
                     else if (bridge.BuildSelection.HasValue) CancelBuild();
                     else SetPanel(session, true);
                 }
@@ -512,7 +512,6 @@ namespace DeadCircuit
             RefreshFeedback(world, player);
             RefreshAdditionalPanels(world, player);
             if (inventory.gameObject.activeSelf) RefreshInventory(world, player);
-            if (appearancePanel != null && appearancePanel.gameObject.activeSelf) RefreshAppearance(world, player);
             if (technology.gameObject.activeSelf) RefreshTechnology(world, player);
             if (growth.gameObject.activeSelf) RefreshGrowth(player);
             if (dead)

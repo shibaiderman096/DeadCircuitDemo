@@ -49,13 +49,16 @@ namespace DeadCircuit
             RefreshPower(false);
         }
 
-        public PlayerState AddPlayer(string id, string name)
+        public PlayerState AddPlayer(string id, string name, int? appearance = null)
         {
+            if (appearance.HasValue && !AppearanceCatalog.IsValid(appearance.Value))
+                throw new ArgumentException("Player appearance preset is invalid.", nameof(appearance));
             if (string.IsNullOrWhiteSpace(id) || id.Length > 64 || HasControl(id))
                 throw new ArgumentException("Player id must contain 1-64 printable characters.", nameof(id));
             PlayerState existing = FindPlayer(id);
             if (existing != null)
             {
+                if (!existing.connected && appearance.HasValue) existing.appearance = appearance.Value;
                 SetConnected(id, true);
                 return existing;
             }
@@ -63,7 +66,8 @@ namespace DeadCircuit
             RefreshSpatial();
             int sx, sy;
             if (!FindSpawn(out sx, out sy)) throw new InvalidOperationException("No safe spawn cell available.");
-            var p = new PlayerState { id = id, name = CleanName(name), seat = FirstFreeSeat(), x = sx, y = sy };
+            var p = new PlayerState { id = id, name = CleanName(name), seat = FirstFreeSeat(), x = sx, y = sy,
+                appearance = appearance ?? AppearanceCatalog.DefaultCode };
             p.items = DemoCatalog.Materials(ItemKind.Wood,12, ItemKind.Scrap,4, ItemKind.Food,6);
             GiveStartingGear(State,p,false);
             State.players.Add(p);
@@ -93,6 +97,7 @@ namespace DeadCircuit
             if (p == null || !p.connected) return;
             string action = cmd.action ?? "";
             if (action.Length > 16) return;
+            if (action == "appearance") return;
             HeldInput input = inputs[p.id];
             if (action.Length == 0 || action == "move")
             {
@@ -116,7 +121,6 @@ namespace DeadCircuit
             if (ApplySurvival(p, cmd)) return;
             switch (action)
             {
-                case "appearance": SetAppearance(p, cmd.arg); return;
                 case "attack":
                     if (!Finite(cmd.aimX) || !Finite(cmd.aimY)) return;
                     Aim(p, cmd.aimX, cmd.aimY);

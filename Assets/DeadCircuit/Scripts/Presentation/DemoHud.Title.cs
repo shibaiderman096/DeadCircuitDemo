@@ -72,16 +72,17 @@ namespace DeadCircuit
             Box("Right Divider", content, 493, 125, 57, 2, TitleBrass);
 
             RectTransform actions = NewRect("Start Actions", content);
-            Place(actions, 144, 206, 392, 252);
+            Place(actions, 144, 172, 392, 294);
             TitleButton("New Game", "新建世界", 0, 0, 392, StartNew, true);
-            loadButton = TitleButton("Load Game", "读取世界", 0, 66, 392, Load);
-            TitleButton("Open LAN", "局域网协作", 0, 132, 392, () => ShowMenuPage(MenuPage.Lan));
+            loadButton = TitleButton("Load Game", "读取世界", 0, 60, 392, Load);
+            TitleButton("Open LAN", "局域网协作", 0, 120, 392, () => ShowMenuPage(MenuPage.Lan));
 #if UNITY_WEBGL && !UNITY_EDITOR
-            titleSettingsButton = TitleButton("Open Settings", "设置", 0, 198, 392, OpenSettings).button;
+            titleSettingsButton = TitleButton("Open Settings", "设置", 0, 180, 392, OpenSettings).button;
 #else
-            titleSettingsButton = TitleButton("Open Settings", "设置", 0, 198, 190, OpenSettings).button;
-            TitleButton("Quit Game", "退出游戏", 202, 198, 190, QuitGame);
+            titleSettingsButton = TitleButton("Open Settings", "设置", 0, 180, 190, OpenSettings).button;
+            TitleButton("Quit Game", "退出游戏", 202, 180, 190, QuitGame);
 #endif
+            TitleButton("Open Appearance", "主角外观", 0, 240, 392, OpenAppearance);
             menuSave = TitleLabel("Save Availability", "", 474, 34, 15, Ink, 0);
             var version = Label("Game Version", page, "v" + Application.version, 0, 0, 96, 24, 14, Ink);
             version.rectTransform.anchorMin = version.rectTransform.anchorMax = version.rectTransform.pivot = Vector2.zero;

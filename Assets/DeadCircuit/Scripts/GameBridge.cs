@@ -89,6 +89,7 @@ namespace DeadCircuit
                 PlayerPrefs.Save();
             }
             PlayerName = PlayerPrefs.GetString("DeadCircuit.Name", "幸存者");
+            LoadAppearancePreference();
             try
             {
                 var addresses = Dns.GetHostAddresses(Dns.GetHostName()).Where(a => a.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(a));
@@ -141,7 +142,7 @@ namespace DeadCircuit
                 }
                 World = simulator.State;
                 foreach (var p in World.players) p.connected = false;
-                simulator.AddPlayer(profileId, CleanName(PlayerName));
+                simulator.AddPlayer(profileId, CleanName(PlayerName), AppearanceCode);
                 IsHost = true;
 #if DEADCIRCUIT_NETCODE
                 SetupNetwork();
@@ -200,7 +201,7 @@ namespace DeadCircuit
 
         public void Send(PlayerCommand command)
         {
-            if (!IsRunning || command == null) return;
+            if (!IsRunning || command == null || command.action == "appearance") return;
             command.playerId = profileId;
             if (IsHost) simulator.Apply(command);
 #if DEADCIRCUIT_NETCODE
@@ -367,8 +368,9 @@ namespace DeadCircuit
         void OnApplicationQuit() { if (IsHost) SaveInternal(false); }
 
 #if DEADCIRCUIT_NETCODE
-        [Serializable] sealed class JoinTicket { public int version = WorldSimulator.SaveVersion; public string id, name; }
-        byte[] TicketBytes() => Encoding.UTF8.GetBytes(JsonUtility.ToJson(new JoinTicket { id = profileId, name = CleanName(PlayerName) }));
+        [Serializable] sealed class JoinTicket { public int version = WorldSimulator.SaveVersion; public int appearance; public string id, name; }
+        byte[] TicketBytes() => Encoding.UTF8.GetBytes(JsonUtility.ToJson(new JoinTicket
+            { id = profileId, name = CleanName(PlayerName), appearance = AppearanceCode }));
         void SetupNetwork()
         {
             var root = new GameObject("LAN / Netcode + Unity Transport");
@@ -394,12 +396,13 @@ namespace DeadCircuit
                 if (request.Payload == null || request.Payload.Length > 512) throw new InvalidDataException("加入资料无效");
                 var ticket = JsonUtility.FromJson<JoinTicket>(Encoding.UTF8.GetString(request.Payload));
                 if (ticket == null || ticket.version != WorldSimulator.SaveVersion || !Guid.TryParse(ticket.id, out var guid)) throw new InvalidDataException("Demo 版本不一致");
+                if (!AppearanceCatalog.IsValid(ticket.appearance)) throw new InvalidDataException("主角外观预设无效");
                 string id = guid.ToString("N");
                 if (request.ClientNetworkId != NetworkManager.ServerClientId && peers.Values.Contains(id)) throw new InvalidDataException("此角色已在游戏中，请关闭重复连接");
                 if (peers.Count >= 4) throw new InvalidDataException("房间已满（最多4人）");
                 if (World.players.Count >= WorldSimulator.MaxPlayers && World.players.All(p => p.id != id)) throw new InvalidDataException("此世界已有8个存档角色，请新建世界");
                 peers[request.ClientNetworkId] = id;
-                var joined = simulator.AddPlayer(id, CleanName(ticket.name));
+                var joined = simulator.AddPlayer(id, CleanName(ticket.name), ticket.appearance);
                 if (smokeHost)
                 {
                     for (int i = 0; i < joined.items.Length; i++) joined.items[i] = 60;

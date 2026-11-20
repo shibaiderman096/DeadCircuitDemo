@@ -6,7 +6,6 @@ namespace DeadCircuit
     public sealed partial class DemoHud
     {
         const float AppearancePreviewScale = 192f;
-        const float AppearanceConfirmationTimeout = 6f;
         static readonly int[] AppearancePreviewFacings = { 3, 1, 2, 0 };
         static readonly string[] AppearancePreviewDirections = { "正面", "背面", "左侧", "右侧" };
 
@@ -19,20 +18,12 @@ namespace DeadCircuit
         readonly UiButton[] appearancePrevious = new UiButton[AppearanceCatalog.FieldCount];
         readonly UiButton[] appearanceNext = new UiButton[AppearanceCatalog.FieldCount];
         readonly UiButton[] appearanceDirections = new UiButton[4];
-        UiButton appearanceInventoryButton, appearanceBackButton, appearanceApplyButton;
+        UiButton appearanceBackButton, appearanceApplyButton;
         UiButton appearanceWalkingButton, appearanceEquipmentButton;
         TextMeshProUGUI appearancePreviewCaption, appearancePreviewEmpty, appearanceStatus;
-        int appearanceDraftCode = AppearanceCatalog.DefaultCode, appearanceFacing = 3, appearanceSubmittedCode;
-        bool appearanceWalking, appearanceEquipment = true, appearanceAwaitingConfirmation, appearanceConfirmationTimedOut;
-        float appearancePhase, appearanceSubmittedAt;
-
-        void MakeAppearanceButton(RectTransform inventoryCard)
-        {
-            if (inventoryCard == null || appearanceInventoryButton != null) return;
-            appearanceInventoryButton = Button("Open Appearance", inventoryCard, "主角外观",
-                826, 18, 176, 32, OpenAppearance);
-            SetButtonArt(appearanceInventoryButton, "ui_equip", 20);
-        }
+        int appearanceDraftCode = AppearanceCatalog.DefaultCode, appearanceSavedCode = AppearanceCatalog.DefaultCode, appearanceFacing = 3;
+        bool appearanceWalking, appearanceEquipment = true;
+        float appearancePhase;
 
         void MakeAppearance(RectTransform root)
         {
@@ -42,11 +33,11 @@ namespace DeadCircuit
             Center(card, 1120, 680);
             PanelRule(card, 1120, 66);
             Label("Appearance Heading", card, "主角外观", 22, 16, 760, 36, 25, Ink, FontStyles.Bold);
-            appearanceBackButton = Button("Close Appearance", card, "返回背包", 948, 18, 150, 32, CloseAppearance);
+            appearanceBackButton = Button("Close Appearance", card, "返回开始菜单", 948, 18, 150, 32, CloseAppearance);
             SetButtonArt(appearanceBackButton, "ui_back", 20);
 
             RectTransform preview = Box("Appearance Preview Surface", card, 22, 80, 350, 468, Recessed);
-            Label("Appearance Preview Heading", preview, "角色预览 · 草稿", 16, 12, 318, 28, 18, Accent, FontStyles.Bold);
+            Label("Appearance Preview Heading", preview, "主角预览 · 草稿", 16, 12, 318, 28, 18, Accent, FontStyles.Bold);
             appearancePreviewCaption = Label("Appearance Preview Caption", preview, "", 16, 42, 318, 24, 13, Muted);
             RectTransform stage = Box("Appearance Preview Stage", preview, 16, 74, 318, 284, Panel);
             stage.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
@@ -116,22 +107,21 @@ namespace DeadCircuit
             }
 
             Label("Appearance Notice", card,
-                "调整仅影响草稿；应用后同步给其他玩家，并随角色存档。\n实际穿戴的护甲会覆盖对应部位；穿戴开关只影响预览，不会卸下装备。",
+                "外观预设保存在本机；新建、读取或加入世界时使用，进入游戏后无法修改。\n实际穿戴的护甲会覆盖对应部位；此处开关只影响预览，不会卸下装备。",
                 22, 558, 1076, 44, 14, Muted);
             Box("Appearance Footer Rule", card, 22, 606, 1076, 1, Edge);
             UiButton reset = Button("Reset Appearance Draft", card, "重置默认草稿", 22, 622, 180, 38, () =>
             {
                 appearanceDraftCode = AppearanceCatalog.DefaultCode;
-                appearanceConfirmationTimedOut = false;
                 RefreshAppearanceOptions();
-                RefreshAppearance(bridge == null ? null : bridge.World, bridge == null ? null : bridge.LocalPlayer);
+                RefreshAppearance();
                 PaintAppearancePreview(bridge == null ? null : bridge.LocalPlayer);
             });
             SetButtonArt(reset, "ui_refresh", 20);
             appearanceStatus = Label("Appearance Draft Status", card, "", 220, 618, 490, 44, 14, Amber);
-            UiButton cancel = Button("Cancel Appearance", card, "取消并返回", 730, 622, 178, 38, CloseAppearance);
+            UiButton cancel = Button("Cancel Appearance", card, "返回菜单", 730, 622, 178, 38, CloseAppearance);
             SetButtonArt(cancel, "ui_back", 20);
-            appearanceApplyButton = Button("Apply Appearance", card, "应用外观", 920, 622, 178, 38, ApplyAppearance, true);
+            appearanceApplyButton = Button("Save Appearance", card, "保存外观", 920, 622, 178, 38, ApplyAppearance, true);
             SetButtonArt(appearanceApplyButton, "ui_equip", 20);
             appearanceApplyButton.button.interactable = false;
             RefreshAppearanceOptions();
@@ -141,32 +131,32 @@ namespace DeadCircuit
 
         void OpenAppearance()
         {
-            PlayerState player = bridge == null ? null : bridge.LocalPlayer;
-            if (appearancePanel == null || bridge == null || !bridge.IsRunning || bridge.World == null ||
-                player == null || !player.connected || player.hp <= 0f) return;
+            if (appearancePanel == null || bridge == null || !bridge.CanEditAppearance || menu == null ||
+                !menu.gameObject.activeInHierarchy || menuPage != MenuPage.Home) return;
 
-            // SetPanel closes all modals before reopening this one. Draft lifetime is explicit.
-            appearanceDraftCode = AppearanceCatalog.IsValid(player.appearance) ? player.appearance : AppearanceCatalog.DefaultCode;
+            appearanceSavedCode = AppearanceCatalog.IsValid(bridge.AppearanceCode) ? bridge.AppearanceCode : AppearanceCatalog.DefaultCode;
+            appearanceDraftCode = appearanceSavedCode;
             appearanceFacing = 3;
             appearanceWalking = false;
             appearanceEquipment = true;
             appearancePhase = 0f;
-            appearanceAwaitingConfirmation = appearanceConfirmationTimedOut = false;
             RefreshAppearanceOptions();
             RefreshAppearancePreviewControls();
-            SetPanel(appearancePanel, true);
+            appearancePanel.gameObject.SetActive(true);
             if (!appearancePanel.gameObject.activeInHierarchy) return;
             appearancePanel.SetAsLastSibling();
-            RefreshAppearance(bridge.World, bridge.LocalPlayer);
+            RefreshAppearance();
             PaintAppearancePreview(bridge.LocalPlayer);
             if (eventSystem != null) eventSystem.SetSelectedGameObject(appearanceBackButton.button.gameObject);
+            DemoAudio.UiOpen();
         }
 
         void CloseAppearance()
         {
-            SetPanel(inventory, true);
-            if (inventory.gameObject.activeInHierarchy && eventSystem != null && appearanceInventoryButton != null)
-                eventSystem.SetSelectedGameObject(appearanceInventoryButton.button.gameObject);
+            if (appearancePanel == null || !appearancePanel.gameObject.activeSelf) return;
+            appearancePanel.gameObject.SetActive(false);
+            if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
+            DemoAudio.UiClose();
         }
 
         void CycleAppearance(int field, int delta)
@@ -177,9 +167,8 @@ namespace DeadCircuit
             if (count <= 0) return;
             int current = AppearanceCatalog.Get(appearanceDraftCode, field);
             appearanceDraftCode = AppearanceCatalog.With(appearanceDraftCode, field, (current + delta + count) % count);
-            appearanceConfirmationTimedOut = false;
             RefreshAppearanceOptions();
-            RefreshAppearance(bridge == null ? null : bridge.World, bridge == null ? null : bridge.LocalPlayer);
+            RefreshAppearance();
             PaintAppearancePreview(bridge == null ? null : bridge.LocalPlayer);
         }
 
@@ -222,50 +211,24 @@ namespace DeadCircuit
                 (appearanceEquipment ? " · 当前穿戴" : " · 基础外观"));
         }
 
-        bool CanApplyAppearance(PlayerState player, WorldState world)
-        {
-            return bridge != null && bridge.IsRunning && world != null && player != null && player.connected &&
-                player.hp > 0f && AppearanceCatalog.IsValid(appearanceDraftCode);
-        }
-
         void ApplyAppearance()
         {
-            PlayerState player = bridge == null ? null : bridge.LocalPlayer;
-            if (appearancePanel == null || !appearancePanel.gameObject.activeInHierarchy ||
-                !CanApplyAppearance(player, bridge == null ? null : bridge.World) || appearanceAwaitingConfirmation) return;
-            appearanceSubmittedCode = appearanceDraftCode;
-            appearanceSubmittedAt = Time.unscaledTime;
-            appearanceAwaitingConfirmation = true;
-            appearanceConfirmationTimedOut = false;
-            Send("appearance", appearanceDraftCode);
-            RefreshAppearance(bridge.World, bridge.LocalPlayer);
+            if (appearancePanel == null || !appearancePanel.gameObject.activeInHierarchy || bridge == null ||
+                !AppearanceCatalog.IsValid(appearanceDraftCode) || !bridge.TrySetAppearance(appearanceDraftCode)) return;
+            appearanceSavedCode = bridge.AppearanceCode;
+            RefreshAppearance();
         }
 
-        void RefreshAppearance(WorldState world, PlayerState player)
+        void RefreshAppearance()
         {
             if (appearancePanel == null || !appearancePanel.gameObject.activeInHierarchy) return;
-            bool available = CanApplyAppearance(player, world);
-            if (appearanceAwaitingConfirmation && available && player.appearance == appearanceSubmittedCode)
-                appearanceAwaitingConfirmation = false;
-            else if (appearanceAwaitingConfirmation && Time.unscaledTime - appearanceSubmittedAt >= AppearanceConfirmationTimeout)
-            {
-                appearanceAwaitingConfirmation = false;
-                appearanceConfirmationTimedOut = true;
-            }
-
-            appearanceApplyButton.button.interactable = available && !appearanceAwaitingConfirmation && player.appearance != appearanceDraftCode;
-            Set(appearanceApplyButton.label, appearanceAwaitingConfirmation ? "等待确认…" : "应用外观");
-            string status;
-            if (bridge == null || !bridge.IsRunning || world == null || player == null) status = "等待角色与世界同步";
-            else if (!player.connected) status = "连接已断开，暂时无法应用";
-            else if (player.hp <= 0f) status = "角色倒下，暂时无法应用";
-            else if (!AppearanceCatalog.IsValid(appearanceDraftCode)) status = "草稿无效，请重置默认外观";
-            else if (appearanceAwaitingConfirmation) status = "已发送请求 · 等待主机确认";
-            else if (player.appearance == appearanceDraftCode) status = "与当前角色外观一致";
-            else if (appearanceConfirmationTimedOut) status = "主机尚未确认，可重试应用";
-            else status = "尚未应用的草稿 · 返回会放弃修改";
+            bool available = bridge != null && bridge.CanEditAppearance && AppearanceCatalog.IsValid(appearanceDraftCode);
+            appearanceApplyButton.button.interactable = available && appearanceSavedCode != appearanceDraftCode;
+            Set(appearanceApplyButton.label, "保存外观");
+            string status = !AppearanceCatalog.IsValid(appearanceDraftCode) ? "草稿无效，请重置默认外观" :
+                appearanceSavedCode == appearanceDraftCode ? "已保存到本机；进入世界时使用" : "草稿尚未保存";
             Set(appearanceStatus, status);
-            appearanceStatus.color = available && !appearanceAwaitingConfirmation && player.appearance == appearanceDraftCode ? Accent : Amber;
+            appearanceStatus.color = appearanceSavedCode == appearanceDraftCode ? Accent : Amber;
         }
 
         void TickAppearancePreview()
@@ -280,8 +243,8 @@ namespace DeadCircuit
         {
             if (appearancePreviewOrigin == null) return;
             int count = 0;
-            if (player != null && AppearanceCatalog.IsValid(appearanceDraftCode))
-                count = Mathf.Clamp(SurvivorVisuals.Sample(player, appearanceDraftCode, appearanceFacing, appearancePhase,
+            if (AppearanceCatalog.IsValid(appearanceDraftCode))
+                count = Mathf.Clamp(SurvivorVisuals.Sample(player ?? new PlayerState(), appearanceDraftCode, appearanceFacing, appearancePhase,
                     appearanceWalking, appearanceEquipment, appearanceLayers, true), 0, appearanceImages.Length);
             float previewScale = FitAppearancePreview(count);
             bool visible = false;
