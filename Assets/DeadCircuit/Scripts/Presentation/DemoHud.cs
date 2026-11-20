@@ -220,6 +220,11 @@ namespace DeadCircuit
                     else if (bridge.BuildSelection.HasValue) CancelBuild();
                     else SetPanel(session, true);
                 }
+                else if (keyboard.bKey.wasPressedThisFrame && inventory.gameObject.activeSelf)
+                {
+                    // Closing an already-open inventory must remain available even if a menu input retained focus.
+                    SetPanel(inventory, false);
+                }
                 else if (!TextInputFocused())
                 {
                     if (keyboard.bKey.wasPressedThisFrame) SetPanel(inventory, !inventory.gameObject.activeSelf);
@@ -285,12 +290,13 @@ namespace DeadCircuit
                 itemLayout.flexibleWidth = 1;
                 slots[i].label.fontSizeMax = slots[i].label.fontSize = 14;
             }
-            buildToggle = Button("HUD Build Toggle", game, "展开建造 1–0", 0, 0, 180, 36, () =>
+            buildToggle = Button("HUD Build Toggle", game, "建造 1–0", 0, 0, 180, 36, () =>
             {
                 buildTrayOpen = !(buildTrayOpen || bridge.BuildSelection.HasValue);
                 if (!buildTrayOpen) CancelBuild();
                 RefreshAll();
             });
+            SetButtonArt(buildToggle, "ui_create", 24);
             BottomCenter(buildToggle.button.GetComponent<RectTransform>(), 18, 180, 36);
             buildTray.gameObject.SetActive(false);
             MakeEquipmentSummary();
@@ -304,7 +310,8 @@ namespace DeadCircuit
             Center(card, 1040, 608);
             PanelRule(card, 1040, 64);
             Label("Technology Heading", card, "工业科技树", 22, 16, 760, 38, 25, Ink, FontStyles.Bold);
-            Button("Close Technology", card, "关闭 T / Esc", 902, 20, 116, 32, () => SetPanel(technology, false));
+            UiButton closeTechnology = Button("Close Technology", card, "返回", 902, 20, 116, 32, () => SetPanel(technology, false));
+            SetButtonArt(closeTechnology, "ui_back", 20);
             for (int i = 0; i < eraButtons.Length; i++)
             {
                 int era = i;
@@ -331,6 +338,7 @@ namespace DeadCircuit
                 technologyBuildCosts[i].alignment = TextAlignmentOptions.TopLeft;
             }
             researchButton = Button("Research Button", card, "", 778, 520, 240, 48, Research, true);
+            SetButtonArt(researchButton, "ui_research", 28);
             technologyNotice = Label("Technology Feedback", card, "", 226, 518, 532, 58, 14, Amber);
             Label("Technology Footer", card, "滚轮 / 拖动右侧内容查看全部设备 · 世界继续运行", 226, 578, 792, 22, 13, Muted);
             technology.gameObject.SetActive(false);
@@ -343,15 +351,19 @@ namespace DeadCircuit
             Center(card, 740, 620);
             PanelRule(card, 740, 68);
             Label("Session Heading", card, "会话", 28, 16, 500, 38, 27, Ink, FontStyles.Bold);
-            Button("Close Session", card, "返回 Esc", 594, 20, 118, 34, () => SetPanel(session, false));
+            UiButton closeSession = Button("Close Session", card, "返回", 594, 20, 118, 34, () => SetPanel(session, false));
+            SetButtonArt(closeSession, "ui_back", 20);
             RectTransform content = ScrollContent("Session Scroll View", card, 28, 86, 684, 298, out _);
             networkText = FlowLabel("Network", content, "", 656, 72, 17, Ink);
             eraText = FlowLabel("Current Technology Era", content, "", 656, 28, 17, Accent);
             objectives = FlowLabel("Objectives Text", content, "", 656, 80, 17, Ink);
             gameStatus = FlowLabel("Session Status", content, "", 656, 72, 16, Muted);
             saveButton = Button("Save World", card, "保存 F5", 28, 404, 330, 46, () => CallBridge(bridge.Save), true);
-            Button("Session Settings", card, "设置", 382, 404, 330, 46, OpenSettings);
-            Button("Return to Menu", card, "返回主菜单", 28, 466, 684, 44, () => CallBridge(bridge.Leave));
+            SetButtonArt(saveButton, "ui_save", 28);
+            UiButton sessionSettings = Button("Session Settings", card, "设置", 382, 404, 330, 46, OpenSettings);
+            SetButtonArt(sessionSettings, "ui_settings", 28);
+            UiButton returnToMenu = Button("Return to Menu", card, "返回主菜单", 28, 466, 684, 44, () => CallBridge(bridge.Leave));
+            SetButtonArt(returnToMenu, "ui_back", 28);
             Label("Session Hint", card, "世界继续运行 · 房主定期自动保存", 28, 522, 684, 28, 14, Muted);
             sessionNotice = Label("Session Feedback", card, "", 28, 562, 684, 44, 15, Amber);
             session.gameObject.SetActive(false);
@@ -364,7 +376,8 @@ namespace DeadCircuit
             Center(card, 900, 608);
             PanelRule(card, 900, 68);
             Label("Help Heading", card, "操作与生存指南", 28, 16, 690, 38, 27, Ink, FontStyles.Bold);
-            Button("Close Help", card, "返回 H / Esc", 756, 20, 116, 34, () => SetPanel(help, false));
+            UiButton closeHelp = Button("Close Help", card, "返回", 756, 20, 116, 34, () => SetPanel(help, false));
+            SetButtonArt(closeHelp, "ui_back", 20);
             RectTransform content = ScrollContent("Help Scroll View", card, 28, 88, 844, 420, out _);
             FlowLabel("Controls Title", content, "操作速查", 816, 30, 20, Accent);
             FlowLabel("Controls Text", content,
@@ -388,7 +401,7 @@ namespace DeadCircuit
             Button("Close Inspector", machinePanel, "收起", 246, 8, 46, 28, () =>
             {
                 inspectorEnabled = false;
-                Set(inspectToggle.label, "设备检查：关");
+                Set(inspectToggle.label, "检查：关");
                 HideInspector();
             });
             RectTransform content = ScrollContent("Machine Scroll View", machinePanel, 10, 44, 284, 260, out machineScroll);
@@ -398,6 +411,7 @@ namespace DeadCircuit
             machineCluster.gameObject.SetActive(false);
             MakeLowVoltageMachineControls(content);
             MakePetrochemistryMachineControls(content);
+            MakePrecisionMachineControls(content);
             machineInfo = FlowLabel("Machine State", content, "", 260, 90, 13, Ink);
             machineRecipe = FlowLabel("Machine Recipe", content, "", 260, 28, 14, Accent);
             machineRecipeFlow = FlowLabel("Machine Recipe Flow", content, "", 260, 60, 13, Ink);
@@ -406,8 +420,11 @@ namespace DeadCircuit
             recipeButton = Button("Cycle Machine Recipe", machinePanel, "切换配方", 12, 312, 280, 30, CycleRecipe);
             interactButton = Button("Interact Machine", machinePanel, "交互 E", 12, 350, 86, 30, () => SendInspected("interact"));
             repairButton = Button("Repair Machine", machinePanel, "修理 G", 109, 350, 86, 30, () => SendInspected("repair"));
-            MakePrecisionMachineControls(content);
             dismantleButton = Button("Dismantle Machine", machinePanel, "拆除 X", 206, 350, 86, 30, () => SendInspected("dismantle"));
+            SetButtonArt(recipeButton, "ui_craft", 20);
+            SetButtonArt(interactButton, "ui_equip", 18);
+            SetButtonArt(repairButton, "ui_repair", 18);
+            SetButtonArt(dismantleButton, "ui_dismantle", 18);
             machinePanel.gameObject.SetActive(false);
         }
 
@@ -419,7 +436,8 @@ namespace DeadCircuit
             PanelRule(card, 1080, 100);
             Label("Growth Title", card, "幸存者成长", 24, 18, 750, 40, 28, Ink, FontStyles.Bold);
             growthSummary = Label("Growth Summary", card, "", 24, 66, 920, 26, 16, Muted);
-            Button("Close Growth", card, "关闭 Esc", 930, 24, 126, 34, () => SetGrowth(false));
+            UiButton closeGrowth = Button("Close Growth", card, "返回", 930, 24, 126, 34, () => SetGrowth(false));
+            SetButtonArt(closeGrowth, "ui_back", 20);
             attributeHeading = Label("Attribute Points", card, "", 24, 110, 336, 28, 19, Accent, FontStyles.Bold);
             skillHeading = Label("Skill Points", card, "", 384, 110, 672, 28, 19, Accent, FontStyles.Bold);
             for (int i = 0; i < attributeButtons.Length; i++)
@@ -461,8 +479,10 @@ namespace DeadCircuit
             PanelRule(card, 570, 90);
             Label("Death Heading", card, "回路中断", 28, 26, 514, 52, 36, Danger, FontStyles.Bold);
             deathInfo = Label("Death Details", card, "", 28, 100, 514, 108, 18, Ink);
-            respawnButton = Button("Respawn", card, "返回救援区", 28, 235, 244, 48, () => Send("respawn"), true);
-            Button("Leave After Death", card, "返回主菜单", 290, 235, 252, 48, () => CallBridge(bridge.Leave));
+            respawnButton = Button("Respawn", card, "复活", 28, 235, 244, 48, () => Send("respawn"), true);
+            SetButtonArt(respawnButton, "ui_back", 28);
+            UiButton leaveAfterDeath = Button("Leave After Death", card, "返回主菜单", 290, 235, 252, 48, () => CallBridge(bridge.Leave));
+            SetButtonArt(leaveAfterDeath, "ui_quit", 28);
             Label("Death Hint", card, "世界仍在运行；复活保留背包与成长。", 28, 300, 514, 24, 14, Muted);
         }
 
@@ -482,8 +502,8 @@ namespace DeadCircuit
                 ClosePanels();
                 buildTrayOpen = inspectorEnabled = false;
                 toolsTray.gameObject.SetActive(false);
-                Set(toolsToggle.label, "工具 / 菜单");
-                Set(inspectToggle.label, "设备检查：关");
+                Set(toolsToggle.label, "工具");
+                Set(inspectToggle.label, "检查：关");
                 if (!running) ShowMenuPage(MenuPage.Home);
                 if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
             }
@@ -494,9 +514,14 @@ namespace DeadCircuit
             WorldState world = bridge.World;
             bool dead = running && player != null && player.hp <= 0f;
             death.gameObject.SetActive(dead);
-            if (!running || dead)
+            if (dead)
             {
-                ClosePanels(running);
+                ClosePanels();
+                buildDetails.gameObject.SetActive(false);
+                machinePanel.gameObject.SetActive(false);
+            }
+            else if (!running)
+            {
                 buildDetails.gameObject.SetActive(false);
                 machinePanel.gameObject.SetActive(false);
             }
@@ -523,9 +548,9 @@ namespace DeadCircuit
             {
                 float delay = Mathf.Max(0f, 5f - (world.elapsed - player.lastDamageAt));
                 respawnButton.button.interactable = delay <= 0f;
-                Set(respawnButton.label, delay > 0f ? "救援接入中 · " + Mathf.CeilToInt(delay) + " 秒" : "返回救援区");
+                Set(respawnButton.label, delay > 0f ? "等待复活 · " + Mathf.CeilToInt(delay) + " 秒" : "复活");
                 Set(deathInfo, "本次倒下次数：" + player.deaths + "\n" +
-                    (delay > 0f ? "救援信号重新接入中，请稍候。" : "救援区准备就绪，点击下方按钮复活。") +
+                    (delay > 0f ? "复活冷却中，请稍候。" : "复活后将在安全位置落脚。") +
                     (player.noticeUntil > world.elapsed ? "\n" + Clean(player.notice) : ""));
             }
         }
@@ -601,7 +626,7 @@ namespace DeadCircuit
             bool available = player.hp > 0f && !AnyPanelOpen();
             buildTray.gameObject.SetActive(available && (buildTrayOpen || selected >= 0));
             buildToggle.button.gameObject.SetActive(available);
-            Set(buildToggle.label, buildTrayOpen || selected >= 0 ? "收起建造" : "展开建造 1–0");
+            Set(buildToggle.label, buildTrayOpen || selected >= 0 ? "收起" : "建造 1–0");
             bool show = selected >= 0 && selected < costs.Length && player.hp > 0f && !AnyPanelOpen();
             buildDetails.gameObject.SetActive(show);
             if (!show)
@@ -706,6 +731,7 @@ namespace DeadCircuit
             recipeButton.button.gameObject.SetActive(false);
             bool inRange = (new Vector2(player.x - inspectedX, player.y - inspectedY)).sqrMagnitude <= 2.4f * 2.4f && player.hp > 0f;
             RefreshLowVoltageMachineControls(world, player, building, inRange);
+            RefreshPrecisionMachineControls(world, player, building);
             if (RefreshPetrochemistryMachineControls(world, player, building, node, inRange)) return;
             interactButton.button.interactable = building != null && inRange;
             repairButton.button.interactable = building != null && inRange && building.hp < WorldSimulator.BuildingMaxHealth(building.kind) &&
@@ -721,7 +747,6 @@ namespace DeadCircuit
                 if (tier >= 0)
                     power += "\n供 / 需 " + building.powerGeneration.ToString("0.#") + " / " + building.powerDemand.ToString("0.#") + unit +
                         (needsPower ? " · 产能 " + (building.powerRatio * 100f).ToString("0") + "%" : "");
-            RefreshPrecisionMachineControls(world, player, building);
                 if (grid != null) power += "\n" + EnergyName(grid.tier) + "网 " + grid.id + " · " +
                     grid.generation.ToString("0.#") + " / " + grid.demand.ToString("0.#") + (grid.tier < 2 ? " 功率" : " kW");
                 Set(machineTitle, InspectedMachineName(building) + "  " + CellLocationText(world, building.x, building.y));
@@ -1019,7 +1044,7 @@ namespace DeadCircuit
             help.gameObject.SetActive(false);
             technology.gameObject.SetActive(false);
             toolsTray.gameObject.SetActive(false);
-            Set(toolsToggle.label, "工具 / 菜单");
+            Set(toolsToggle.label, "工具");
             if (includeSettings)
             {
                 if (settingsPanel.gameObject.activeSelf) PlayerPrefs.Save();
@@ -1037,7 +1062,7 @@ namespace DeadCircuit
             bool samePanel = panel != null && panel.gameObject.activeSelf;
             ClosePanels();
             toolsTray.gameObject.SetActive(false);
-            Set(toolsToggle.label, "工具 / 菜单");
+            Set(toolsToggle.label, "工具");
             if (open && panel != null)
             {
                 bridge.BuildSelection = null;
@@ -1371,10 +1396,10 @@ namespace DeadCircuit
             {
                 var layout = content.gameObject.AddComponent<UnityEngine.UI.GridLayoutGroup>();
                 layout.padding = new RectOffset(6, 6, 6, 6);
-                layout.cellSize = new Vector2(166, 84);
+                layout.cellSize = new Vector2((width - 16f - 12f - 8f) * .5f, 84);
                 layout.spacing = new Vector2(8, 8);
                 layout.constraint = UnityEngine.UI.GridLayoutGroup.Constraint.FixedColumnCount;
-                layout.constraintCount = 3;
+                layout.constraintCount = 2;
                 layout.childAlignment = TextAnchor.UpperLeft;
             }
             else
@@ -1458,6 +1483,8 @@ namespace DeadCircuit
             label.textWrappingMode = TextWrappingModes.Normal;
             label.overflowMode = TextOverflowModes.Truncate;
             label.raycastTarget = false;
+            if (!string.IsNullOrEmpty(value) && DefaultFont != null)
+                DefaultFont.TryAddCharacters(value, true);
             label.text = value;
             return label;
         }

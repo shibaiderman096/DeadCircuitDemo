@@ -103,14 +103,68 @@ namespace DeadCircuit
             }
             return true;
         }
-        private bool NearSpawn(int x, int y) { return Math.Abs(x - State.width / 2) <= 1 && Math.Abs(y - (State.height / 2 + 3)) <= 1; }
+        private bool NearSpawn(int x, int y) => State.generatorVersion < WorldGeneration.NaturalOpeningVersion &&
+            Math.Abs(x - State.width / 2) <= 1 && Math.Abs(y - (State.height / 2 + 3)) <= 1;
         private bool OccupiedByActor(int x, int y)
         {
             foreach (PlayerState p in State.players) if (p.hp > 0f && Math.Abs(p.x - x) < 0.8f && Math.Abs(p.y - y) < 0.8f) return true;
             foreach (ZombieState z in State.zombies) if (Math.Abs(z.x - x) < 0.8f && Math.Abs(z.y - y) < 0.8f) return true;
             return false;
         }
-        private bool FindSpawn(out int x, out int y)
+        private bool FindSpawn(out int x, out int y, PlayerState returning = null)
+        {
+            if (State.generatorVersion < WorldGeneration.NaturalOpeningVersion) return FindLegacySpawn(out x, out y);
+
+            PlayerState nearby = returning;
+            if (nearby == null || FloorWorld.IsInterior(State, RoundCell(nearby.x), RoundCell(nearby.y)))
+                nearby = State.players.Find(p => p.connected && p.hp > 0f &&
+                    !FloorWorld.IsInterior(State, RoundCell(p.x), RoundCell(p.y)));
+            // Try near the player or a teammate first, then consider the entire initial terrain.
+            if (nearby != null)
+            {
+                int cx = RoundCell(nearby.x), cy = RoundCell(nearby.y);
+                if (FindLanding(cx - 16, cy - 16, cx + 16, cy + 16, nearby, false, out x, out y)) return true;
+            }
+            return FindLanding(0, 0, State.width - 1, State.height - 1, null, true, out x, out y);
+        }
+
+        private bool FindLanding(int left, int top, int right, int bottom, PlayerState nearby,
+            bool allowCloseEnemies, out int x, out int y)
+        {
+            x = y = 0;
+            double best = double.NegativeInfinity;
+            for (int iy = top; iy <= bottom; iy++) for (int ix = left; ix <= right; ix++)
+            {
+                char ground = WorldTiles.Ground(State, ix, iy);
+                if ((ground != '0' && ground != '1' && ground != '3') || BlockedAt(ix, iy) ||
+                    FloorWorld.IsProtectedCell(State, ix, iy) || OccupiedByActor(ix, iy) || SurvivalOccupiesCell(ix, iy)) continue;
+                float threat = 64f;
+                foreach (ZombieState z in State.zombies) threat = Math.Min(threat, DistSq(z.x, z.y, ix, iy));
+                if (threat < (allowCloseEnemies ? 2.25f : 64f)) continue;
+                int exits = 0;
+                for (int d = 0; d < DirectionX.Length; d++)
+                    if (!BlockedAt(ix + DirectionX[d], iy + DirectionY[d])) exits++;
+                if (exits == 0) continue;
+                uint rank = LandingRank(State.seed, ix, iy);
+                double score = (threat >= 64f ? 10000 : 0) + exits * 2 + rank / 4294967296.0;
+                if (nearby != null) score -= Math.Abs(DistSq(nearby.x, nearby.y, ix, iy) - 9f);
+                if (score <= best) continue;
+                best = score; x = ix; y = iy;
+            }
+            return !double.IsNegativeInfinity(best);
+        }
+
+        private static uint LandingRank(int seed, int x, int y)
+        {
+            unchecked
+            {
+                uint n = (uint)seed ^ (uint)x * 0x9e3779b9u ^ (uint)y * 0x85ebca6bu;
+                n ^= n >> 16; n *= 0x7feb352du; n ^= n >> 15; n *= 0x846ca68bu;
+                return n ^ (n >> 16);
+            }
+        }
+
+        private bool FindLegacySpawn(out int x, out int y)
         {
             int cx = State.width / 2, cy = State.height / 2 + 3;
             // Prefer eight-cell clearance; protection still permits rescue if a horde surrounds the base.

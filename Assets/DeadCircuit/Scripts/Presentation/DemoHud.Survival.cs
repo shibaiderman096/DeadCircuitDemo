@@ -42,7 +42,8 @@ namespace DeadCircuit
         {
             RectTransform hud = Box("Survival HUD", game, 18, 134, 242, 104, HudSurface);
             survivalHudWater = Label("Survival HUD Water", hud, "", 12, 3, 136, 24, 14, Ink);
-            Button("Open Survival", hud, "生存 J", 157, 4, 77, 27, ToggleSurvival);
+            UiButton openSurvival = Button("Open Survival", hud, "生存", 157, 4, 77, 27, ToggleSurvival);
+            SetButtonArt(openSurvival, "ui_survival", 18);
             RectTransform track = Box("Survival Water Track", hud, 12, 33, 218, 5, Edge);
             survivalWaterFill = Box("Survival Water Fill", track, 0, 0, 218, 5, Accent);
             Stretch(survivalWaterFill);
@@ -54,7 +55,8 @@ namespace DeadCircuit
             RectTransform card = Box("Survival Frame", survivalPanel, 0, 0, 1120, 656, Panel, true);
             Center(card, 1120, 656);
             Label("Survival Title", card, "生存手册", 22, 14, 760, 40, 27, Ink, FontStyles.Bold);
-            Button("Close Survival", card, "返回 J / Esc", 952, 18, 146, 34, () => SetPanel(survivalPanel, false));
+            UiButton closeSurvival = Button("Close Survival", card, "返回", 952, 18, 146, 34, () => SetPanel(survivalPanel, false));
+            SetButtonArt(closeSurvival, "ui_back", 20);
             PanelRule(card, 1076, 58);
             survivalStatus = Label("Survival Status", card, "", 22, 66, 1076, 64, 15, Ink);
             survivalStatus.alignment = TextAlignmentOptions.TopLeft;
@@ -69,6 +71,10 @@ namespace DeadCircuit
                 survivalPages[i] = ScrollContent("Survival " + names[i] + " Scroll", card,
                     targetPage ? 390 : 22, 190, targetPage ? 708 : 1076, 402, out survivalScrolls[i]);
             }
+            SetButtonArt(survivalTabs[0], "ui_eat", 24);
+            SetButtonArt(survivalTabs[1], "ui_craft", 24);
+            SetButtonArt(survivalTabs[2], "ui_seed", 24);
+            SetButtonArt(survivalTabs[3], "ui_inspect", 24);
             MakeSurvivalTargets(card);
             MakeSurvivalFood();
             MakeSurvivalCooking();
@@ -161,6 +167,10 @@ namespace DeadCircuit
         {
             UiButton result = Button(name, row, title, x, y, width, 36,
                 () => SurvivalRequest(action, arg, survivalX, survivalY));
+            string icon = action == "drink" || action == "collectwater" || action == "watercrop" ? "ui_water" :
+                action == "till" || action == "sow" ? "ui_seed" :
+                action == "harvest" ? "ui_harvest" : action == "butcher" ? "ui_dismantle" : "ui_craft";
+            SetButtonArt(result, icon, 22);
             survivalCommands.Add(result); survivalActions.Add(action); survivalArguments.Add(arg);
             return result;
         }
@@ -195,6 +205,7 @@ namespace DeadCircuit
                 "自动选择 2.4 格内、视线畅通且已解锁的工作站占地格。成本从随身库存扣除；操作后保留面板。未满足距离、原料或库存空间时按钮禁用。", 1048, 50, 14, Muted);
             SurvivalRow boil = MakeSurvivalRow("Survival Boil Water", content, -1, 1048, 100, true);
             Set(boil.action.label, "煮沸一份");
+            SetButtonArt(boil.action, "ui_water", 24);
             boil.action.button.onClick.RemoveAllListeners();
             boil.action.button.onClick.AddListener(() => { DemoAudio.UiClick(); RequestSurvivalStation("boilwater", 0, BuildKind.StoneFurnace); });
             survivalRecipes.Add(boil);
@@ -204,6 +215,7 @@ namespace DeadCircuit
                 SurvivalRow row = MakeSurvivalRow("Survival Recipe " + recipe.id, content, recipe.id, 1048, 118, true);
                 SetHudArt(row.icon, "food_" + (int)recipe.output);
                 Set(row.action.label, "处理 ×" + recipe.quantity);
+                SetButtonArt(row.action, "ui_craft", 24);
                 row.action.button.onClick.RemoveAllListeners();
                 row.action.button.onClick.AddListener(() => { DemoAudio.UiClick(); RequestSurvivalStation("cook", entry.id, entry.station); });
                 survivalRecipes.Add(row);
@@ -217,22 +229,25 @@ namespace DeadCircuit
             survivalCropIcon = MakeHudArt("Survival Selected Crop Icon", selection, 8, 12, 40);
             survivalCropText = Label("Survival Selected Crop", selection, "", 60, 0, 606, 66, 14, Ink);
             survivalCropText.alignment = TextAlignmentOptions.TopLeft;
-            Button("Survival Previous Crop", selection, "上一作物", 0, 72, 324, 34,
+            UiButton previousCrop = Button("Survival Previous Crop", selection, "上一作物", 0, 72, 324, 34,
                 () => { survivalCrop = (survivalCrop + SurvivalCatalog.CropCount - 1) % SurvivalCatalog.CropCount; RefreshAll(); });
-            Button("Survival Next Crop", selection, "下一作物", 334, 72, 324, 34,
+            SetButtonArt(previousCrop, "ui_prev", 20);
+            UiButton nextCrop = Button("Survival Next Crop", selection, "下一作物", 334, 72, 324, 34,
                 () => { survivalCrop = (survivalCrop + 1) % SurvivalCatalog.CropCount; RefreshAll(); });
+            SetButtonArt(nextCrop, "ui_next", 20);
             RectTransform actions = FlowRow("Survival Farming Actions", content, 680, 126);
             SurvivalCommand("Survival Till", actions, "1 翻土 · 木材 1", 0, 0, 324, "till", 0);
             // Crop is resolved at click time; unlike the other commands its argument changes.
             UiButton sow = Button("Survival Sow", actions, "2 播种 · 种子 1", 334, 0, 324, 36,
                 () => SurvivalRequest("sow", survivalCrop, survivalX, survivalY));
+            SetButtonArt(sow, "ui_seed", 22);
             SurvivalCommand("Survival Water Raw", actions, "3 浇原水 · 1份", 0, 44, 324, "watercrop", 0);
             SurvivalCommand("Survival Water Clean", actions, "3 浇净水 · 1份", 334, 44, 324, "watercrop", 1);
             SurvivalCommand("Survival Harvest", actions, "4 收获成熟作物", 0, 88, 658, "harvest", 0);
             survivalSow = sow.button;
             survivalPlotText = FlowLabel("Survival Selected Plot", content, "", 680, 100, 14, Accent);
             FlowLabel("Survival Farming Guide", content,
-                "左侧选地后可连续操作，不会关闭面板。翻土需草地 / 泥土、木材 1，避开救援区与占地。浇水每份 +40 湿度；需湿度至少 12 且温度适宜才生长。枯死作物可重新播种。下方点击已有农田可定位，超距请先关闭面板走近。",
+                "左侧选地后可连续操作，不会关闭面板。翻土需草地 / 泥土、木材 1，且地块未被占用。浇水每份 +40 湿度；需湿度至少 12 且温度适宜才生长。枯死作物可重新播种。下方点击已有农田可定位，超距请先关闭面板走近。",
                 680, 108, 14, Muted);
             for (int i = 0; i < SurvivalCatalog.MaxPlots; i++)
             {
@@ -526,7 +541,7 @@ namespace DeadCircuit
                     else if (w.survival.plots.Count >= SurvivalCatalog.MaxPlots) reason = "农田数量达到上限";
                     else if (SurvivalGround(w, x, y) != '0' && SurvivalGround(w, x, y) != '1') reason = "只能在草地、泥土翻土";
                     else if (SurvivalBuilding(w, x, y) != null || SurvivalNode(w, x, y)) reason = "设备或资源占据此格";
-                    else if (Math.Abs(x - w.width / 2) <= 1 && Math.Abs(y - (w.height / 2 + 3)) <= 1) reason = "救援区不可开垦";
+                    else if (w.generatorVersion < WorldGeneration.NaturalOpeningVersion && Math.Abs(x - w.width / 2) <= 1 && Math.Abs(y - (w.height / 2 + 3)) <= 1) reason = "救援区不可开垦";
                     else if (SurvivalActorAt(w, x, y)) reason = "人物或生物占据此格";
                     else if (Count(p.items, (int)ItemKind.Wood) < 1) reason = "需要木材 1";
                     else if (w.nextId >= int.MaxValue - 2) reason = "世界实体数量达到上限";

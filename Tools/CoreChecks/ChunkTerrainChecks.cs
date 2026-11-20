@@ -58,21 +58,40 @@ static partial class Checks
             Require(!ChunkStreaming.Step(world), "legacy world streamed a new chunk");
             TerrainThrows<ArgumentException>(() => ChunkStreaming.GenerateChunk(world, 4, 4));
         });
-        Run("sparse chunk creation preserves original tutorial geometry coordinates and legacy strings", () =>
+        Run("sparse chunk creation uses normal terrain and entities for the sixteen initial chunks", () =>
         {
-            var options = new WorldGenerationSettings { seed = 11, cityDensity = 1, chunked = false };
-            var legacy = WorldGeneration.Generate(options);
-            options.chunked = true;
-            var world = WorldGeneration.Generate(options);
-            Require(world.width == 64 && world.height == 64 && world.ground.Length == 4096 && world.biomes.Length == 4096, "tutorial storage expanded");
-            Require(world.ground == legacy.ground && world.biomes == legacy.biomes && TerrainEntityDump(world) == TerrainEntityDump(legacy), "tutorial terrain or entity geometry shifted");
-            Require(TerrainSerialize(world.zombies) == TerrainSerialize(legacy.zombies) && TerrainSerialize(world.survival.creatures) == TerrainSerialize(legacy.survival.creatures), "tutorial enemies/creatures moved");
-            Require(world.version == WorldSimulator.SaveVersion && world.generatorVersion == WorldGeneration.CurrentGeneratorVersion && world.generation.chunked && world.chunks.enabled, "new world version contract");
-            Require(world.chunks.records.Count == 16 && world.chunks.generated == "", "tutorial did not become exactly sixteen records");
-            for (int y = 0; y < 64; y++) for (int x = 0; x < 64; x++)
-                Require(WorldTiles.Ground(world, x, y) == legacy.ground[x + y * 64] && WorldTiles.Biome(world, x, y) == legacy.biomes[x + y * 64], "tutorial chunk split changed bytes");
-            Require(world.buildings.Any(b => b.kind == BuildKind.Workbench && b.x == 29 && b.y == 35), "original workbench moved");
-            Require(!ChunkStreaming.IsGenerated(world, -1, 35) && !ChunkStreaming.IsGenerated(world, 64, 35), "creation eagerly generated outside tutorial");
+            foreach (var options in new[] {
+                new WorldGenerationSettings { seed = 11, chunked = true },
+                new WorldGenerationSettings { seed = -991, preset = WorldPreset.Urban, cityDensity = 2, chunked = true }
+            })
+            {
+                var world = WorldGeneration.Generate(options);
+                Require(world.width == 64 && world.height == 64 && world.ground.Length == 4096 && world.biomes.Length == 4096, "bounded save metadata changed");
+                Require(world.version == WorldSimulator.SaveVersion && world.generatorVersion == WorldGeneration.CurrentGeneratorVersion && world.generation.chunked && world.chunks.enabled, "new world version contract");
+                Require(world.players.Count == 0 && world.chunks.records.Count == 16 && world.chunks.generated == "", "expected exactly sixteen initial sparse records and no survivors");
+                var streamed = TerrainBlank(world.seed, options.preset, options.cityDensity);
+                streamed.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
+                TerrainPopulate(streamed, reverse: true, minX: 0, maxX: 4, minY: 0, maxY: 4);
+                var normalQuartz = streamed.nodes.Where(n => n.kind == NodeKind.Quartz).Select(n => (n.x, n.y)).ToHashSet();
+                var openingQuartz = world.nodes.Where(n => n.kind == NodeKind.Quartz && !normalQuartz.Contains((n.x, n.y))).ToArray();
+                Require(openingQuartz.Length <= 1, "more than one opening quartz reserve was added");
+                if (openingQuartz.Length == 1)
+                {
+                    var n = openingQuartz[0];
+                    var chunk = streamed.chunks.records.Single(c => c.x == n.x / 16 && c.y == n.y / 16);
+                    int index = n.x % 16 + n.y % 16 * 16;
+                    if (chunk.ground[index] == '2')
+                    {
+                        var tiles = chunk.ground.ToCharArray();
+                        tiles[index] = '1';
+                        chunk.ground = new string(tiles);
+                    }
+                    streamed.nodes.Add(n);
+                }
+                Require(TerrainMapDump(world) == TerrainMapDump(streamed) && TerrainEntityDump(world) == TerrainEntityDump(streamed),
+                    $"seed {world.seed} initial chunks differ from normally streamed terrain or entities");
+                Require(!ChunkStreaming.IsGenerated(world, -1, 35) && !ChunkStreaming.IsGenerated(world, 64, 35), "creation eagerly generated outside the initial region");
+            }
         });
         Run("sparse chunk generation reaches all four directions beyond 256 and the global edge chunks", () =>
         {
@@ -267,11 +286,21 @@ static partial class Checks
                     int roads = 0;
                     for (int y = -128; y < 0; y++) for (int x = -128; x < 0; x++) if (WorldTiles.Ground(world, x, y) == '3') roads++;
                     Require(roads < 128 * 128 / 3, "signed modulo painted negative half-plane as road");
-                    for (int i = -128; i < 128; i++) foreach (var c in new[] { (32, i), (33, i), (i, 32), (i, 33) })
-                        Require(WorldTiles.Ground(world, c.Item1, c.Item2) == '3', "tutorial arterial 32/33 stopped at a chunk seam");
                 }
             }
             Require(counts[(int)WorldPreset.Wilderness] < counts[(int)WorldPreset.Balanced] && counts[(int)WorldPreset.Balanced] < counts[(int)WorldPreset.Urban], "presets change labels only");
+        });
+        Run("sparse chunk legacy versions keep the arterial and current worlds follow settlement roads", () =>
+        {
+            foreach (int version in new[] { 3, 9, WorldGeneration.CurrentGeneratorVersion })
+            {
+                var world = TerrainBlank(73149, WorldPreset.Wilderness, 0);
+                world.generatorVersion = version;
+                TerrainPopulate(world, minX: 2, maxX: 3, minY: -8, maxY: 8);
+                bool continuousArterial = Enumerable.Range(-128, 256).All(y =>
+                    WorldTiles.Ground(world, 32, y) == '3' && WorldTiles.Ground(world, 33, y) == '3');
+                Require(version < 10 ? continuousArterial : !continuousArterial, $"generator {version} has wrong fixed arterial behavior");
+            }
         });
         Run("sparse chunk record budget refuses a whole chunk without an empty record", () =>
         {

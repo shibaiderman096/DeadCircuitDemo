@@ -23,6 +23,7 @@ namespace DeadCircuit
                 details.enableAutoSizing = false;
                 details.alignment = TextAlignmentOptions.TopLeft;
                 UiButton button = Button("Water Research " + id, root, "", 588, 12, 170, 64, () => ResearchWater(id));
+                SetButtonArt(button, "ui_research", 22);
                 waterResearchRows.Add(new PrimitiveResearchRow { id = id, root = root, details = details, research = button });
             }
             waterProduction = FlowLabel("Water Production Acceptance", content, "", 768, 128, 15, Ink);
@@ -31,6 +32,7 @@ namespace DeadCircuit
             waterMillDetails.enableAutoSizing = false;
             waterMillDetails.alignment = TextAlignmentOptions.TopLeft;
             waterMillAction = Button("Water Mill Action", waterMillRow, "水力磨粉", 588, 12, 170, 64, RequestWaterMill);
+            SetButtonArt(waterMillAction, "ui_craft", 22);
         }
 
         void RefreshWaterTechnology(WorldState world, PlayerState player)

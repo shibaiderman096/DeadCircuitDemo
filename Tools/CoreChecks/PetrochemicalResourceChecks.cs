@@ -9,66 +9,43 @@ static partial class Checks
     // save restoration and Apply("prospect"). No private simulator calls.
     static void PetrochemicalResourceChecks()
     {
-        Run("petrochemical resources give every new world a finite reachable starter oil source", () =>
+        Run("petrochemical resources allow oil-free openings and keep generated oil finite", () =>
         {
-            var locations = new HashSet<long>();
-            foreach (int seed in new[] { int.MinValue, -991, 0, 73149, int.MaxValue })
-            foreach (WorldPreset preset in Enum.GetValues<WorldPreset>())
-            foreach (int density in new[] { 0, 2 })
             foreach (bool chunked in new[] { false, true })
             {
-                var options = new WorldGenerationSettings { seed = seed, preset = preset, cityDensity = density, chunked = chunked };
-                var world = WorldGeneration.Generate(options);
-                var accessible = PetrochemicalReachable(world);
-                var oils = world.nodes.Where(n => n.kind == NodeKind.Oil).ToArray();
-                Require(oils.Length > 0 && oils.All(n => n.stock > 0 && n.stock <= 100000), "missing or unbounded oil source");
-                Require(oils.All(n => n.x >= 3 && n.x <= 60 && n.y >= 3 && n.y <= 60), "oil blocks the initial dry border");
-                Require(oils.All(n => !(n.x >= 22 && n.x <= 42 && n.y >= 22 && n.y <= 42) &&
-                    (WorldTiles.Ground(world, n.x, n.y) == '0' || WorldTiles.Ground(world, n.x, n.y) == '1')), "oil guarantee restored fixed tutorial floor supplies");
-                foreach (var oil in oils) locations.Add(WorldTiles.Key(oil.x, oil.y));
-                Require(oils.Any(n => (n.x - 32) * (n.x - 32) + (n.y - 35) * (n.y - 35) <= 48 * 48 &&
-                    PetrochemicalAdjacent(accessible, n.x, n.y) && PetrochemicalHasPumpSpace(world, n)), $"starter oil inaccessible or lacks pump space: {seed}/{preset}/{density}/{chunked}");
-                Require(!chunked || world.chunks.records.Count == 16, "starter guarantee explored outside the initial map");
-                Require(TerrainEntityDump(world) == TerrainEntityDump(WorldGeneration.Generate(options)), "same settings rerolled oil");
+                bool foundOilFree = false, foundOil = false;
+                foreach (int seed in Enumerable.Range(-16, 32).Concat(new[] { int.MinValue, -991, 73149, int.MaxValue }))
+                {
+                    var options = new WorldGenerationSettings { seed = seed, preset = WorldPreset.Wilderness, cityDensity = 0, chunked = chunked };
+                    var world = WorldGeneration.Generate(options);
+                    var oils = world.nodes.Where(n => n.kind == NodeKind.Oil).ToArray();
+                    foundOilFree |= oils.Length == 0; foundOil |= oils.Length > 0;
+                    foreach (var oil in oils)
+                    {
+                        Require(WorldTiles.Ground(world, oil.x, oil.y) is '0' or '1', "oil is not on dry natural ground");
+                        var biome = (BiomeKind)(WorldTiles.Biome(world, oil.x, oil.y) - '0');
+                        var rule = BiomeResourceCatalog.Get(biome);
+                        Require(oil.stock >= rule.oilMinStock && oil.stock <= rule.oilMaxStock, "initial oil stock outside biome limits");
+                    }
+                    Require(TerrainEntityDump(world) == TerrainEntityDump(WorldGeneration.Generate(options)), "same settings rerolled oil");
+                }
+                Require(foundOilFree && foundOil, $"chunked={chunked}: opening survey did not find both oil-free and oil-bearing worlds");
             }
-            Require(locations.Count > 5, "oil guarantee uses a fixed starting coordinate");
         });
-        Run("petrochemical resources new world oil supports a real Apply build oil pump on clear legal dry ground", () =>
+        Run("petrochemical resources support a real Apply build oil pump beside a known dry deposit", () =>
         {
-            foreach (int seed in new[] { int.MinValue, -991, 0, 73149, int.MaxValue })
-            foreach (WorldPreset preset in Enum.GetValues<WorldPreset>())
-            foreach (int density in new[] { 0, 2 }) foreach (bool chunked in new[] { false, true })
+            foreach (bool chunked in new[] { false, true })
             {
-                var world = WorldGeneration.Generate(new WorldGenerationSettings { seed = seed, preset = preset, cityDensity = density, chunked = chunked });
+                var world = PetrochemicalOilFixture(chunked, out var oil);
                 var sim = new WorldSimulator(world); var p = sim.AddPlayer("oil-builder", "Builder");
-                // Authorize the earned technology/material fixture, preserving
-                // every generated tile, resource, building, farm and creature.
                 sim.State.era = TechEra.MediumVoltage;
                 sim.State.mvResearch = (1 << (int)PetrochemicalTech.Prospecting) | (1 << (int)PetrochemicalTech.Extraction);
                 sim.State.mvSurvey = 1;
                 Array.Copy(DemoCatalog.BuildCost(BuildKind.OilPump), p.items, p.items.Length);
-                var accessible = PetrochemicalReachable(sim.State); bool built = false;
-                string last = "no legal pump/standing site";
-                foreach (var oil in sim.State.nodes.Where(n => n.kind == NodeKind.Oil))
-                {
-                    foreach (var site in PetrochemicalPumpSites(sim.State, oil))
-                    {
-                        int width = DemoCatalog.Width(BuildKind.OilPump), height = DemoCatalog.Height(BuildKind.OilPump);
-                        foreach (var stand in new[] { (site.x - 1, site.y), (site.x, site.y - 1), (site.x + width, site.y), (site.x, site.y + height) })
-                        {
-                            if (!accessible.Contains(WorldTiles.Key(stand.Item1, stand.Item2))) continue;
-                            p.x = stand.Item1; p.y = stand.Item2; p.interactCooldown = 0;
-                            sim.State.tick++; // fresh discrete command budget, no world generation/ticks
-                            sim.Apply(Command(p, "build", site.x, site.y, (int)BuildKind.OilPump));
-                            built = sim.State.buildings.Any(b => b.kind == BuildKind.OilPump && b.x == site.x && b.y == site.y);
-                            last = p.notice;
-                            if (built) break;
-                        }
-                        if (built) break;
-                    }
-                    if (built) break;
-                }
-                Require(built, $"real oil pump build failed: {seed}/{preset}/{density}/{chunked}: {last}");
+                p.x = oil.x - 3; p.y = oil.y;
+                sim.Apply(Command(p, "build", oil.x - 2, oil.y, (int)BuildKind.OilPump));
+                Require(sim.State.buildings.Any(b => b.kind == BuildKind.OilPump && b.x == oil.x - 2 && b.y == oil.y),
+                    $"real oil pump build failed: chunked={chunked}: {p.notice}");
                 Require(p.items.All(n => n == 0), "real pump build did not pay exact cost");
             }
         });
@@ -132,14 +109,14 @@ static partial class Checks
         });
         Run("petrochemical resources current saves deep copy finite stock and never refill depleted sources", () =>
         {
-            foreach (int seed in new[] { -991, 0, 73149 }) foreach (bool chunked in new[] { false, true })
+            foreach (bool chunked in new[] { false, true })
             {
-                var sim = new WorldSimulator(WorldGeneration.Generate(new WorldGenerationSettings { seed = seed, chunked = chunked }));
-                var oil = sim.State.nodes.First(n => n.kind == NodeKind.Oil);
+                var sim = new WorldSimulator(PetrochemicalOilFixture(chunked, out var deposit));
+                var oil = sim.State.nodes.Single(n => n.id == deposit.id);
                 oil.stock -= 7;
                 var source = Saved(sim.State); string frozen = Dump(source);
                 var restored = new WorldSimulator(source);
-                Require(restored.State.version == WorldSimulator.SaveVersion && restored.State.generatorVersion == 9, "current save changed generator/schema");
+                Require(restored.State.version == WorldSimulator.SaveVersion && restored.State.generatorVersion == WorldGeneration.CurrentGeneratorVersion, "current save changed generator/schema");
                 var copied = restored.State.nodes.Single(n => n.id == oil.id);
                 Require(copied.stock == oil.stock && !ReferenceEquals(copied, source.nodes.Single(n => n.id == oil.id)), "restored oil stock aliases save or refills");
                 copied.stock--;
@@ -235,6 +212,18 @@ static partial class Checks
         });
     }
 
+    static WorldState PetrochemicalOilFixture(bool chunked, out NodeState oil)
+    {
+        var world = chunked ? WorldGeneration.Generate(new WorldGenerationSettings { chunked = true }) : Flat();
+        world.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
+        if (chunked) InfiniteClearChunk(world, -7, -2);
+        else world.ground = new string('0', 4096);
+        int x = chunked ? -7 * 16 + 8 : 16, y = chunked ? -2 * 16 + 8 : 16;
+        oil = new NodeState { id = world.nextId++, x = x, y = y, kind = NodeKind.Oil, hp = 35, stock = 2400 };
+        world.nodes.Add(oil);
+        return world;
+    }
+
     static WorldSimulator PetrochemicalSurveyFixture(out PlayerState p)
     {
         // Keep earned LV acceptance while starting MV with no survey/production
@@ -286,7 +275,8 @@ static partial class Checks
             {
                 char ground = WorldTiles.Ground(world, x, y);
                 if (ground == '2' || ground == '?' || blocked.Contains(WorldTiles.Key(x, y)) ||
-                    Math.Abs(x - 32) <= 1 && Math.Abs(y - 35) <= 1 || FloorWorld.IsProtectedCell(world, x, y)) clear = false;
+                    world.generatorVersion < 10 && Math.Abs(x - 32) <= 1 && Math.Abs(y - 35) <= 1 ||
+                    FloorWorld.IsProtectedCell(world, x, y)) clear = false;
                 if (world.zombies.Any(z => Math.Abs(z.x - x) < .8f && Math.Abs(z.y - y) < .8f)) clear = false;
                 if (world.survival != null && world.survival.enabled &&
                     (world.survival.plots.Any(plot => plot.x == x && plot.y == y) ||

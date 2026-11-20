@@ -584,7 +584,6 @@ namespace DeadCircuit
                 bool dedicatedBiomeTree = state.kind == NodeKind.Tree && world.generatorVersion >= 8 && biome >= (int)BiomeKind.Swamp;
                 Sprite nodeArt = state.kind == NodeKind.Wall ? ConnectedWall(state.x, state.y) :
                     dedicatedBiomeTree ? DemoArt.Get("biome_tree_" + biome) : DemoArt.Get("node_" + (int)state.kind);
-
                 v.body.sprite = nodeArt ?? Art(art);
                 if (nodeArt!=null)
                 {
@@ -599,8 +598,8 @@ namespace DeadCircuit
                     state.kind == NodeKind.Clay ? new Color(1f,.55f,.32f) :
                     state.kind == NodeKind.Coal ? new Color(.3f,.34f,.4f) :
                     state.kind == NodeKind.Limestone ? new Color(.92f,.9f,.72f) :
-                    state.kind == NodeKind.Quartz ? new Color(.96f,.86f,1f) :
                     state.kind == NodeKind.FireClay ? new Color(.83f,.48f,.37f) :
+                    state.kind == NodeKind.Quartz ? new Color(.96f,.86f,1f) :
                     state.kind == NodeKind.Oil ? new Color(.36f,.28f,.48f) : Color.white;
                 if (state.kind == NodeKind.Oil)
                 {
@@ -611,8 +610,8 @@ namespace DeadCircuit
                 if (state.kind == NodeKind.Stone || state.kind == NodeKind.Clay)
                     v.root.name = state.kind == NodeKind.Stone ? "石料堆 / Stone" : "黏土矿床 / Clay";
                 if (state.kind == NodeKind.Coal || state.kind == NodeKind.Limestone || state.kind == NodeKind.FireClay)
-                if (state.kind == NodeKind.Quartz) v.root.name = "石英矿床";
                     v.root.name = (state.kind == NodeKind.Coal ? "煤" : state.kind == NodeKind.Limestone ? "石灰石" : "耐火黏土") + "矿床";
+                if (state.kind == NodeKind.Quartz) v.root.name = "石英矿床";
                 Color ecology = state.kind == NodeKind.Tree && world.generatorVersion >= 8 && !dedicatedBiomeTree ? BiomeTint(world,state.x,state.y) : Color.white;
                 v.body.color = DamageColor(v,mineral * ecology); v.body.color = new Color(v.body.color.r,v.body.color.g,v.body.color.b,canopy);
                 v.shadow.transform.localScale = state.kind == NodeKind.Tree ? new Vector3(1.4f,.9f,1) : Vector3.one;

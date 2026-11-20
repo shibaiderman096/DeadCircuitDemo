@@ -28,6 +28,7 @@ namespace DeadCircuit
                 details.enableAutoSizing = false;
                 details.alignment = TextAlignmentOptions.TopLeft;
                 UiButton button = Button("Primitive Research " + id, root, "", 588, 12, 170, 64, () => ResearchPrimitive(id));
+                SetButtonArt(button, "ui_research", 22);
                 primitiveResearchRows.Add(new PrimitiveResearchRow { id = id, root = root, details = details, research = button });
             }
             MakeWaterTechnology(content);

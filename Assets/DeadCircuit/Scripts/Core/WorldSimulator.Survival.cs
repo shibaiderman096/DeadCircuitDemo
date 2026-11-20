@@ -365,7 +365,7 @@ namespace DeadCircuit
                     int biome = WorldTiles.Biome(world, x, y) - '0';
                     char ground = WorldTiles.Ground(world, x, y);
                     if (biome < 0 || biome >= WorldGeneration.BiomeCount || (definition.biomeMask & (1 << biome)) == 0 || (ground != '0' && ground != '1') ||
-                        !SurvivalWorldCellFree(world, x, y) || DistSq(x, y, 32, 35) < 144) continue;
+                        !SurvivalWorldCellFree(world, x, y)) continue;
                     bool occupied = false;
                     foreach (var c in s.creatures) if (DistSq(c.x, c.y, x, y) < 2.25f) { occupied = true; break; }
                     foreach (var p in world.players) if (p.hp > 0 && DistSq(p.x, p.y, x, y) < 144) { occupied = true; break; }

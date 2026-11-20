@@ -74,7 +74,7 @@ namespace DeadCircuit
             inputs.Add(id, new HeldInput { protectionUntil = State.elapsed + 4f });
             InitializeSurvivalPlayer(p, true);
             MapExploration.Reveal(State,p);
-            Notice(p, PrimitiveCatalog.Enabled(State) ? "原始开局：采集石材与木材，靠近工作台按T研究工具，再烧炭、制陶、炼铜锡与青铜。科技全队共享。" : "原始开局：采矿、3木材制2燃料，石炉炼铁铜锡。水车保底岸位(25,25)，科技全队共享。");
+            Notice(p, PrimitiveCatalog.Enabled(State) ? "原始开局：探索并采集木材与石材，建造工作台和石炉。按T查看研究，科技全队共享。" : "原始开局：采矿、3木材制2燃料，石炉炼铁铜锡。科技全队共享。");
             flowRevision = -1;
             return p;
         }
@@ -392,13 +392,13 @@ namespace DeadCircuit
         {
             if (p.hp > 0f || State.elapsed - p.lastDamageAt < 5f) return;
             RefreshSpatial(); int x, y;
-            if (!FindSpawn(out x, out y)) { Notice(p, "救援区被敌人封锁，暂时无法复活。"); return; }
+            if (!FindSpawn(out x, out y, p)) { Notice(p, "暂时找不到安全落脚处，无法复活。"); return; }
             p.x = x; p.y = y; p.hp = PlayerMaxHealth(p); p.stamina = PlayerMaxStamina(p);
             p.hunger = Math.Max(45f, p.hunger); p.attackCooldown = 0.5f;
             ResetSurvivalAfterRespawn(p);
             p.lastDamageAt = State.elapsed;
             HeldInput input = inputs[p.id]; input.x = input.y = 0f; input.sprint = false; input.protectionUntil = State.elapsed + 5f;
-            Notice(p, "已在救援区复活，保留背包与成长；短暂无敌。"); flowRevision = -1;
+            Notice(p, "已复活，保留背包与成长；短暂无敌。"); flowRevision = -1;
         }
 
         private void GainXp(PlayerState p, int amount)

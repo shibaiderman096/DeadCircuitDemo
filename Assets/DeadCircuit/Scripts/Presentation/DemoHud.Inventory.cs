@@ -38,9 +38,14 @@ namespace DeadCircuit
         readonly List<GameObject> gearDetailObjects = new List<GameObject>();
         readonly List<GameObject> gunDetailObjects = new List<GameObject>();
         readonly List<GameObject> armorDetailObjects = new List<GameObject>();
+        const float InventoryPreviewMaxScale = 256f;
+        readonly SurvivorLayer[] inventoryPreviewLayers = new SurvivorLayer[SurvivorVisuals.Capacity];
+        readonly UnityEngine.UI.Image[] inventoryPreviewImages = new UnityEngine.UI.Image[SurvivorVisuals.Capacity];
         RectTransform materialGrid, gearGrid, partGrid, inventoryRecipes;
+        RectTransform inventoryPreviewOrigin, inventoryFootRule;
         UnityEngine.UI.ScrollRect materialScroll, gearScroll, partScroll, craftingScroll, itemDetailScroll;
         TextMeshProUGUI equipmentSummary, inventorySummary, inventoryEmpty, inventorySelection;
+        TextMeshProUGUI inventoryPreviewEmpty;
         TextMeshProUGUI itemTitle, itemMeta, itemUsage, itemStats, equipmentHint, armorSummary;
         UiButton sortInventory, filterInventory, equipSelected, unequipSelected, repairGear, reloadGear, unloadGear, salvageGear;
         int inventoryTab, inventorySort, inventoryFilter, selectedMaterial, selectedGear = -1, selectedPart;
@@ -65,41 +70,74 @@ namespace DeadCircuit
             RectTransform card = Box("Inventory Card", inventory, 0, 0, 1160, 688, Panel, true);
             Center(card, 1160, 688);
             PanelRule(card, 1160, 58);
-            Box("Equipment Slots Surface", card, 14, 62, 1132, 104, Recessed);
-            Box("Inventory Browser Surface", card, 14, 208, 564, 368, Recessed);
-            Box("Inventory Detail Surface", card, 584, 208, 562, 368, Recessed);
+            Box("Inventory Browser Surface", card, 14, 70, 350, 496, Recessed);
+            RectTransform preview = Box("Character Preview Surface", card, 372, 70, 332, 496, Recessed);
+            Box("Equipment Slots Surface", card, 712, 70, 434, 244, Recessed);
+            Box("Inventory Detail Surface", card, 712, 322, 434, 244, Recessed);
             Box("Inventory Footer Rule", card, 22, 616, 1116, 1, Edge);
             Label("Inventory Heading", card, "随身背包 / 装备工坊", 22, 16, 830, 36, 25, Ink, FontStyles.Bold);
-            Button("Close Inventory", card, "关闭 B / Esc", 1012, 18, 126, 32, () => SetPanel(inventory, false));
-            equipmentSlots[0] = Button("Weapon Equipment Slot", card, "武器位", 22, 66, 408, 44, () => BrowseEquipmentSlot(0));
-            equipmentSlots[1] = Button("Tool Equipment Slot", card, "工具位", 438, 66, 408, 44, () => BrowseEquipmentSlot(1));
-            equipmentSlots[2] = Button("Unarmed Equipment Slot", card, "徒手", 854, 66, 94, 44, () => InventoryCommand("switch", 2));
-            inventorySelection = Label("Equipment Selection", card, "", 962, 64, 176, 48, 13, Accent);
+            UiButton closeInventory = Button("Close Inventory", card, "返回", 1012, 18, 126, 32, () => SetPanel(inventory, false));
+            SetButtonArt(closeInventory, "ui_back", 20);
+            Label("Inventory Browser Heading", card, "背包物品", 22, 78, 200, 26, 17, Accent, FontStyles.Bold);
+            Label("Character Preview Heading", preview, "幸存者 / SURVIVOR", 16, 10, 300, 26, 17, Accent, FontStyles.Bold);
+            Label("Character Preview Hint", preview, "当前外观与穿戴 · 实时", 16, 38, 300, 20, 12, Muted);
+            RectTransform stage = Box("Inventory Preview Stage", preview, 14, 64, 304, 418, Panel);
+            stage.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
+            inventoryFootRule = Box("Inventory Preview Foot Rule", stage, 38, 392, 228, 1, Edge);
+            inventoryPreviewEmpty = Label("Inventory Preview Empty", stage, "角色信息同步中", 12, 170, 280, 56, 15, Muted);
+            inventoryPreviewEmpty.alignment = TextAlignmentOptions.Center;
+            inventoryPreviewOrigin = NewRect("Inventory Preview Origin", stage);
+            inventoryPreviewOrigin.anchorMin = inventoryPreviewOrigin.anchorMax = new Vector2(.5f, 0f);
+            inventoryPreviewOrigin.pivot = new Vector2(.5f, 0f);
+            inventoryPreviewOrigin.anchoredPosition = new Vector2(0f, 20f);
+            inventoryPreviewOrigin.sizeDelta = Vector2.zero;
+            for (int i = 0; i < inventoryPreviewImages.Length; i++)
+            {
+                RectTransform layer = NewRect("Inventory Survivor Layer " + i, inventoryPreviewOrigin);
+                layer.anchorMin = layer.anchorMax = Vector2.zero;
+                var image = layer.gameObject.AddComponent<UnityEngine.UI.Image>();
+                image.type = UnityEngine.UI.Image.Type.Simple;
+                image.useSpriteMesh = false;
+                image.raycastTarget = false;
+                image.enabled = false;
+                inventoryPreviewImages[i] = image;
+            }
+            Label("Equipment Slots Heading", card, "已装备", 726, 78, 150, 24, 17, Accent, FontStyles.Bold);
+            inventorySelection = Label("Equipment Selection", card, "", 864, 77, 268, 30, 12, Muted);
+            equipmentSlots[0] = Button("Weapon Equipment Slot", card, "武器位", 726, 108, 198, 48, () => BrowseEquipmentSlot(0));
+            equipmentSlots[1] = Button("Tool Equipment Slot", card, "工具位", 932, 108, 200, 48, () => BrowseEquipmentSlot(1));
+            equipmentSlots[2] = Button("Unarmed Equipment Slot", card, "徒手", 726, 252, 406, 34, () => InventoryCommand("switch", 2));
             for (int i = 0; i < armorSlots.Length; i++)
             {
                 int slot = i;
-                armorSlots[i] = Button("Armor Slot " + i, card, "", 22 + i * 232, 118, 224, 42, () => BrowseArmorSlot(slot));
+                armorSlots[i] = Button("Armor Slot " + i, card, "", 726 + (i % 2) * 206, 162 + (i / 2) * 44, 200, 40, () => BrowseArmorSlot(slot));
                 armorSlots[i].label.fontSizeMax = 14;
                 armorSlots[i].label.fontSizeMin = 12;
             }
-            armorSummary = Label("Armor Summary", card, "", 962, 116, 176, 48, 13, Accent);
+            armorSummary = Label("Armor Summary", card, "", 726, 288, 406, 20, 12, Accent);
             string[] names = { "Materials", "Equipment", "Parts", "Craft" };
             string[] titles = { "材料", "装备", "配件", "制作" };
             for (int i = 0; i < inventoryTabs.Length; i++)
             {
                 int tab = i;
-                inventoryTabs[i] = Button("Inventory Tab " + names[i], card, titles[i], 22 + i * 104, 170, 96, 34, () => BrowseInventoryTab(tab));
+                inventoryTabs[i] = Button("Inventory Tab " + names[i], card, titles[i], 22 + i * 78, 106, 72, 30, () => BrowseInventoryTab(tab));
             }
-            sortInventory = Button("Inventory Sort", card, "排序：分类", 438, 170, 132, 34,
+            SetButtonArt(inventoryTabs[0], "ui_inventory", 20);
+            SetButtonArt(inventoryTabs[1], "ui_equip", 20);
+            SetButtonArt(inventoryTabs[2], "ui_attach", 20);
+            SetButtonArt(inventoryTabs[3], "ui_craft", 20);
+            sortInventory = Button("Inventory Sort", card, "排序：分类", 22, 142, 146, 32,
                 () => { inventorySort = (inventorySort + 1) % 3; RefreshAll(); });
-            inventorySummary = Label("Inventory Summary", card, "", 22, 214, 344, 28, 14, Muted);
-            filterInventory = Button("Inventory Category Filter", card, "分类：全部", 374, 214, 196, 30, CycleInventoryFilter);
-            Label("Inventory Detail Heading", card, "选中详情 · 滚轮查看属性与装配", 592, 214, 546, 28, 15, Accent);
+            SetButtonArt(sortInventory, "ui_refresh", 20);
+            filterInventory = Button("Inventory Category Filter", card, "分类：全部", 176, 142, 178, 32, CycleInventoryFilter);
+            SetButtonArt(filterInventory, "ui_inspect", 18);
+            inventorySummary = Label("Inventory Summary", card, "", 22, 174, 332, 24, 13, Muted);
+            Label("Inventory Detail Heading", card, "选中详情", 726, 328, 406, 20, 15, Accent);
             materialGrid = MakeInventoryGrid("Inventory Scroll View", card, out materialScroll);
             gearGrid = MakeInventoryGrid("Equipment Scroll View", card, out gearScroll);
             partGrid = MakeInventoryGrid("Parts Scroll View", card, out partScroll);
-            inventoryRecipes = ScrollContent("Craft Scroll View", card, 22, 252, 548, 316, out craftingScroll);
-            inventoryEmpty = Label("Inventory Empty", card, "", 40, 270, 496, 96, 16, Muted);
+            inventoryRecipes = ScrollContent("Craft Scroll View", card, 22, 202, 334, 364, out craftingScroll);
+            inventoryEmpty = Label("Inventory Empty", card, "", 38, 306, 300, 96, 15, Muted);
             for (int i = 0; i < DemoCatalog.ItemNames.Length; i++)
             {
                 int item = i;
@@ -115,6 +153,7 @@ namespace DeadCircuit
             MakeInventoryRecipes();
             MakeItemDetails(card);
             eatButton = Button("Eat", card, "吃食 F", 22, 580, 130, 34, () => Send("eat"));
+            SetButtonArt(eatButton, "ui_eat", 22);
             workbenchHint = Label("Workbench Requirement", card, "", 166, 574, 972, 44, 13, Muted);
             inventoryNotice = Label("Inventory Feedback", card, "", 22, 622, 1116, 50, 13, Amber);
             inventory.gameObject.SetActive(false);
@@ -122,18 +161,18 @@ namespace DeadCircuit
 
         RectTransform MakeInventoryGrid(string name, Transform parent, out UnityEngine.UI.ScrollRect scroll)
         {
-            RectTransform content = ScrollContent(name, parent, 22, 252, 548, 316, out scroll, true);
+            RectTransform content = ScrollContent(name, parent, 22, 202, 334, 364, out scroll, true);
             return content;
         }
 
         InventoryCell MakeInventoryCell(string name, Transform parent, int id, string title, int category, Action select)
         {
-            UiButton widget = Button(name, parent, title, 0, 0, 166, 84, select);
+            UiButton widget = Button(name, parent, title, 0, 0, 149, 76, select);
             widget.label.alignment = TextAlignmentOptions.TopLeft;
             widget.label.fontSizeMax = 14;
             widget.label.fontSizeMin = 12;
             Stretch(widget.label.rectTransform, 10, 8, 8, 6);
-            Box("Category Accent", widget.button.transform, 0, 0, 3, 84, category == 3 ? Amber : Accent);
+            Box("Category Accent", widget.button.transform, 0, 0, 3, 76, category == 3 ? Amber : Accent);
             return new InventoryCell { id = id, title = title, category = category, widget = widget };
         }
 
@@ -151,18 +190,19 @@ namespace DeadCircuit
             foreach (RecipeDefinition recipe in handcraft)
             {
                 RecipeDefinition entry = recipe;
-                RectTransform row = FlowRow("Craft Recipe " + entry.id, inventoryRecipes, 520, 112);
+                RectTransform row = FlowRow("Craft Recipe " + entry.id, inventoryRecipes, 302, 112);
                 UiButton craft = Button(entry.id == 0 ? "Craft Fuel" : entry.id == 1 ? "Craft Ammo" : "Craft Recipe Button " + entry.id,
-                    row, entry.name, 2, 6, 134, 66, () => CraftRecipe(entry.id));
-                manualRecipes.Add(new RecipeRow { recipe = entry, craft = craft, details = RecipeDetails(row) });
+                    row, entry.name, 2, 6, 120, 66, () => CraftRecipe(entry.id));
+                SetButtonArt(craft, "ui_craft", 26);
+                manualRecipes.Add(new RecipeRow { recipe = entry, craft = craft, details = RecipeDetails(row, 166) });
             }
             for (int i = 0; i < EquipmentCatalog.GearNames.Length; i++) MakeEquipmentRecipe(i, false);
             for (int i = 0; i < EquipmentCatalog.PartNames.Length; i++) MakeEquipmentRecipe(i, true);
         }
 
-        TextMeshProUGUI RecipeDetails(RectTransform row)
+        TextMeshProUGUI RecipeDetails(RectTransform row, float width)
         {
-            TextMeshProUGUI details = Label("Craft Recipe Details", row, "", 148, 4, 362, 104, 13, Ink);
+            TextMeshProUGUI details = Label("Craft Recipe Details", row, "", 132, 4, width, 104, 12, Ink);
             details.enableAutoSizing = false;
             details.alignment = TextAlignmentOptions.TopLeft;
             return details;
@@ -171,74 +211,85 @@ namespace DeadCircuit
         void MakeEquipmentRecipe(int kind, bool part)
         {
             string prefix = part ? "Part Craft " : "Gear Craft ";
-            RectTransform row = FlowRow(prefix + kind + " Row", inventoryRecipes, 520, 112);
-            UiButton craft = Button(prefix + kind, row, "", 2, 6, 134, 66, () => CraftEquipment(kind, part));
-            equipmentRecipes.Add(new EquipmentRecipeRow { kind = kind, part = part, craft = craft, details = RecipeDetails(row) });
+            RectTransform row = FlowRow(prefix + kind + " Row", inventoryRecipes, 302, 112);
+            UiButton craft = Button(prefix + kind, row, "", 2, 6, 120, 66, () => CraftEquipment(kind, part));
+            SetButtonArt(craft, part ? "ui_attach" : "ui_craft", 26);
+            equipmentRecipes.Add(new EquipmentRecipeRow { kind = kind, part = part, craft = craft, details = RecipeDetails(row, 166) });
         }
 
         void MakeItemDetails(RectTransform card)
         {
-            RectTransform content = ScrollContent("Inventory Details Scroll View", card, 592, 252, 546, 316, out itemDetailScroll);
-            itemTitle = FlowLabel("Selected Item Name", content, "", 518, 36, 22, Accent);
-            itemMeta = FlowLabel("Selected Item Quantity", content, "", 518, 54, 14, Muted);
-            itemUsage = FlowLabel("Selected Item Usage", content, "", 518, 64, 14, Ink);
-            itemStats = FlowLabel("Selected Gear Stats", content, "", 518, 108, 15, Ink);
+            RectTransform content = ScrollContent("Inventory Details Scroll View", card, 716, 352, 430, 214, out itemDetailScroll);
+            itemTitle = FlowLabel("Selected Item Name", content, "", 390, 36, 20, Accent);
+            itemMeta = FlowLabel("Selected Item Quantity", content, "", 390, 54, 13, Muted);
+            itemUsage = FlowLabel("Selected Item Usage", content, "", 390, 64, 13, Ink);
+            itemStats = FlowLabel("Selected Gear Stats", content, "", 390, 108, 14, Ink);
             gearDetailObjects.Add(itemStats.gameObject);
-            RectTransform actions = FlowRow("Gear Actions", content, 518, 38);
-            equipSelected = Button("Equip Selected Gear", actions, "装备并切换", 0, 0, 166, 36, EquipSelectedGear, true);
-            repairGear = Button("Repair Gear", actions, "维修装备", 174, 0, 166, 36, () => InventoryCommand("gearrepair", selectedGear));
-            salvageGear = Button("Salvage Gear", actions, "回收装备", 348, 0, 168, 36, () => InventoryCommand("gearsalvage", selectedGear));
+            RectTransform actions = FlowRow("Gear Actions", content, 390, 38);
+            equipSelected = Button("Equip Selected Gear", actions, "装备并切换", 0, 0, 124, 36, EquipSelectedGear, true);
+            repairGear = Button("Repair Gear", actions, "维修装备", 132, 0, 124, 36, () => InventoryCommand("gearrepair", selectedGear));
+            salvageGear = Button("Salvage Gear", actions, "回收装备", 264, 0, 126, 36, () => InventoryCommand("gearsalvage", selectedGear));
+            SetButtonArt(equipSelected, "ui_equip", 22);
+            SetButtonArt(repairGear, "ui_repair", 22);
+            SetButtonArt(salvageGear, "ui_salvage", 22);
             salvageGear.label.color = Amber;
             gearDetailObjects.Add(actions.gameObject);
-            RectTransform unequipRow = FlowRow("Armor Unequip Actions", content, 518, 36);
-            unequipSelected = Button("Unequip Selected Gear", unequipRow, "脱下所选防具", 0, 0, 516, 34, () => InventoryCommand("unequip", selectedGear));
+            RectTransform unequipRow = FlowRow("Armor Unequip Actions", content, 390, 36);
+            unequipSelected = Button("Unequip Selected Gear", unequipRow, "脱下所选防具", 0, 0, 390, 34, () => InventoryCommand("unequip", selectedGear));
+            SetButtonArt(unequipSelected, "ui_detach", 22);
             armorDetailObjects.Add(unequipRow.gameObject);
             TextMeshProUGUI salvageWarning = FlowLabel("Salvage Gear Warning", content,
-                "回收会永久移除此装备，返还半价材料、全部配件和弹匣内弹药；任一库存装不下时整笔拒绝。", 518, 50, 13, Amber);
+                "回收会永久移除此装备，返还半价材料、全部配件和弹匣内弹药；任一库存装不下时整笔拒绝。", 390, 50, 12, Amber);
             gearDetailObjects.Add(salvageWarning.gameObject);
-            TextMeshProUGUI heading = FlowLabel("Ammo Selection Heading", content, "下次装填弹种 · 先卸弹才能更换已装弹种", 518, 32, 14, Accent);
+            TextMeshProUGUI heading = FlowLabel("Ammo Selection Heading", content, "下次装填弹种 · 先卸弹才能更换已装弹种", 390, 32, 13, Accent);
             gunDetailObjects.Add(heading.gameObject);
-            RectTransform ammoRow = FlowRow("Ammo Selection", content, 518, 48);
+            RectTransform ammoRow = FlowRow("Ammo Selection", content, 390, 48);
             for (int i = 0; i < DemoCatalog.ItemNames.Length; i++)
             {
                 ItemKind ammo = (ItemKind)i;
                 if (!EquipmentCatalog.IsAmmo(ammo)) continue;
                 int index = inventoryAmmo.Count;
                 inventoryAmmo.Add(ammo);
-                UiButton button = Button("Select Ammo " + i, ammoRow, "", index * 104, 0, 100, 46, () => InventoryCommand("ammoselect", (int)ammo));
+                UiButton button = Button("Select Ammo " + i, ammoRow, "", index * 77, 0, 74, 46, () => InventoryCommand("ammoselect", (int)ammo));
                 button.label.fontSizeMax = 12;
+                SetButtonArt(button, "ui_reload", 22);
                 ammoButtons.Add(button);
             }
             gunDetailObjects.Add(ammoRow.gameObject);
-            RectTransform reloadRow = FlowRow("Magazine Actions", content, 518, 38);
-            reloadGear = Button("Reload Gear", reloadRow, "装填 R", 0, 0, 254, 36, () => InventoryCommand("reload"));
-            unloadGear = Button("Unload Gear", reloadRow, "卸下弹药", 262, 0, 254, 36, () => InventoryCommand("unload", selectedGear));
+            RectTransform reloadRow = FlowRow("Magazine Actions", content, 390, 38);
+            reloadGear = Button("Reload Gear", reloadRow, "装填 R", 0, 0, 190, 36, () => InventoryCommand("reload"));
+            unloadGear = Button("Unload Gear", reloadRow, "卸下弹药", 200, 0, 190, 36, () => InventoryCommand("unload", selectedGear));
+            SetButtonArt(reloadGear, "ui_reload", 22);
+            SetButtonArt(unloadGear, "ui_detach", 22);
             gunDetailObjects.Add(reloadRow.gameObject);
-            heading = FlowLabel("Attachment Heading", content, "已装配件 · 空槽可直接安装", 518, 32, 15, Accent);
+            heading = FlowLabel("Attachment Heading", content, "已装配件 · 空槽可直接安装", 390, 32, 13, Accent);
             gunDetailObjects.Add(heading.gameObject);
             for (int i = 0; i < EquipmentCatalog.SlotNames.Length; i++)
             {
                 int slot = i;
-                RectTransform row = FlowRow("Attachment Slot " + i, content, 518, 34);
-                attachmentLabels.Add(Label("Attachment Slot State " + i, row, "", 0, 0, 392, 32, 14, Ink));
-                detachButtons.Add(Button("Detach Slot " + i, row, "卸下", 402, 0, 114, 32, () => InventoryCommand("detach", selectedGear, slot)));
+                RectTransform row = FlowRow("Attachment Slot " + i, content, 390, 34);
+                attachmentLabels.Add(Label("Attachment Slot State " + i, row, "", 0, 0, 274, 32, 13, Ink));
+                UiButton detach = Button("Detach Slot " + i, row, "卸下", 284, 0, 106, 32, () => InventoryCommand("detach", selectedGear, slot));
+                SetButtonArt(detach, "ui_detach", 18);
+                detachButtons.Add(detach);
                 gunDetailObjects.Add(row.gameObject);
             }
-            heading = FlowLabel("Install Parts Heading", content, "安装配件 · 先选择目标装备，已占用槽请先卸下", 518, 32, 14, Accent);
+            heading = FlowLabel("Install Parts Heading", content, "安装配件 · 先选择目标装备，已占用槽请先卸下", 390, 32, 13, Accent);
             gunDetailObjects.Add(heading.gameObject);
             for (int i = 0; i < EquipmentCatalog.PartNames.Length; i += 2)
             {
-                RectTransform row = FlowRow("Install Parts Row " + i / 2, content, 518, 40);
+                RectTransform row = FlowRow("Install Parts Row " + i / 2, content, 390, 40);
                 for (int j = i; j < Mathf.Min(i + 2, EquipmentCatalog.PartNames.Length); j++)
                 {
                     int part = j;
-                    UiButton button = Button("Attach Part " + j, row, "", (j - i) * 262, 0, 254, 36, () => InventoryCommand("attach", selectedGear, part));
+                    UiButton button = Button("Attach Part " + j, row, "", (j - i) * 196, 0, 190, 36, () => InventoryCommand("attach", selectedGear, part));
                     button.label.fontSizeMax = 13;
+                    SetButtonArt(button, "ui_attach", 22);
                     installButtons.Add(button);
                 }
                 gunDetailObjects.Add(row.gameObject);
             }
-            equipmentHint = FlowLabel("Equipment Action Requirement", content, "", 518, 64, 13, Muted);
+            equipmentHint = FlowLabel("Equipment Action Requirement", content, "", 390, 64, 12, Muted);
             gearDetailObjects.Add(equipmentHint.gameObject);
         }
 
@@ -367,6 +418,80 @@ namespace DeadCircuit
                 paintedSelectionRevision = inventorySelectionRevision;
                 ResetScroll(itemDetailScroll);
             }
+            PaintInventoryPreview(player);
+        }
+
+        void PaintInventoryPreview(PlayerState player)
+        {
+            if (inventoryPreviewOrigin == null) return;
+            int appearance = player != null && AppearanceCatalog.IsValid(player.appearance) ? player.appearance : AppearanceCatalog.DefaultCode;
+            int count = Mathf.Clamp(SurvivorVisuals.Sample(player, appearance, 3, 0f, false, true,
+                inventoryPreviewLayers, true), 0, inventoryPreviewImages.Length);
+            float scale = FitInventoryPreview(count);
+            bool visible = false;
+            for (int i = 0; i < inventoryPreviewImages.Length; i++)
+            {
+                UnityEngine.UI.Image image = inventoryPreviewImages[i];
+                if (i >= count)
+                {
+                    image.enabled = false;
+                    continue;
+                }
+                SurvivorLayer layer = inventoryPreviewLayers[i];
+                Sprite sprite = layer.sprite;
+                if (sprite == null || sprite.pixelsPerUnit <= 0f || sprite.rect.width <= 0f || sprite.rect.height <= 0f)
+                {
+                    image.enabled = false;
+                    continue;
+                }
+                image.sprite = sprite;
+                image.color = layer.color;
+                RectTransform rect = image.rectTransform;
+                Vector2 size = sprite.rect.size;
+                rect.pivot = new Vector2(sprite.pivot.x / size.x, sprite.pivot.y / size.y);
+                rect.sizeDelta = size * (scale * layer.scale / sprite.pixelsPerUnit);
+                rect.anchoredPosition = layer.position * scale;
+                rect.localRotation = Quaternion.Euler(0f, 0f, layer.angle);
+                rect.localScale = new Vector3(1f, layer.flipY ? -1f : 1f, 1f);
+                image.enabled = true;
+                visible = true;
+            }
+            inventoryPreviewEmpty.gameObject.SetActive(!visible);
+        }
+
+        float FitInventoryPreview(int count)
+        {
+            RectTransform stage = inventoryPreviewOrigin.parent as RectTransform;
+            if (stage == null || count == 0) return InventoryPreviewMaxScale;
+            Vector2 minimum = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+            Vector2 maximum = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+            for (int i = 0; i < count; i++)
+            {
+                SurvivorLayer layer = inventoryPreviewLayers[i];
+                Sprite sprite = layer.sprite;
+                if (sprite == null || sprite.pixelsPerUnit <= 0f) continue;
+                Quaternion rotation = Quaternion.Euler(0f, 0f, layer.angle);
+                for (int corner = 0; corner < 4; corner++)
+                {
+                    Vector2 point = new Vector2((corner & 1) * sprite.rect.width - sprite.pivot.x,
+                        ((corner >> 1) & 1) * sprite.rect.height - sprite.pivot.y) * (layer.scale / sprite.pixelsPerUnit);
+                    if (layer.flipY) point.y = -point.y;
+                    point = layer.position + (Vector2)(rotation * point);
+                    minimum = Vector2.Min(minimum, point);
+                    maximum = Vector2.Max(maximum, point);
+                }
+            }
+            if (float.IsInfinity(minimum.x)) return InventoryPreviewMaxScale;
+            const float padding = 12f;
+            Vector2 available = stage.rect.size - Vector2.one * (padding * 2f);
+            Vector2 size = maximum - minimum;
+            float scale = Mathf.Min(InventoryPreviewMaxScale, available.x / Mathf.Max(.01f, size.x),
+                available.y / Mathf.Max(.01f, size.y));
+            inventoryPreviewOrigin.anchoredPosition = new Vector2(
+                Mathf.Clamp(0f, -stage.rect.width * .5f + padding - minimum.x * scale, stage.rect.width * .5f - padding - maximum.x * scale),
+                Mathf.Clamp(20f, padding - minimum.y * scale, stage.rect.height - padding - maximum.y * scale));
+            inventoryFootRule.anchoredPosition = new Vector2(38f, inventoryPreviewOrigin.anchoredPosition.y - stage.rect.height);
+            return scale;
         }
 
         void RefreshInventoryCells(PlayerState player)

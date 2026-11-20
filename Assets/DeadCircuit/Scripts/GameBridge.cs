@@ -78,17 +78,18 @@ namespace DeadCircuit
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             qaRun = Array.IndexOf(Environment.GetCommandLineArgs(), "--demo-qa") >= 0;
+            ConfigureQaSavePath();
             Application.runInBackground = true;
             Application.targetFrameRate = 60;
             QualitySettings.vSyncCount = 0;
-            profileId = PlayerPrefs.GetString("DeadCircuit.Profile", "");
-            if (!Guid.TryParse(profileId, out _))
+            profileId = qaRun ? "00000000000000000000000000000001" : PlayerPrefs.GetString("DeadCircuit.Profile", "");
+            if (!qaRun && !Guid.TryParse(profileId, out _))
             {
                 profileId = Guid.NewGuid().ToString("N");
                 PlayerPrefs.SetString("DeadCircuit.Profile", profileId);
                 PlayerPrefs.Save();
             }
-            PlayerName = PlayerPrefs.GetString("DeadCircuit.Name", "幸存者");
+            PlayerName = qaRun ? "幸存者" : PlayerPrefs.GetString("DeadCircuit.Name", "幸存者");
             LoadAppearancePreference();
             try
             {
@@ -111,8 +112,8 @@ namespace DeadCircuit
             yield return null;
             var args = Environment.GetCommandLineArgs();
             qaRun = args.Contains("--demo-qa");
-            smokeHost = args.Contains("--demo-smoke-host");
-            smokeClient = args.Contains("--demo-smoke-client");
+            smokeHost = !qaRun && args.Contains("--demo-smoke-host");
+            smokeClient = !qaRun && args.Contains("--demo-smoke-client");
             if (smokeHost || smokeClient)
             {
                 // Distinct process profiles permit a genuine host + client test on one PC.
@@ -141,7 +142,7 @@ namespace DeadCircuit
                         new WorldSimulator(WorldGeneration.Generate(pendingGeneration)) : new WorldSimulator(seed);
                 }
                 World = simulator.State;
-                foreach (var p in World.players) p.connected = false;
+                foreach (var p in World.players) simulator.SetConnected(p.id, false);
                 simulator.AddPlayer(profileId, CleanName(PlayerName), AppearanceCode);
                 IsHost = true;
 #if DEADCIRCUIT_NETCODE
@@ -401,8 +402,8 @@ namespace DeadCircuit
                 if (request.ClientNetworkId != NetworkManager.ServerClientId && peers.Values.Contains(id)) throw new InvalidDataException("此角色已在游戏中，请关闭重复连接");
                 if (peers.Count >= 4) throw new InvalidDataException("房间已满（最多4人）");
                 if (World.players.Count >= WorldSimulator.MaxPlayers && World.players.All(p => p.id != id)) throw new InvalidDataException("此世界已有8个存档角色，请新建世界");
-                peers[request.ClientNetworkId] = id;
                 var joined = simulator.AddPlayer(id, CleanName(ticket.name), ticket.appearance);
+                peers[request.ClientNetworkId] = id;
                 if (smokeHost)
                 {
                     for (int i = 0; i < joined.items.Length; i++) joined.items[i] = 60;

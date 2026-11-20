@@ -131,8 +131,9 @@ namespace DeadCircuit
 
         void OpenAppearance()
         {
-            if (appearancePanel == null || bridge == null || !bridge.CanEditAppearance || menu == null ||
-                !menu.gameObject.activeInHierarchy || menuPage != MenuPage.Home) return;
+            if (appearancePanel == null || bridge == null || bridge.IsRunning || menu == null ||
+                !menu.gameObject.activeInHierarchy || menuPages == null || menuPages.Length == 0 ||
+                !menuPages[0].gameObject.activeInHierarchy) return;
 
             appearanceSavedCode = AppearanceCatalog.IsValid(bridge.AppearanceCode) ? bridge.AppearanceCode : AppearanceCatalog.DefaultCode;
             appearanceDraftCode = appearanceSavedCode;
@@ -234,6 +235,7 @@ namespace DeadCircuit
         void TickAppearancePreview()
         {
             if (appearancePanel == null || !appearancePanel.gameObject.activeInHierarchy) return;
+            RefreshAppearance();
             if (appearanceWalking)
                 appearancePhase = Mathf.Repeat(appearancePhase + Time.unscaledDeltaTime * 7f, Mathf.PI * 2f);
             PaintAppearancePreview(bridge == null ? null : bridge.LocalPlayer);

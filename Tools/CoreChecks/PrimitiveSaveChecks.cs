@@ -168,15 +168,28 @@ static partial class Checks
                 Reject(old, "v10 accepted primitive kiln " + pair.kind);
             }
         });
-        Run("primitive save fresh unresearched starter stone furnace restores with default recipe10", () =>
+        Run("primitive save fresh world restores with no research or free furnace", () =>
         {
             var fresh = new WorldSimulator(73149); fresh.AddPlayer("primitive-new", "New");
             Require(fresh.State.primitiveVersion == 1 && fresh.State.primitiveResearch == 0, "new world did not opt into unresearched primitive progression");
-            var furnace = fresh.State.buildings.Single(b => b.kind == BuildKind.StoneFurnace);
-            Require(TechCatalog.SelectedRecipe(furnace).id == 10, "starter furnace lost default recipe10");
             var saved = Saved(fresh.State); string before = Dump(saved); var state = new WorldSimulator(saved).State;
-            Require(state.primitiveVersion == 1 && state.primitiveResearch == 0 && state.buildings.Any(b => b.id == furnace.id && b.kind == BuildKind.StoneFurnace), "restore rejected or replaced unresearched starter furnace");
+            Require(state.primitiveVersion == 1 && state.primitiveResearch == 0 && state.buildings.All(b => b.kind != BuildKind.StoneFurnace),
+                "fresh save gained research or a free furnace");
             Require(Dump(saved) == before, "new-world restoration mutated its caller");
+        });
+        Run("primitive save unresearched player-built stone furnace restores with default recipe10", () =>
+        {
+            var world = Flat(era: TechEra.Primitive); world.primitiveVersion = 1;
+            var sim = new WorldSimulator(world);
+            var p = sim.AddPlayer("primitive-builder", "Builder"); p.x = 10; p.y = 10;
+            Array.Copy(DemoCatalog.BuildCost(BuildKind.StoneFurnace), p.items, p.items.Length);
+            sim.Apply(Command(p, "build", 11, 10, (int)BuildKind.StoneFurnace));
+            var furnace = sim.State.buildings.Single(b => b.kind == BuildKind.StoneFurnace);
+            Require(TechCatalog.SelectedRecipe(furnace).id == 10, "new furnace lost default recipe10");
+            var restored = new WorldSimulator(Saved(sim.State)).State;
+            var copy = restored.buildings.Single(b => b.id == furnace.id && b.kind == BuildKind.StoneFurnace);
+            Require(restored.primitiveVersion == 1 && restored.primitiveResearch == 0 && TechCatalog.SelectedRecipe(copy).id == 10,
+                "restore changed an unresearched furnace or its default recipe");
         });
     }
 }
