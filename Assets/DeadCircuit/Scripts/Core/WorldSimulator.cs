@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 16;
+        public const int SaveVersion = 17;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -155,6 +155,7 @@ namespace DeadCircuit
                 case "steam": ResearchSteam(p, cmd.arg); return;
                 case "lv": ResearchLowVoltage(p, cmd.arg); return;
                 case "mv": ResearchPetrochemical(p, cmd.arg); return;
+                case "hv": ResearchPrecision(p, cmd.arg); return;
                 case "prospect": ProspectPetrochemical(p); return;
                 case "mill": Mill(p, cmd.x, cmd.y); return;
                 case "interact": case "build": case "repair": case "dismantle": case "recipe": case "configure":
@@ -347,6 +348,7 @@ namespace DeadCircuit
             if(b==null || !TechCatalog.IsUnlocked(State,b.kind)) return;
             if(ConfigureElectrical(p,b,arg)) return;
             if(ConfigurePetrochemical(p,b,arg)) return;
+            if(ConfigurePrecision(p,b,arg)) return;
             if(b.kind==BuildKind.Door)
             {
                 if(arg==0 || arg==1) SetDoor(p,b,arg);
@@ -354,7 +356,8 @@ namespace DeadCircuit
             }
             if(b.kind==BuildKind.Transformer)
             {
-                if(arg<0 || arg>1 || (arg==1 && State.era<TechEra.HighVoltage)) return;
+                if(arg<0 || arg>1) return;
+                if(arg==1 && !PrecisionCatalog.HasResearch(State,PrecisionTech.Grid)) { Notice(p,"需要高压研究：高压电网。"); return; }
                 b.setting=arg; b.progress=0f; RefreshPower(false); Notice(p,arg==0 ? "变压器 MV→LV" : "变压器 HV→MV"); return;
             }
             RecipeDefinition r=TechCatalog.Recipe(arg);

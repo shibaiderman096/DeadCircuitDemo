@@ -5,12 +5,10 @@ static partial class Checks
     static WorldSimulator HuntingFixture(out PlayerState player, GearKind weapon, Action<WorldState,PlayerState> arrange) =>
         EquipmentFixture(out player, weapon, arrange:(s,p)=>
         {
-            s.version=6; WorldGeneration.LegacyMetadata(s);
             s.survival=new SurvivalWorldState { enabled=true,initialized=true };
             p.needs.initialized=true;
             if (EquipmentCatalog.IsGun(weapon)) p.gear[0].magazine=1;
             arrange(s,p);
-            PrepareLegacySaveFixture(s, 6);
         });
     static CreatureState HuntingAnimal(WorldState s,float x=34,float y=35)
     {

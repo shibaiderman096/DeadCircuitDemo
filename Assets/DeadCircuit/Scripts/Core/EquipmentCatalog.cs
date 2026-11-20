@@ -47,7 +47,7 @@ namespace DeadCircuit
         public static bool UsesPickaxe(NodeKind kind) =>
             kind == NodeKind.Stone || kind == NodeKind.Clay || kind == NodeKind.Ore ||
             kind == NodeKind.CopperOre || kind == NodeKind.TinOre || kind == NodeKind.UraniumOre ||
-            kind == NodeKind.Coal || kind == NodeKind.Limestone || kind == NodeKind.FireClay;
+            kind == NodeKind.Coal || kind == NodeKind.Limestone || kind == NodeKind.FireClay || kind == NodeKind.Quartz;
 
         public static GearDefinition Gear(GearKind kind)
         {

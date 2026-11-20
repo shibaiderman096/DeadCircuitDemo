@@ -37,6 +37,12 @@ namespace DeadCircuit
             else if ((roll -= rule.copperPermille * vein) < 0) kind = NodeKind.CopperOre;
             else if ((roll -= rule.tinPermille * vein) < 0) kind = NodeKind.TinOre;
             else if ((roll -= rule.uraniumPermille * vein) < 0) kind = NodeKind.UraniumOre;
+            else if (generatorVersion >= 9 && (roll -= rule.quartzPermille) < 0)
+            {
+                kind = NodeKind.Quartz;
+                stock = SampleQuartzStock(seed, x, y);
+                return true;
+            }
             else
             {
                 double forest = Noise(seed, x, y, 9, 0x7ee1u);
@@ -65,5 +71,11 @@ namespace DeadCircuit
 
         internal static double OilAccessPriority(int seed, int x, int y, BiomeKind biome) =>
             Unit(seed, x, y, 0x0114u) / BiomeResourceCatalog.Get(biome).oilPermille;
+
+        internal static int SampleQuartzStock(int seed, int x, int y) =>
+            80 + (int)(Hash(seed, x, y, 0x0141u) % 81);
+
+        internal static double QuartzAccessPriority(int seed, int x, int y, BiomeKind biome) =>
+            Unit(seed, x, y, 0x0142u) / BiomeResourceCatalog.Get(biome).quartzPermille;
     }
 }

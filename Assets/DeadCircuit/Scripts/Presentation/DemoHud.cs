@@ -27,7 +27,7 @@ namespace DeadCircuit
         static readonly Color Amber = new Color32(242, 187, 98, 255);
         static readonly Color Danger = new Color32(244, 128, 113, 255);
         static readonly string[] Directions = { "东 →", "北 ↑", "西 ←", "南 ↓" };
-        static readonly string[] Nodes = { "树木", "铁矿脉", "废料堆", "补给箱", "障碍墙", "铜矿脉", "锡矿脉", "铀矿脉", "石料堆", "黏土矿床", "煤矿露头", "石灰石矿床", "耐火黏土矿床" };
+        static readonly string[] Nodes = { "树木", "铁矿脉", "废料堆", "补给箱", "障碍墙", "铜矿脉", "锡矿脉", "铀矿脉", "石料堆", "黏土矿床", "煤矿露头", "石灰石矿床", "耐火黏土矿床", "油源", "石英矿床" };
         static readonly string[] AttributeHelp =
         {
             "强化近战与采集能力", "每点生命上限 +15", "每点体力上限 +8、移速 +0.09",
@@ -405,6 +405,7 @@ namespace DeadCircuit
             recipeButton = Button("Cycle Machine Recipe", machinePanel, "切换配方", 12, 312, 280, 30, CycleRecipe);
             interactButton = Button("Interact Machine", machinePanel, "交互 E", 12, 350, 86, 30, () => SendInspected("interact"));
             repairButton = Button("Repair Machine", machinePanel, "修理 G", 109, 350, 86, 30, () => SendInspected("repair"));
+            MakePrecisionMachineControls(content);
             dismantleButton = Button("Dismantle Machine", machinePanel, "拆除 X", 206, 350, 86, 30, () => SendInspected("dismantle"));
             machinePanel.gameObject.SetActive(false);
         }
@@ -718,6 +719,7 @@ namespace DeadCircuit
                 if (tier >= 0)
                     power += "\n供 / 需 " + building.powerGeneration.ToString("0.#") + " / " + building.powerDemand.ToString("0.#") + unit +
                         (needsPower ? " · 产能 " + (building.powerRatio * 100f).ToString("0") + "%" : "");
+            RefreshPrecisionMachineControls(world, player, building);
                 if (grid != null) power += "\n" + EnergyName(grid.tier) + "网 " + grid.id + " · " +
                     grid.generation.ToString("0.#") + " / " + grid.demand.ToString("0.#") + (grid.tier < 2 ? " 功率" : " kW");
                 Set(machineTitle, InspectedMachineName(building) + "  " + CellLocationText(world, building.x, building.y));
@@ -750,12 +752,12 @@ namespace DeadCircuit
                 bool chooseRecipe = recipes > 1 || recipes == 1 && recipe == null;
                 bool transformer = building.kind == BuildKind.Transformer;
                 recipeButton.button.gameObject.SetActive(chooseRecipe || transformer);
-                recipeButton.button.interactable = inRange && (transformer ? world.era >= TechEra.HighVoltage : chooseRecipe);
+                recipeButton.button.interactable = inRange && (transformer ? CanSwitchTransformer(world, building) : chooseRecipe);
                 Set(recipeButton.label, transformer ? (building.setting == 0 ? "切换：高压 → 中压" : "切换：中压 → 低压") : "切换配方（" + recipes + " 种）");
                 if (transformer)
                 {
                     SetFlowText(machineRecipe, building.setting == 0 ? "变压：中压 → 低压" : "变压：高压 → 中压", 28);
-                    SetFlowText(machineSafety, world.era < TechEra.HighVoltage ? "研究高压后可切换高压 → 中压。" : "输入与输出分别接对应电压网络。");
+                    SetFlowText(machineSafety, !CanSwitchTransformer(world, building) ? "研究高压电网后可切换高压 → 中压。" : "输入与输出分别接对应电压网络。");
                 }
                 if (building.kind == BuildKind.SteamTurbine)
                     SetFlowText(machineSafety, "转换：蒸汽输入 → 低压电力输出\n蒸汽网与低压网分别连接。");
@@ -955,8 +957,13 @@ namespace DeadCircuit
 
         void Research()
         {
-            if (!technology.gameObject.activeSelf || bridge.World == null || bridge.LocalPlayer == null ||
-                selectedEra != (int)bridge.World.era + 1 || bridge.LocalPlayer.interactCooldown > 0f ||
+            if (!technology.gameObject.activeSelf || bridge.World == null || bridge.LocalPlayer == null) return;
+            if (selectedEra == (int)TechEra.HighVoltage && bridge.World.era >= TechEra.HighVoltage)
+            {
+                ResearchPrecision(bridge.World, bridge.LocalPlayer);
+                return;
+            }
+            if (selectedEra != (int)bridge.World.era + 1 || bridge.LocalPlayer.interactCooldown > 0f ||
                 !string.IsNullOrEmpty(EraResearchRequirement(bridge.World, (TechEra)selectedEra)) ||
                 !TechCatalog.CanResearch(bridge.World, bridge.LocalPlayer, (TechEra)selectedEra)) return;
             Send("research", selectedEra);
@@ -979,7 +986,7 @@ namespace DeadCircuit
             if (building == null) return;
             if (building.kind == BuildKind.Transformer)
             {
-                if (bridge.World.era >= TechEra.HighVoltage) SendInspected("recipe", building.setting == 0 ? 1 : 0);
+                if (CanSwitchTransformer(bridge.World, building)) SendInspected("recipe", building.setting == 0 ? 1 : 0);
                 return;
             }
             var options = new List<RecipeDefinition>();
@@ -1249,7 +1256,13 @@ namespace DeadCircuit
             }
             else if (world.era == TechEra.LowVoltage && !HasBuilding(world, BuildKind.CircuitAssembler)) return "建立低压网，制造基础电路";
             else if (world.era == TechEra.MediumVoltage && !HasBuilding(world, BuildKind.ChemicalPlant)) return "接通中压化工厂，制造聚合物";
-            else if (world.era == TechEra.HighVoltage && !HasBuilding(world, BuildKind.PrecisionAssembler)) return "接通高压精密装配机";
+            else if (world.era == TechEra.HighVoltage)
+            {
+                if (!PrecisionCatalog.HasResearch(world, PrecisionTech.Grid)) return "按 T 查看高压工艺与高压电网前置";
+                if (!HasBuilding(world, BuildKind.PrecisionAssembler)) return "接通高压精密装配机";
+                string acceptance = PrecisionCatalog.NuclearRequirement(world);
+                if (!string.IsNullOrEmpty(acceptance)) return acceptance;
+            }
             else if (world.era == TechEra.Nuclear) return "监控冷却、温度与核废料";
             TechEra next = (TechEra)((int)world.era + 1);
             int[] cost = TechCatalog.ResearchCost(next);

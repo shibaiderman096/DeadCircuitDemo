@@ -87,7 +87,7 @@ namespace DeadCircuit
             if(s==null || (int)kind<0 || (int)kind>=DemoCatalog.BuildNames.Length) return "无效建筑。";
             if(s.era<TechCatalog.RequiredEra(kind)) return "需要科技时代："+TechCatalog.EraName(TechCatalog.RequiredEra(kind));
             int id=BuildResearch(kind);
-            return id<0 || HasResearch(s,id) ? "" : "需要石化研究："+Definition(id).name;
+            return id<0 || HasResearch(s,id) ? PrecisionCatalog.BuildRequirement(s,kind) : "需要石化研究："+Definition(id).name;
         }
         public static bool IsBuildUnlocked(WorldState s,BuildKind kind) => BuildRequirement(s,kind).Length==0;
         public static string RecipeRequirement(WorldState s,RecipeDefinition r)
@@ -98,7 +98,8 @@ namespace DeadCircuit
                 r.id==165 ? (int)PetrochemicalTech.Refining : r.id==162 || r.id==163 ? (int)PetrochemicalTech.Lubrication :
                 r.id==91 || r.id==164 ? (int)PetrochemicalTech.Cooling : BuildResearch(r.building);
             if(id>=0 && !HasResearch(s,id)) return "需要石化研究："+Definition(id).name;
-            return BuildRequirement(s,r.building);
+            string build=BuildRequirement(s,r.building);
+            return build.Length>0 ? build : PrecisionCatalog.RecipeRequirement(s,r);
         }
         public static bool IsRecipeUnlocked(WorldState s,RecipeDefinition r) => RecipeRequirement(s,r).Length==0;
         public static bool IsFluid(int item) => item==(int)ItemKind.Coolant || item>=(int)ItemKind.CrudeOil && item<= (int)ItemKind.HotCoolant;

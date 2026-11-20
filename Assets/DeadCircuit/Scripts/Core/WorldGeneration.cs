@@ -173,6 +173,7 @@ namespace DeadCircuit
             }
             GenerateSites(state, ground, reserved, occupied);
             EnsureReachableOil(state, ground, reserved, occupied);
+            EnsureReachableQuartz(state, ground, reserved, occupied);
             GenerateResources(state, ground, reserved, occupied);
             state.ground = new string(ground);
             int[] initialX = { 14, 50, 32, 32, 12, 54 }, initialY = { 32, 32, 14, 54, 33, 33 };
@@ -325,6 +326,54 @@ namespace DeadCircuit
             int pumpX = selectedPump % Size, pumpY = selectedPump / Size;
             for (int y = pumpY; y < pumpY + DemoCatalog.Height(BuildKind.OilPump); y++)
                 for (int x = pumpX; x < pumpX + DemoCatalog.Width(BuildKind.OilPump); x++) reserved[x + y * Size] = true;
+        }
+
+        private static void EnsureReachableQuartz(WorldState state, char[] ground, bool[] reserved, HashSet<int> occupied)
+        {
+            if (state.generatorVersion < 9 || state.nodes.Count >= WorldSimulator.MaxNodes) return;
+            var blocked = new bool[ground.Length];
+            foreach (int cell in occupied) blocked[cell] = true;
+            foreach (var building in state.buildings)
+                if (building.kind == BuildKind.Door) blocked[building.x + building.y * Size] = false;
+            int[] parents = ResourcePaths(ground, blocked);
+            int selected = -1, approach = -1, bestTier = int.MaxValue;
+            double bestRank = double.MaxValue;
+            for (int y = 3; y <= 60; y++) for (int x = 3; x <= 60; x++)
+            {
+                int cell = x + y * Size;
+                // Includes the tutorial, streets, site halos and the oil well's approach and pump footprint.
+                if (reserved[cell] || occupied.Contains(cell) || ground[cell] == '3' || ground[cell] == '4') continue;
+                var biome = (BiomeKind)(state.biomes[cell] - '0');
+                int stand = parents[cell], tier;
+                if (ground[cell] == '2')
+                {
+                    // Last resort: put an isolated outcrop on the immediate dry approach, never a bridge.
+                    if (parents[cell - 1] != -2) stand = cell - 1;
+                    else if (parents[cell + 1] != -2) stand = cell + 1;
+                    else if (parents[cell - Size] != -2) stand = cell - Size;
+                    else if (parents[cell + Size] != -2) stand = cell + Size;
+                    else continue;
+                    tier = 3;
+                }
+                else
+                {
+                    if (stand < 0) continue;
+                    bool shoreline = ground[cell - 1] == '2' || ground[cell + 1] == '2' ||
+                        ground[cell - Size] == '2' || ground[cell + Size] == '2';
+                    bool sampled = ChunkTerrain.SampleResource(state.seed, x, y, biome, state.generation, shoreline,
+                        out NodeKind kind, out _, state.generatorVersion);
+                    if (sampled && kind == NodeKind.Oil) continue;
+                    tier = !sampled ? 1 : kind == NodeKind.Quartz ? 0 : 2;
+                }
+                double rank = ChunkTerrain.QuartzAccessPriority(state.seed, x, y, biome);
+                if (tier > bestTier || tier == bestTier && rank >= bestRank) continue;
+                selected = cell; approach = stand; bestTier = tier; bestRank = rank;
+            }
+            if (selected < 0) throw new InvalidOperationException("New world has no reachable quartz location.");
+            if (ground[selected] == '2') ground[selected] = '1';
+            int sx = selected % Size, sy = selected / Size;
+            AddNode(state, occupied, sx, sy, NodeKind.Quartz, ChunkTerrain.SampleQuartzStock(state.seed, sx, sy));
+            for (int path = approach; path >= 0; path = parents[path]) reserved[path] = true;
         }
 
         private static int OilPumpSpace(WorldState state, char[] ground, HashSet<int> occupied, int[] parents, int oilX, int oilY)

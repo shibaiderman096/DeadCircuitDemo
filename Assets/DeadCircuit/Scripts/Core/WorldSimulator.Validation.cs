@@ -55,6 +55,7 @@ namespace DeadCircuit
             CopySteamProgression(source, s);
             CopyLowVoltageProgression(source, s);
             CopyPetrochemicalProgression(source, s);
+            CopyPrecisionProgression(source, s);
             var entityIds = new HashSet<int>();
             CopyChunks(source,s);
             var occupied = new HashSet<long>();
@@ -64,7 +65,7 @@ namespace DeadCircuit
             {
                 SaveCheck(n != null, "null node"); CheckEntityId(n.id, entityIds, ref highestId);
                 CheckCell(n.x, n.y,source); long cell = WorldTiles.Key(n.x,n.y);
-                SaveCheck((int)n.kind >= 0 && (int)n.kind <= (legacy ? 4 : source.version<11 ? 7 : (int)NodeKind.Oil), "node kind");
+                SaveCheck((int)n.kind >= 0 && (int)n.kind <= (legacy ? 4 : source.version<11 ? 7 : (int)NodeKind.Quartz), "node kind");
                 char terrain=WorldTiles.Ground(source,n.x,n.y);
                 SaveCheck(occupied.Add(cell) && terrain != '2' && terrain!='?', "overlapping/water node"); solid.Add(cell);
                 SaveCheck(n.stock > 0 && n.stock <= 100000, "node stock"); SaveRange(n.hp, 0.001f, 10000f, "node hp");
@@ -83,14 +84,15 @@ namespace DeadCircuit
                     if (!DemoCatalog.Walkable(b)) solid.Add(cell);
                 }
                 SaveRange(b.hp, 0.001f, BuildingMaxHealth(b.kind), "building hp");
-                SaveRange(b.progress,0f,4f,"machine progress");
+                SaveRange(b.progress,0f,TechCatalog.SelectedRecipe(b)?.duration ?? 4f,"machine progress");
                 SaveRange(b.fuel,0f,b.kind==BuildKind.HighGenerator ? 10.01f : 20.01f,"fuel seconds");
                 SaveCheck(TechCatalog.IsFuelBurner(b.kind) || b.kind==BuildKind.Reactor || b.fuel==0f,"fuel in non-burner");
                 if(!legacy)
                 {
-                    SaveCheck(b.setting>=0 && b.setting<=(PetrochemicalCatalog.IsLiquidStorage(b.kind) ? FluidCount-1 : b.kind==BuildKind.FilterSplitter ? DemoCatalog.ItemCount-1 : b.kind==BuildKind.Transformer || b.kind==BuildKind.Door || b.kind==BuildKind.CircuitBreaker ? 1 : 0),"machine setting");
+                    SaveCheck(b.setting>=0 && b.setting<=(PetrochemicalCatalog.IsLiquidStorage(b.kind) ? FluidCount-1 : b.kind==BuildKind.FilterSplitter ? DemoCatalog.ItemCount-1 : b.kind==BuildKind.Transformer || b.kind==BuildKind.Door || b.kind==BuildKind.CircuitBreaker || b.kind==BuildKind.PrecisionAssembler ? 1 : 0),"machine setting");
                     SaveCheck(source.version<7 || !b.modularBoiler || (b.kind==BuildKind.Boiler && b.fuel==0f),"modular boiler mode");
-                    SaveCheck(b.kind!=BuildKind.Transformer || b.setting==0 || source.era>=TechEra.HighVoltage,"unresearched transformer setting");
+                    SaveCheck(b.kind!=BuildKind.Transformer || b.setting==0 || PrecisionCatalog.HasResearch(source,PrecisionTech.Grid),"unresearched transformer setting");
+                    SaveCheck(b.kind!=BuildKind.PrecisionAssembler || b.setting==0 || PrecisionCatalog.HasResearch(source,PrecisionTech.Control),"unresearched precision setting");
                     SaveRange(b.temperature,20f,1200f,"machine temperature");
                     SaveCheck(b.kind==BuildKind.Reactor || (b.temperature==20f && (b.kind==BuildKind.CircuitBreaker || !b.tripped)),"reactor-only state");
                     RecipeDefinition r=TechCatalog.SelectedRecipe(b);

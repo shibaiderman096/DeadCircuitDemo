@@ -407,7 +407,8 @@ namespace DeadCircuit
                 if(!LowVoltageCatalog.IsBuildUnlocked(State,b.kind) || !LowVoltageCatalog.IsRecipeUnlocked(State,r)) continue;
                 if(!PetrochemicalCatalog.IsRecipeUnlocked(State,r)) continue;
                 if((b.kind==BuildKind.ChemicalReactor || b.kind==BuildKind.DistillationUnit || b.kind==BuildKind.CoolingTower || r.id==71) && !NearWater(b)) continue;
-                if(!CanRunRecipe(b.items,r,BufferLimit,Incoming(b.id))) continue;
+                int outputLimit=b.kind==BuildKind.PrecisionAssembler && b.setting==1 ? PrecisionCatalog.ControlledBuffer : BufferLimit;
+                if(!CanRunRecipe(b.items,r,BufferLimit,Incoming(b.id),outputLimit)) continue;
                 float ratio=b.powerRatio;
                 if(b.kind==BuildKind.StoneFurnace)
                 {
@@ -426,6 +427,8 @@ namespace DeadCircuit
                 RecordSteamProduction(b,r);
                 RecordLowVoltageProduction(b,r);
                 RecordPetrochemicalProduction(b,r);
+                if(b.kind==BuildKind.PrecisionAssembler && r.id==80 && b.powerRatio>0f)
+                    State.hvPowered=SaturatingAdd(State.hvPowered,r.outputs[(int)ItemKind.ControlModule]);
                 b.progress=0f;
                 if(b.kind==BuildKind.Assembler) foreach(PlayerState p in State.players)
                     if(p.connected && p.hp>0f && DistSq(p.x,p.y,b.x,b.y)<=196f) GainXp(p,2);
@@ -436,10 +439,11 @@ namespace DeadCircuit
         {
             if(amount>0) State.produced[item]=SaturatingAdd(State.produced[item],amount);
         }
-        private static bool CanRunRecipe(int[] inventory,RecipeDefinition r,int limit,int[] reserved)
+        private static bool CanRunRecipe(int[] inventory,RecipeDefinition r,int limit,int[] reserved,int outputLimit=int.MaxValue)
         {
             for(int i=0;i<DemoCatalog.ItemCount;i++)
-                if(inventory[i]<r.inputs[i] || inventory[i]-r.inputs[i]+r.outputs[i]+(reserved==null ? 0 : reserved[i])>limit) return false;
+                if(inventory[i]<r.inputs[i] || inventory[i]-r.inputs[i]+r.outputs[i]+(reserved==null ? 0 : reserved[i])>
+                    (r.outputs[i]>0 ? Math.Min(limit,outputLimit) : limit)) return false;
             return true;
         }
         // Snapshot all live reservations once, before any machine changes inventory.
@@ -469,6 +473,7 @@ namespace DeadCircuit
                 case NodeKind.Limestone: return (int)ItemKind.Limestone;
                 case NodeKind.FireClay: return (int)ItemKind.FireClay;
                 case NodeKind.Oil: return (int)ItemKind.CrudeOil;
+                case NodeKind.Quartz: return (int)ItemKind.Quartz;
                 case NodeKind.Crate: return (int)ItemKind.Food;
                 default: return (int)ItemKind.Scrap;
             }

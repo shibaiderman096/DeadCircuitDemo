@@ -11,7 +11,9 @@ static partial class Checks
             (13,TechEra.Water),(20,TechEra.Water),(30,TechEra.Steam),(31,TechEra.Steam),(32,TechEra.Steam),(33,TechEra.Steam),
             (40,TechEra.LowVoltage),(41,TechEra.LowVoltage),(42,TechEra.LowVoltage),(43,TechEra.LowVoltage),(50,TechEra.LowVoltage),(60,TechEra.LowVoltage),
             (70,TechEra.MediumVoltage),(71,TechEra.MediumVoltage),(80,TechEra.HighVoltage),(90,TechEra.Nuclear),(91,TechEra.MediumVoltage),
-            (52,TechEra.LowVoltage),(53,TechEra.LowVoltage),(54,TechEra.MediumVoltage),(55,TechEra.HighVoltage),(56,TechEra.LowVoltage),(57,TechEra.LowVoltage)
+            (52,TechEra.LowVoltage),(53,TechEra.LowVoltage),(54,TechEra.MediumVoltage),(55,TechEra.HighVoltage),(56,TechEra.LowVoltage),(57,TechEra.LowVoltage),
+            (170,TechEra.HighVoltage),(171,TechEra.HighVoltage),(172,TechEra.HighVoltage),(173,TechEra.HighVoltage),
+            (174,TechEra.HighVoltage),(175,TechEra.HighVoltage),(176,TechEra.HighVoltage),(177,TechEra.HighVoltage)
         })
         {
             Run($"era {era} recipe {id} consumes inputs and completes a real output batch", () =>
@@ -29,7 +31,7 @@ static partial class Checks
                 for(int i=0;i<DemoCatalog.ItemCount;i++)
                 {
                     Require(m.items[i]==r.outputs[i],$"recipe {r.id} item {i}: expected {r.outputs[i]}, got {m.items[i]}");
-                    Require(sim.State.produced[i]==r.outputs[i],$"recipe {r.id} production history mismatch for {i}");
+                    Require(sim.State.produced[i]-state.produced[i]==r.outputs[i],$"recipe {r.id} production history mismatch for {i}");
                 }
                 if(r.building==BuildKind.StoneFurnace)Require(m.fuel>0,"stone furnace produced without lighting fuel");
             });
@@ -44,7 +46,7 @@ static partial class Checks
                 if(TechCatalog.RequiresWater(m.kind))Water(state,10,10+DemoCatalog.Height(m.kind));
                 var before=Copy(m.items);var sim=new WorldSimulator(state);Advance(sim,r.duration+1);m=Building(sim,m.id);
                 for(int i=0;i<DemoCatalog.ItemCount;i++)if(i!=(int)ItemKind.Fuel || m.kind!=BuildKind.StoneFurnace)Require(m.items[i]==before[i],$"blocked recipe {r.id} lost/created item {i}");
-                Require(sim.State.produced.All(v=>v==0),$"blocked recipe {r.id} counted phantom production");
+                Require(sim.State.produced.SequenceEqual(state.produced),$"blocked recipe {r.id} counted phantom production");
             }
         });
         Run("every non-free machine recipe stalls with one required input missing", () =>
@@ -56,7 +58,7 @@ static partial class Checks
                 if(TechCatalog.RequiresWater(m.kind))Water(state,10,10+DemoCatalog.Height(m.kind));
                 var sim=new WorldSimulator(state);Advance(sim,r.duration+1);m=Building(sim,m.id);
                 for(int i=0;i<DemoCatalog.ItemCount;i++)if(r.outputs[i]>0)Require(m.items[i]==0,$"recipe {r.id} manufactured without all inputs");
-                Require(sim.State.produced.All(v=>v==0),"missing input fabricated production history");
+                Require(sim.State.produced.SequenceEqual(state.produced),"missing input fabricated production history");
             }
         });
         Run("all item types travel through their compatible solid or liquid ports as conserved cargo", () =>

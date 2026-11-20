@@ -3,7 +3,7 @@ using DeadCircuit;
 static partial class Checks
 {
     static readonly BuildKind[] ResearchMachines = { BuildKind.Workbench, BuildKind.MechanicalCrusher, BuildKind.SteamFurnace, BuildKind.CircuitAssembler, BuildKind.ChemicalPlant, BuildKind.PrecisionAssembler };
-    static readonly BuildKind[] NewlyUnlocked = { BuildKind.Shaft, BuildKind.CokeOven, BuildKind.PowerPole, BuildKind.MediumPole, BuildKind.HighPole, BuildKind.NuclearProcessor };
+    static readonly BuildKind[] NewlyUnlocked = { BuildKind.Shaft, BuildKind.CokeOven, BuildKind.PowerPole, BuildKind.MediumPole, BuildKind.SiliconRefiner, BuildKind.NuclearProcessor };
     static void Water(WorldState state, int x, int y)
     {
         var ground=state.ground.ToCharArray(); ground[x+y*state.width]='2'; state.ground=new string(ground);
@@ -21,7 +21,7 @@ static partial class Checks
         Run("v3 appended ordinals harvest the right new minerals", () =>
         {
             var items=new[] { ItemKind.Wood,ItemKind.Ore,ItemKind.Iron,ItemKind.Scrap,ItemKind.Fuel,ItemKind.Ammo,ItemKind.Food,ItemKind.CopperOre,ItemKind.Copper,ItemKind.Bronze,ItemKind.Steel,ItemKind.Circuit,ItemKind.Polymer,ItemKind.AdvancedCircuit,ItemKind.UraniumOre,ItemKind.NuclearFuel,ItemKind.Coolant,ItemKind.NuclearWaste,ItemKind.CrushedOre,ItemKind.TinOre,ItemKind.Tin };
-            Require(items.Length==21 && DemoCatalog.ItemCount==54,"item ordinals and current inventory length");
+            Require(items.Length==21 && DemoCatalog.ItemCount==62,"item ordinals and current inventory length");
             for(int i=0;i<items.Length;i++) Require((int)items[i]==i,$"saved item {items[i]} was renumbered");
             var appended=new[] { BuildKind.Workbench,BuildKind.StoneFurnace,BuildKind.Waterwheel,BuildKind.Shaft,BuildKind.MechanicalCrusher,BuildKind.Boiler,BuildKind.SteamPipe,BuildKind.SteamMiner,BuildKind.SteamFurnace,BuildKind.SteamTurbine,BuildKind.CircuitAssembler,BuildKind.DieselGenerator,BuildKind.ChemicalPlant,BuildKind.MediumPole,BuildKind.Transformer,BuildKind.HighGenerator,BuildKind.HighPole,BuildKind.PrecisionAssembler,BuildKind.NuclearProcessor,BuildKind.Reactor,BuildKind.CoolingTower };
             for(int i=0;i<appended.Length;i++) Require((int)appended[i]==10+i,$"saved building {appended[i]} was renumbered");
@@ -46,7 +46,8 @@ static partial class Checks
             var target=(TechEra)stage;var previous=(TechEra)(stage-1);int index=stage-1;
             Run($"research {target} requires materials and a live built prerequisite and charges once for both players", () =>
             {
-                var sim=new WorldSimulator(Flat(era:previous));var a=Builder(sim,"a","A");var b=Builder(sim,"b","B");
+                var entry=Flat(era:previous); if(target==TechEra.Nuclear) { entry.hvPowered=4; entry.produced=PrecisionEvidence(TechEra.Nuclear); }
+                var sim=new WorldSimulator(entry);var a=Builder(sim,"a","A");var b=Builder(sim,"b","B");
                 var cost=TechCatalog.ResearchCost(target);Require(cost.Length==DemoCatalog.ItemCount && cost.Any(v=>v>0),"research has no material cost");
                 var before=Copy(a.items);var partner=Copy(b.items);
                 Require(!TechCatalog.CanResearch(sim.State,a,target) && TechCatalog.ResearchRequirement(sim.State,target).Length>0,"unbuilt prerequisite accepted");
@@ -75,6 +76,11 @@ static partial class Checks
                     Require(sim.State.mvResearch==0 && !TechCatalog.IsUnlocked(sim.State,BuildKind.OilPump),"era entry bypassed petroleum research");
                     return;
                 }
+                if(target==TechEra.HighVoltage)
+                {
+                    Require(sim.State.hvResearch==0 && PrecisionCatalog.BuildRequirement(sim.State,BuildKind.HighPole).Length>0,"era entry bypassed precision research");
+                    return;
+                }
                 Require(TechCatalog.IsUnlocked(sim.State,NewlyUnlocked[index]),"teammate did not see shared unlock");b.x=8;b.y=15;Ready(b);int buildings=sim.State.buildings.Count;sim.Apply(Command(b,"build",10,15,(int)NewlyUnlocked[index]));
                 Require(sim.State.buildings.Count==buildings+1 && sim.State.buildings.Any(m=>m.x==10 && m.y==15 && m.kind==NewlyUnlocked[index]),"teammate cannot use shared research");
             });
@@ -101,7 +107,7 @@ static partial class Checks
                 var state=Flat(era:TechEra.Primitive);int w=DemoCatalog.Width(kind),h=DemoCatalog.Height(kind);Water(state,10,10+h);if(kind==BuildKind.Miner || kind==BuildKind.SteamMiner)Ore(state,10+w,10);
                 if(kind==BuildKind.OilPump)state.nodes.Add(new NodeState{id=state.nextId++,kind=NodeKind.Oil,x=10+w,y=10,stock=100});
                 var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var before=Copy(p.items);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==0,$"locked {kind} built");Inventory(p.items,before,$"locked {kind} paid");
-                sim.State.era=TechCatalog.RequiredEra(kind);sim.State.steamResearch=255;sim.State.lvResearch=255;sim.State.mvResearch=255;Ready(p);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{kind} negative control was invalid even when unlocked");Paid(p.items,before,DemoCatalog.BuildCost(kind),$"{kind} construction");
+                sim.State.era=TechCatalog.RequiredEra(kind);sim.State.steamResearch=255;sim.State.lvResearch=255;sim.State.mvResearch=255;sim.State.hvResearch=PrecisionCatalog.AllResearch;Ready(p);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{kind} negative control was invalid even when unlocked");Paid(p.items,before,DemoCatalog.BuildCost(kind),$"{kind} construction");
             }
         });
         Run("all era hotbars expose unlocked kinds that actually build and charge correctly", () =>

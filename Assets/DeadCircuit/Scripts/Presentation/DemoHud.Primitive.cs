@@ -34,6 +34,7 @@ namespace DeadCircuit
             MakeSteamTechnology(content);
             MakeLowVoltageTechnology(content);
             MakePetrochemistryTechnology(content);
+            MakePrecisionTechnology(content);
         }
 
         void RefreshPrimitiveTechnology(WorldState world, PlayerState player)
@@ -67,6 +68,7 @@ namespace DeadCircuit
             RefreshSteamTechnology(world, player);
             RefreshLowVoltageTechnology(world, player);
             RefreshPetrochemistryTechnology(world, player);
+            RefreshPrecisionTechnology(world, player);
         }
 
         static string PrimitivePrerequisites(WorldState world, int mask)
@@ -95,7 +97,7 @@ namespace DeadCircuit
         static int DefaultTechnologyEra(WorldState world) => PrimitiveCatalog.Enabled(world) && world.era == TechEra.Primitive
             ? 0 : WaterCatalog.Enabled(world) && world.era == TechEra.Water ? 1 :
                 world.era == TechEra.Steam ? 2 : world.era == TechEra.LowVoltage ? 3 :
-                world.era == TechEra.MediumVoltage ? 4 : Mathf.Min((int)world.era + 1, 6);
+                world.era == TechEra.MediumVoltage ? 4 : world.era == TechEra.HighVoltage ? 5 : Mathf.Min((int)world.era + 1, 6);
 
         static string EraResearchRequirement(WorldState world, TechEra target)
         {

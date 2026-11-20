@@ -57,7 +57,7 @@ static partial class Checks
                 var machine=Add(state,consumers[output],13,10);var r=TechCatalog.DefaultRecipe(machine.kind);machine.items=Copy(r.inputs);machine.recipe=r.id;
                 var sim=new WorldSimulator(state);Advance(sim,r.duration+1);machine=Building(sim,machine.id);
                 Require(Building(sim,source.id).powerGeneration>0,"wrong-tier negative control had no live generation");
-                Require(!machine.powered && machine.progress==0 && sim.State.produced.All(v=>v==0),$"tier {input} powered a tier {output} recipe");
+                Require(!machine.powered && machine.progress==0 && sim.State.produced.SequenceEqual(state.produced),$"tier {input} powered a tier {output} recipe");
                 Inventory(machine.items,r.inputs,"wrong-tier machine consumed recipe material");
             }
         });
@@ -90,7 +90,7 @@ static partial class Checks
         {
             foreach(bool solar in new[] { false,true })
             {
-                var state=Flat(era:TechEra.MediumVoltage);var source=Add(state,solar?BuildKind.SolarPanel:BuildKind.DieselGenerator,7,10);if(!solar)source.items[(int)(source.kind==BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel)]=1;
+                var state=Flat(era:solar ? TechEra.HighVoltage : TechEra.MediumVoltage);var source=Add(state,solar?BuildKind.SolarPanel:BuildKind.DieselGenerator,7,10);if(!solar)source.items[(int)(source.kind==BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel)]=1;
                 var transformer=Add(state,BuildKind.Transformer,11,10);var machine=Add(state,BuildKind.Smelter,15,10);machine.items[(int)ItemKind.Ore]=1;
                 var sim=new WorldSimulator(state);Advance(sim,3);source=Building(sim,source.id);transformer=Building(sim,transformer.id);machine=Building(sim,machine.id);
                 Require(transformer.powerGeneration>0 && transformer.powerGeneration<=180.001f,"transformer output exceeded capped 90% conversion");
@@ -124,7 +124,9 @@ static partial class Checks
         {
             var state=Flat(era:TechEra.MediumVoltage);var target=Add(state,BuildKind.Transformer,10,10);var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var b=Building(sim,target.id);
             foreach(int arg in new[] { -1,1,2,90,int.MaxValue }){Ready(p);sim.Apply(Command(p,"configure",10,10,arg));Require(b.setting==0,"MV actor selected HV converter mode or invalid setting");}
-            sim.State.era=TechEra.HighVoltage;Ready(p);sim.Apply(Command(p,"configure",10,10,1));Require(b.setting==1,"HV actor could not select HV-to-MV mode");
+            Advance(sim,WorldSimulator.FixedStep);
+            sim.State.era=TechEra.HighVoltage;Ready(p);sim.Apply(Command(p,"configure",10,10,1));Require(b.setting==0,"HV actor bypassed grid research");
+            sim.State.hvResearch=PrecisionCatalog.AllResearch;Ready(p);sim.Apply(Command(p,"configure",10,10,1));Require(b.setting==1,"researched grid could not select HV-to-MV mode");
         });
         Run("reactor consumes nuclear fuel and coolant and produces tracked nuclear waste", () =>
         {

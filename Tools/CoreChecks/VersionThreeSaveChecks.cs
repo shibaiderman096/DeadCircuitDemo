@@ -4,12 +4,12 @@ using System.Text.Json.Nodes;
 
 static partial class Checks
 {
-    static WorldState VersionThreeFixture()
+    static WorldState VersionThreeFixture(bool current = false)
     {
         var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,10,10);reactor.temperature=440;reactor.fuel=3;reactor.progress=.4f;reactor.items[(int)ItemKind.NuclearFuel]=2;reactor.items[(int)ItemKind.Coolant]=8;
         var processor=Add(state,BuildKind.NuclearProcessor,20,10);processor.recipe=90;processor.items[(int)ItemKind.UraniumOre]=2;processor.items[(int)ItemKind.Steel]=1;
         Add(state,BuildKind.Transformer,25,10).setting=1;state.produced[(int)ItemKind.NuclearWaste]=7;
-        var sim=new WorldSimulator(state);Builder(sim);return AsVersionThree(Saved(sim.State));
+        var sim=new WorldSimulator(state);Builder(sim);return current ? Saved(sim.State) : AsVersionThree(Saved(sim.State));
     }
     // Actual pre-equipment JSON: 21 slots and no v4 equipment fields, never a v4
     // graph relabeled as v3 with current inventories. Preserve the caller graph.
@@ -74,20 +74,20 @@ static partial class Checks
                 var again=new WorldSimulator(Saved(restored));Require(again.State.version==WorldSimulator.SaveVersion && again.State.era==TechEra.MediumVoltage && again.State.players[0].items.SequenceEqual(p.items),"migrated v4 second restore lost research or inventory");
             });
         }
-        Run("v3 restore isolates production research thermal recipe setting and player state", () =>
+        Run("current restore isolates production research thermal recipe setting and player state", () =>
         {
-            var saved=VersionThreeFixture();var restored=new WorldSimulator(saved);string before=Dump(restored.State);var oldReactor=saved.buildings.Single(b=>b.kind==BuildKind.Reactor);var newReactor=restored.State.buildings.Single(b=>b.kind==BuildKind.Reactor);
+            var saved=VersionThreeFixture(current:true);var restored=new WorldSimulator(saved);string before=Dump(restored.State);var oldReactor=saved.buildings.Single(b=>b.kind==BuildKind.Reactor);var newReactor=restored.State.buildings.Single(b=>b.kind==BuildKind.Reactor);
             Require(!ReferenceEquals(saved.produced,restored.State.produced) && !ReferenceEquals(saved.buildings,restored.State.buildings),"v3 restore aliases research/production collections");
-            Require(restored.State.produced.Length==DemoCatalog.ItemCount && restored.State.produced.Take(21).SequenceEqual(saved.produced) && restored.State.produced.Skip(21).All(n=>n==0),"v3 production counters were lost or invented during expansion");
+            Require(restored.State.produced.Length==DemoCatalog.ItemCount && restored.State.produced.SequenceEqual(saved.produced),"current production counters were lost or invented during restoration");
             Require(restored.State.players.All(p=>p.items.Length==DemoCatalog.ItemCount) && restored.State.buildings.All(b=>b.items.Length==DemoCatalog.ItemCount),"v3 inventories did not expand to the current length");
             Require(newReactor.temperature==440 && newReactor.progress==.4f && newReactor.fuel==3 && !newReactor.tripped,"restore changed reactor operating reserves");
             Require(restored.State.buildings.Single(b=>b.kind==BuildKind.NuclearProcessor).recipe==90 && restored.State.buildings.Single(b=>b.kind==BuildKind.Transformer).setting==1,"restore lost recipe/converter configuration");
             saved.era=TechEra.Primitive;saved.produced[17]=999;oldReactor.temperature=1199;oldReactor.tripped=true;oldReactor.items[15]=99;saved.buildings.Single(b=>b.kind==BuildKind.NuclearProcessor).recipe=int.MaxValue;saved.buildings.Single(b=>b.kind==BuildKind.Transformer).setting=0;saved.players[0].items[20]=999;saved.players[0].attributes[0]=9;saved.players[0].skillPoints=0;
             Require(Dump(restored.State)==before,"caller mutation crossed a v3 deep-copy boundary");
         });
-        Run("v3 save roundtrip resumes the same reactor temperature fuel coolant waste and power", () =>
+        Run("current save roundtrip resumes the same reactor temperature fuel coolant waste and power", () =>
         {
-            var live=new WorldSimulator(VersionThreeFixture());Advance(live,1.25f);var restored=new WorldSimulator(Saved(live.State));
+            var live=new WorldSimulator(VersionThreeFixture(current:true));Advance(live,1.25f);var restored=new WorldSimulator(Saved(live.State));
             for(int tick=0;tick<160;tick++){live.Step(WorldSimulator.FixedStep);restored.Step(WorldSimulator.FixedStep);}
             Require(Dump(live.State)==Dump(restored.State),"v3 reactor/production replay diverged after a mid-run save");
         });

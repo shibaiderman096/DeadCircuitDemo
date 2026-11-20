@@ -61,8 +61,22 @@ static partial class Checks
         mvDistilled = era >= TechEra.MediumVoltage ? 12 : 0, mvDiesel = era >= TechEra.MediumVoltage ? 4 : 0,
         mvPolymer = era >= TechEra.MediumVoltage ? 4 : 0, mvLubricant = era >= TechEra.MediumVoltage ? 2 : 0,
         mvCooled = era >= TechEra.MediumVoltage ? 4 : 0, mvPowered = era >= TechEra.MediumVoltage ? 4 : 0,
+        hvResearch = era >= TechEra.HighVoltage ? PrecisionCatalog.AllResearch : 0,
+        hvPowered = era == TechEra.Nuclear ? 4 : 0,
+        produced = PrecisionEvidence(era),
         tick = (long)Math.Round(elapsed / WorldSimulator.FixedStep), nextWaveAt = elapsed + 180f
     };
+    static int[] PrecisionEvidence(TechEra era)
+    {
+        var items=new int[DemoCatalog.ItemCount];
+        if(era<TechEra.HighVoltage) return items;
+        items[(int)ItemKind.IndustrialSilicon]=4; items[(int)ItemKind.PureSilicon]=2;
+        items[(int)ItemKind.Wafer]=4; items[(int)ItemKind.Semiconductor]=4;
+        items[(int)ItemKind.AdvancedCircuit]=2; items[(int)ItemKind.PrecisionPart]=4;
+        items[(int)ItemKind.ControlModule]=era==TechEra.Nuclear ? 4 : 2;
+        items[(int)ItemKind.HeatAlloy]=era==TechEra.Nuclear ? 6 : 4;
+        return items;
+    }
     static PlayerState Builder(WorldSimulator sim, string id = "p", string name = "P")
     {
         var player = sim.AddPlayer(id, name); Array.Fill(player.items, 100); return player;
@@ -151,6 +165,9 @@ static partial class Checks
         PetrochemicalResourceChecks();
         PetrochemicalFlowChecks();
         PetrochemicalProgressionChecks();
+        PrecisionChecks();
+        PrecisionProgressionChecks();
+        QuartzResourceChecks();
         ElectricalAutomationChecks();
         RunLowVoltageProgressionChecks();
         CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); CargoChecks(); SaveAndCombatChecks();
@@ -377,7 +394,7 @@ static partial class Checks
             int bright = 0, dark = 0; float peak = 0;
             for (int phase = 0; phase < 16; phase++)
             {
-                var state = Flat(phase * 240f / 16, TechEra.MediumVoltage); var panel = Add(state, BuildKind.SolarPanel, 10, 10); var target = Add(state, BuildKind.ChemicalPlant, 14, 10);
+                var state = Flat(phase * 240f / 16, TechEra.HighVoltage); var panel = Add(state, BuildKind.SolarPanel, 10, 10); var target = Add(state, BuildKind.ChemicalPlant, 14, 10);
                 target.items[(int)ItemKind.ChemicalFeedstock] = 10; target.items[(int)ItemKind.Coolant] = 10;
                 var sim = new WorldSimulator(state); Advance(sim, .05f); panel = Building(sim,panel.id); target = Building(sim,target.id);
                 Require(float.IsFinite(panel.powerGeneration) && panel.powerGeneration >= 0 && panel.powerGeneration <= 40.001f, "solar output outside 0..40 kW");
