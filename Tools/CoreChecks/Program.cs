@@ -146,6 +146,7 @@ static partial class Checks
         LandmarkChecks();
         SettlementChecks();
         FloorChecks();
+        NaturalBuildingChecks();
         FloorIntegrationChecks();
         ChunkChecks();
         ChunkTerrainChecks();

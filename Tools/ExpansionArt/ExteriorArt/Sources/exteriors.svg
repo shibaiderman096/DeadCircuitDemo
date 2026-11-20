@@ -1,0 +1,525 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="108" viewBox="0 0 144 108" shape-rendering="crispEdges">
+  <style>
+.c-ink{fill:#192829}
+.c-dark{fill:#253b3b}
+.c-shadow{fill:#344a43}
+.c-steel{fill:#536a68}
+.c-light{fill:#8ba39a}
+.c-cream{fill:#ddd5ac}
+.c-white{fill:#eee9d3}
+.c-soil{fill:#503e32}
+.c-brown{fill:#76533b}
+.c-tan{fill:#aa8054}
+.c-sand{fill:#c4ab75}
+.c-rust{fill:#9b5338}
+.c-amber{fill:#e59a50}
+.c-gold{fill:#edc566}
+.c-red{fill:#b75446}
+.c-rose{fill:#d68169}
+.c-leaf{fill:#527445}
+.c-green{fill:#739650}
+.c-olive{fill:#81824a}
+.c-teal{fill:#80d8bc}
+.c-cyan{fill:#4c9e9b}
+.c-ice{fill:#aed5d2}
+.c-blue{fill:#497b86}
+.c-purple{fill:#796175}
+</style>
+  <g id="exterior_roof_tile" transform="translate(2 2)">
+    <title>Opaque staggered terracotta roof courses; seamless in both axes</title>
+    <rect class="c-brown" x="0" y="0" width="32" height="32" />
+    <rect class="c-rust" x="0" y="1" width="32" height="5" />
+    <rect class="c-tan" x="0" y="0" width="32" height="1" />
+    <rect class="c-brown" x="0" y="6" width="32" height="1" />
+    <rect class="c-soil" x="0" y="1" width="1" height="6" />
+    <rect class="c-brown" x="1" y="1" width="1" height="4" />
+    <rect class="c-tan" x="2" y="1" width="4" height="1" />
+    <rect class="c-brown" x="4" y="5" width="3" height="1" />
+    <rect class="c-soil" x="8" y="1" width="1" height="6" />
+    <rect class="c-brown" x="9" y="1" width="1" height="4" />
+    <rect class="c-tan" x="10" y="1" width="4" height="1" />
+    <rect class="c-brown" x="12" y="5" width="3" height="1" />
+    <rect class="c-soil" x="16" y="1" width="1" height="6" />
+    <rect class="c-brown" x="17" y="1" width="1" height="4" />
+    <rect class="c-tan" x="18" y="1" width="4" height="1" />
+    <rect class="c-brown" x="20" y="5" width="3" height="1" />
+    <rect class="c-soil" x="24" y="1" width="1" height="6" />
+    <rect class="c-brown" x="25" y="1" width="1" height="4" />
+    <rect class="c-tan" x="26" y="1" width="4" height="1" />
+    <rect class="c-brown" x="28" y="5" width="3" height="1" />
+    <rect class="c-rust" x="0" y="9" width="32" height="5" />
+    <rect class="c-tan" x="0" y="8" width="32" height="1" />
+    <rect class="c-brown" x="0" y="14" width="32" height="1" />
+    <rect class="c-soil" x="4" y="9" width="1" height="6" />
+    <rect class="c-brown" x="5" y="9" width="1" height="4" />
+    <rect class="c-tan" x="6" y="9" width="4" height="1" />
+    <rect class="c-brown" x="8" y="13" width="3" height="1" />
+    <rect class="c-soil" x="12" y="9" width="1" height="6" />
+    <rect class="c-brown" x="13" y="9" width="1" height="4" />
+    <rect class="c-tan" x="14" y="9" width="4" height="1" />
+    <rect class="c-brown" x="16" y="13" width="3" height="1" />
+    <rect class="c-soil" x="20" y="9" width="1" height="6" />
+    <rect class="c-brown" x="21" y="9" width="1" height="4" />
+    <rect class="c-tan" x="22" y="9" width="4" height="1" />
+    <rect class="c-brown" x="24" y="13" width="3" height="1" />
+    <rect class="c-soil" x="28" y="9" width="1" height="6" />
+    <rect class="c-brown" x="29" y="9" width="1" height="4" />
+    <rect class="c-tan" x="30" y="9" width="2" height="1" />
+    <rect class="c-tan" x="0" y="9" width="2" height="1" />
+    <rect class="c-brown" x="0" y="13" width="3" height="1" />
+    <rect class="c-rust" x="0" y="17" width="32" height="5" />
+    <rect class="c-tan" x="0" y="16" width="32" height="1" />
+    <rect class="c-brown" x="0" y="22" width="32" height="1" />
+    <rect class="c-soil" x="0" y="17" width="1" height="6" />
+    <rect class="c-brown" x="1" y="17" width="1" height="4" />
+    <rect class="c-tan" x="2" y="17" width="4" height="1" />
+    <rect class="c-brown" x="4" y="21" width="3" height="1" />
+    <rect class="c-soil" x="8" y="17" width="1" height="6" />
+    <rect class="c-brown" x="9" y="17" width="1" height="4" />
+    <rect class="c-tan" x="10" y="17" width="4" height="1" />
+    <rect class="c-brown" x="12" y="21" width="3" height="1" />
+    <rect class="c-soil" x="16" y="17" width="1" height="6" />
+    <rect class="c-brown" x="17" y="17" width="1" height="4" />
+    <rect class="c-tan" x="18" y="17" width="4" height="1" />
+    <rect class="c-brown" x="20" y="21" width="3" height="1" />
+    <rect class="c-soil" x="24" y="17" width="1" height="6" />
+    <rect class="c-brown" x="25" y="17" width="1" height="4" />
+    <rect class="c-tan" x="26" y="17" width="4" height="1" />
+    <rect class="c-brown" x="28" y="21" width="3" height="1" />
+    <rect class="c-rust" x="0" y="25" width="32" height="5" />
+    <rect class="c-tan" x="0" y="24" width="32" height="1" />
+    <rect class="c-brown" x="0" y="30" width="32" height="1" />
+    <rect class="c-soil" x="4" y="25" width="1" height="6" />
+    <rect class="c-brown" x="5" y="25" width="1" height="4" />
+    <rect class="c-tan" x="6" y="25" width="4" height="1" />
+    <rect class="c-brown" x="8" y="29" width="3" height="1" />
+    <rect class="c-soil" x="12" y="25" width="1" height="6" />
+    <rect class="c-brown" x="13" y="25" width="1" height="4" />
+    <rect class="c-tan" x="14" y="25" width="4" height="1" />
+    <rect class="c-brown" x="16" y="29" width="3" height="1" />
+    <rect class="c-soil" x="20" y="25" width="1" height="6" />
+    <rect class="c-brown" x="21" y="25" width="1" height="4" />
+    <rect class="c-tan" x="22" y="25" width="4" height="1" />
+    <rect class="c-brown" x="24" y="29" width="3" height="1" />
+    <rect class="c-soil" x="28" y="25" width="1" height="6" />
+    <rect class="c-brown" x="29" y="25" width="1" height="4" />
+    <rect class="c-tan" x="30" y="25" width="2" height="1" />
+    <rect class="c-tan" x="0" y="25" width="2" height="1" />
+    <rect class="c-brown" x="0" y="29" width="3" height="1" />
+    <rect class="c-soil" x="31" y="1" width="1" height="1" />
+    <rect class="c-soil" x="31" y="2" width="1" height="1" />
+    <rect class="c-soil" x="31" y="3" width="1" height="1" />
+    <rect class="c-soil" x="31" y="4" width="1" height="1" />
+    <rect class="c-soil" x="31" y="5" width="1" height="1" />
+    <rect class="c-soil" x="31" y="6" width="1" height="1" />
+    <rect class="c-brown" x="31" y="13" width="1" height="1" />
+    <rect class="c-soil" x="31" y="17" width="1" height="1" />
+    <rect class="c-soil" x="31" y="18" width="1" height="1" />
+    <rect class="c-soil" x="31" y="19" width="1" height="1" />
+    <rect class="c-soil" x="31" y="20" width="1" height="1" />
+    <rect class="c-soil" x="31" y="21" width="1" height="1" />
+    <rect class="c-soil" x="31" y="22" width="1" height="1" />
+    <rect class="c-brown" x="31" y="29" width="1" height="1" />
+    <rect class="c-tan" x="0" y="31" width="32" height="1" />
+  </g>
+  <g id="exterior_roof_metal" transform="translate(38 2)">
+    <title>Opaque standing-seam zinc sheets; sparse fasteners and oxidation</title>
+    <rect class="c-steel" x="0" y="0" width="32" height="32" />
+    <rect class="c-shadow" x="3" y="0" width="1" height="32" />
+    <rect class="c-light" x="4" y="0" width="1" height="32" />
+    <rect class="c-shadow" x="11" y="0" width="1" height="32" />
+    <rect class="c-light" x="12" y="0" width="1" height="32" />
+    <rect class="c-shadow" x="19" y="0" width="1" height="32" />
+    <rect class="c-light" x="20" y="0" width="1" height="32" />
+    <rect class="c-shadow" x="27" y="0" width="1" height="32" />
+    <rect class="c-light" x="28" y="0" width="1" height="32" />
+    <rect class="c-shadow" x="6" y="7" width="2" height="1" />
+    <rect class="c-light" x="6" y="6" width="1" height="1" />
+    <rect class="c-shadow" x="22" y="23" width="2" height="1" />
+    <rect class="c-light" x="22" y="22" width="1" height="1" />
+    <rect class="c-shadow" x="12" y="19" width="2" height="1" />
+    <rect class="c-shadow" x="13" y="20" width="3" height="1" />
+    <rect class="c-shadow" x="28" y="3" width="2" height="1" />
+    <rect class="c-shadow" x="29" y="4" width="3" height="1" />
+    <rect class="c-steel" x="31" y="4" width="1" height="1" />
+    <rect class="c-steel" x="0" y="31" width="3" height="1" />
+    <rect class="c-shadow" x="3" y="31" width="1" height="1" />
+    <rect class="c-light" x="4" y="31" width="1" height="1" />
+    <rect class="c-steel" x="5" y="31" width="6" height="1" />
+    <rect class="c-shadow" x="11" y="31" width="1" height="1" />
+    <rect class="c-light" x="12" y="31" width="1" height="1" />
+    <rect class="c-steel" x="13" y="31" width="6" height="1" />
+    <rect class="c-shadow" x="19" y="31" width="1" height="1" />
+    <rect class="c-light" x="20" y="31" width="1" height="1" />
+    <rect class="c-steel" x="21" y="31" width="6" height="1" />
+    <rect class="c-shadow" x="27" y="31" width="1" height="1" />
+    <rect class="c-light" x="28" y="31" width="1" height="1" />
+    <rect class="c-steel" x="29" y="31" width="3" height="1" />
+  </g>
+  <g id="exterior_roof_flat" transform="translate(74 2)">
+    <title>Opaque muted bitumen roof; staggered thin membrane laps</title>
+    <rect class="c-shadow" x="0" y="0" width="32" height="32" />
+    <rect class="c-dark" x="0" y="15" width="32" height="1" />
+    <rect class="c-dark" x="23" y="0" width="1" height="15" />
+    <rect class="c-steel" x="24" y="0" width="1" height="6" />
+    <rect class="c-steel" x="30" y="5" width="2" height="1" />
+    <rect class="c-steel" x="0" y="5" width="2" height="1" />
+    <rect class="c-dark" x="1" y="11" width="3" height="1" />
+    <rect class="c-dark" x="0" y="31" width="32" height="1" />
+    <rect class="c-dark" x="7" y="16" width="1" height="15" />
+    <rect class="c-steel" x="8" y="16" width="1" height="6" />
+    <rect class="c-steel" x="14" y="21" width="4" height="1" />
+    <rect class="c-dark" x="17" y="27" width="3" height="1" />
+    <rect class="c-shadow" x="0" y="31" width="23" height="1" />
+    <rect class="c-dark" x="23" y="31" width="1" height="1" />
+    <rect class="c-steel" x="24" y="31" width="1" height="1" />
+    <rect class="c-shadow" x="25" y="31" width="7" height="1" />
+  </g>
+  <g id="exterior_roof_glass" transform="translate(110 2)">
+    <title>Opaque dark architectural glass; reflected sky with no interior view</title>
+    <rect class="c-dark" x="0" y="0" width="32" height="32" />
+    <rect class="c-blue" x="2" y="0" width="5" height="1" />
+    <rect class="c-steel" x="7" y="0" width="1" height="1" />
+    <rect class="c-blue" x="3" y="1" width="5" height="1" />
+    <rect class="c-steel" x="8" y="1" width="1" height="1" />
+    <rect class="c-blue" x="4" y="2" width="5" height="1" />
+    <rect class="c-steel" x="9" y="2" width="1" height="1" />
+    <rect class="c-blue" x="5" y="3" width="5" height="1" />
+    <rect class="c-steel" x="10" y="3" width="1" height="1" />
+    <rect class="c-blue" x="6" y="4" width="5" height="1" />
+    <rect class="c-steel" x="11" y="4" width="1" height="1" />
+    <rect class="c-blue" x="7" y="5" width="5" height="1" />
+    <rect class="c-steel" x="12" y="5" width="1" height="1" />
+    <rect class="c-blue" x="8" y="6" width="5" height="1" />
+    <rect class="c-steel" x="13" y="6" width="1" height="1" />
+    <rect class="c-blue" x="9" y="7" width="5" height="1" />
+    <rect class="c-steel" x="14" y="7" width="1" height="1" />
+    <rect class="c-blue" x="10" y="8" width="5" height="1" />
+    <rect class="c-steel" x="15" y="8" width="1" height="1" />
+    <rect class="c-blue" x="11" y="9" width="5" height="1" />
+    <rect class="c-steel" x="16" y="9" width="1" height="1" />
+    <rect class="c-blue" x="12" y="10" width="5" height="1" />
+    <rect class="c-steel" x="17" y="10" width="1" height="1" />
+    <rect class="c-blue" x="13" y="11" width="5" height="1" />
+    <rect class="c-steel" x="18" y="11" width="1" height="1" />
+    <rect class="c-blue" x="14" y="12" width="5" height="1" />
+    <rect class="c-steel" x="19" y="12" width="1" height="1" />
+    <rect class="c-blue" x="15" y="13" width="5" height="1" />
+    <rect class="c-steel" x="20" y="13" width="1" height="1" />
+    <rect class="c-blue" x="16" y="14" width="5" height="1" />
+    <rect class="c-steel" x="21" y="14" width="1" height="1" />
+    <rect class="c-blue" x="17" y="15" width="5" height="1" />
+    <rect class="c-steel" x="22" y="15" width="1" height="1" />
+    <rect class="c-blue" x="18" y="16" width="5" height="1" />
+    <rect class="c-steel" x="23" y="16" width="1" height="1" />
+    <rect class="c-blue" x="19" y="17" width="5" height="1" />
+    <rect class="c-steel" x="24" y="17" width="1" height="1" />
+    <rect class="c-blue" x="20" y="18" width="5" height="1" />
+    <rect class="c-steel" x="25" y="18" width="1" height="1" />
+    <rect class="c-blue" x="21" y="19" width="5" height="1" />
+    <rect class="c-steel" x="26" y="19" width="1" height="1" />
+    <rect class="c-blue" x="22" y="20" width="5" height="1" />
+    <rect class="c-steel" x="27" y="20" width="1" height="1" />
+    <rect class="c-blue" x="23" y="21" width="5" height="1" />
+    <rect class="c-steel" x="28" y="21" width="1" height="1" />
+    <rect class="c-blue" x="24" y="22" width="5" height="1" />
+    <rect class="c-steel" x="29" y="22" width="1" height="1" />
+    <rect class="c-blue" x="25" y="23" width="5" height="1" />
+    <rect class="c-steel" x="30" y="23" width="1" height="1" />
+    <rect class="c-blue" x="26" y="24" width="5" height="1" />
+    <rect class="c-steel" x="31" y="24" width="1" height="1" />
+    <rect class="c-blue" x="27" y="25" width="5" height="1" />
+    <rect class="c-steel" x="0" y="25" width="1" height="1" />
+    <rect class="c-blue" x="28" y="26" width="4" height="1" />
+    <rect class="c-blue" x="0" y="26" width="1" height="1" />
+    <rect class="c-steel" x="1" y="26" width="1" height="1" />
+    <rect class="c-blue" x="29" y="27" width="3" height="1" />
+    <rect class="c-blue" x="0" y="27" width="2" height="1" />
+    <rect class="c-steel" x="2" y="27" width="1" height="1" />
+    <rect class="c-blue" x="30" y="28" width="2" height="1" />
+    <rect class="c-blue" x="0" y="28" width="3" height="1" />
+    <rect class="c-steel" x="3" y="28" width="1" height="1" />
+    <rect class="c-blue" x="31" y="29" width="1" height="1" />
+    <rect class="c-blue" x="0" y="29" width="4" height="1" />
+    <rect class="c-steel" x="4" y="29" width="1" height="1" />
+    <rect class="c-blue" x="0" y="30" width="5" height="1" />
+    <rect class="c-steel" x="5" y="30" width="1" height="1" />
+    <rect class="c-blue" x="1" y="31" width="5" height="1" />
+    <rect class="c-steel" x="6" y="31" width="1" height="1" />
+    <rect class="c-steel" x="0" y="0" width="1" height="32" />
+    <rect class="c-shadow" x="1" y="0" width="1" height="32" />
+    <rect class="c-steel" x="0" y="0" width="32" height="1" />
+    <rect class="c-shadow" x="0" y="1" width="32" height="1" />
+    <rect class="c-steel" x="16" y="0" width="1" height="32" />
+    <rect class="c-shadow" x="17" y="0" width="1" height="32" />
+    <rect class="c-steel" x="0" y="16" width="32" height="1" />
+    <rect class="c-shadow" x="0" y="17" width="32" height="1" />
+    <rect class="c-steel" x="31" y="2" width="1" height="1" />
+    <rect class="c-steel" x="31" y="3" width="1" height="1" />
+    <rect class="c-steel" x="31" y="4" width="1" height="1" />
+    <rect class="c-steel" x="31" y="5" width="1" height="1" />
+    <rect class="c-steel" x="31" y="6" width="1" height="1" />
+    <rect class="c-steel" x="31" y="7" width="1" height="1" />
+    <rect class="c-steel" x="31" y="8" width="1" height="1" />
+    <rect class="c-steel" x="31" y="9" width="1" height="1" />
+    <rect class="c-steel" x="31" y="10" width="1" height="1" />
+    <rect class="c-steel" x="31" y="11" width="1" height="1" />
+    <rect class="c-steel" x="31" y="12" width="1" height="1" />
+    <rect class="c-steel" x="31" y="13" width="1" height="1" />
+    <rect class="c-steel" x="31" y="14" width="1" height="1" />
+    <rect class="c-steel" x="31" y="15" width="1" height="1" />
+    <rect class="c-steel" x="31" y="18" width="1" height="1" />
+    <rect class="c-steel" x="31" y="19" width="1" height="1" />
+    <rect class="c-steel" x="31" y="20" width="1" height="1" />
+    <rect class="c-steel" x="31" y="21" width="1" height="1" />
+    <rect class="c-steel" x="31" y="22" width="1" height="1" />
+    <rect class="c-steel" x="31" y="23" width="1" height="1" />
+    <rect class="c-steel" x="31" y="25" width="1" height="1" />
+    <rect class="c-steel" x="31" y="26" width="1" height="1" />
+    <rect class="c-steel" x="31" y="27" width="1" height="1" />
+    <rect class="c-steel" x="31" y="28" width="1" height="1" />
+    <rect class="c-steel" x="31" y="29" width="1" height="1" />
+    <rect class="c-steel" x="31" y="30" width="1" height="1" />
+    <rect class="c-steel" x="31" y="31" width="1" height="1" />
+    <rect class="c-steel" x="0" y="31" width="17" height="1" />
+    <rect class="c-shadow" x="17" y="31" width="1" height="1" />
+    <rect class="c-steel" x="18" y="31" width="14" height="1" />
+  </g>
+  <g id="exterior_facade_brick" transform="translate(2 38)">
+    <title>South elevation, one storey: brick courses, two closed windows and slab edges</title>
+    <rect class="c-rust" x="0" y="0" width="32" height="32" />
+    <rect class="c-brown" x="0" y="3" width="32" height="1" />
+    <rect class="c-brown" x="0" y="0" width="1" height="3" />
+    <rect class="c-brown" x="8" y="0" width="1" height="3" />
+    <rect class="c-brown" x="16" y="0" width="1" height="3" />
+    <rect class="c-brown" x="24" y="0" width="1" height="3" />
+    <rect class="c-brown" x="0" y="7" width="32" height="1" />
+    <rect class="c-brown" x="4" y="4" width="1" height="3" />
+    <rect class="c-brown" x="12" y="4" width="1" height="3" />
+    <rect class="c-brown" x="20" y="4" width="1" height="3" />
+    <rect class="c-brown" x="28" y="4" width="1" height="3" />
+    <rect class="c-brown" x="0" y="11" width="32" height="1" />
+    <rect class="c-brown" x="0" y="8" width="1" height="3" />
+    <rect class="c-brown" x="8" y="8" width="1" height="3" />
+    <rect class="c-brown" x="16" y="8" width="1" height="3" />
+    <rect class="c-brown" x="24" y="8" width="1" height="3" />
+    <rect class="c-brown" x="0" y="15" width="32" height="1" />
+    <rect class="c-brown" x="4" y="12" width="1" height="3" />
+    <rect class="c-brown" x="12" y="12" width="1" height="3" />
+    <rect class="c-brown" x="20" y="12" width="1" height="3" />
+    <rect class="c-brown" x="28" y="12" width="1" height="3" />
+    <rect class="c-brown" x="0" y="19" width="32" height="1" />
+    <rect class="c-brown" x="0" y="16" width="1" height="3" />
+    <rect class="c-brown" x="8" y="16" width="1" height="3" />
+    <rect class="c-brown" x="16" y="16" width="1" height="3" />
+    <rect class="c-brown" x="24" y="16" width="1" height="3" />
+    <rect class="c-brown" x="0" y="23" width="32" height="1" />
+    <rect class="c-brown" x="4" y="20" width="1" height="3" />
+    <rect class="c-brown" x="12" y="20" width="1" height="3" />
+    <rect class="c-brown" x="20" y="20" width="1" height="3" />
+    <rect class="c-brown" x="28" y="20" width="1" height="3" />
+    <rect class="c-brown" x="0" y="27" width="32" height="1" />
+    <rect class="c-brown" x="0" y="24" width="1" height="3" />
+    <rect class="c-brown" x="8" y="24" width="1" height="3" />
+    <rect class="c-brown" x="16" y="24" width="1" height="3" />
+    <rect class="c-brown" x="24" y="24" width="1" height="3" />
+    <rect class="c-brown" x="0" y="31" width="32" height="1" />
+    <rect class="c-brown" x="4" y="28" width="1" height="3" />
+    <rect class="c-brown" x="12" y="28" width="1" height="3" />
+    <rect class="c-brown" x="20" y="28" width="1" height="3" />
+    <rect class="c-brown" x="28" y="28" width="1" height="3" />
+    <rect class="c-tan" x="1" y="4" width="3" height="1" />
+    <rect class="c-tan" x="15" y="16" width="3" height="1" />
+    <rect class="c-tan" x="10" y="26" width="3" height="1" />
+    <rect class="c-tan" x="27" y="28" width="3" height="1" />
+    <rect class="c-tan" x="0" y="0" width="32" height="1" />
+    <rect class="c-brown" x="0" y="1" width="32" height="1" />
+    <rect class="c-brown" x="2" y="5" width="12" height="1" />
+    <rect class="c-tan" x="3" y="6" width="10" height="1" />
+    <rect class="c-ink" x="3" y="7" width="10" height="17" />
+    <rect class="c-tan" x="4" y="8" width="8" height="15" />
+    <rect class="c-dark" x="5" y="9" width="6" height="13" />
+    <rect class="c-blue" x="5" y="9" width="6" height="3" />
+    <rect class="c-steel" x="5" y="12" width="2" height="8" />
+    <rect class="c-light" x="5" y="9" width="2" height="1" />
+    <rect class="c-tan" x="8" y="9" width="1" height="13" />
+    <rect class="c-tan" x="5" y="15" width="6" height="1" />
+    <rect class="c-tan" x="2" y="24" width="12" height="1" />
+    <rect class="c-soil" x="2" y="25" width="12" height="1" />
+    <rect class="c-brown" x="18" y="5" width="12" height="1" />
+    <rect class="c-tan" x="19" y="6" width="10" height="1" />
+    <rect class="c-ink" x="19" y="7" width="10" height="17" />
+    <rect class="c-tan" x="20" y="8" width="8" height="15" />
+    <rect class="c-dark" x="21" y="9" width="6" height="13" />
+    <rect class="c-blue" x="21" y="9" width="6" height="3" />
+    <rect class="c-steel" x="21" y="12" width="2" height="8" />
+    <rect class="c-light" x="21" y="9" width="2" height="1" />
+    <rect class="c-tan" x="24" y="9" width="1" height="13" />
+    <rect class="c-tan" x="21" y="15" width="6" height="1" />
+    <rect class="c-tan" x="18" y="24" width="12" height="1" />
+    <rect class="c-soil" x="18" y="25" width="12" height="1" />
+    <rect class="c-brown" x="0" y="30" width="32" height="1" />
+    <rect class="c-soil" x="0" y="31" width="32" height="1" />
+    <rect class="c-brown" x="31" y="2" width="1" height="1" />
+    <rect class="c-brown" x="31" y="8" width="1" height="1" />
+    <rect class="c-brown" x="31" y="9" width="1" height="1" />
+    <rect class="c-brown" x="31" y="10" width="1" height="1" />
+    <rect class="c-brown" x="31" y="16" width="1" height="1" />
+    <rect class="c-brown" x="31" y="17" width="1" height="1" />
+    <rect class="c-brown" x="31" y="18" width="1" height="1" />
+    <rect class="c-brown" x="31" y="24" width="1" height="1" />
+    <rect class="c-brown" x="31" y="25" width="1" height="1" />
+    <rect class="c-brown" x="31" y="26" width="1" height="1" />
+    <rect class="c-tan" x="0" y="31" width="32" height="1" />
+  </g>
+  <g id="exterior_facade_concrete" transform="translate(38 38)">
+    <title>South elevation, one storey: precast concrete, recessed window and floor slab</title>
+    <rect class="c-light" x="0" y="0" width="32" height="32" />
+    <rect class="c-steel" x="0" y="0" width="32" height="2" />
+    <rect class="c-cream" x="0" y="2" width="32" height="1" />
+    <rect class="c-steel" x="1" y="3" width="1" height="25" />
+    <rect class="c-light" x="2" y="3" width="1" height="24" />
+    <rect class="c-steel" x="29" y="3" width="1" height="25" />
+    <rect class="c-steel" x="4" y="5" width="4" height="1" />
+    <rect class="c-steel" x="25" y="25" width="3" height="1" />
+    <rect class="c-ink" x="6" y="7" width="20" height="16" />
+    <rect class="c-steel" x="7" y="8" width="18" height="14" />
+    <rect class="c-dark" x="8" y="9" width="16" height="12" />
+    <rect class="c-blue" x="8" y="9" width="16" height="3" />
+    <rect class="c-steel" x="8" y="12" width="2" height="7" />
+    <rect class="c-light" x="8" y="9" width="2" height="1" />
+    <rect class="c-steel" x="16" y="9" width="1" height="12" />
+    <rect class="c-steel" x="8" y="15" width="16" height="1" />
+    <rect class="c-cream" x="5" y="23" width="22" height="1" />
+    <rect class="c-steel" x="5" y="24" width="22" height="2" />
+    <rect class="c-steel" x="8" y="26" width="1" height="2" />
+    <rect class="c-steel" x="23" y="26" width="2" height="1" />
+    <rect class="c-steel" x="0" y="28" width="32" height="1" />
+    <rect class="c-shadow" x="0" y="29" width="32" height="3" />
+    <rect class="c-steel" x="0" y="31" width="32" height="1" />
+  </g>
+  <g id="exterior_facade_industrial" transform="translate(74 38)">
+    <title>South elevation, one storey: industrial cladding, ribbon glazing and steel floor beam</title>
+    <rect class="c-steel" x="0" y="0" width="32" height="32" />
+    <rect class="c-shadow" x="7" y="3" width="1" height="25" />
+    <rect class="c-shadow" x="15" y="3" width="1" height="25" />
+    <rect class="c-shadow" x="23" y="3" width="1" height="25" />
+    <rect class="c-shadow" x="31" y="3" width="1" height="25" />
+    <rect class="c-light" x="0" y="0" width="32" height="1" />
+    <rect class="c-shadow" x="0" y="1" width="32" height="2" />
+    <rect class="c-light" x="0" y="3" width="1" height="25" />
+    <rect class="c-shadow" x="1" y="3" width="2" height="25" />
+    <rect class="c-light" x="4" y="6" width="24" height="1" />
+    <rect class="c-ink" x="4" y="7" width="24" height="15" />
+    <rect class="c-dark" x="5" y="8" width="6" height="13" />
+    <rect class="c-blue" x="5" y="8" width="6" height="3" />
+    <rect class="c-steel" x="5" y="11" width="2" height="4" />
+    <rect class="c-light" x="5" y="8" width="2" height="1" />
+    <rect class="c-dark" x="13" y="8" width="6" height="13" />
+    <rect class="c-blue" x="13" y="8" width="6" height="3" />
+    <rect class="c-steel" x="13" y="11" width="2" height="4" />
+    <rect class="c-light" x="13" y="8" width="2" height="1" />
+    <rect class="c-dark" x="21" y="8" width="6" height="13" />
+    <rect class="c-blue" x="21" y="8" width="6" height="3" />
+    <rect class="c-steel" x="21" y="11" width="2" height="4" />
+    <rect class="c-light" x="21" y="8" width="2" height="1" />
+    <rect class="c-shadow" x="5" y="14" width="22" height="1" />
+    <rect class="c-light" x="4" y="22" width="24" height="1" />
+    <rect class="c-shadow" x="4" y="23" width="24" height="1" />
+    <rect class="c-brown" x="6" y="25" width="4" height="1" />
+    <rect class="c-brown" x="23" y="24" width="2" height="2" />
+    <rect class="c-shadow" x="0" y="28" width="32" height="1" />
+    <rect class="c-dark" x="0" y="29" width="32" height="2" />
+    <rect class="c-steel" x="0" y="31" width="32" height="1" />
+    <rect class="c-light" x="31" y="3" width="1" height="1" />
+    <rect class="c-light" x="31" y="4" width="1" height="1" />
+    <rect class="c-light" x="31" y="5" width="1" height="1" />
+    <rect class="c-light" x="31" y="6" width="1" height="1" />
+    <rect class="c-light" x="31" y="7" width="1" height="1" />
+    <rect class="c-light" x="31" y="8" width="1" height="1" />
+    <rect class="c-light" x="31" y="9" width="1" height="1" />
+    <rect class="c-light" x="31" y="10" width="1" height="1" />
+    <rect class="c-light" x="31" y="11" width="1" height="1" />
+    <rect class="c-light" x="31" y="12" width="1" height="1" />
+    <rect class="c-light" x="31" y="13" width="1" height="1" />
+    <rect class="c-light" x="31" y="14" width="1" height="1" />
+    <rect class="c-light" x="31" y="15" width="1" height="1" />
+    <rect class="c-light" x="31" y="16" width="1" height="1" />
+    <rect class="c-light" x="31" y="17" width="1" height="1" />
+    <rect class="c-light" x="31" y="18" width="1" height="1" />
+    <rect class="c-light" x="31" y="19" width="1" height="1" />
+    <rect class="c-light" x="31" y="20" width="1" height="1" />
+    <rect class="c-light" x="31" y="21" width="1" height="1" />
+    <rect class="c-light" x="31" y="22" width="1" height="1" />
+    <rect class="c-light" x="31" y="23" width="1" height="1" />
+    <rect class="c-light" x="31" y="24" width="1" height="1" />
+    <rect class="c-light" x="31" y="25" width="1" height="1" />
+    <rect class="c-light" x="31" y="26" width="1" height="1" />
+    <rect class="c-light" x="31" y="27" width="1" height="1" />
+    <rect class="c-light" x="0" y="31" width="32" height="1" />
+  </g>
+  <g id="exterior_cornice" transform="translate(110 38)">
+    <title>Opaque continuous cornice; lit upper lip and shaded fascia</title>
+    <rect class="c-cream" x="0" y="0" width="32" height="1" />
+    <rect class="c-light" x="0" y="1" width="32" height="2" />
+    <rect class="c-steel" x="0" y="3" width="32" height="1" />
+    <rect class="c-shadow" x="0" y="4" width="32" height="2" />
+    <rect class="c-dark" x="0" y="6" width="32" height="2" />
+    <rect class="c-steel" x="7" y="4" width="2" height="3" />
+    <rect class="c-shadow" x="9" y="4" width="1" height="3" />
+    <rect class="c-steel" x="23" y="4" width="2" height="3" />
+    <rect class="c-shadow" x="25" y="4" width="1" height="3" />
+  </g>
+  <g id="exterior_roof_vent" transform="translate(2 74)">
+    <title>Separate transparent roof prop: low louvred ventilation box</title>
+    <rect class="c-dark" x="9" y="26" width="19" height="2" />
+    <rect class="c-ink" x="6" y="20" width="22" height="7" />
+    <rect class="c-steel" x="7" y="21" width="20" height="4" />
+    <rect class="c-light" x="7" y="21" width="20" height="1" />
+    <rect class="c-shadow" x="7" y="25" width="20" height="1" />
+    <rect class="c-ink" x="7" y="11" width="18" height="13" />
+    <rect class="c-steel" x="8" y="12" width="16" height="11" />
+    <rect class="c-light" x="8" y="12" width="2" height="11" />
+    <rect class="c-shadow" x="10" y="16" width="14" height="7" />
+    <rect class="c-dark" x="11" y="17" width="11" height="1" />
+    <rect class="c-dark" x="11" y="20" width="11" height="1" />
+    <rect class="c-dark" x="11" y="22" width="11" height="1" />
+    <rect class="c-ink" x="4" y="6" width="24" height="10" />
+    <rect class="c-steel" x="5" y="7" width="22" height="8" />
+    <rect class="c-light" x="5" y="7" width="22" height="1" />
+    <rect class="c-light" x="5" y="8" width="1" height="6" />
+    <rect class="c-dark" x="8" y="9" width="16" height="4" />
+    <rect class="c-light" x="9" y="9" width="2" height="4" />
+    <rect class="c-steel" x="10" y="9" width="1" height="4" />
+    <rect class="c-light" x="13" y="9" width="2" height="4" />
+    <rect class="c-steel" x="14" y="9" width="1" height="4" />
+    <rect class="c-light" x="17" y="9" width="2" height="4" />
+    <rect class="c-steel" x="18" y="9" width="1" height="4" />
+    <rect class="c-light" x="21" y="9" width="2" height="4" />
+    <rect class="c-steel" x="22" y="9" width="1" height="4" />
+    <rect class="c-shadow" x="6" y="14" width="20" height="1" />
+  </g>
+  <g id="exterior_roof_hatch" transform="translate(38 74)">
+    <title>Separate transparent roof prop: closed service hatch, hinges and handle</title>
+    <rect class="c-dark" x="7" y="27" width="22" height="2" />
+    <rect class="c-ink" x="4" y="6" width="24" height="22" />
+    <rect class="c-steel" x="5" y="7" width="22" height="19" />
+    <rect class="c-light" x="5" y="7" width="22" height="1" />
+    <rect class="c-light" x="5" y="8" width="1" height="17" />
+    <rect class="c-shadow" x="6" y="25" width="21" height="2" />
+    <rect class="c-dark" x="7" y="9" width="18" height="15" />
+    <rect class="c-shadow" x="8" y="10" width="16" height="13" />
+    <rect class="c-steel" x="8" y="10" width="16" height="1" />
+    <rect class="c-steel" x="8" y="11" width="1" height="11" />
+    <rect class="c-ink" x="9" y="5" width="4" height="4" />
+    <rect class="c-steel" x="10" y="5" width="2" height="3" />
+    <rect class="c-light" x="10" y="5" width="2" height="1" />
+    <rect class="c-ink" x="20" y="5" width="4" height="4" />
+    <rect class="c-steel" x="21" y="5" width="2" height="3" />
+    <rect class="c-light" x="21" y="5" width="2" height="1" />
+    <rect class="c-ink" x="18" y="17" width="5" height="3" />
+    <rect class="c-light" x="19" y="17" width="3" height="1" />
+    <rect class="c-steel" x="10" y="21" width="3" height="1" />
+  </g>
+</svg>

@@ -418,6 +418,7 @@ namespace DeadCircuit
             viewMin = center - new Vector2(halfWidth, halfHeight);
             viewMax = center + new Vector2(halfWidth, halfHeight);
             UpdateAmbient(world, local);
+            DrawNaturalExteriors(world, local);
             DrawRooms(world);
             DrawSites(world);
             DrawNodes(world, local);
@@ -566,7 +567,7 @@ namespace DeadCircuit
             {
                 if (state.hp <= 0 || state.stock <= 0) continue;
                 blockedNodes.Add(WorldTiles.Key(state.x, state.y));
-                if (!Visible(state.x,state.y)) continue;
+                if (!Visible(state.x,state.y) || NaturalInteriorHidden(state.x, state.y)) continue;
                 var v = Get(nodes,state.id,new Vector2(state.x,state.y),state.hp,state.kind==NodeKind.Wall ? 160f : 35f);
                 string art;
                 switch (state.kind)
@@ -642,6 +643,7 @@ namespace DeadCircuit
                 Vector2 center = BuildingCenter(state);
                 if (center.x + w * .5f < viewMin.x || center.x - w * .5f > viewMax.x ||
                     center.y + h * .5f < viewMin.y || center.y - h * .5f > viewMax.y) continue;
+                if (NaturalInteriorHidden(center.x, center.y) && !(state.kind == BuildKind.Door && NaturalEntrance(state.x, state.y))) continue;
                 var v = Get(buildings, state.id, center, state.hp, WorldSimulator.BuildingMaxHealth(state.kind));
                 // A machine is fixed geometry, including when its dimensions change on rotation.
                 v.position = v.previous = center; v.root.transform.position = center;
@@ -763,7 +765,7 @@ namespace DeadCircuit
         {
             if (world.players != null) foreach (var state in world.players)
             {
-                if (!state.connected || !Visible(state.x,state.y)) continue;
+                if (!state.connected || !Visible(state.x,state.y) || NaturalInteriorHidden(state.x, state.y)) continue;
                 Vector2 target=new Vector2(state.x,state.y);
                 bool isLocal=local != null && state.id==local.id;
                 Visual v;
@@ -795,7 +797,7 @@ namespace DeadCircuit
             }
             if (world.zombies != null) foreach (var state in world.zombies)
             {
-                if (state.hp<=0 || !Visible(state.x,state.y)) continue;
+                if (state.hp<=0 || !Visible(state.x,state.y) || NaturalInteriorHidden(state.x, state.y)) continue;
                 var target=new Vector2(state.x,state.y);
                 float baseHealth=EnemyCatalog.Stats(state.variant).hp;
                 var v=Get(zombies,state.id,target,state.hp,Mathf.Max(baseHealth,state.hp));
@@ -817,6 +819,9 @@ namespace DeadCircuit
                 v.previous=Vector2.Lerp(v.previous,target,1-Mathf.Exp(-8f*Time.unscaledDeltaTime));
             }
             selectionRing.enabled=local!=null && local.hp>0;
+            // Keep the local survivor locatable behind a tall exterior without
+            // removing its roof or revealing any rooms from outside.
+            selectionRing.sortingOrder = local != null && NaturalExteriorOccludes(local.x, local.y) ? 9600 : -11000;
             if (local!=null)
             {
                 Visual v;
@@ -1019,6 +1024,7 @@ namespace DeadCircuit
                 BuildingState from, to;
                 if (!buildingStates.TryGetValue(link.fromId,out from) || !buildingStates.TryGetValue(link.toId,out to)) continue;
                 Vector2 a = WireAnchor(from), b = WireAnchor(to);
+                if (NaturalInteriorHidden(from.x, from.y) || NaturalInteriorHidden(to.x, to.y)) continue;
                 if (!SegmentVisible(a,b)) continue;
                 if (count == wires.Count) wires.Add(NewLine("Power network wire",9100,.018f,false));
                 bool focused = focusedNetwork > 0 && from.networkId == focusedNetwork;
@@ -1091,7 +1097,7 @@ namespace DeadCircuit
                 // Small snapshot timing corrections may hold the icon briefly, never pull it backwards.
                 if (sameTrip) progress = Mathf.Max(v.progress,progress);
                 Vector2 position = Vector2.Lerp(from,to,progress);
-                if (!Visible(position.x,position.y)) continue;
+                if (!Visible(position.x,position.y) || NaturalInteriorHidden(position.x, position.y)) continue;
                 if (!exists)
                 {
                     v = cargoPool.Count > 0 ? cargoPool.Pop() : new CargoVisual { sprite = NewSprite("In-flight item",effectsRoot,9400) };
@@ -1122,6 +1128,7 @@ namespace DeadCircuit
             if (world.traces!=null) foreach (var t in world.traces)
             {
                 if (t.until<visualTime || count>=64 || t.effect==2) continue;
+                if (NaturalInteriorHidden(t.x, t.y) || NaturalInteriorHidden(t.endX, t.endY)) continue;
                 if (!Visible(t.x,t.y) && !Visible(t.endX,t.endY)) continue;
                 TraceVisual v;
                 if (count==traces.Count)
@@ -1194,7 +1201,8 @@ namespace DeadCircuit
             focusedNetwork = 0;
             BuildingState hovered = null;
             if (!ui) foreach (var b in buildingStates.Values)
-                if (DemoCatalog.Contains(b,x,y)) { hovered = b; break; }
+                if (DemoCatalog.Contains(b,x,y) && !NaturalInteriorHidden(DemoCatalog.CenterX(b), DemoCatalog.CenterY(b)))
+                { hovered = b; break; }
             int rangeCount = 0, wireCount = 0;
             if (selected)
             {
