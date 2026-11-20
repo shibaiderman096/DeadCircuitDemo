@@ -24,6 +24,12 @@
 7. 检查当前目录的 Git 状态后再改文件；提交时仅包含本次任务修改，保留其他未提交工作，绝不从此项目推送到远程。
 8. 每次完成项目开发工作后、提交与交付前，必须同步更新 `DEVELOPMENT_OUTLINE.md` 及本次涉及的专题大纲（如 `BIOMES.md`、`SEASONS_CHUNKS.md`），记录实际完成内容、验证结果与遗留事项，明确区分已实现和规划内容；与本次实现一并提交。
 
+## Git 分支交付
+
+1. 开始开发前核对 Git 状态和合并目标（默认本地 `master`），从目标分支创建本次任务的独立分支。当前工作区有无关改动时，用独立工作树隔离。
+2. 在任务分支审查本次差异，按改动范围执行下文的验证。所需检查全部通过后，仅提交本次任务的改动。检查失败或未完成时，保留任务分支并报告原因，暂不合并。
+3. 将验证通过的任务分支合并回目标分支，能快进时使用快进合并。如果目标分支已有新提交，先在任务分支整合并重新验证。合并后确认目标分支包含任务提交，并报告验证结果和提交哈希。
+
 ## 工具与验证
 
 项目仓库声明 Unity MCP for Unity（`com.coplaydev.unity-mcp`）；只有当前会话实际提供对应 MCP 工具时才调用它。若 Unity CLI 已安装，可先运行 `unity status --project-path 'D:/unity/DeadCircuitDemo'` 查看项目编辑器是否连接，再用 `unity command --help` 查看此版本可用的 Editor 操作。执行 Editor 命令时传入 `--project-path 'D:/unity/DeadCircuitDemo' --caller plugin --skill unity-cli`，并在操作前确认目标、命令参数和潜在写入。Unity CLI 工具目录随连接的 Editor 及安装包变化，以实时列表为准。
