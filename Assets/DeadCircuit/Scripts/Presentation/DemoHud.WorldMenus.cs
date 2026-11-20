@@ -25,6 +25,7 @@ namespace DeadCircuit
         readonly UiButton[] densityButtons = new UiButton[3];
         readonly RectTransform[] menuPages = new RectTransform[4];
         RectTransform menuFrame, worldListContent, settingsPanel, toolsTray, buildTray;
+        RectTransform deleteWorldDialog;
         CanvasGroup menuInteraction;
         UnityEngine.UI.ScrollRect worldListScroll;
         UnityEngine.UI.Slider volumeSlider, effectsSlider, scaleSlider;
@@ -32,10 +33,13 @@ namespace DeadCircuit
         TextMeshProUGUI creationSummary, worldListEmpty, selectedWorldDetails, selectedWorldSummary;
         TextMeshProUGUI volumeValue, effectsValue, scaleValue, lanStatus;
         UiButton createWorldButton, loadSelectedWorld, inspectToggle, toolsToggle, buildToggle;
+        TextMeshProUGUI deleteWorldDetails;
+        UiButton deleteSelectedWorld, cancelDeleteWorld;
         MenuPage menuPage;
         WorldPreset worldPreset = WorldPreset.Balanced;
         int cityDensity = 1;
         string selectedSaveId = "";
+        string pendingDeleteSaveId;
         bool buildTrayOpen, inspectorEnabled, menuRequestPending;
         float nextMenuRequestAt;
 
@@ -68,6 +72,7 @@ namespace DeadCircuit
             menuStatus = Label("Connection Status", menuFrame, "", 24, 576, 1072, 48, 15, Ink);
             menuStatus.alignment = TextAlignmentOptions.TopLeft;
             MakeSettings(root);
+            MakeDeleteWorldDialog(root);
             ShowMenuPage(MenuPage.Home, false);
         }
 
@@ -124,8 +129,69 @@ namespace DeadCircuit
             RectTransform content = ScrollContent("Selected World Scroll View", details, 14, 64, 396, 274, out _);
             selectedWorldDetails = FlowLabel("Selected World Details", content, "选择左侧存档以查看详情。", 368, 100, 17, Ink);
             selectedWorldSummary = FlowLabel("Selected World Summary", content, "", 368, 80, 15, Muted);
-            loadSelectedWorld = Button("Load Selected World", page, "读取选中世界", 668, 454, 424, 48, LoadSelectedWorld, true);
-            Label("Load World Notice", page, "只读取选中的存档，不创建或覆盖其他世界。", 668, 512, 424, 30, 14, Muted);
+            loadSelectedWorld = Button("Load Selected World", page, "读取选中世界", 668, 454, 258, 48, LoadSelectedWorld, true);
+            deleteSelectedWorld = Button("Delete Selected World", page, "删除存档", 938, 454, 154, 48, OpenDeleteWorldDialog);
+            deleteSelectedWorld.label.color = Danger;
+            deleteSelectedWorld.button.interactable = false;
+        }
+
+        void MakeDeleteWorldDialog(RectTransform root)
+        {
+            deleteWorldDialog = Backdrop("Delete World Dialog", root, new Color32(4, 12, 8, 230));
+            RectTransform card = Box("Delete World Card", deleteWorldDialog, 0, 0, 560, 278, Panel, true);
+            Center(card, 560, 278);
+            PanelRule(card, 560, 66);
+            Label("Delete World Heading", card, "删除存档", 28, 16, 504, 38, 27, Danger, FontStyles.Bold);
+            deleteWorldDetails = Label("Delete World Details", card, "", 28, 80, 504, 96, 18, Ink);
+            deleteWorldDetails.alignment = TextAlignmentOptions.TopLeft;
+            Label("Delete World Warning", card, "此世界的进度将永久删除。", 28, 178, 504, 28, 16, Muted);
+            cancelDeleteWorld = Button("Cancel World Delete", card, "取消", 28, 216, 246, 42, CloseDeleteWorldDialog);
+            UiButton confirm = Button("Confirm World Delete", card, "确认删除", 286, 216, 246, 42, ConfirmDeleteWorld);
+            confirm.label.color = Danger;
+            deleteWorldDialog.gameObject.SetActive(false);
+        }
+
+        void OpenDeleteWorldDialog()
+        {
+            if (menuPage != MenuPage.Load || menuRequestPending || deleteWorldDialog.gameObject.activeSelf || !bridge.CanDeleteWorld) return;
+            WorldSaveInfo world = bridge.Worlds.Find(w => w.saveId == selectedSaveId);
+            if (world == null) return;
+
+            pendingDeleteSaveId = world.saveId;
+            Set(deleteWorldDetails, Clean(string.IsNullOrWhiteSpace(world.name) ? world.saveId : world.name) +
+                "\n种子：" + world.seed.ToString(CultureInfo.InvariantCulture) + "\n修改时间：" + Clean(world.modified));
+            deleteWorldDialog.SetAsLastSibling();
+            deleteWorldDialog.gameObject.SetActive(true);
+            menuInteraction.interactable = false;
+            menuInteraction.blocksRaycasts = false;
+            if (eventSystem != null) eventSystem.SetSelectedGameObject(cancelDeleteWorld.button.gameObject);
+            DemoAudio.UiOpen();
+        }
+
+        void CloseDeleteWorldDialog()
+        {
+            if (!deleteWorldDialog.gameObject.activeSelf) return;
+            pendingDeleteSaveId = null;
+            deleteWorldDialog.gameObject.SetActive(false);
+            menuInteraction.interactable = !settingsPanel.gameObject.activeSelf;
+            menuInteraction.blocksRaycasts = true;
+            if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
+            DemoAudio.UiClose();
+        }
+
+        void ConfirmDeleteWorld()
+        {
+            string requested = pendingDeleteSaveId;
+            if (string.IsNullOrEmpty(requested) || !deleteWorldDialog.gameObject.activeSelf) return;
+            CloseDeleteWorldDialog();
+
+            try
+            {
+                bridge.DeleteWorld(requested);
+                Notify("已删除存档。");
+            }
+            catch (Exception error) { Notify("删除存档失败：" + error.Message, true); }
+            RequestWorldList();
         }
 
         void MakeLanPage(RectTransform page)
@@ -155,6 +221,7 @@ namespace DeadCircuit
 
         void ShowMenuPage(MenuPage page, bool refresh = true)
         {
+            CloseDeleteWorldDialog();
             menuPage = page;
             for (int i = 0; i < menuPages.Length; i++) menuPages[i].gameObject.SetActive(i == (int)page);
             menuStatus.alignment = page == MenuPage.Home ? TextAlignmentOptions.Center : TextAlignmentOptions.TopLeft;
@@ -234,6 +301,7 @@ namespace DeadCircuit
                 worldListEmpty.gameObject.SetActive(true);
                 SetFlowText(worldListEmpty, "无法读取存档列表，请点击刷新重试。", 80);
                 loadSelectedWorld.button.interactable = false;
+                deleteSelectedWorld.button.interactable = false;
                 Set(menuSave, "存档列表读取失败；可进入读取页重试。");
                 Notify("读取列表失败：" + error.Message, true);
             }
@@ -280,6 +348,7 @@ namespace DeadCircuit
             // Never silently switch the requested save when refresh removes a selection.
             if (selected == null) selectedSaveId = "";
             loadSelectedWorld.button.interactable = selected != null;
+            deleteSelectedWorld.button.interactable = selected != null && bridge.CanDeleteWorld;
             SetFlowText(selectedWorldDetails, selected == null ? "选择左侧存档以查看详情。" :
                 Clean(selected.name) + "\n\n种子：" + selected.seed.ToString(CultureInfo.InvariantCulture) + "\n修改时间：" + Clean(selected.modified), 100);
             SetFlowText(selectedWorldSummary, selected == null ? "" : Clean(selected.summary), 32);

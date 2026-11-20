@@ -50,6 +50,23 @@ namespace DeadCircuit
             }
             finally { pendingGeneration = null; }
         }
+        internal bool CanDeleteWorld => !IsRunning && !connecting && !leaving && !smokeHost && !smokeClient;
+
+        internal void DeleteWorld(string saveId)
+        {
+            if (!CanDeleteWorld) throw new InvalidOperationException("请先退出当前游戏或连接。");
+            if (!Worlds.Exists(world => world.saveId == saveId))
+                throw new InvalidOperationException("所选存档已不在列表中，请刷新后重试。");
+
+            if (qaRun)
+            {
+                if (saveId != "qa") throw new ArgumentException("QA 只能删除独立测试世界。", nameof(saveId));
+                WorldArchive.DeletePath(ResolveSavePath());
+            }
+            else if (saveId == "legacy") WorldArchive.DeletePath(LegacySavePath);
+            else Archive.Delete(saveId);
+        }
+
         public void LoadWorld(string saveId)
         {
             if (IsRunning || connecting || leaving) return;

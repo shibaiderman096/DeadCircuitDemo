@@ -207,7 +207,8 @@ namespace DeadCircuit
             var keyboard = Keyboard.current;
             if (!running && keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
-                if (settingsPanel.gameObject.activeSelf) CloseSettings();
+                if (deleteWorldDialog.gameObject.activeSelf) CloseDeleteWorldDialog();
+                else if (settingsPanel.gameObject.activeSelf) CloseSettings();
                 else if (appearancePanel != null && appearancePanel.gameObject.activeSelf) CloseAppearance();
                 else ShowMenuPage(MenuPage.Home);
             }
@@ -471,6 +472,7 @@ namespace DeadCircuit
             bool running = bridge.IsRunning;
             if (wasRunning != running)
             {
+                CloseDeleteWorldDialog();
                 inspectedId = inspectedX = inspectedY = -1;
                 localFeedback = "";
                 lastBridgeStatus = lastPlayerNotice = lastWorldNotice = "";
