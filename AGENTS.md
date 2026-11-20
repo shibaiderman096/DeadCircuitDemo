@@ -22,6 +22,7 @@
 5. 需要重生成图集时运行 `python Tools/generate_art.py`；脚本会写入 `Assets/DeadCircuit/Resources/Art/`。编辑生成素材时同步维护生成脚本。
 6. 默认使用 PowerShell 7 处理 Windows 命令；任务开始时重新核验编辑器、命令行、Git 和运行时状态。Unity Editor 命令需明确指定目标项目。
 7. 检查当前目录的 Git 状态后再改文件；提交时仅包含本次任务修改，保留其他未提交工作，绝不从此项目推送到远程。
+8. 每次完成项目开发工作后、提交与交付前，必须同步更新 `DEVELOPMENT_OUTLINE.md` 及本次涉及的专题大纲（如 `BIOMES.md`、`SEASONS_CHUNKS.md`），记录实际完成内容、验证结果与遗留事项，明确区分已实现和规划内容；与本次实现一并提交。
 
 ## 工具与验证
 
