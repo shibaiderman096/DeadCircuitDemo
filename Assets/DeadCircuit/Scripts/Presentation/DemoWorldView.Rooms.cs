@@ -148,9 +148,8 @@ namespace DeadCircuit
             roomFloorMesh.SetVertices(vertices); roomFloorMesh.SetUVs(0, uv);
             roomFloorMesh.SetTriangles(triangles, 0); roomFloorMesh.SetColors(colors); roomFloorMesh.RecalculateBounds();
             roomFloorRenderer.enabled = vertices.Count > 0;
-            // Roofs stay cut away by default, including above open doors. RoomLayout
-            // still treats the live door as an enclosing boundary; no opaque roof
-            // sprite can hide movement, combat or the doorway below it.
+            // Natural sites add their own exterior shell in DrawNaturalExteriors.
+            // Player-built rooms keep this floor and the existing cutaway view.
         }
 
         void AddRoomFloor(int x, int y)
@@ -185,6 +184,7 @@ namespace DeadCircuit
 
         void ResetRooms()
         {
+            ResetNaturalExteriors();
             ResetSites();
             roomLayout = drawnRoomLayout = null; roomTopology = 0; roomGround = null;
             drawnRoomChunkX = drawnRoomChunkY = int.MinValue;
@@ -194,6 +194,7 @@ namespace DeadCircuit
 
         void DisposeRooms()
         {
+            DisposeNaturalExteriors();
             DisposeSites();
             if (roomFloorMesh != null) Destroy(roomFloorMesh);
             if (roomFloorMaterial != null) Destroy(roomFloorMaterial);

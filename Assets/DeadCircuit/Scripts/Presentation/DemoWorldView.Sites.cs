@@ -79,11 +79,11 @@ namespace DeadCircuit
             if (world.sites != null) foreach (var site in world.sites)
             {
                 if (!SitePlan(site, out _) || site.x > siteMaxX + 1 || site.y > siteMaxY + 1 ||
-                    site.x + site.width < siteMinX - 1 || site.y + site.height < siteMinY - 1) continue;
+                    site.x + site.width < siteMinX - 1 || site.y + site.height + NaturalBuildingLayout.MaxRiseCells < siteMinY - 1) continue;
                 int x0 = WorldTiles.FloorDiv(site.x - 1, ChunkSize);
                 int y0 = WorldTiles.FloorDiv(site.y - 1, ChunkSize);
                 int x1 = WorldTiles.FloorDiv(site.x + site.width, ChunkSize);
-                int y1 = WorldTiles.FloorDiv(site.y + site.height, ChunkSize);
+                int y1 = WorldTiles.FloorDiv(site.y + site.height + NaturalBuildingLayout.MaxRiseCells, ChunkSize);
                 bool wanted = false;
                 for (int cy = y0; cy <= y1 && !wanted; cy++)
                 for (int cx = x0; cx <= x1; cx++)
@@ -94,6 +94,7 @@ namespace DeadCircuit
             }
             ulong hash = SiteHash(sites ^ chunks, visibleSites.Count);
             hash = SiteHash(hash, world.generatorVersion);
+            hash = SiteHash(SiteHash(hash, (int)exteriorVisibilitySignature), (int)(exteriorVisibilitySignature >> 32));
             hash = SiteHash(hash, siteMinX); hash = SiteHash(hash, siteMinY);
             hash = SiteHash(hash, siteMaxX); return SiteHash(hash, siteMaxY);
         }
@@ -140,6 +141,7 @@ namespace DeadCircuit
                 // Outdoor paving keeps the authoritative terrain beneath it; it
                 // must not become an indoor room floor. Spaces have no footprint.
                 if (cell == ' ' || cell == ',') continue;
+                if (NaturalInteriorHidden(x, y)) continue;
                 if (floor != null) AddSiteFloor(floor, x, y);
                 else siteArtPending = true;
                 char stair = floorsEnabled && (cell == '.' || cell == '<' || cell == '>')
@@ -218,7 +220,7 @@ namespace DeadCircuit
             float x = site.doorX + (outward.x - outward.y) * .8125f;
             float y = site.doorY + (outward.y + outward.x) * .8125f;
             if (!SiteCellVisible(Mathf.FloorToInt(x + .5f), Mathf.FloorToInt(y + .5f))) return;
-            AddSiteSprite(DemoArt.Get("landmark_sign_" + (int)site.kind), x, y, .5625f, SiteSignOrder, 0);
+            AddSiteSprite(DemoArt.Get("landmark_sign_" + (int)site.kind), x, y, .5625f, NaturalSignOrder(site), 0);
         }
 
         void ResetSites() => DisposeSites();

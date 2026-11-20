@@ -1,0 +1,76 @@
+{
+  "width": 144,
+  "height": 108,
+  "sprites": [
+    {
+      "name": "exterior_roof_tile",
+      "x": 2,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "exterior_roof_metal",
+      "x": 38,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "exterior_roof_flat",
+      "x": 74,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "exterior_roof_glass",
+      "x": 110,
+      "y": 2,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "exterior_facade_brick",
+      "x": 2,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "exterior_facade_concrete",
+      "x": 38,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "exterior_facade_industrial",
+      "x": 74,
+      "y": 38,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "exterior_cornice",
+      "x": 110,
+      "y": 38,
+      "w": 32,
+      "h": 8
+    },
+    {
+      "name": "exterior_roof_vent",
+      "x": 2,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "exterior_roof_hatch",
+      "x": 38,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    }
+  ]
+}
