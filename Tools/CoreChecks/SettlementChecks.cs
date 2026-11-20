@@ -124,6 +124,21 @@ static partial class Checks
                 weight(SettlementKind.Rural, SiteKind.Barn) > weight(SettlementKind.LowDensitySuburb, SiteKind.Barn) &&
                 SettlementGeneration.BlueprintWeight(SettlementKind.Rural, SiteKind.HuntingCabin, BiomeKind.ConiferousForest) >
                     SettlementGeneration.BlueprintWeight(SettlementKind.HighDensitySuburb, SiteKind.HuntingCabin, BiomeKind.ConiferousForest), "rural lacks agriculture/cabins");
+            foreach (var kind in new[] { SiteKind.Apartment, SiteKind.Hospital, SiteKind.Supermarket })
+            {
+                int biomeMask = SiteBlueprintCatalog.Get(kind).biomeMask;
+                for (int biome = 0; biome < WorldGeneration.BiomeCount; biome++)
+                {
+                    bool available = (biomeMask & (1 << biome)) != 0;
+                    Require((SettlementGeneration.BlueprintWeight(SettlementKind.HighDensityCity, kind, (BiomeKind)biome) > 0) == available &&
+                        (SettlementGeneration.BlueprintWeight(SettlementKind.LowDensityCity, kind, (BiomeKind)biome) > 0) == available,
+                        "urban landmark city eligibility disagrees with biome mask: " + kind + "/" + biome);
+                    Require(SettlementGeneration.BlueprintWeight(SettlementKind.HighDensitySuburb, kind, (BiomeKind)biome) == 0 &&
+                        SettlementGeneration.BlueprintWeight(SettlementKind.LowDensitySuburb, kind, (BiomeKind)biome) == 0 &&
+                        SettlementGeneration.BlueprintWeight(SettlementKind.Rural, kind, (BiomeKind)biome) == 0,
+                        "urban landmark can spawn outside city zones: " + kind + "/" + biome);
+                }
+            }
             Require(weight(SettlementKind.HighDensityCity, SiteKind.Farmhouse) == 0 && weight(SettlementKind.Rural, SiteKind.Apartment) == 0 &&
                 weight(SettlementKind.Rural, SiteKind.Hospital) == 0, "incompatible building uses not filtered");
             for (int k = 1; k <= 5; k++) Require(weight((SettlementKind)k, SiteKind.Workshop) > 0, "industry cannot mix in class " + k);

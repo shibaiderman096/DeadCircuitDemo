@@ -58,16 +58,16 @@ namespace DeadCircuit
             { 8, 13, 16, 12, 9 },    // GasStation
             { 12, 13, 8, 4, 1 },     // PoliceStation
             { 12, 18, 18, 8, 1 },    // School
-            { 100, 62, 16, 2, 0 },   // Apartment
+            { 100, 62, 0, 0, 0 },    // Apartment
             { 0, 0, 5, 15, 65 },     // Greenhouse
             { 8, 12, 12, 6, 3 },     // Substation
             { 38, 32, 18, 9, 2 },    // Restaurant
             { 28, 24, 18, 9, 1 },    // Pharmacy
             { 18, 23, 24, 18, 10 },  // HardwareStore
-            { 48, 28, 12, 2, 0 },    // Supermarket
+            { 48, 28, 0, 0, 0 },     // Supermarket
             { 16, 18, 8, 2, 0 },     // Library
             { 14, 15, 12, 6, 2 },    // FireStation
-            { 70, 30, 5, 0, 0 },     // Hospital
+            { 70, 30, 0, 0, 0 },     // Hospital
             { 10, 8, 6, 4, 2 },      // ResearchLab
             { 6, 10, 8, 4, 1 },      // PowerPlant
             { 8, 10, 10, 6, 2 },     // WaterTreatment
