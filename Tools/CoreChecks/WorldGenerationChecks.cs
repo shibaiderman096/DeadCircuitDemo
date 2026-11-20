@@ -305,15 +305,11 @@ static partial class Checks
         Require(state.buildings.Count(b => b.kind == BuildKind.Door) == state.sites.Count, "generated door count differs from site count");
         foreach (var expected in new[] { (BuildKind.Workbench, 29, 35), (BuildKind.StoneFurnace, 28, 37), (BuildKind.Chest, 30, 37) })
             Require(state.buildings.Any(b => b.kind == expected.Item1 && b.x == expected.Item2 && b.y == expected.Item3), "tutorial device moved");
-        Require(state.buildings.Single(b => b.kind == BuildKind.Chest).items[(int)ItemKind.Wood] == 12, "tutorial wood supply changed");
-        foreach (var expected in new[] { (NodeKind.Ore, 24, 30, 3000), (NodeKind.CopperOre, 24, 34, 1600), (NodeKind.TinOre, 24, 37, 1000), (NodeKind.UraniumOre, 40, 37, 500),
-            (NodeKind.Tree, 25, 34, 30), (NodeKind.Tree, 25, 35, 30), (NodeKind.Tree, 26, 36, 30), (NodeKind.Scrap, 36, 34, 60), (NodeKind.Crate, 35, 35, 16), (NodeKind.Crate, 36, 37, 16) })
-            Require(state.nodes.Any(n => n.kind == expected.Item1 && n.x == expected.Item2 && n.y == expected.Item3 && n.stock == expected.Item4), "tutorial supply moved/missing");
+        Require(state.buildings.Single(b => b.kind == BuildKind.Chest).items.All(n => n == 0), "starting chest grants free materials");
+        Require(!state.nodes.Any(n => n.x >= 22 && n.x <= 42 && n.y >= 22 && n.y <= 42), "fixed starting resource remains");
         var occupied = state.nodes.Select(n => n.x + n.y * 64).ToHashSet();
         foreach (var b in state.buildings) for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) occupied.Add(x + y * 64);
         var reachable = GenerationFlood(state, occupied);
-        foreach (var n in state.nodes.Where(n => n.x >= 22 && n.x <= 42 && n.y >= 23 && n.y <= 41))
-            Require(GenerationHasReachableNeighbor(reachable, n.x, n.y), "tutorial supply cannot be gathered");
         foreach (var b in state.buildings.Where(b => b.kind != BuildKind.Door)) Require(GenerationHasReachableNeighbor(reachable, b.x, b.y), "starter machine cannot be used");
         for (int y = 24; y <= 29; y++) for (int x = 23; x <= 24; x++) Require(state.ground[x + y * 64] == '2', "tutorial river removed");
         for (int y = 25; y <= 26; y++) for (int x = 25; x <= 26; x++)

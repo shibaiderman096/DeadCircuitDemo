@@ -5,38 +5,14 @@ static partial class Checks
     // Public seams: new-world generation, sparse chunk generation and real interact commands.
     static void RunSteamResourceChecks()
     {
-        Run("steam resources guarantee reachable finite starter deposits without opening crates", () =>
-        {
-            foreach (int seed in new[] { -991, 0, 73149 })
-            foreach (WorldPreset preset in Enum.GetValues<WorldPreset>())
-            foreach (int density in new[] { 0, 2 })
-            foreach (bool chunked in new[] { false, true })
-            {
-                var world = WorldGeneration.Generate(new WorldGenerationSettings
-                    { seed = seed, preset = preset, cityDensity = density, chunked = chunked });
-                Require(world.generatorVersion == WorldGeneration.CurrentGeneratorVersion, "new steam-resource worlds must use the current generator");
-                var blocked = world.nodes.Select(n => n.x + n.y * 64).ToHashSet();
-                foreach (var b in world.buildings)
-                    for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
-                        for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) blocked.Add(x + y * 64);
-                var reachable = GenerationFlood(world, blocked);
-                foreach (NodeKind kind in new[] { NodeKind.Coal, NodeKind.Limestone, NodeKind.FireClay })
-                {
-                    var deposits = world.nodes.Where(n => n.kind == kind && n.x >= 22 && n.x <= 42 && n.y >= 22 && n.y <= 42).ToArray();
-                    Require(deposits.Length > 0, $"missing starter {kind}: seed={seed}, preset={preset}, density={density}, chunked={chunked}");
-                    Require(deposits.All(n => n.stock >= 160 && n.stock <= 1000 && n.hp > 0), "starter deposit is exhausted or unbounded: " + kind);
-                    Require(deposits.Any(n => WorldTiles.Ground(world, n.x, n.y) != '2' && GenerationHasReachableNeighbor(reachable, n.x, n.y)),
-                        "starter resource requires opening crates or clearing obstacles: " + kind);
-                }
-            }
-        });
         Run("steam resources gather correct items with bare hands and existing pickaxes then deplete", () =>
         {
             foreach (bool chunked in new[] { false, true })
             foreach (GearKind? pick in new GearKind?[] { null, GearKind.StonePickaxe, GearKind.SteelPickaxe })
             foreach (var resource in new[] { (NodeKind.Coal, ItemKind.Coal), (NodeKind.Limestone, ItemKind.Limestone), (NodeKind.FireClay, ItemKind.FireClay) })
             {
-                var sim = new WorldSimulator(WorldGeneration.Generate(new WorldGenerationSettings { chunked = chunked }));
+                var world = SteamGatherWorld(resource.Item1, chunked);
+                var sim = new WorldSimulator(world);
                 var p = sim.AddPlayer("steam-gatherer", "Miner");
                 var node = sim.State.nodes.Single(n => n.kind == resource.Item1 && n.x >= 22 && n.x <= 42 && n.y >= 22 && n.y <= 42);
                 var crates = sim.State.nodes.Where(n => n.kind == NodeKind.Crate).ToDictionary(n => n.id, n => n.stock);
@@ -69,9 +45,9 @@ static partial class Checks
         {
             foreach (var resource in new[] { (NodeKind.Coal, ItemKind.Coal), (NodeKind.Limestone, ItemKind.Limestone), (NodeKind.FireClay, ItemKind.FireClay) })
             {
-                var sim = new WorldSimulator(WorldGeneration.Generate(null));
+                var sim = new WorldSimulator(SteamGatherWorld(resource.Item1, false));
                 var p = sim.AddPlayer("steam-cap", "Miner");
-                var node = sim.State.nodes.First(n => n.kind == resource.Item1);
+                var node = sim.State.nodes.Single(n => n.kind == resource.Item1 && n.x == 37 && n.y == 35);
                 node.stock = 3; p.x = node.x; p.y = node.y - 1; p.activeSlot = 2;
                 p.items[(int)resource.Item2] = WorldSimulator.InventoryLimit - 1;
                 sim.Apply(Command(p, "interact", node.x, node.y));
@@ -182,6 +158,14 @@ static partial class Checks
                 Advance(sim, .6f);
             }
         });
+    }
+
+    // Harvesting fixtures provide a deposit explicitly; new worlds no longer grant one.
+    static WorldState SteamGatherWorld(NodeKind kind, bool chunked)
+    {
+        var world = WorldGeneration.Generate(new WorldGenerationSettings { chunked = chunked });
+        world.nodes.Add(new NodeState { id = world.nextId++, kind = kind, x = 37, y = 35, stock = 7 });
+        return world;
     }
 
     static void SteamResourceChunkAccess(WorldState world, int cx, int cy)

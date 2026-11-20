@@ -39,7 +39,6 @@ static partial class Checks
             var sim=New(out var p);Require(sim.State.era==TechEra.Primitive && sim.State.version==WorldSimulator.SaveVersion,"new world skipped progression");
             Require(sim.State.produced.Length==DemoCatalog.ItemCount && sim.State.produced.All(n=>n==0),"new world fabricated production history");
             Require(sim.State.buildings.All(b=>TechCatalog.RequiredEra(b.kind)==TechEra.Primitive),"prebuilt modern factory");
-            foreach(var kind in new[] { NodeKind.Ore,NodeKind.CopperOre,NodeKind.TinOre,NodeKind.UraniumOre })Require(sim.State.nodes.Any(n=>n.kind==kind && n.stock>0),$"new world lacks {kind}");
             Array.Fill(p.items,100);sim.Apply(Command(p,"research",arg:6));Require(sim.State.era==TechEra.Primitive,"funded malicious research jumped to Nuclear");
         });
         for(int stage=1;stage<=6;stage++)

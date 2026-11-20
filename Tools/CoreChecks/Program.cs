@@ -198,7 +198,7 @@ static partial class Checks
                     for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
                         Require(x >= 0 && x < 64 && y >= 0 && y < 64 && sim.State.ground[x + y * 64] != '2' && cells.Add((x, y)), "overlapping/outside/water starter footprint");
                 }
-                Require(sim.State.nodes.Any(n => n.kind == NodeKind.Ore && n.x == 24 && n.y == 30), "starter ore moved");
+                Require(!sim.State.nodes.Any(n => n.x >= 22 && n.x <= 42 && n.y >= 22 && n.y <= 42), "fixed starting resource remains");
             }
         });
         Run("primitive starter leaves a safe usable construction area", () =>

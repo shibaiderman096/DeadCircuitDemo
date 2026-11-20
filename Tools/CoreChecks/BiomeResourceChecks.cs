@@ -57,26 +57,35 @@ static partial class Checks
             Require(actual.SequenceEqual(new[] { old, old, old, "45D253F881142679182063A36F3C4D2DFA133D983B1700C5B912F9E092E9F745" }),
                 "legacy generation changed: " + string.Join(",", actual));
         });
-        Run("biome resources keep tutorial research materials reachable across seeds and presets", () =>
+        Run("biome resources new worlds omit fixed starting supplies across seeds presets and map modes", () =>
         {
+            int naturalResources = 0;
             foreach (int seed in new[] { -991, 0, 73149 }) foreach (WorldPreset preset in Enum.GetValues<WorldPreset>())
+            foreach (int density in new[] { 0, 2 }) foreach (bool chunked in new[] { false, true })
             {
-                var world = WorldGeneration.Generate(new WorldGenerationSettings { seed = seed, preset = preset, cityDensity = 2 });
-                GenerationMapContract(world);
-                foreach (var entry in new[] { (NodeKind.Stone, 27, 34, 600), (NodeKind.Clay, 27, 36, 600),
-                    (NodeKind.Ore, 24, 30, 3000), (NodeKind.CopperOre, 24, 34, 1600), (NodeKind.TinOre, 24, 37, 1000) })
-                    Require(world.nodes.Any(n => n.kind == entry.Item1 && n.x == entry.Item2 && n.y == entry.Item3 && n.stock == entry.Item4),
-                        "tutorial lost required supply: " + entry.Item1);
+                var settings = new WorldGenerationSettings { seed = seed, preset = preset, cityDensity = density, chunked = chunked };
+                var world = WorldGeneration.Generate(settings);
+                Require(!world.nodes.Any(n => n.x >= 22 && n.x <= 42 && n.y >= 22 && n.y <= 42),
+                    $"fixed starting resource remains: seed={seed}, preset={preset}, density={density}, chunked={chunked}");
+                Require(world.buildings.Single(b => b.kind == BuildKind.Chest).items.All(n => n == 0), "starting chest grants free materials");
+                foreach (var kind in new[] { BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.Chest })
+                    Require(world.buildings.Any(b => b.kind == kind), "removing resources removed a starting facility: " + kind);
+                naturalResources += world.nodes.Count(n => n.kind != NodeKind.Wall && n.kind != NodeKind.Crate);
+                Require(TerrainEntityDump(world) == TerrainEntityDump(WorldGeneration.Generate(settings)), "seeded resources changed between identical generations");
             }
+            Require(naturalResources > 0, "natural resources disappeared with starting supplies");
         });
         Run("biome resources preserve depleted nodes generator choice and future output through save restore", () =>
         {
             foreach (int generator in new[] { 6, 7 })
             {
-                var sim = new WorldSimulator(WorldGeneration.Generate(new WorldGenerationSettings { chunked = true }));
+                var world = WorldGeneration.Generate(new WorldGenerationSettings { chunked = true });
+                int stoneId = world.nextId++;
+                world.nodes.Add(new NodeState { id = stoneId, kind = NodeKind.Stone, x = 27, y = 34, stock = 1 });
+                var sim = new WorldSimulator(world);
                 sim.State.generatorVersion = generator;
                 var p = sim.AddPlayer("biome-save", "Gatherer"); p.x = 27; p.y = 35;
-                var stone = sim.State.nodes.Single(n => n.kind == NodeKind.Stone && n.x == 27 && n.y == 34);
+                var stone = sim.State.nodes.Single(n => n.id == stoneId);
                 stone.stock = 1; int before = p.items[(int)ItemKind.Stone];
                 sim.Apply(Command(p, "interact", 27, 34));
                 Require(p.items[(int)ItemKind.Stone] == before + 1 && sim.State.nodes.All(n => n.id != stone.id), "stone did not deplete once");

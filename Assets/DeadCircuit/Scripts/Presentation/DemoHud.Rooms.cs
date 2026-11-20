@@ -52,9 +52,9 @@ namespace DeadCircuit
             string hint = "靠近并瞄准后按 E；空手也可采集。";
             switch (node.kind)
             {
-                case NodeKind.Coal: hint += "\n煤层多见于针叶林与冻原；出生区(37,35)有露头保障。"; break;
-                case NodeKind.Limestone: hint += "\n石灰石多见于河谷、荒漠与雪山；出生区(38,37)有矿床保障。"; break;
-                case NodeKind.FireClay: hint += "\n耐火黏土多见于湿地、沼泽与河谷沉积层；出生区(39,35)有矿床保障。"; break;
+                case NodeKind.Coal: hint += "\n煤层多见于针叶林与冻原，需在自然地貌中勘探。"; break;
+                case NodeKind.Limestone: hint += "\n石灰石多见于河谷、荒漠与雪山，需在自然地貌中勘探。"; break;
+                case NodeKind.FireClay: hint += "\n耐火黏土多见于湿地、沼泽与河谷沉积层，需在自然地貌中勘探。"; break;
             }
             if (EquipmentCatalog.UsesPickaxe(node.kind))
                 hint += "\n蒸汽矿机可采集这类矿床，需紧邻矿床并接通蒸汽；LV采矿机目前采铁、铜、锡、铀。";

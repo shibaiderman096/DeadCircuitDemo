@@ -178,7 +178,7 @@ namespace DeadCircuit
             for (int i = 0; i < initialX.Length; i++)
                 state.zombies.Add(new ZombieState { id = state.nextId++, x = initialX[i], y = initialY[i],
                     variant = i == 5 ? 1 : 0, hp = i == 5 ? 32f : 45f });
-            state.announcement = "原始时代：工作台(29,35)、石炉(28,37)，附近有石材与黏土。按T研究：工具→烧炭→制陶→铜锡→青铜→块炼铁；满足实际产量后进入水力。科技全队共享。";
+            state.announcement = "原始时代：工作台(29,35)、石炉(28,37)。资源需在周围自然地貌中寻找和采集。按T研究：工具→烧炭→制陶→铜锡→青铜→块炼铁；满足实际产量后进入水力。科技全队共享。";
             state.announcementUntil = 28f;
             WorldSimulator.PrepareGeneratedWorld(state);
             return state;
@@ -271,32 +271,9 @@ namespace DeadCircuit
             for (int y = 26; y <= 39; y++) for (int x = 23; x <= 40; x++) ground[x + y * Size] = '4';
             for (int y = 24; y <= 29; y++) for (int x = 23; x <= 24; x++) ground[x + y * Size] = '2';
             for (int y = 25; y <= 26; y++) for (int x = 25; x <= 26; x++) ground[x + y * Size] = '0';
-            AddNode(state, occupied, 24, 30, NodeKind.Ore, 3000);
-            AddNode(state, occupied, 24, 34, NodeKind.CopperOre, 1600);
-            AddNode(state, occupied, 24, 37, NodeKind.TinOre, 1000);
-            AddNode(state, occupied, 40, 37, NodeKind.UraniumOre, 500);
-            AddNode(state, occupied, 25, 34, NodeKind.Tree, 30);
-            AddNode(state, occupied, 25, 35, NodeKind.Tree, 30);
-            AddNode(state, occupied, 26, 36, NodeKind.Tree, 30);
-            if (state.generatorVersion >= 6)
-            {
-                AddNode(state, occupied, 27, 34, NodeKind.Stone, 600);
-                AddNode(state, occupied, 27, 36, NodeKind.Clay, 600);
-            }
-            if (state.generatorVersion >= 8)
-            {
-                // Exposed finite deposits on the reserved, dry tutorial floor;
-                // no crate loot, research or random biome roll gates steam.
-                AddNode(state, occupied, 37, 35, NodeKind.Coal, 600);
-                AddNode(state, occupied, 38, 37, NodeKind.Limestone, 600);
-                AddNode(state, occupied, 39, 35, NodeKind.FireClay, 600);
-            }
-            AddNode(state, occupied, 36, 34, NodeKind.Scrap, 60);
-            AddNode(state, occupied, 35, 35, NodeKind.Crate, 16);
-            AddNode(state, occupied, 36, 37, NodeKind.Crate, 16);
             AddStarter(state, occupied, BuildKind.Workbench, 29, 35);
             AddStarter(state, occupied, BuildKind.StoneFurnace, 28, 37);
-            AddStarter(state, occupied, BuildKind.Chest, 30, 37).items[(int)ItemKind.Wood] = 12;
+            AddStarter(state, occupied, BuildKind.Chest, 30, 37);
         }
 
         private static BuildingState AddStarter(WorldState state, HashSet<int> occupied, BuildKind kind, int x, int y)
