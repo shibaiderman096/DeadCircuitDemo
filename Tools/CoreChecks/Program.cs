@@ -37,7 +37,8 @@ static partial class Checks
     {
         var sim = new WorldSimulator(73149); p = sim.AddPlayer("test-player", "测试者"); return sim;
     }
-    // Legacy spatial/logistics fixtures explicitly opt into LV. A seeded new world must stay Primitive.
+    // Isolated spatial/logistics fixtures supply earned LV evidence explicitly.
+    // New-world and progression checks must start without these synthetic unlocks.
     static WorldState Flat(float elapsed = 0, TechEra era = TechEra.LowVoltage) => new()
     {
         version = WorldSimulator.SaveVersion, era = era, seed = 73149, ground = new string('4', 4096), elapsed = elapsed,
@@ -47,6 +48,13 @@ static partial class Checks
         steamPigIron = era >= TechEra.Steam ? 6 : 0, steamSteel = era >= TechEra.Steam ? 4 : 0,
         steamPlates = era >= TechEra.Steam ? 4 : 0, steamFittings = era >= TechEra.Steam ? 4 : 0,
         steamDriven = era >= TechEra.Steam ? 4 : 0,
+        lvResearch = era >= TechEra.LowVoltage ? 255 : 0,
+        lvWire = era >= TechEra.LowVoltage ? 12 : 0, lvInsulators = era >= TechEra.LowVoltage ? 8 : 0,
+        lvCable = era >= TechEra.LowVoltage ? 8 : 0, lvCoils = era >= TechEra.LowVoltage ? 4 : 0,
+        lvMotors = era >= TechEra.LowVoltage ? 2 : 0, lvRelays = era >= TechEra.LowVoltage ? 4 : 0,
+        lvCircuits = era >= TechEra.LowVoltage ? 6 : 0, lvElectric = era >= TechEra.LowVoltage ? 8 : 0,
+        lvAutomated = era >= TechEra.LowVoltage ? 4 : 0, lvSorted = era >= TechEra.LowVoltage ? 4 : 0,
+        lvProtected = era >= TechEra.LowVoltage ? 4 : 0,
         tick = (long)Math.Round(elapsed / WorldSimulator.FixedStep), nextWaveAt = elapsed + 180f
     };
     static PlayerState Builder(WorldSimulator sim, string id = "p", string name = "P")
@@ -132,6 +140,9 @@ static partial class Checks
         WaterChecks();
         SteamChecks();
         RunSteamResourceChecks();
+        LowVoltageChecks();
+        ElectricalAutomationChecks();
+        RunLowVoltageProgressionChecks();
         CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); CargoChecks(); SaveAndCombatChecks();
         TechnologyChecks(); EraEnergyChecks(); EraProductionChecks(); VersionThreeSaveChecks(); EquipmentChecks(); WorldGenerationChecks(); WorldArchiveChecks(); SurvivalChecks(); EnemyChecks(); ExpansionIntegrationChecks(); ForagingChecks();
         if (selected == 0) { Console.Error.WriteLine("No check names matched the supplied filters."); return 2; }

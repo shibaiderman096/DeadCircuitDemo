@@ -28,6 +28,7 @@ namespace DeadCircuit
                 case BuildKind.CombustionChamber: case BuildKind.Chimney: case BuildKind.FeedwaterPump: case BuildKind.SteamEngine:
                 case BuildKind.CokeOven: case BuildKind.RefractoryKiln: case BuildKind.IronBlastFurnace: case BuildKind.RefiningForge: case BuildKind.MachineTool:
                 case BuildKind.Boiler: case BuildKind.SteamPipe: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return TechEra.Steam;
+                case BuildKind.WindingBench: case BuildKind.FilterSplitter: case BuildKind.CircuitBreaker: case BuildKind.ElectricCrusher:
                 case BuildKind.Generator: case BuildKind.Miner: case BuildKind.Smelter: case BuildKind.Assembler: case BuildKind.Turret: case BuildKind.PowerPole: case BuildKind.SteamTurbine: case BuildKind.CircuitAssembler: return TechEra.LowVoltage;
                 case BuildKind.SolarPanel: case BuildKind.DieselGenerator: case BuildKind.ChemicalPlant: case BuildKind.MediumPole: case BuildKind.Transformer: case BuildKind.CoolingTower: return TechEra.MediumVoltage;
                 case BuildKind.HighGenerator: case BuildKind.HighPole: case BuildKind.PrecisionAssembler: return TechEra.HighVoltage;
@@ -82,10 +83,11 @@ namespace DeadCircuit
             switch (kind)
             {
                 case BuildKind.SteamEngine: case BuildKind.Waterwheel: case BuildKind.Shaft: case BuildKind.MechanicalCrusher:
-                case BuildKind.IronBlastFurnace: case BuildKind.RefiningForge: case BuildKind.MachineTool:
+                case BuildKind.IronBlastFurnace: case BuildKind.RefiningForge: case BuildKind.MachineTool: case BuildKind.WindingBench:
                 case BuildKind.BlastFurnace: case BuildKind.MechanicalPress: case BuildKind.MechanicalWorkshop:
                 case BuildKind.WaterMill: case BuildKind.IrrigationPump: case BuildKind.MechanicalHopper: return 0;
                 case BuildKind.Boiler: case BuildKind.SteamPipe: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return 1;
+                case BuildKind.FilterSplitter: case BuildKind.CircuitBreaker: case BuildKind.ElectricCrusher:
                 case BuildKind.Generator: case BuildKind.Miner: case BuildKind.Smelter: case BuildKind.Assembler: case BuildKind.Turret: case BuildKind.PowerPole: case BuildKind.SteamTurbine: case BuildKind.CircuitAssembler: case BuildKind.Transformer: return 2;
                 case BuildKind.SolarPanel: case BuildKind.DieselGenerator: case BuildKind.ChemicalPlant: case BuildKind.MediumPole: case BuildKind.CoolingTower: return 3;
                 case BuildKind.HighGenerator: case BuildKind.HighPole: case BuildKind.PrecisionAssembler: case BuildKind.NuclearProcessor: case BuildKind.Reactor: return 4;
@@ -122,6 +124,11 @@ namespace DeadCircuit
             {
                 string steam = SteamCatalog.LowVoltageRequirement(s);
                 if (steam.Length > 0) return steam;
+            }
+            if(target==TechEra.MediumVoltage)
+            {
+                string electrical=LowVoltageCatalog.MediumVoltageRequirement(s);
+                if(electrical.Length>0) return electrical;
             }
             BuildKind required = target == TechEra.Water ? BuildKind.Workbench : target == TechEra.Steam ? BuildKind.MechanicalCrusher : target == TechEra.LowVoltage ? BuildKind.SteamFurnace : target == TechEra.MediumVoltage ? BuildKind.CircuitAssembler : target == TechEra.HighVoltage ? BuildKind.ChemicalPlant : BuildKind.PrecisionAssembler;
             return s.buildings.Exists(b => b != null && b.kind == required && b.hp > 0f) ? "" : "需要已建设备：" + DemoCatalog.BuildName(required);
@@ -173,7 +180,7 @@ namespace DeadCircuit
             R(55,"穿甲弹精密装配",TechEra.HighVoltage,BuildKind.PrecisionAssembler,4f,DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Copper,2,ItemKind.Polymer,1),DemoCatalog.Materials(ItemKind.ArmorPiercingAmmo,4)),
             R(56,"手制步枪弹",TechEra.LowVoltage,BuildKind.Workbench,.5f,DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Copper,1),DemoCatalog.Materials(ItemKind.RifleAmmo,3)),
             R(57,"手制霰弹",TechEra.LowVoltage,BuildKind.Workbench,.5f,DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Scrap,1),DemoCatalog.Materials(ItemKind.Shell,2)),
-            R(60,"基础电路",TechEra.LowVoltage,BuildKind.CircuitAssembler,3f,DemoCatalog.Materials(ItemKind.Copper,2,ItemKind.Iron,1),DemoCatalog.Materials(ItemKind.Circuit,2)),
+            R(60,"继电基础电路",TechEra.LowVoltage,BuildKind.CircuitAssembler,3f,DemoCatalog.Materials(ItemKind.Relay,1,ItemKind.Cable,1,ItemKind.IronPlate,1),DemoCatalog.Materials(ItemKind.Circuit,2)),
             R(70,"聚合物",TechEra.MediumVoltage,BuildKind.ChemicalPlant,4f,DemoCatalog.Materials(ItemKind.Wood,2,ItemKind.Fuel,1),DemoCatalog.Materials(ItemKind.Polymer,2)),
             R(71,"罐装冷却液（近水）",TechEra.MediumVoltage,BuildKind.ChemicalPlant,3f,DemoCatalog.Materials(ItemKind.Iron,1,ItemKind.Fuel,1),DemoCatalog.Materials(ItemKind.Coolant,4)),
             R(80,"高级电路",TechEra.HighVoltage,BuildKind.PrecisionAssembler,4f,DemoCatalog.Materials(ItemKind.Circuit,2,ItemKind.Polymer,2,ItemKind.Copper,1),DemoCatalog.Materials(ItemKind.AdvancedCircuit,1)),
@@ -190,7 +197,18 @@ namespace DeadCircuit
             R(122,"高炉炼生铁",TechEra.Steam,BuildKind.IronBlastFurnace,4f,DemoCatalog.Materials(ItemKind.CrushedOre,2,ItemKind.Coke,2,ItemKind.Limestone,1),DemoCatalog.Materials(ItemKind.PigIron,3)),
             R(123,"精炼钢材",TechEra.Steam,BuildKind.RefiningForge,4f,DemoCatalog.Materials(ItemKind.PigIron,3,ItemKind.Limestone,1,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Steel,2)),
             R(124,"机械压制钢板",TechEra.Steam,BuildKind.MechanicalPress,3f,DemoCatalog.Materials(ItemKind.Steel,1),DemoCatalog.Materials(ItemKind.SteelPlate,1)),
-            R(125,"耐压管件加工",TechEra.Steam,BuildKind.MachineTool,3f,DemoCatalog.Materials(ItemKind.SteelPlate,1,ItemKind.Bronze,1),DemoCatalog.Materials(ItemKind.PipeFitting,2))
+            R(125,"耐压管件加工",TechEra.Steam,BuildKind.MachineTool,3f,DemoCatalog.Materials(ItemKind.SteelPlate,1,ItemKind.Bronze,1),DemoCatalog.Materials(ItemKind.PipeFitting,2)),
+            R(140,"陶瓷绝缘烧制",TechEra.LowVoltage,BuildKind.ClayKiln,4f,DemoCatalog.Materials(ItemKind.Clay,2,ItemKind.Brick,1,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Insulator,2)),
+            R(141,"机械拉制铜线",TechEra.LowVoltage,BuildKind.MachineTool,3f,DemoCatalog.Materials(ItemKind.Copper,1),DemoCatalog.Materials(ItemKind.CopperWire,3)),
+            R(142,"手工绝缘电缆",TechEra.LowVoltage,BuildKind.Workbench,.5f,DemoCatalog.Materials(ItemKind.CopperWire,2,ItemKind.Insulator,1),DemoCatalog.Materials(ItemKind.Cable,2)),
+            R(143,"机械绕制线圈",TechEra.LowVoltage,BuildKind.WindingBench,3f,DemoCatalog.Materials(ItemKind.CopperWire,4,ItemKind.Insulator,1,ItemKind.Iron,1),DemoCatalog.Materials(ItemKind.Coil,1)),
+            R(144,"手工电机装配",TechEra.LowVoltage,BuildKind.Workbench,.5f,DemoCatalog.Materials(ItemKind.Coil,1,ItemKind.Steel,1,ItemKind.Gear,1,ItemKind.Bearing,1),DemoCatalog.Materials(ItemKind.Motor,1)),
+            R(145,"手工继电器",TechEra.LowVoltage,BuildKind.Workbench,.5f,DemoCatalog.Materials(ItemKind.Coil,1,ItemKind.IronPlate,1,ItemKind.Insulator,1),DemoCatalog.Materials(ItemKind.Relay,1)),
+            R(146,"电动破碎铁矿",TechEra.LowVoltage,BuildKind.ElectricCrusher,2f,DemoCatalog.Materials(ItemKind.Ore,1),DemoCatalog.Materials(ItemKind.CrushedOre,2)),
+            R(147,"电炉铜线加工",TechEra.LowVoltage,BuildKind.Smelter,2f,DemoCatalog.Materials(ItemKind.Copper,1),DemoCatalog.Materials(ItemKind.CopperWire,4)),
+            R(148,"电缆自动装配",TechEra.LowVoltage,BuildKind.Assembler,3f,DemoCatalog.Materials(ItemKind.CopperWire,4,ItemKind.Insulator,2),DemoCatalog.Materials(ItemKind.Cable,4)),
+            R(149,"电机自动装配",TechEra.LowVoltage,BuildKind.Assembler,3f,DemoCatalog.Materials(ItemKind.Coil,1,ItemKind.Steel,1,ItemKind.Gear,1,ItemKind.Bearing,1),DemoCatalog.Materials(ItemKind.Motor,1)),
+            R(150,"继电器自动装配",TechEra.LowVoltage,BuildKind.Assembler,3f,DemoCatalog.Materials(ItemKind.Coil,1,ItemKind.IronPlate,1,ItemKind.Insulator,1),DemoCatalog.Materials(ItemKind.Relay,1))
         };
         public static RecipeDefinition Recipe(int id) { foreach(var r in Recipes) if(r.id==id) return r; return null; }
         public static RecipeDefinition DefaultRecipe(BuildKind kind) { foreach(var r in Recipes) if(r.building==kind && kind!=BuildKind.Workbench) return r; return null; }
@@ -199,7 +217,7 @@ namespace DeadCircuit
         public static bool Stores(BuildKind kind,int item)
         {
             if(item<0 || item>=DemoCatalog.ItemCount) return false;
-            if(kind==BuildKind.Chest || kind==BuildKind.Belt || kind==BuildKind.MechanicalHopper) return true;
+            if(kind==BuildKind.Chest || kind==BuildKind.Belt || kind==BuildKind.MechanicalHopper || kind==BuildKind.FilterSplitter) return true;
             if(kind==BuildKind.CombustionChamber && (item==(int)ItemKind.Coal || item==(int)ItemKind.Coke)) return true;
             if(IsFuelBurner(kind) && item==(int)ItemKind.Fuel) return true;
             if(kind==BuildKind.StoneFurnace && item==(int)ItemKind.Charcoal) return true;

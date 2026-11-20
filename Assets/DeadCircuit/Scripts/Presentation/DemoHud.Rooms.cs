@@ -118,6 +118,10 @@ namespace DeadCircuit
                 return "旧式一体锅炉：保留自带燃烧及近水取水；E 补燃料。";
             if (building.kind == BuildKind.Door)
                 return "E 开关门；打开后可通行。开门仍保留屋顶覆盖，默认剖面显示内部。";
+            if (building.kind == BuildKind.FilterSplitter)
+                return "LV供电；在检查面板设置过滤物品：匹配物品送前方，余料送左侧。堵塞不混线，在途物品到货后才能改过滤。";
+            if (building.kind == BuildKind.CircuitBreaker)
+                return "保护所在LV连通电网；过载跳闸后同网停电，独立电网不受影响。先降载或增加发电，再在检查面板复位接通；也可手动断开。";
             return DemoCatalog.BuildDescriptions[(int)building.kind];
         }
 

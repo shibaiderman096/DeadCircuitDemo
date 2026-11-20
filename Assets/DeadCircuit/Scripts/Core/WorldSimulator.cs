@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 14;
+        public const int SaveVersion = 15;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -153,6 +153,7 @@ namespace DeadCircuit
                 case "primitive": ResearchPrimitive(p, cmd.arg); return;
                 case "water": ResearchWater(p, cmd.arg); return;
                 case "steam": ResearchSteam(p, cmd.arg); return;
+                case "lv": ResearchLowVoltage(p, cmd.arg); return;
                 case "mill": Mill(p, cmd.x, cmd.y); return;
                 case "interact": case "build": case "repair": case "dismantle": case "recipe": case "configure":
                     if (p.interactCooldown > 0f || !Inside(cmd.x, cmd.y) ||
@@ -310,6 +311,7 @@ namespace DeadCircuit
                 if (!CanRunRecipe(p.items,r,InventoryLimit,null)) { Notice(p, "配方材料不足或背包已满。"); return; }
                 Pay(p.items,r.inputs);
                 for(int i=0;i<DemoCatalog.ItemCount;i++) { p.items[i]+=r.outputs[i]; RecordProduced(i,r.outputs[i]); }
+                RecordLowVoltageProduction(null,r);
                 p.interactCooldown=.5f; Notice(p,"已制作："+r.name); return;
             }
             int source = arg == 0 ? (int)ItemKind.Wood : (int)ItemKind.Iron;
@@ -339,6 +341,7 @@ namespace DeadCircuit
         {
             BuildingState b=BuildingAt(x,y);
             if(b==null || !TechCatalog.IsUnlocked(State,b.kind)) return;
+            if(ConfigureElectrical(p,b,arg)) return;
             if(b.kind==BuildKind.Door)
             {
                 if(arg==0 || arg==1) SetDoor(p,b,arg);

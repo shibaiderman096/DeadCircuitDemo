@@ -75,7 +75,7 @@ static partial class Checks
         Run("building catalog preserves old ordinals and exposes all modular footprints and costs", () =>
         {
             Require((int)BuildKind.CoolingTower==30 && (int)BuildKind.Door==31 && (int)BuildKind.SteamEngine==35,"serialized ordinals drifted");
-            Require(DemoCatalog.BuildNames.Length==49 && DemoCatalog.BuildDescriptions.Length==49,"catalog mismatch");
+            Require(DemoCatalog.BuildNames.Length==53 && DemoCatalog.BuildDescriptions.Length==53,"catalog mismatch");
             foreach(BuildKind kind in Enum.GetValues<BuildKind>())
             {
                 Require(DemoCatalog.BuildCost(kind).Sum()>0,"free or unknown building");

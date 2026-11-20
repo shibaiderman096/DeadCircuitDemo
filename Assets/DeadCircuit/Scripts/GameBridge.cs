@@ -529,6 +529,9 @@ namespace DeadCircuit
             state.steamResearch = 255;
             state.steamCoked = 6; state.steamRefractory = 8; state.steamPigIron = 6;
             state.steamSteel = 4; state.steamPlates = 4; state.steamFittings = 4; state.steamDriven = 4;
+            state.lvResearch = 255; state.lvWire = 12; state.lvInsulators = 8; state.lvCable = 8; state.lvCoils = 4;
+            state.lvMotors = 2; state.lvRelays = 4; state.lvCircuits = 6; state.lvElectric = 8;
+            state.lvAutomated = 4; state.lvSorted = 4; state.lvProtected = 4;
             state.buildings.Clear(); state.cargo.Clear(); state.powerNetworks.Clear();
             state.nodes.RemoveAll(n => n.x >= 23 && n.x <= 39 && n.y >= 25 && n.y <= 33);
             char[] ground = state.ground.ToCharArray();

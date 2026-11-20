@@ -101,7 +101,7 @@ namespace DeadCircuit
             if(s==null || (int)kind<0 || (int)kind>=DemoCatalog.BuildNames.Length) return "无效建筑。";
             if(s.era<TechCatalog.RequiredEra(kind)) return "需要科技时代："+TechCatalog.EraName(TechCatalog.RequiredEra(kind));
             int id=BuildResearch(kind);
-            return id<0 || HasResearch(s,id) ? "" : "需要蒸汽研究："+Definition(id).name;
+            return id<0 || HasResearch(s,id) ? LowVoltageCatalog.BuildRequirement(s,kind) : "需要蒸汽研究："+Definition(id).name;
         }
         public static bool IsBuildUnlocked(WorldState s, BuildKind kind) => BuildRequirement(s,kind).Length==0;
         public static string RecipeRequirement(WorldState s, RecipeDefinition recipe)
@@ -109,7 +109,7 @@ namespace DeadCircuit
             if(s==null || recipe==null) return "无效配方。";
             if(s.era<recipe.era) return "需要科技时代："+TechCatalog.EraName(recipe.era);
             int id=recipe.id==124 ? (int)SteamTech.Machining : recipe.id==125 ? (int)SteamTech.Piping : BuildResearch(recipe.building);
-            return id<0 || HasResearch(s,id) ? "" : "需要蒸汽研究："+Definition(id).name;
+            return id<0 || HasResearch(s,id) ? LowVoltageCatalog.RecipeRequirement(s,recipe) : "需要蒸汽研究："+Definition(id).name;
         }
         public static bool IsRecipeUnlocked(WorldState s, RecipeDefinition recipe) => RecipeRequirement(s,recipe).Length==0;
         public static string LowVoltageRequirement(WorldState s)

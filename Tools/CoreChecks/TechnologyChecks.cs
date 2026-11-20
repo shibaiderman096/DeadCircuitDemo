@@ -21,7 +21,7 @@ static partial class Checks
         Run("v3 appended ordinals harvest the right new minerals", () =>
         {
             var items=new[] { ItemKind.Wood,ItemKind.Ore,ItemKind.Iron,ItemKind.Scrap,ItemKind.Fuel,ItemKind.Ammo,ItemKind.Food,ItemKind.CopperOre,ItemKind.Copper,ItemKind.Bronze,ItemKind.Steel,ItemKind.Circuit,ItemKind.Polymer,ItemKind.AdvancedCircuit,ItemKind.UraniumOre,ItemKind.NuclearFuel,ItemKind.Coolant,ItemKind.NuclearWaste,ItemKind.CrushedOre,ItemKind.TinOre,ItemKind.Tin };
-            Require(items.Length==21 && DemoCatalog.ItemCount==40,"item ordinals and current inventory length");
+            Require(items.Length==21 && DemoCatalog.ItemCount==46,"item ordinals and current inventory length");
             for(int i=0;i<items.Length;i++) Require((int)items[i]==i,$"saved item {items[i]} was renumbered");
             var appended=new[] { BuildKind.Workbench,BuildKind.StoneFurnace,BuildKind.Waterwheel,BuildKind.Shaft,BuildKind.MechanicalCrusher,BuildKind.Boiler,BuildKind.SteamPipe,BuildKind.SteamMiner,BuildKind.SteamFurnace,BuildKind.SteamTurbine,BuildKind.CircuitAssembler,BuildKind.DieselGenerator,BuildKind.ChemicalPlant,BuildKind.MediumPole,BuildKind.Transformer,BuildKind.HighGenerator,BuildKind.HighPole,BuildKind.PrecisionAssembler,BuildKind.NuclearProcessor,BuildKind.Reactor,BuildKind.CoolingTower };
             for(int i=0;i<appended.Length;i++) Require((int)appended[i]==10+i,$"saved building {appended[i]} was renumbered");
@@ -66,6 +66,11 @@ static partial class Checks
                     Require(!TechCatalog.IsUnlocked(sim.State,BuildKind.CokeOven),"era entry skipped coking research");
                     Add(sim.State,BuildKind.Workbench,10,13);b.x=8;b.y=13;Ready(b);sim.Apply(Command(b,"steam",arg:0));
                 }
+                if(target==TechEra.LowVoltage)
+                {
+                    Require(sim.State.lvResearch==0 && !TechCatalog.IsUnlocked(sim.State,BuildKind.PowerPole),"era entry bypassed electrical research");
+                    return; // The real LV manufacturing/research chain has its own progression check.
+                }
                 Require(TechCatalog.IsUnlocked(sim.State,NewlyUnlocked[index]),"teammate did not see shared unlock");b.x=8;b.y=15;Ready(b);int buildings=sim.State.buildings.Count;sim.Apply(Command(b,"build",10,15,(int)NewlyUnlocked[index]));
                 Require(sim.State.buildings.Count==buildings+1 && sim.State.buildings.Any(m=>m.x==10 && m.y==15 && m.kind==NewlyUnlocked[index]),"teammate cannot use shared research");
             });
@@ -91,7 +96,7 @@ static partial class Checks
             {
                 var state=Flat(era:TechEra.Primitive);int w=DemoCatalog.Width(kind),h=DemoCatalog.Height(kind);Water(state,10,10+h);if(kind==BuildKind.Miner || kind==BuildKind.SteamMiner)Ore(state,10+w,10);
                 var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var before=Copy(p.items);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==0,$"locked {kind} built");Inventory(p.items,before,$"locked {kind} paid");
-                sim.State.era=TechCatalog.RequiredEra(kind);sim.State.steamResearch=255;Ready(p);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{kind} negative control was invalid even when unlocked");Paid(p.items,before,DemoCatalog.BuildCost(kind),$"{kind} construction");
+                sim.State.era=TechCatalog.RequiredEra(kind);sim.State.steamResearch=255;sim.State.lvResearch=255;Ready(p);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{kind} negative control was invalid even when unlocked");Paid(p.items,before,DemoCatalog.BuildCost(kind),$"{kind} construction");
             }
         });
         Run("all era hotbars expose unlocked kinds that actually build and charge correctly", () =>

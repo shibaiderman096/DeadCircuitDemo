@@ -53,6 +53,7 @@ namespace DeadCircuit
             CopyPrimitiveProgression(source, s);
             CopyWaterProgression(source, s);
             CopySteamProgression(source, s);
+            CopyLowVoltageProgression(source, s);
             var entityIds = new HashSet<int>();
             CopyChunks(source,s);
             var occupied = new HashSet<long>();
@@ -86,11 +87,11 @@ namespace DeadCircuit
                 SaveCheck(TechCatalog.IsFuelBurner(b.kind) || b.kind==BuildKind.Reactor || b.fuel==0f,"fuel in non-burner");
                 if(!legacy)
                 {
-                    SaveCheck(b.setting>=0 && b.setting<=(b.kind==BuildKind.Transformer || b.kind==BuildKind.Door ? 1 : 0),"machine setting");
+                    SaveCheck(b.setting>=0 && b.setting<=(b.kind==BuildKind.FilterSplitter ? DemoCatalog.ItemCount-1 : b.kind==BuildKind.Transformer || b.kind==BuildKind.Door || b.kind==BuildKind.CircuitBreaker ? 1 : 0),"machine setting");
                     SaveCheck(source.version<7 || !b.modularBoiler || (b.kind==BuildKind.Boiler && b.fuel==0f),"modular boiler mode");
                     SaveCheck(b.kind!=BuildKind.Transformer || b.setting==0 || source.era>=TechEra.HighVoltage,"unresearched transformer setting");
                     SaveRange(b.temperature,20f,1200f,"machine temperature");
-                    SaveCheck(b.kind==BuildKind.Reactor || (!b.tripped && b.temperature==20f),"reactor-only state");
+                    SaveCheck(b.kind==BuildKind.Reactor || (b.temperature==20f && (b.kind==BuildKind.CircuitBreaker || !b.tripped)),"reactor-only state");
                     RecipeDefinition r=TechCatalog.SelectedRecipe(b);
                     SaveCheck(source.version>=12 || r==null || r.id<110 || r.id>115,"water recipe requires v12");
                     SaveCheck(b.recipe==0 || (r!=null && r.building==b.kind && b.kind!=BuildKind.Workbench),"machine recipe");
@@ -119,7 +120,7 @@ namespace DeadCircuit
                 BuildingState from, to;
                 SaveCheck(byId.TryGetValue(c.fromId, out from) && byId.TryGetValue(c.toId, out to), "cargo endpoints");
                 to = byId[c.toId]; from = byId[c.fromId];
-                SaveCheck(DemoCatalog.Contains(to, DemoCatalog.OutputX(from), DemoCatalog.OutputY(from)) && Accepts(to.kind, c.item), "cargo route");
+                SaveCheck(ElectricalCargoRouteValid(from,to,c.item) && Accepts(to.kind, c.item), "cargo route");
                 SaveRange(c.fromX, from.x - .5f, from.x + DemoCatalog.Width(from) - .5f, "cargo from x");
                 SaveRange(c.fromY, from.y - .5f, from.y + DemoCatalog.Height(from) - .5f, "cargo from y");
                 SaveRange(c.toX, to.x - .5f, to.x + DemoCatalog.Width(to) - .5f, "cargo to x");

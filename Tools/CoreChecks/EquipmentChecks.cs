@@ -68,7 +68,7 @@ static partial class Checks
         {
             var sim = New(out var p);
             Require(sim.State.version == WorldSimulator.SaveVersion, "new world must use save version 4");
-            Require(DemoCatalog.ItemCount == 40 && p.items.Length == DemoCatalog.ItemCount && sim.State.produced.Length == DemoCatalog.ItemCount, "equipment inventory does not include the steam-era materials");
+            Require(DemoCatalog.ItemCount == 46 && p.items.Length == DemoCatalog.ItemCount && sim.State.produced.Length == DemoCatalog.ItemCount, "equipment inventory does not include the low-voltage materials");
         });
         Run("equipment preserves old ammo and appends four caliber ordinals", () =>
         {

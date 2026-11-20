@@ -8,7 +8,7 @@ namespace DeadCircuit
         private struct ItemTransfer
         {
             public BuildingState from, to;
-            public int item;
+            public int item, x, y, direction;
         }
 
         private sealed class PowerLayout
@@ -57,6 +57,7 @@ namespace DeadCircuit
                 return;
             }
             int moved = 0;
+            if (InteractElectrical(p, b, arg)) return;
             if(b.kind==BuildKind.Door) { SetDoor(p,b,1-b.setting); return; }
             if (b.kind != BuildKind.Chest && b.kind != BuildKind.MechanicalHopper && b.kind != BuildKind.Belt && b.kind != BuildKind.Wall && b.kind != BuildKind.Turret)
             {
@@ -133,7 +134,7 @@ namespace DeadCircuit
                     totalReserved++;
                     if (c.item == item) reserved++;
                 }
-                if (to.kind == BuildKind.MechanicalHopper && c.fromId == to.id && c.item == item) returning++;
+                if (ReservesCargoReturn(to) && c.fromId == to.id && c.item == item) returning++;
             }
             if (to.kind == BuildKind.Belt) maximum = Math.Min(maximum, 2 - TotalItems(to.items) - totalReserved);
             return Transfer(from, to.items, item, maximum, BufferLimit - reserved - returning);
@@ -197,6 +198,7 @@ namespace DeadCircuit
             ResolveTier(3);
             foreach(var l in powerLayout) if(l.kind==BuildKind.Transformer && l.setting==0) ConvertPower(l,.9f);
             ResolveTier(2);
+            ApplyElectricalProtection(consume);
             foreach(var l in powerLayout)
             {
                 if(!l.unlocked) continue;
@@ -269,6 +271,7 @@ namespace DeadCircuit
         private static int OutputTier(BuildingState b) => TechCatalog.EnergyTier(b);
         private bool WaterPowerUnlocked(BuildingState b)
         {
+            if(!LowVoltageCatalog.IsBuildUnlocked(State,b.kind)) return false;
             if(!SteamCatalog.IsBuildUnlocked(State,b.kind)) return false;
             if(!WaterCatalog.Enabled(State)) return true;
             switch(b.kind)
@@ -387,6 +390,7 @@ namespace DeadCircuit
                 if(r==null || r.building!=b.kind || b.kind==BuildKind.Workbench || r.era>State.era) continue;
                 if(!PrimitiveCatalog.IsBuildUnlocked(State,b.kind) || !PrimitiveCatalog.IsRecipeUnlocked(State,r)) continue;
                 if(!WaterCatalog.IsBuildUnlocked(State,b.kind) || !WaterCatalog.IsRecipeUnlocked(State,r)) continue;
+                if(!LowVoltageCatalog.IsBuildUnlocked(State,b.kind) || !LowVoltageCatalog.IsRecipeUnlocked(State,r)) continue;
                 if((b.kind==BuildKind.CoolingTower || r.id==71) && !NearWater(b)) continue;
                 if(!CanRunRecipe(b.items,r,BufferLimit,Incoming(b.id))) continue;
                 float ratio=b.powerRatio;
@@ -405,6 +409,7 @@ namespace DeadCircuit
                 }
                 RecordWaterProduction(b,r);
                 RecordSteamProduction(b,r);
+                RecordLowVoltageProduction(b,r);
                 b.progress=0f;
                 if(b.kind==BuildKind.Assembler) foreach(PlayerState p in State.players)
                     if(p.connected && p.hp>0f && DistSq(p.x,p.y,b.x,b.y)<=196f) GainXp(p,2);
@@ -470,7 +475,7 @@ namespace DeadCircuit
                 cargoBusySources.Add(c.fromId);
                 if (cargoBuildings.ContainsKey(c.toId)) ChangeCargoReservation(c.toId, c.item, 1);
                 BuildingState source;
-                if (cargoBuildings.TryGetValue(c.fromId,out source) && source.kind == BuildKind.MechanicalHopper)
+                if (cargoBuildings.TryGetValue(c.fromId,out source) && ReservesCargoReturn(source))
                     cargoReturnItems[c.fromId] = c.item;
             }
             // Capture exportable inventory BEFORE any arrival or orphan return. Even a restored
@@ -478,12 +483,19 @@ namespace DeadCircuit
             foreach (BuildingState from in productionOrder)
             {
                 if (cargoBusySources.Contains(from.id) || CargoExportRate(from) <= 0f) continue;
+                if (from.kind == BuildKind.FilterSplitter)
+                {
+                    ItemTransfer electricalPlan;
+                    if (TryPlanElectricalCargo(from, out electricalPlan)) cargoPlans.Add(electricalPlan);
+                    continue;
+                }
                 BuildingState to = BuildingAt(DemoCatalog.OutputX(from), DemoCatalog.OutputY(from));
                 if (to == null || to == from || to.hp <= 0f) continue;
                 // Side loading is allowed, but the front of a belt is exclusively an output.
                 if (to.kind == BuildKind.Belt && ((from.rotation - to.rotation) & 3) == 2) continue;
                 int item = CargoExportItem(from, to);
-                if (item >= 0) cargoPlans.Add(new ItemTransfer { from = from, to = to, item = item });
+                if (item >= 0) cargoPlans.Add(new ItemTransfer { from = from, to = to, item = item,
+                    x = DemoCatalog.OutputX(from), y = DemoCatalog.OutputY(from), direction = from.rotation });
             }
             int kept = 0, oldCount = State.cargo.Count;
             for (int i = 0; i < oldCount; i++)
@@ -513,6 +525,8 @@ namespace DeadCircuit
                         cargoReturnItems.Remove(c.fromId);
                         if (from.kind == BuildKind.MechanicalHopper && WaterCatalog.IsWaterDriven(State,from))
                             State.waterTransported = SaturatingAdd(State.waterTransported,1);
+                        if (from.kind == BuildKind.FilterSplitter && c.item == from.setting)
+                            State.lvSorted = SaturatingAdd(State.lvSorted,1);
                         continue;
                     }
                     // Unexpected external filling must block the packet, never discard it.
@@ -525,15 +539,15 @@ namespace DeadCircuit
             {
                 if (State.cargo.Count >= MaxCargo || State.nextId >= int.MaxValue - 1) break;
                 if (plan.from.items[plan.item] <= 0 || CargoExportRate(plan.from) <= 0f || !HasCargoRoom(plan.to, plan.item)) continue;
-                int x = DemoCatalog.OutputX(plan.from), y = DemoCatalog.OutputY(plan.from);
-                float fromX = x - DirectionX[plan.from.rotation], fromY = y - DirectionY[plan.from.rotation];
+                int x = plan.x, y = plan.y;
+                float fromX = x - DirectionX[plan.direction], fromY = y - DirectionY[plan.direction];
                 var c = new CargoState { id = AllocateId(), fromId = plan.from.id, toId = plan.to.id, item = plan.item,
                     fromX = fromX, fromY = fromY, toX = x, toY = y, progress = 0f,
                     // Keep a bounded duration in saves; only live progress depends on power ratio.
                     duration = (float)Math.Sqrt(DistSq(fromX, fromY, x, y)) / (DemoCatalog.CargoSpeed * (plan.from.kind == BuildKind.MechanicalHopper ? 2f : 1f)) };
                 plan.from.items[plan.item]--;
                 // Reserve the vacated slot until delivery so an orphan can always return normally.
-                if (plan.from.kind == BuildKind.MechanicalHopper) cargoReturnItems[plan.from.id] = plan.item;
+                if (ReservesCargoReturn(plan.from)) cargoReturnItems[plan.from.id] = plan.item;
                 ChangeCargoReservation(plan.to.id, plan.item, 1);
                 State.cargo.Add(c);
             }
@@ -542,6 +556,9 @@ namespace DeadCircuit
         private float CargoExportRate(BuildingState from)
         {
             if(WaterCatalog.Enabled(State) && !WaterCatalog.IsBuildUnlocked(State,from.kind)) return 0f;
+            if(from.kind==BuildKind.FilterSplitter)
+                return LowVoltageCatalog.HasResearch(State,LowVoltageTech.Sorting) && LowVoltageCatalog.IsBuildUnlocked(State,from.kind) && from.powered
+                    ? from.powerRatio : 0f;
             if(from.kind!=BuildKind.MechanicalHopper) return 1f;
             return from.powered && from.powerRatio>0f && PrimitiveCatalog.IsBuildUnlocked(State,from.kind) && WaterCatalog.IsBuildUnlocked(State,from.kind)
                 ? from.powerRatio : 0f;
@@ -550,7 +567,7 @@ namespace DeadCircuit
         private int CargoExportItem(BuildingState from,BuildingState to)
         {
             for(int i=0;i<DemoCatalog.ItemCount;i++)
-                if(from.items[i]>0 && (from.kind==BuildKind.Chest || from.kind==BuildKind.MechanicalHopper || from.kind==BuildKind.Belt || CanExportOutput(from,i)) && Accepts(to,i)) return i;
+                if(from.items[i]>0 && (from.kind==BuildKind.Chest || from.kind==BuildKind.MechanicalHopper || from.kind==BuildKind.Belt || from.kind==BuildKind.FilterSplitter || CanExportOutput(from,i)) && Accepts(to,i)) return i;
             return -1;
         }
         private bool CanExportOutput(BuildingState b,int item)
@@ -576,14 +593,14 @@ namespace DeadCircuit
         {
             int[] reserved; cargoIncoming.TryGetValue(b.id, out reserved);
             int returningItem;
-            int returning = b.kind == BuildKind.MechanicalHopper && cargoReturnItems.TryGetValue(b.id,out returningItem) && returningItem == item ? 1 : 0;
+            int returning = ReservesCargoReturn(b) && cargoReturnItems.TryGetValue(b.id,out returningItem) && returningItem == item ? 1 : 0;
             if (b.items[item] + (reserved == null ? 0 : reserved[item]) + returning >= BufferLimit) return false;
             return b.kind != BuildKind.Belt || TotalItems(b.items) + (reserved == null ? 0 : TotalItems(reserved)) < 2;
         }
         private bool Accepts(BuildingState b,int item)
         {
             if(b.kind==BuildKind.Boiler && b.modularBoiler) return false;
-            if(b.kind==BuildKind.Chest || b.kind==BuildKind.MechanicalHopper || b.kind==BuildKind.Belt) return true;
+            if(b.kind==BuildKind.Chest || b.kind==BuildKind.MechanicalHopper || b.kind==BuildKind.Belt || b.kind==BuildKind.FilterSplitter) return true;
             if(b.kind==BuildKind.CombustionChamber) return item==(int)ItemKind.Coal || item==(int)ItemKind.Coke || item==(int)ItemKind.Fuel;
             if(TechCatalog.IsFuelBurner(b.kind) && item==FuelItem(b)) return true;
             if(b.kind==BuildKind.Turret) return item==(int)ItemKind.Ammo;
@@ -593,7 +610,7 @@ namespace DeadCircuit
         }
         private static bool Accepts(BuildKind kind,int item)
         {
-            if(kind==BuildKind.Chest || kind==BuildKind.MechanicalHopper || kind==BuildKind.Belt) return true;
+            if(kind==BuildKind.Chest || kind==BuildKind.MechanicalHopper || kind==BuildKind.Belt || kind==BuildKind.FilterSplitter) return true;
             if(kind==BuildKind.CombustionChamber) return item==(int)ItemKind.Coal || item==(int)ItemKind.Coke || item==(int)ItemKind.Fuel;
             if(TechCatalog.IsFuelBurner(kind) && item==(int)ItemKind.Fuel) return true;
             if(kind==BuildKind.StoneFurnace && item==(int)ItemKind.Charcoal) return true;
