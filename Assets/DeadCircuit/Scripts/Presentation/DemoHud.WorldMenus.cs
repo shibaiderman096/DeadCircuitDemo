@@ -83,11 +83,11 @@ namespace DeadCircuit
 
         void MakeCreatePage(RectTransform page)
         {
-            MenuHeading(page, "Create World Heading", "创建世界");
+            MenuHeading(page, "Create World Heading", "新建世界");
             Label("World Name Label", page, "世界名称", 28, 88, 620, 24, 16, Muted);
             worldNameField = Input("World Name", page, "新的世界", "为这个世界命名", 28, 118, 620, 44, 40);
             Label("Seed Label", page, "种子 · 留空随机，也可输入数字或文字", 28, 178, 620, 24, 16, Muted);
-            seedField = Input("World Seed", page, "", "随机 / 数字 / 文字", 28, 208, 490, 44, 128);
+            seedField = Input("World Seed", page, "", "输入数字或文字，留空随机", 28, 208, 490, 44, 128);
             seedField.characterValidation = TMP_InputField.CharacterValidation.None;
             UiButton randomSeed = Button("Random World Seed", page, "随机", 532, 208, 116, 44, RandomizeCreationSeed);
             SetButtonArt(randomSeed, "ui_random", 24);
@@ -110,7 +110,7 @@ namespace DeadCircuit
             MakeWorldTerrainPreview(page);
             createWorldButton = Button("Create World", page, "创建世界", 680, 480, 412, 48, CreateConfiguredWorld, true);
             SetButtonArt(createWorldButton, "ui_new_world", 28);
-            Label("Create World Notice", page, "创建独立世界；已有存档从「读取世界」进入。", 28, 480, 620, 48, 15, Muted);
+            Label("Create World Notice", page, "创建后由你担任房主；已有进度请从「读取世界」继续。", 28, 480, 620, 48, 15, Muted);
             seedField.onValueChanged.AddListener(_ =>
             {
                 worldPreviewAt = Time.unscaledTime + WorldPreviewDebounce;
@@ -151,11 +151,11 @@ namespace DeadCircuit
             UiButton refreshWorlds = Button("Refresh Worlds", page, "刷新", 486, 82, 156, 34, RequestWorldList);
             SetButtonArt(refreshWorlds, "ui_refresh", 22);
             worldListContent = ScrollContent("World List Scroll View", page, 28, 128, 614, 388, out worldListScroll);
-            worldListEmpty = FlowLabel("World List Empty", worldListContent, "暂无存档，请返回创建世界。", 580, 80, 17, Muted);
+            worldListEmpty = FlowLabel("World List Empty", worldListContent, "暂无本地存档。返回开始菜单，选择「新建世界」。", 580, 80, 17, Muted);
             RectTransform details = Box("Selected World Card", page, 668, 82, 424, 352, Recessed);
             Label("Selected World Heading", details, "存档详情", 20, 16, 384, 32, 22, Accent);
             RectTransform content = ScrollContent("Selected World Scroll View", details, 14, 64, 396, 274, out _);
-            selectedWorldDetails = FlowLabel("Selected World Details", content, "选择左侧存档以查看详情。", 368, 100, 17, Ink);
+            selectedWorldDetails = FlowLabel("Selected World Details", content, "选择左侧存档，查看世界详情。", 368, 100, 17, Ink);
             selectedWorldSummary = FlowLabel("Selected World Summary", content, "", 368, 80, 15, Muted);
             loadSelectedWorld = Button("Load Selected World", page, "读取世界", 668, 454, 258, 48, LoadSelectedWorld, true);
             SetButtonArt(loadSelectedWorld, "ui_load_world", 28);
@@ -173,7 +173,7 @@ namespace DeadCircuit
             Label("Delete World Heading", card, "删除存档", 28, 16, 504, 38, 27, Danger, FontStyles.Bold);
             deleteWorldDetails = Label("Delete World Details", card, "", 28, 80, 504, 96, 18, Ink);
             deleteWorldDetails.alignment = TextAlignmentOptions.TopLeft;
-            Label("Delete World Warning", card, "此世界的进度将永久删除。", 28, 178, 504, 28, 16, Muted);
+            Label("Delete World Warning", card, "已保存的世界进度将永久删除，无法恢复。", 28, 178, 504, 28, 16, Muted);
             cancelDeleteWorld = Button("Cancel World Delete", card, "取消", 28, 216, 246, 42, CloseDeleteWorldDialog);
             UiButton confirm = Button("Confirm World Delete", card, "确认删除", 286, 216, 246, 42, ConfirmDeleteWorld);
             confirm.label.color = Danger;
@@ -225,18 +225,18 @@ namespace DeadCircuit
 
         void MakeLanPage(RectTransform page)
         {
-            MenuHeading(page, "LAN Heading", "局域网协作");
+            MenuHeading(page, "LAN Heading", "局域网联机");
             Label("Name Label", page, "角色名", 28, 92, 596, 26, 16, Muted);
             nameField = Input("Player Name", page, bridge.PlayerName, "幸存者", 28, 126, 596, 46, 12);
-            Label("IP Label", page, "主机 IPv4 · UDP 7777", 28, 194, 596, 26, 16, Muted);
+            Label("IP Label", page, "房主 IPv4 地址 · UDP 7777", 28, 194, 596, 26, 16, Muted);
             ipField = Input("Host IPv4", page, "", "例如 192.168.1.8", 28, 228, 596, 46, 15);
-            UiButton join = Button("Join Game", page, "连接主机", 28, 304, 286, 48, Join, true);
+            UiButton join = Button("Join Game", page, "加入世界", 28, 304, 286, 48, Join, true);
             SetButtonArt(join, "ui_join", 28);
             UiButton cancel = Button("Cancel Connection", page, "取消连接", 330, 304, 294, 48, () => CallBridge(bridge.Leave));
             SetButtonArt(cancel, "ui_cancel", 28);
-            UiButton host = Button("Start Host", page, "创建主机", 28, 388, 596, 48, StartNew);
+            UiButton host = Button("Start Host", page, "新建世界", 28, 388, 596, 48, StartNew);
             SetButtonArt(host, "ui_network", 28);
-            Label("Host Existing World Hint", page, "继续已有世界：返回后选择「读取世界」。", 28, 456, 596, 40, 15, Muted);
+            Label("Host Existing World Hint", page, "由你担任房主：新建世界，或返回开始菜单读取已有世界。", 28, 456, 596, 40, 15, Muted);
             RectTransform details = Box("LAN Connection Card", page, 660, 92, 432, 420, Recessed);
             Label("LAN Status Heading", details, "连接状态", 20, 18, 392, 32, 22, Accent);
             lanStatus = Label("LAN Connection Status", details, "", 20, 76, 392, 126, 17, Ink);
@@ -335,7 +335,7 @@ namespace DeadCircuit
                 bridge.PlayerName = ReadName();
                 CallBridge(() => bridge.CreateWorld(settings));
             }
-            catch (Exception error) { Notify("创建失败：" + error.Message, true); }
+            catch (Exception error) { Notify("创建世界失败：" + error.Message, true); }
             finally { menuRequestPending = false; }
         }
 
@@ -355,8 +355,8 @@ namespace DeadCircuit
                 SetFlowText(worldListEmpty, "无法读取存档列表，请点击刷新重试。", 80);
                 loadSelectedWorld.button.interactable = false;
                 deleteSelectedWorld.button.interactable = false;
-                Set(menuSave, "存档列表读取失败；可进入读取页重试。");
-                Notify("读取列表失败：" + error.Message, true);
+                Set(menuSave, "存档列表读取失败。打开「读取世界」后刷新重试。");
+                Notify("读取存档列表失败：" + error.Message, true);
             }
         }
 
@@ -396,13 +396,13 @@ namespace DeadCircuit
             }
             for (int i = count; i < worldRows.Count; i++) worldRows[i].widget.button.transform.parent.gameObject.SetActive(false);
             worldListEmpty.gameObject.SetActive(count == 0);
-            SetFlowText(worldListEmpty, "暂无可读取的本地存档，请返回创建世界。", 80);
-            Set(menuSave, count == 0 ? "暂无本地存档" : "本地世界 " + count + " 个 · 进入读取页选择");
+            SetFlowText(worldListEmpty, "暂无可读取的本地存档。返回开始菜单，选择「新建世界」。", 80);
+            Set(menuSave, count == 0 ? "暂无本地存档" : "本地世界 " + count + " 个 · 选择「读取世界」继续");
             // Never silently switch the requested save when refresh removes a selection.
             if (selected == null) selectedSaveId = "";
             loadSelectedWorld.button.interactable = selected != null;
             deleteSelectedWorld.button.interactable = selected != null && bridge.CanDeleteWorld;
-            SetFlowText(selectedWorldDetails, selected == null ? "选择左侧存档以查看详情。" :
+            SetFlowText(selectedWorldDetails, selected == null ? "选择左侧存档，查看世界详情。" :
                 Clean(selected.name) + "\n\n种子：" + selected.seed.ToString(CultureInfo.InvariantCulture) + "\n修改时间：" + Clean(selected.modified), 100);
             SetFlowText(selectedWorldSummary, selected == null ? "" : Clean(selected.summary), 32);
         }
@@ -426,7 +426,7 @@ namespace DeadCircuit
                 bridge.PlayerName = ReadName();
                 CallBridge(() => bridge.LoadWorld(requested));
             }
-            catch (Exception error) { Notify("读取失败：" + error.Message, true); }
+            catch (Exception error) { Notify("读取世界失败：" + error.Message, true); }
             finally { menuRequestPending = false; }
         }
 
@@ -441,7 +441,7 @@ namespace DeadCircuit
             menuStatus.color = color;
             Set(lanStatus, status);
             lanStatus.color = color;
-            Set(menuAddress, "本机 IPv4\n" + Clean(bridge.HostIP) + "\n\n同一局域网 · UDP 7777\n加入时填写房主的 IPv4 地址。");
+            Set(menuAddress, "本机 IPv4 地址\n" + Clean(bridge.HostIP) + "\n\n请连接同一局域网 · UDP 7777\n加入时填写房主的 IPv4 地址。");
             createWorldButton.button.interactable = !menuRequestPending && Time.unscaledTime >= nextMenuRequestAt;
         }
 
@@ -463,11 +463,11 @@ namespace DeadCircuit
             effectsValue = Label("Effects Volume Value", card, "", 580, 202, 112, 30, 18, Accent);
             effectsSlider = PreferenceSlider("Effects Volume", card, 28, 246, 664, 0f, 1f,
                 Mathf.Clamp01(PlayerPrefs.GetFloat(EffectsPreference, .8f)), ApplyEffectsVolume);
-            Label("UI Scale Label", card, "界面比例", 28, 308, 450, 30, 19, Ink);
+            Label("UI Scale Label", card, "界面缩放", 28, 308, 450, 30, 19, Ink);
             scaleValue = Label("UI Scale Value", card, "", 580, 308, 112, 30, 18, Accent);
             scaleSlider = PreferenceSlider("UI Scale", card, 28, 352, 664, .8f, 1f,
                 Mathf.Clamp(PlayerPrefs.GetFloat(ScalePreference, 1f), .8f, 1f), ApplyUiScale);
-            Label("UI Scale Hint", card, "80–100% · 保留 1280 × 720 的完整布局区域", 28, 404, 664, 30, 15, Muted);
+            Label("UI Scale Hint", card, "80–100% · 调整文字与按钮的大小", 28, 404, 664, 30, 15, Muted);
             UiButton resetSettings = Button("Reset UI Settings", card, "恢复默认", 28, 466, 220, 44, () =>
             { volumeSlider.value = .7f; effectsSlider.value = .8f; scaleSlider.value = 1f; });
             SetButtonArt(resetSettings, "ui_refresh", 24);
@@ -560,11 +560,11 @@ namespace DeadCircuit
             dock.anchorMin = dock.anchorMax = dock.pivot = new Vector2(1, 0);
             dock.anchoredPosition = new Vector2(-18, 18);
             dock.sizeDelta = new Vector2(220, 40);
-            toolsToggle = Button("HUD Tools Toggle", dock, "工具", 0, 0, 220, 40, () =>
+            toolsToggle = Button("HUD Tools Toggle", dock, "菜单", 0, 0, 220, 40, () =>
             {
                 bool open = !toolsTray.gameObject.activeSelf;
                 toolsTray.gameObject.SetActive(open);
-                Set(toolsToggle.label, open ? "收起" : "工具");
+                Set(toolsToggle.label, open ? "收起" : "菜单");
             });
             SetButtonArt(toolsToggle, "ui_settings", 26);
             toolsTray = Box("HUD Tools Tray", dock, 0, -278, 220, 268, Panel, true);
@@ -587,7 +587,7 @@ namespace DeadCircuit
             SetButtonArt(helpShortcut, "ui_help", 20);
             UiButton sessionShortcut = Button("Open Session", toolsTray, "菜单 Esc", 114, 176, 98, 36, () => SetPanel(session, true));
             SetButtonArt(sessionShortcut, "ui_session", 20);
-            Label("HUD Tools Hint", toolsTray, "检查开启后，指向设备查看详情", 8, 222, 204, 32, 12, Muted);
+            Label("HUD Tools Hint", toolsTray, "开启设备详情后，指向设备查看", 8, 222, 204, 32, 12, Muted);
             toolsTray.gameObject.SetActive(false);
         }
     }

@@ -35,13 +35,13 @@ namespace DeadCircuit
         };
         static readonly string[] EraDescriptions =
         {
-            "按 T 从原始工艺起步：采集木材、石料和黏土，研究工具、烧炭与陶器，再验证冶金和建造生产。完成前置后研究水力。",
-            "让水流驱动水车，经传动轴给机械破碎机供能。破碎、冶炼与青铜加工为蒸汽工业做准备。",
-            "组合燃烧室、锅炉、给水泵和烟囱，经蒸汽管驱动设备；蒸汽机可输出机械动力。",
+            "采集木材、石材与黏土，研究工具、烧炭和制陶。完成冶金与建造任务后，即可研究水力。",
+            "在岸边建造水车，用传动轴连接机械设备。加工矿石、青铜与机械零件，为蒸汽工业准备材料。",
+            "将燃烧室、锅炉、取水泵与烟囱相邻建造，用蒸汽管为设备供能。蒸汽引擎可将蒸汽转为机械动力。",
             "低压电气化：建立低压发电与输电网络，制造电路，让采矿、冶炼与装配自动运行。",
-            "中压工业：完善化工、聚合物与高级电路生产。用变压器向低一级电网供电。",
-            "高压工业：扩大发电与精密装配规模。高压设备需要匹配的高压电网，逐级降压供应旧产线。",
-            "核工业：加工铀与核燃料，为反应堆持续供应冷却剂，并及时处理核废料；监控温度与停堆状态。"
+            "勘探油藏，搭建采油、炼油与化工产线。生产柴油、聚合物与润滑油，用变压器向低压电网供电。",
+            "提纯硅材，制造电子器件、控制模块与耐热合金。建立高压电网，逐级降压为其他产线供电。",
+            "加工铀矿，制造核燃料。为反应堆持续供应冷却液，及时取出核废料，留意温度与停堆状态。"
         };
 
         // One dynamic asset for every label, also available to the world view.
@@ -309,7 +309,7 @@ namespace DeadCircuit
             RectTransform card = Box("Technology Card", technology, 0, 0, 1040, 608, Panel, true);
             Center(card, 1040, 608);
             PanelRule(card, 1040, 64);
-            Label("Technology Heading", card, "工业科技树", 22, 16, 760, 38, 25, Ink, FontStyles.Bold);
+            Label("Technology Heading", card, "科技研究", 22, 16, 760, 38, 25, Ink, FontStyles.Bold);
             UiButton closeTechnology = Button("Close Technology", card, "返回", 902, 20, 116, 32, () => SetPanel(technology, false));
             SetButtonArt(closeTechnology, "ui_back", 20);
             for (int i = 0; i < eraButtons.Length; i++)
@@ -318,15 +318,15 @@ namespace DeadCircuit
                 eraButtons[i] = Button("Technology Era " + i, card, "", 22, 78 + i * 58, 180, 50, () => BrowseEra(era));
                 eraButtons[i].label.fontSizeMax = 16;
             }
-            Label("Technology Navigation Hint", card, "选择时代浏览设备\n后期可预览，研究须逐阶", 22, 502, 180, 64, 14, Muted);
+            Label("Technology Navigation Hint", card, "选择时代查看科技与设备\n完成前置时代后才能研究", 22, 502, 180, 64, 14, Muted);
             RectTransform content = ScrollContent("Technology Scroll View", card, 226, 78, 792, 424, out technologyScroll);
             technologyTitle = FlowLabel("Technology Era Title", content, "", 768, 34, 22, Accent);
             technologyDescription = FlowLabel("Technology Description", content, "", 768, 56, 16, Ink);
-            FlowLabel("Research Materials Heading", content, "研究材料 · 持有 / 需求", 768, 28, 17, Accent);
+            FlowLabel("Research Materials Heading", content, "研究材料 · 持有 / 所需", 768, 28, 17, Accent);
             researchMaterials = FlowLabel("Research Materials", content, "", 768, 52, 15, Ink);
             researchRequirement = FlowLabel("Research Requirement", content, "", 768, 48, 15, Muted);
             MakePrimitiveTechnology(content);
-            FlowLabel("Era Buildings Heading", content, "本阶段设备 · 点击已解锁设备进入建造", 768, 28, 17, Accent);
+            FlowLabel("Era Buildings Heading", content, "建造目录 · 点击已解锁设备开始建造", 768, 28, 17, Accent);
             for (int i = 0; i < technologyBuildButtons.Length; i++)
             {
                 int kind = i;
@@ -350,7 +350,7 @@ namespace DeadCircuit
             RectTransform card = Box("Session Card", session, 0, 0, 740, 620, Panel, true);
             Center(card, 740, 620);
             PanelRule(card, 740, 68);
-            Label("Session Heading", card, "会话", 28, 16, 500, 38, 27, Ink, FontStyles.Bold);
+            Label("Session Heading", card, "游戏菜单", 28, 16, 500, 38, 27, Ink, FontStyles.Bold);
             UiButton closeSession = Button("Close Session", card, "返回", 594, 20, 118, 34, () => SetPanel(session, false));
             SetButtonArt(closeSession, "ui_back", 20);
             RectTransform content = ScrollContent("Session Scroll View", card, 28, 86, 684, 298, out _);
@@ -364,7 +364,7 @@ namespace DeadCircuit
             SetButtonArt(sessionSettings, "ui_settings", 28);
             UiButton returnToMenu = Button("Return to Menu", card, "返回主菜单", 28, 466, 684, 44, () => CallBridge(bridge.Leave));
             SetButtonArt(returnToMenu, "ui_back", 28);
-            Label("Session Hint", card, "世界继续运行 · 房主定期自动保存", 28, 522, 684, 28, 14, Muted);
+            Label("Session Hint", card, "游戏不会暂停 · 房主定期自动保存；离开前请确认存档成功。", 28, 522, 684, 28, 14, Muted);
             sessionNotice = Label("Session Feedback", card, "", 28, 562, 684, 44, 15, Amber);
             session.gameObject.SetActive(false);
         }
@@ -381,13 +381,13 @@ namespace DeadCircuit
             RectTransform content = ScrollContent("Help Scroll View", card, 28, 88, 844, 420, out _);
             FlowLabel("Controls Title", content, "操作速查", 816, 30, 20, Accent);
             FlowLabel("Controls Text", content,
-                "WASD 移动 · Shift 冲刺 · 滚轮缩放 · E 交互 / 采集\n左键攻击 / 放置 · 右键瞄准（建造时取消）\nR 装填（建造时旋转）· Q 切换武器 / 工具\n1–0 建造快捷栏 · T 科技 / 全设备 · X 拆除 · G 修理\nF 吃食 · C 燃料 · Ctrl+C 弹药 · B 背包 / 装备 / 制作\nTab 成长 · J 生存 · H 帮助 · Esc 关闭 / 会话 · F5 保存", 816, 172, 18, Ink);
+                "WASD 移动 · Shift 冲刺 · 滚轮缩放 · E 交互 / 采集\n左键攻击 / 放置 · 右键瞄准（建造时取消）\nR 装填（建造时旋转）· Q 切换武器 / 工具\n1–0 建造快捷栏 · T 科技研究 · X 拆除 · G 修理\nF 进食 · C 制作燃料 · Ctrl+C 制作弹药 · B 背包 / 装备 / 制作\nTab 成长 · J 生存 · H 帮助 · Esc 关闭界面 / 游戏菜单 · F5 保存", 816, 172, 18, Ink);
             FlowLabel("Tutorial Title", content, "从原始到核工业", 816, 30, 20, Accent);
             FlowLabel("Production Tutorial", content,
-                "新世界先按 T → 原始工艺，采集木材、石料、黏土并研究工具、烧炭和陶器。\n炭窑将木材烧成木炭；陶窑用黏土与木炭烧砖，再逐步验证冶金工艺。\n原始 → 水力 → 蒸汽 → 低压 → 中压 → 高压 → 核工业，按顺序研究。\n传动轴传机械动力，管道传蒸汽；电网匹配电压，核反应堆需冷却。", 816, 124, 18, Ink);
+                "按 T 打开科技研究。采集木材、石材与黏土，研究工具、烧炭和制陶。\n用炭窑烧制木炭，再用陶窑烧制陶砖，逐步研究冶金工艺。\n原始 → 水力 → 蒸汽 → 低压 → 中压 → 高压 → 核工业，按顺序研究。\n传动轴传机械动力，管道传蒸汽；电网匹配电压，核反应堆需冷却。", 816, 124, 18, Ink);
             helpProgress = FlowLabel("Tutorial Progress", content, "", 816, 76, 16, Muted);
-            FlowLabel("HUD Expansion Help", content, "底部展开建造栏；右下工具菜单打开详细面板。设备检查可在工具菜单按需开启。", 816, 62, 17, Ink);
-            FlowLabel("Panel Hint", content, "打开面板时世界继续运行。Esc 优先关闭面板，其次取消建造，再打开会话。", 816, 56, 16, Amber);
+            FlowLabel("HUD Expansion Help", content, "点击底部展开建造栏。右下角菜单可打开其他界面，也可开启设备详情。", 816, 62, 17, Ink);
+            FlowLabel("Panel Hint", content, "打开界面时游戏不会暂停。按 Esc 关闭当前界面；再次按下可取消建造或打开游戏菜单。", 816, 56, 16, Amber);
             helpNotice = Label("Help Feedback", card, "", 28, 530, 844, 56, 15, Amber);
             help.gameObject.SetActive(false);
         }
@@ -466,7 +466,7 @@ namespace DeadCircuit
                     skillButtons[branch, tier].label.fontSize = 14;
                 }
             }
-            Label("Growth Rules", card, "属性上限 10；每点消耗 1 属性点。技能独立计点，按前置逐阶学习，第 1 / 2 / 3 阶需人物等级 1 / 3 / 5。",
+            Label("Growth Rules", card, "每项属性上限为10，提升1点消耗1属性点。技能须依次学习，另需技能点；第1、2、3阶分别需要角色等级1、3、5。",
                 24, 529, 1032, 24, 13, Muted);
             growthNotice = Label("Growth Feedback", card, "", 24, 559, 1032, 36, 15, Amber);
         }
@@ -483,7 +483,7 @@ namespace DeadCircuit
             SetButtonArt(respawnButton, "ui_back", 28);
             UiButton leaveAfterDeath = Button("Leave After Death", card, "返回主菜单", 290, 235, 252, 48, () => CallBridge(bridge.Leave));
             SetButtonArt(leaveAfterDeath, "ui_quit", 28);
-            Label("Death Hint", card, "世界仍在运行；复活保留背包与成长。", 28, 300, 514, 24, 14, Muted);
+            Label("Death Hint", card, "游戏不会暂停 · 复活后保留背包、等级与技能", 28, 300, 514, 24, 14, Muted);
         }
 
         void RefreshAll()
@@ -502,7 +502,7 @@ namespace DeadCircuit
                 ClosePanels();
                 buildTrayOpen = inspectorEnabled = false;
                 toolsTray.gameObject.SetActive(false);
-                Set(toolsToggle.label, "工具");
+                Set(toolsToggle.label, "菜单");
                 Set(inspectToggle.label, "检查：关");
                 if (!running) ShowMenuPage(MenuPage.Home);
                 if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
@@ -549,7 +549,7 @@ namespace DeadCircuit
                 float delay = Mathf.Max(0f, 5f - (world.elapsed - player.lastDamageAt));
                 respawnButton.button.interactable = delay <= 0f;
                 Set(respawnButton.label, delay > 0f ? "等待复活 · " + Mathf.CeilToInt(delay) + " 秒" : "复活");
-                Set(deathInfo, "本次倒下次数：" + player.deaths + "\n" +
+                Set(deathInfo, "累计倒下：" + player.deaths + "\n" +
                     (delay > 0f ? "复活冷却中，请稍候。" : "复活后将在安全位置落脚。") +
                     (player.noticeUntil > world.elapsed ? "\n" + Clean(player.notice) : ""));
             }
@@ -576,7 +576,7 @@ namespace DeadCircuit
             }
             string goal = NextEraGoal(world, player);
             Set(eraText, "科技：" + TechCatalog.EraName(world.era) + "  ·  T 查看 / 建造");
-            SetFlowText(objectives, (PrimitiveCatalog.Enabled(world) && era == 0 ? "原始工艺 · T 查看研究与生产前置" : era < 6 ? "下一时代 · " + TechCatalog.EraName((TechEra)(era + 1)) : "核工业运行") + "\n" + goal);
+            SetFlowText(objectives, (PrimitiveCatalog.Enabled(world) && era == 0 ? "原始工艺 · 按 T 查看研究条件" : era < 6 ? "下一时代 · " + TechCatalog.EraName((TechEra)(era + 1)) : "核工业运行") + "\n" + goal);
             SetFlowText(helpProgress, "当前：" + TechCatalog.EraName(world.era) + "  ·  " + goal + "\n击杀 " + world.kills + "  ·  制造 " + world.manufactured);
         }
 
@@ -594,7 +594,7 @@ namespace DeadCircuit
             waveText.color = remaining <= 30 ? Danger : Amber;
             int connected = 0;
             foreach (PlayerState peer in world.players) if (peer.connected) connected++;
-            SetFlowText(networkText, (bridge.IsHost ? "房主" : "客户端") + " · " + connected + "/" + WorldSimulator.MaxPlayers + " 人 · 丧尸 " + world.zombies.Count +
+            SetFlowText(networkText, (bridge.IsHost ? "房主" : "队员") + " · " + connected + "/" + WorldSimulator.MaxPlayers + " 人 · 丧尸 " + world.zombies.Count +
                 "\n本机 IPv4：" + Clean(bridge.HostIP) + "  ·  UDP 7777");
             saveButton.button.interactable = bridge.IsHost;
             Set(saveButton.label, bridge.IsHost ? "保存 F5" : "仅房主可保存");
@@ -665,17 +665,17 @@ namespace DeadCircuit
             SetFlowText(technologyDescription, EraDescriptions[selectedEra], 56);
             bool unlocked = selectedEra <= current;
             bool primitive = selectedEra == 0 && PrimitiveCatalog.Enabled(world);
-            SetFlowText(researchMaterials, selectedEra == 0 ? primitive ? "下列各工艺分别研究；材料在研究时扣除，生产验证由世界累计产出判定。" : "旧世界：原始工艺旁路，无需补研究。" : MaterialText(TechCatalog.ResearchCost(target), player.items, true), 28);
-            string requirement = unlocked ? "已解锁：可直接选择下列设备建造。" :
+            SetFlowText(researchMaterials, selectedEra == 0 ? primitive ? "各项工艺需单独研究，并消耗背包材料。生产进度由全队累计。" : "原始工艺已开放，无需额外研究。" : MaterialText(TechCatalog.ResearchCost(target), player.items, true), 28);
+            string requirement = unlocked ? "此时代已解锁。完成对应工艺研究后，即可选择设备建造。" :
                 selectedEra != current + 1 ? "前置：先完成" + TechCatalog.EraName((TechEra)(selectedEra - 1)) + "研究，不可越级。" :
                 EraResearchRequirement(world, target);
-            if (primitive) requirement = "依次查看每个节点的前置、持有材料及生产验证；完成条件后点击对应研究按钮。";
-            SetFlowText(researchRequirement, string.IsNullOrEmpty(requirement) ? "工序前置已满足。" : requirement, 30);
+            if (primitive) requirement = "查看各项工艺的前置研究、所需材料和生产进度。满足条件后，点击研究。";
+            SetFlowText(researchRequirement, string.IsNullOrEmpty(requirement) ? "研究条件已满足。" : requirement, 30);
             researchRequirement.color = unlocked ? Accent : string.IsNullOrEmpty(requirement) ? Accent : Amber;
             bool canResearch = selectedEra == current + 1 && player.connected && player.hp > 0f && player.interactCooldown <= 0f &&
                 string.IsNullOrEmpty(EraResearchRequirement(world, target)) && TechCatalog.CanResearch(world, player, target);
             researchButton.button.interactable = canResearch;
-            Set(researchButton.label, primitive ? "在节点中研究原始工艺" : unlocked ? "该时代已解锁" : selectedEra != current + 1 ? "请先完成前一时代" : canResearch ? "研究" + TechCatalog.EraName(target) : "研究条件未满足");
+            Set(researchButton.label, primitive ? "选择下方工艺研究" : unlocked ? "该时代已解锁" : selectedEra != current + 1 ? "请先完成前一时代" : canResearch ? "研究" + TechCatalog.EraName(target) : "研究条件未满足");
             RefreshPrimitiveTechnology(world, player);
             for (int i = 0; i < technologyBuildRows.Length; i++)
             {
@@ -745,8 +745,8 @@ namespace DeadCircuit
                 string unit = tier < 2 ? " 功率" : " kW";
                 string power = "动力：" + EnergyName(tier);
                 if (tier >= 0)
-                    power += "\n供 / 需 " + building.powerGeneration.ToString("0.#") + " / " + building.powerDemand.ToString("0.#") + unit +
-                        (needsPower ? " · 产能 " + (building.powerRatio * 100f).ToString("0") + "%" : "");
+                    power += "\n供给 / 需求 " + building.powerGeneration.ToString("0.#") + " / " + building.powerDemand.ToString("0.#") + unit +
+                        (needsPower ? " · 动力供给 " + (building.powerRatio * 100f).ToString("0") + "%" : "");
                 if (grid != null) power += "\n" + EnergyName(grid.tier) + "网 " + grid.id + " · " +
                     grid.generation.ToString("0.#") + " / " + grid.demand.ToString("0.#") + (grid.tier < 2 ? " 功率" : " kW");
                 Set(machineTitle, InspectedMachineName(building) + "  " + CellLocationText(world, building.x, building.y));
@@ -755,8 +755,8 @@ namespace DeadCircuit
                     " · " + DemoCatalog.Width(building) + "×" + DemoCatalog.Height(building) + "格\n" + power + "\n" + MachineFlow(building));
                 RefreshSteamCluster(world, building);
                 int moving = world.cargo == null ? 0 : world.cargo.FindAll(c => c.fromId == building.id || c.toId == building.id).Count;
-                SetFlowText(machineContents, InventoryText(building.items) + (moving > 0 ? "\n在途物料 " + moving + " 件" : ""));
-                SetFlowText(machineHint, (inRange ? "2.4 格内可操作，须视线畅通。" : "距离过远，靠近后可操作。") +
+                SetFlowText(machineContents, InventoryText(building.items) + (moving > 0 ? "\n运输中的物品 " + moving + " 件" : ""));
+                SetFlowText(machineHint, (inRange ? "操作范围：2.4 格，视线须畅通。" : "距离过远，请靠近设备。") +
                     "\n" + InspectedMachineDescription(building));
                 Set(interactButton.label, building.kind == BuildKind.Door ? (building.setting == 1 ? "关门 E" : "开门 E") : "交互 E");
                 RecipeDefinition recipe = MachineRecipe(building);
@@ -784,23 +784,23 @@ namespace DeadCircuit
                 if (transformer)
                 {
                     SetFlowText(machineRecipe, building.setting == 0 ? "变压：中压 → 低压" : "变压：高压 → 中压", 28);
-                    SetFlowText(machineSafety, !CanSwitchTransformer(world, building) ? "研究高压电网后可切换高压 → 中压。" : "输入与输出分别接对应电压网络。");
+                    SetFlowText(machineSafety, !CanSwitchTransformer(world, building) ? "研究高压电网后可切换高压 → 中压。" : "输入端与输出端须分别接入对应电压的电网。");
                 }
                 if (building.kind == BuildKind.SteamTurbine)
-                    SetFlowText(machineSafety, "转换：蒸汽输入 → 低压电力输出\n蒸汽网与低压网分别连接。");
+                    SetFlowText(machineSafety, "将蒸汽转为低压电力。\n蒸汽管接输入端，低压电网接输出端。");
                 if (building.kind == BuildKind.Reactor)
                 {
                     int coolant = Count(building.items, (int)ItemKind.Coolant);
                     bool cooling = coolant > 0 || building.progress > 0f;
                     bool nuclearFuel = Count(building.items, (int)ItemKind.NuclearFuel) > 0 || building.fuel > 0f;
-                    string state = building.tripped ? "自动停堆 / 降温中" : !cooling ? "停机 / 缺冷却液" :
-                        !nuclearFuel ? "待机 / 缺核燃料" : Count(building.items, (int)ItemKind.NuclearWaste) >= WorldSimulator.BufferLimit ? "停机 / 废料缓存已满" :
+                    string state = building.tripped ? "已停堆 · 正在降温" : !cooling ? "停机 · 缺少冷却液" :
+                        !nuclearFuel ? "待机 · 缺少核燃料" : Count(building.items, (int)ItemKind.NuclearWaste) >= WorldSimulator.BufferLimit ? "停机 · 核废料已满" :
                         building.powerGeneration > 0 ? "运行中" : "待机";
                     SetFlowText(machineRecipeFlow, "输入：核燃料、冷却液\n产出：高压电力、核废料");
                     SetFlowText(machineSafety, "温度 " + building.temperature.ToString("0") + "℃ · " + state +
-                        "\n冷却液 " + coolant + " 罐 · 余冷 " + building.progress.ToString("0.0") + " 秒" +
+                        "\n冷却液 " + coolant + " 单位 · 剩余冷却时间 " + building.progress.ToString("0.0") + " 秒" +
                         "\n核废料 " + Count(building.items, (int)ItemKind.NuclearWaste) + " / " + WorldSimulator.BufferLimit +
-                        "\n900℃自动停堆，冷却至300℃恢复。");
+                        "\n达到 900℃时自动停堆，降至 300℃后恢复运行。");
                     machineSafety.color = building.tripped || !cooling || building.temperature >= 700f ? Danger : nuclearFuel ? Accent : Amber;
                 }
                 else machineSafety.color = Amber;
@@ -816,7 +816,7 @@ namespace DeadCircuit
             string biomeName = resourceBiome >= 0 && resourceBiome < WorldGenerationCatalog.Biomes.Count
                 ? WorldGenerationCatalog.Biomes[resourceBiome].name : "未知";
             SetFlowText(machineInfo, "所在群系：" + biomeName + "\n资源余量：" + node.stock);
-            SetFlowText(machineContents, "资源耐久：" + Mathf.CeilToInt(node.hp) + "\n合适工具：" + ResourceToolText(node.kind));
+            SetFlowText(machineContents, "资源耐久：" + Mathf.CeilToInt(node.hp) + "\n采集工具：" + ResourceToolText(node.kind));
             SetFlowText(machineHint, ResourceCollectionHint(world, player, node));
         }
 
@@ -829,7 +829,7 @@ namespace DeadCircuit
         void RefreshGrowth(PlayerState player)
         {
             Set(growthSummary, "Lv." + player.level + "  ·  经验 " + player.xp + " / " + WorldSimulator.XpToNextLevel(player.level) +
-                "  ·  升级获得 2 属性点与 1 技能点  ·  世界继续运行");
+                "  ·  每次升级获得 2 属性点与 1 技能点");
             Set(attributeHeading, "属性强化  /  可用点数 " + player.attributePoints);
             Set(skillHeading, "专精树  /  可用技能点 " + player.skillPoints);
             for (int i = 0; i < attributeButtons.Length; i++)
@@ -851,7 +851,7 @@ namespace DeadCircuit
                     UiButton node = skillButtons[branch, tier];
                     node.button.interactable = !learned && next && levelMet && player.skillPoints > 0 && player.hp > 0f;
                     string state = learned ? "已掌握" : !next ? "前置：先学习上一阶" :
-                        !levelMet ? "需人物等级 " + requiredLevel : player.skillPoints <= 0 ? "需要 1 技能点" : "学习本阶 · 1 技能点";
+                        !levelMet ? "需角色等级 " + requiredLevel : player.skillPoints <= 0 ? "需要 1 技能点" : "学习本阶 · 1 技能点";
                     Set(node.label, "第 " + (tier + 1) + " 阶  ·  Lv." + requiredLevel + "\n" + state);
                     Tint(node, learned ? new Color32(42, 86, 67, 255) : next && levelMet ? new Color32(84, 65, 38, 255) : Panel);
                     node.label.color = learned ? Accent : next && levelMet ? Amber : Muted;
@@ -907,7 +907,7 @@ namespace DeadCircuit
             Set(helpNotice, help.gameObject.activeSelf ? message : "");
             helpNotice.color = color;
             Set(growthNotice, growth.gameObject.activeSelf ?
-                (message.Length > 0 ? message : "点击亮起的节点学习；属性点与技能点相互独立。") : "");
+                (message.Length > 0 ? message : "点击亮起的技能学习。属性与技能分别消耗对应点数。") : "");
             growthNotice.color = color;
             Set(technologyNotice, technology.gameObject.activeSelf ?
                 (message.Length > 0 ? message : "研究由全队共享；只消耗发起者背包中的材料。") : "");
@@ -1044,7 +1044,7 @@ namespace DeadCircuit
             help.gameObject.SetActive(false);
             technology.gameObject.SetActive(false);
             toolsTray.gameObject.SetActive(false);
-            Set(toolsToggle.label, "工具");
+            Set(toolsToggle.label, "菜单");
             if (includeSettings)
             {
                 if (settingsPanel.gameObject.activeSelf) PlayerPrefs.Save();
@@ -1062,7 +1062,7 @@ namespace DeadCircuit
             bool samePanel = panel != null && panel.gameObject.activeSelf;
             ClosePanels();
             toolsTray.gameObject.SetActive(false);
-            Set(toolsToggle.label, "工具");
+            Set(toolsToggle.label, "菜单");
             if (open && panel != null)
             {
                 bridge.BuildSelection = null;
@@ -1128,7 +1128,7 @@ namespace DeadCircuit
                     rotation = ((bridge.BuildRotation % 4) + 4) % 4, aimX = aim.x, aimY = aim.y
                 });
                 refreshAt = 0f;
-                if (action == "skill" || action == "attribute") Notify("已发送加点请求，以主机反馈为准。");
+                if (action == "skill" || action == "attribute") Notify("正在更新角色能力…");
             }
             catch (Exception error) { Notify("操作失败：" + error.Message, true); }
         }
@@ -1179,24 +1179,24 @@ namespace DeadCircuit
             {
                 case BuildKind.Generator: case BuildKind.DieselGenerator: case BuildKind.HighGenerator:
                 case BuildKind.CombustionChamber: case BuildKind.StoneFurnace:
-                    return "余燃 " + building.fuel.ToString("0.0") + " 秒 · E 补燃料";
-                case BuildKind.Boiler: return building.modularBoiler ? "模块化锅炉 · 由集群供应热量、给水及排汽" :
-                    "旧式一体锅炉 · 余燃 " + building.fuel.ToString("0.0") + " 秒 · E 补燃料";
+                    return "剩余燃烧时间 " + building.fuel.ToString("0.0") + " 秒 · E 补燃料";
+                case BuildKind.Boiler: return building.modularBoiler ? "由相邻的燃烧室、取水泵与烟囱提供运行条件" :
+                    "一体式锅炉 · 剩余燃烧时间 " + building.fuel.ToString("0.0") + " 秒 · E 补燃料";
                 case BuildKind.Miner: return "相邻矿脉 → 对应原矿";
-                case BuildKind.SteamMiner: return "蒸汽驱动 · 铁矿脉 → 铁矿";
+                case BuildKind.SteamMiner: return "蒸汽驱动 · 采集相邻矿床中的资源";
                 case BuildKind.Belt: return "物料 → 箭头方向的相邻设备";
-                case BuildKind.Turret: return "输入 弹药 → 自动防守";
+                case BuildKind.Turret: return "装入弹药后自动攻击敌人";
                 case BuildKind.Chest: return "接收物料 → E 取出库存";
                 case BuildKind.PowerPole: case BuildKind.MediumPole: case BuildKind.HighPole: return "同电压连线 7 格 · 覆盖 4 格";
                 case BuildKind.SolarPanel: return building.powerGeneration > 0 ? "日照发电 · 夜间停机" : "夜间待机 · 无需燃料";
                 case BuildKind.Wall: return "阻挡敌人 · 修理消耗木材";
                 case BuildKind.Door: return building.setting == 1 ? "门已打开 · E 关门 · 可通行" : "门已关闭 · E 开门";
-                case BuildKind.Chimney: return "集群排汽 · 与锅炉模块接触连接";
-                case BuildKind.FeedwaterPump: return "集群给水 · 近水并与锅炉模块接触连接";
+                case BuildKind.Chimney: return "为相邻的锅炉机组排烟";
+                case BuildKind.FeedwaterPump: return "为相邻的锅炉机组供水 · 须靠近水面";
                 case BuildKind.SteamEngine: return "蒸汽输入 → 机械动力 · 沿朝向连接传动轴";
                 case BuildKind.Workbench: return "B 打开手工配方 · 靠近后制作";
-                case BuildKind.CharcoalKiln: return "炭窑 · 木材 4 → 木炭 2 · E 投入木材 / 取炭";
-                case BuildKind.ClayKiln: return "陶窑 · 黏土 4 + 木炭 1 → 砖 4 · E 投料 / 取砖";
+                case BuildKind.CharcoalKiln: return "木材×4 → 木炭×2 · E 投料 / 取出";
+                case BuildKind.ClayKiln: return "黏土×4 + 木炭×1 → 陶砖×4 · E 投料 / 取出";
                 case BuildKind.Waterwheel: return "近水驱动 · 接触传动轴输出动力";
                 case BuildKind.Shaft: return "接触传递机械动力";
                 case BuildKind.SteamPipe: return "接触传递蒸汽动力";
@@ -1269,19 +1269,19 @@ namespace DeadCircuit
                     if (!string.IsNullOrEmpty(primitive)) return primitive;
                 }
                 if (!HasBuilding(world, BuildKind.Workbench)) return "采集木材，建造工作台";
-                if (!HasBuilding(world, BuildKind.StoneFurnace)) return "建石炉，加燃料冶炼铁矿";
+                if (!HasBuilding(world, BuildKind.StoneFurnace)) return "建造石炉，补充燃料并冶炼铁矿";
             }
             else if (world.era == TechEra.Water)
             {
                 if (!HasBuilding(world, BuildKind.Waterwheel)) return "在岸边建造水车";
-                if (!HasBuilding(world, BuildKind.MechanicalCrusher)) return "传动轴连接水车与破碎机";
+                if (!HasBuilding(world, BuildKind.MechanicalCrusher)) return "用传动轴连接水车与机械粉碎机";
             }
             else if (world.era == TechEra.Steam)
             {
-                if (!HasBuilding(world, BuildKind.Boiler)) return "近水建锅炉并补燃料";
-                if (!HasBuilding(world, BuildKind.SteamFurnace)) return "蒸汽管连接锅炉与蒸汽炉";
+                if (!HasBuilding(world, BuildKind.Boiler)) return "在岸边搭建锅炉机组：燃烧室、锅炉、取水泵与烟囱";
+                if (!HasBuilding(world, BuildKind.SteamFurnace)) return "用蒸汽管连接锅炉与蒸汽高炉";
             }
-            else if (world.era == TechEra.LowVoltage && !HasBuilding(world, BuildKind.CircuitAssembler)) return "建立低压网，制造基础电路";
+            else if (world.era == TechEra.LowVoltage && !HasBuilding(world, BuildKind.CircuitAssembler)) return "建立低压电网，制造电路";
             else if (world.era == TechEra.MediumVoltage && !HasBuilding(world, BuildKind.ChemicalPlant)) return "接通中压化工厂，制造聚合物";
             else if (world.era == TechEra.HighVoltage)
             {
@@ -1296,12 +1296,12 @@ namespace DeadCircuit
             for (int i = 0; i < cost.Length; i++)
             {
                 if (Count(player.items, i) >= cost[i]) continue;
-                if (i == (int)ItemKind.Bronze) return "铜、锡冶炼后在工作台合金";
-                if (i == (int)ItemKind.Steel) return "蒸汽炉以铁锭和燃料炼钢";
+                if (i == (int)ItemKind.Bronze) return "冶炼铜锭与锡锭，在工作台制作青铜";
+                if (i == (int)ItemKind.Steel) return "用蒸汽高炉将生铁与石灰石炼成钢";
                 return "准备研究材料：" + DemoCatalog.ItemNames[i] + " " + Count(player.items, i) + "/" + cost[i];
             }
             string missing = EraResearchRequirement(world, next);
-            return string.IsNullOrEmpty(missing) ? "材料已齐，按 T 研究下一时代" : missing;
+            return string.IsNullOrEmpty(missing) ? "条件已满足，按 T 研究下一时代" : missing;
         }
 
         string InventoryText(int[] items)

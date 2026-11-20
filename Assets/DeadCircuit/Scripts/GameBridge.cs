@@ -25,7 +25,7 @@ namespace DeadCircuit
         public PlayerState LocalPlayer => World?.players?.Find(p => p.id == profileId);
         public bool IsRunning { get; private set; }
         public bool IsHost { get; private set; }
-        public string Status { get; private set; } = "局域网合作 / 最多 4 位幸存者";
+        public string Status { get; private set; } = "局域网合作 · 最多 4 人";
         public string HostIP { get; private set; } = "127.0.0.1";
         public string PlayerName { get; set; } = "幸存者";
         public BuildKind? BuildSelection { get; set; }
@@ -149,14 +149,14 @@ namespace DeadCircuit
                 SetupNetwork();
                 network.NetworkConfig.ConnectionData = TicketBytes();
                 transport.SetConnectionData("127.0.0.1", Port, "0.0.0.0");
-                if (!network.StartHost()) throw new IOException("7777 端口无法监听，可能已有主机运行");
+                if (!network.StartHost()) throw new IOException("无法使用端口 7777。请检查是否已有游戏房间占用该端口");
                 RegisterMessages();
                 peers[NetworkManager.ServerClientId] = profileId;
                 IsRunning = true;
-                Status = "主机已就绪 · UDP 7777 · " + HostIP;
+                Status = "房间已创建 · UDP 7777 · " + HostIP;
 #else
                 IsRunning = true;
-                Status = "开发模式：联机包尚未安装";
+                Status = "当前版本可单人游玩，暂不支持联机。";
 #endif
                 ResetClocks();
                 RememberName();
@@ -186,7 +186,7 @@ namespace DeadCircuit
                 RegisterMessages();
                 RememberName();
 #else
-                Status = "请先安装 Netcode for GameObjects 并重新编译。";
+                Status = "当前版本暂不支持联机，请使用支持联机的游戏版本。";
 #endif
             }
             catch (Exception e) { Status = "连接失败：" + e.Message; AbortSession(); }
@@ -222,7 +222,7 @@ namespace DeadCircuit
         void Update()
         {
             if (connecting && Time.unscaledTime - connectStarted > 15)
-            { Status = "连接超时。请检查主机 IP、同一局域网和防火墙的专用网络权限。"; AbortSession(); }
+            { Status = "连接超时。请确认房主地址正确，双方位于同一局域网，并允许游戏通过防火墙。"; AbortSession(); }
             if (!IsRunning) { SmokeUpdate(); return; }
             inputClock += Time.unscaledDeltaTime;
             if (!(smokeHost || smokeClient || qaRun)) ReadInput();
@@ -325,7 +325,7 @@ namespace DeadCircuit
         {
             if (leaving) return;
             if (IsHost && IsRunning) SaveInternal(false);
-            Status = "已返回主菜单；房主世界会自动保存。";
+            Status = "已返回主菜单。";
             AbortSession();
         }
 
@@ -396,12 +396,12 @@ namespace DeadCircuit
             {
                 if (request.Payload == null || request.Payload.Length > 512) throw new InvalidDataException("加入资料无效");
                 var ticket = JsonUtility.FromJson<JoinTicket>(Encoding.UTF8.GetString(request.Payload));
-                if (ticket == null || ticket.version != WorldSimulator.SaveVersion || !Guid.TryParse(ticket.id, out var guid)) throw new InvalidDataException("Demo 版本不一致");
+                if (ticket == null || ticket.version != WorldSimulator.SaveVersion || !Guid.TryParse(ticket.id, out var guid)) throw new InvalidDataException("游戏版本不一致，请与房主使用相同版本");
                 if (!AppearanceCatalog.IsValid(ticket.appearance)) throw new InvalidDataException("主角外观预设无效");
                 string id = guid.ToString("N");
                 if (request.ClientNetworkId != NetworkManager.ServerClientId && peers.Values.Contains(id)) throw new InvalidDataException("此角色已在游戏中，请关闭重复连接");
-                if (peers.Count >= 4) throw new InvalidDataException("房间已满（最多4人）");
-                if (World.players.Count >= WorldSimulator.MaxPlayers && World.players.All(p => p.id != id)) throw new InvalidDataException("此世界已有8个存档角色，请新建世界");
+                if (peers.Count >= 4) throw new InvalidDataException("房间已满（最多 4 人）");
+                if (World.players.Count >= WorldSimulator.MaxPlayers && World.players.All(p => p.id != id)) throw new InvalidDataException("此世界的角色名额已满（最多 8 个），请新建世界");
                 var joined = simulator.AddPlayer(id, CleanName(ticket.name), ticket.appearance);
                 peers[request.ClientNetworkId] = id;
                 if (smokeHost)
@@ -434,7 +434,7 @@ namespace DeadCircuit
             else
             {
                 string reason = network.DisconnectReason;
-                Status = string.IsNullOrWhiteSpace(reason) ? "与主机断开连接。可使用相同角色重新加入。" : "无法加入：" + reason;
+                Status = string.IsNullOrWhiteSpace(reason) ? "与房主断开连接。可使用原角色重新加入。" : "无法加入：" + reason;
                 AbortSession();
             }
         }

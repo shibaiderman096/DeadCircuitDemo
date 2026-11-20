@@ -75,7 +75,7 @@ namespace DeadCircuit
             Box("Equipment Slots Surface", card, 712, 70, 434, 244, Recessed);
             Box("Inventory Detail Surface", card, 712, 322, 434, 244, Recessed);
             Box("Inventory Footer Rule", card, 22, 616, 1116, 1, Edge);
-            Label("Inventory Heading", card, "随身背包 / 装备工坊", 22, 16, 830, 36, 25, Ink, FontStyles.Bold);
+            Label("Inventory Heading", card, "背包与装备", 22, 16, 830, 36, 25, Ink, FontStyles.Bold);
             UiButton closeInventory = Button("Close Inventory", card, "返回", 1012, 18, 126, 32, () => SetPanel(inventory, false));
             SetButtonArt(closeInventory, "ui_back", 20);
             Label("Inventory Browser Heading", card, "背包物品", 22, 78, 200, 26, 17, Accent, FontStyles.Bold);
@@ -132,7 +132,7 @@ namespace DeadCircuit
             filterInventory = Button("Inventory Category Filter", card, "分类：全部", 176, 142, 178, 32, CycleInventoryFilter);
             SetButtonArt(filterInventory, "ui_inspect", 18);
             inventorySummary = Label("Inventory Summary", card, "", 22, 174, 332, 24, 13, Muted);
-            Label("Inventory Detail Heading", card, "选中详情", 726, 328, 406, 20, 15, Accent);
+            Label("Inventory Detail Heading", card, "物品详情", 726, 328, 406, 20, 15, Accent);
             materialGrid = MakeInventoryGrid("Inventory Scroll View", card, out materialScroll);
             gearGrid = MakeInventoryGrid("Equipment Scroll View", card, out gearScroll);
             partGrid = MakeInventoryGrid("Parts Scroll View", card, out partScroll);
@@ -152,7 +152,7 @@ namespace DeadCircuit
             }
             MakeInventoryRecipes();
             MakeItemDetails(card);
-            eatButton = Button("Eat", card, "吃食 F", 22, 580, 130, 34, () => Send("eat"));
+            eatButton = Button("Eat", card, "进食 F", 22, 580, 130, 34, () => Send("eat"));
             SetButtonArt(eatButton, "ui_eat", 22);
             workbenchHint = Label("Workbench Requirement", card, "", 166, 574, 972, 44, 13, Muted);
             inventoryNotice = Label("Inventory Feedback", card, "", 22, 622, 1116, 50, 13, Amber);
@@ -235,13 +235,13 @@ namespace DeadCircuit
             salvageGear.label.color = Amber;
             gearDetailObjects.Add(actions.gameObject);
             RectTransform unequipRow = FlowRow("Armor Unequip Actions", content, 390, 36);
-            unequipSelected = Button("Unequip Selected Gear", unequipRow, "脱下所选防具", 0, 0, 390, 34, () => InventoryCommand("unequip", selectedGear));
+            unequipSelected = Button("Unequip Selected Gear", unequipRow, "脱下防具", 0, 0, 390, 34, () => InventoryCommand("unequip", selectedGear));
             SetButtonArt(unequipSelected, "ui_detach", 22);
             armorDetailObjects.Add(unequipRow.gameObject);
             TextMeshProUGUI salvageWarning = FlowLabel("Salvage Gear Warning", content,
-                "回收会永久移除此装备，返还半价材料、全部配件和弹匣内弹药；任一库存装不下时整笔拒绝。", 390, 50, 12, Amber);
+                "回收会永久拆解装备，返还一半制作材料、全部配件和弹匣内弹药。任一库存空间不足时，整次回收取消。", 390, 50, 12, Amber);
             gearDetailObjects.Add(salvageWarning.gameObject);
-            TextMeshProUGUI heading = FlowLabel("Ammo Selection Heading", content, "下次装填弹种 · 先卸弹才能更换已装弹种", 390, 32, 13, Accent);
+            TextMeshProUGUI heading = FlowLabel("Ammo Selection Heading", content, "装填弹种 · 更换前先卸下现有弹药", 390, 32, 13, Accent);
             gunDetailObjects.Add(heading.gameObject);
             RectTransform ammoRow = FlowRow("Ammo Selection", content, 390, 48);
             for (int i = 0; i < DemoCatalog.ItemNames.Length; i++)
@@ -274,7 +274,7 @@ namespace DeadCircuit
                 detachButtons.Add(detach);
                 gunDetailObjects.Add(row.gameObject);
             }
-            heading = FlowLabel("Install Parts Heading", content, "安装配件 · 先选择目标装备，已占用槽请先卸下", 390, 32, 13, Accent);
+            heading = FlowLabel("Install Parts Heading", content, "安装配件 · 先选装备，更换前先卸下原配件", 390, 32, 13, Accent);
             gunDetailObjects.Add(heading.gameObject);
             for (int i = 0; i < EquipmentCatalog.PartNames.Length; i += 2)
             {
@@ -356,7 +356,7 @@ namespace DeadCircuit
             if (current == null) { Set(equipmentSummary, "徒手 · Q 切换 · B 背包"); return; }
             WeaponStats stats = EquipmentCatalog.Stats(current);
             string magazine = stats.magazine > 0 ? " · " + current.magazine + "/" + stats.magazine : "";
-            string state = player.reloadRemaining > 0f ? " · 装填 " + player.reloadRemaining.ToString("0.0") + "s" :
+            string state = player.reloadRemaining > 0f ? " · 装填 " + player.reloadRemaining.ToString("0.0") + "秒" :
                 current.durability <= 15 ? " · 低耐久" : "";
             Set(equipmentSummary, EquipmentCatalog.GearNames[(int)current.kind] + magazine + state);
             equipmentSummary.color = current.durability <= 15 ? Amber : Ink;
@@ -379,13 +379,13 @@ namespace DeadCircuit
             for (int i = 0; i < armorSlots.Length; i++)
             {
                 GearState armor = EquipmentCatalog.Find(player, Count(player.armorIds, i));
-                Set(armorSlots[i].label, armorNames[i] + " · " + (armor == null ? "空槽 / 浏览防具" : EquipmentCatalog.GearNames[(int)armor.kind] + "\n耐久 " + armor.durability + "%"));
+                Set(armorSlots[i].label, armorNames[i] + " · " + (armor == null ? "空槽 · 选择防具" : EquipmentCatalog.GearNames[(int)armor.kind] + "\n耐久 " + armor.durability + "%"));
                 armorSlots[i].button.interactable = ready;
                 Tint(armorSlots[i], armor != null && armor.id == selectedGear ? Selected : Raised);
                 armorSlots[i].label.color = armor != null && armor.durability <= 0 ? Danger : Ink;
                 SetButtonArt(armorSlots[i], armor == null ? null : "gear_" + (int)armor.kind, 28);
             }
-            Set(armorSummary, "总护甲 " + EquipmentCatalog.ArmorRating(player).ToString("0.#") + "\n移动 -" + (EquipmentCatalog.MovementPenalty(player) * 100f).ToString("0.#") + "%");
+            Set(armorSummary, "总护甲 " + EquipmentCatalog.ArmorRating(player).ToString("0.#") + "\n移速 -" + (EquipmentCatalog.MovementPenalty(player) * 100f).ToString("0.#") + "%");
             for (int i = 0; i < equipmentSlots.Length; i++)
             {
                 GearState gear = EquipmentCatalog.Find(player, i == 0 ? player.weaponId : player.toolId);
@@ -406,9 +406,9 @@ namespace DeadCircuit
             Set(sortInventory.label, "排序：" + (inventorySort == 0 ? "分类" : inventorySort == 1 ? "名称" : "数量"));
             Set(filterInventory.label, "分类：" + InventoryFilterName());
             bool bench = EquipmentCatalog.HasWorkbench(world, player);
-            Set(workbenchHint, bench ? "工作台就绪 · 制作、维修、装配与回收均由主机验证时代、材料和库存空间。" :
-                PrimitiveCatalog.Enabled(world) ? "按 T 研究原始工艺；制作 / 维修 / 装配 / 回收需工作台 2.4 格内且视线畅通。" :
-                "制作 / 维修 / 装配 / 回收需工作台 2.4 格内且视线畅通；燃料 / 普通弹药可随身制作。");
+            Set(workbenchHint, bench ? "工作台可用。制作、维修、装配与回收还需满足科技、材料和库存空间要求。" :
+                PrimitiveCatalog.Enabled(world) ? "按 T 研究原始工艺。制作、维修、装配与回收需在工作台 2.4 格内，且视线畅通。" :
+                "制作、维修、装配与回收需在工作台 2.4 格内，且视线畅通。燃料和普通弹药可随身制作。");
             workbenchHint.color = bench ? Accent : Muted;
             RefreshInventoryCells(player);
             if (inventoryTab == 3) RefreshInventoryRecipes(world, player, bench);
@@ -558,7 +558,7 @@ namespace DeadCircuit
                 if (visibleCells[i].widget.button.transform.GetSiblingIndex() != i) visibleCells[i].widget.button.transform.SetSiblingIndex(i);
             Set(inventorySummary, "持有 " + owned + (inventoryTab == 1 ? " 件装备" : " 类") + " · 显示 " + visibleCells.Count + " / " + (inventoryTab == 1 ? (player.gear == null ? 0 : player.gear.Count) : cells.Count));
             inventoryEmpty.gameObject.SetActive(visibleCells.Count == 0);
-            Set(inventoryEmpty, inventoryTab == 1 ? "暂无此类装备。\n切换「制作」查看装备门槛与成本。" : "此分类暂无物品。");
+            Set(inventoryEmpty, inventoryTab == 1 ? "暂无此类装备。\n前往「制作」查看所需科技和材料。" : "此分类暂无物品。");
         }
 
         void RefreshItemDetails(WorldState world, PlayerState player, GearState target, bool bench)
@@ -572,7 +572,7 @@ namespace DeadCircuit
             if (inventoryDetailKind == 0)
             {
                 Set(itemTitle, DemoCatalog.ItemNames[selectedMaterial]);
-                SetFlowText(itemMeta, "数量：" + Count(player.items, selectedMaterial) + " / " + WorldSimulator.InventoryLimit + " · " + MaterialCategoryName(MaterialCategory(selectedMaterial)));
+                SetFlowText(itemMeta, "数量：×" + Count(player.items, selectedMaterial) + " / " + WorldSimulator.InventoryLimit + " · " + MaterialCategoryName(MaterialCategory(selectedMaterial)));
                 SetFlowText(itemUsage, MaterialUsage(selectedMaterial));
                 return;
             }
@@ -580,16 +580,16 @@ namespace DeadCircuit
             {
                 PartDefinition part = EquipmentCatalog.Part((PartKind)selectedPart);
                 Set(itemTitle, part.name);
-                SetFlowText(itemMeta, "散件数量：" + Count(player.parts, selectedPart) + " · 插槽：" + EquipmentCatalog.SlotNames[(int)part.slot] + " · " + TechCatalog.EraName(part.era));
+                SetFlowText(itemMeta, "未安装配件：×" + Count(player.parts, selectedPart) + " · 插槽：" + EquipmentCatalog.SlotNames[(int)part.slot] + " · " + TechCatalog.EraName(part.era));
                 SetFlowText(itemUsage, part.description + "\n装配目标：" + (target == null ? "请先在装备页选择一件装备。" : EquipmentCatalog.GearNames[(int)target.kind] + " #" + target.id) +
                     "\n先在装备页选中目标，再在此页点击对应安装按钮。");
             }
             else
             {
                 Set(itemTitle, target == null ? "尚未选择装备" : EquipmentCatalog.GearNames[(int)target.kind] + "  #" + target.id);
-                SetFlowText(itemMeta, target == null ? "在左侧选择装备；制作页可查看全部装备和条件。" : "数量：1 · 耐久：" + target.durability + " / " + EquipmentCatalog.Gear(target.kind).maxDurability +
-                    " · " + (IsWorn(player, target) ? "防具已穿戴" : player.weaponId == target.id ? "已装备武器位" : player.toolId == target.id ? "已装备工具位" : "存放于背包"));
-                SetFlowText(itemUsage, target == null ? "回收后会清除选择，避免误操作其他装备。" : GearUsage(target.kind));
+                SetFlowText(itemMeta, target == null ? "在左侧选择装备；「制作」页可查看全部装备及制作条件。" : "数量：×1 · 耐久：" + target.durability + " / " + EquipmentCatalog.Gear(target.kind).maxDurability +
+                    " · " + (IsWorn(player, target) ? "防具已穿戴" : player.weaponId == target.id ? "已放入武器位" : player.toolId == target.id ? "已放入工具位" : "存放于背包"));
+                SetFlowText(itemUsage, target == null ? "在左侧选择装备；回收后需重新选择。" : GearUsage(target.kind));
             }
             if (!hasGear) return;
             WeaponStats stats = EquipmentCatalog.Stats(target);
@@ -600,8 +600,8 @@ namespace DeadCircuit
             bool loading = player.reloadRemaining > 0f;
             string combat = "伤害 " + stats.damage.ToString("0.#") + (stats.pellets > 1 ? " × " + stats.pellets + " 弹丸" : "") +
                 " · 射程 " + stats.range.ToString("0.##") + " 格\n" +
-                (gun ? "射速 " : "动作频率 ") + (1f / Mathf.Max(.01f, stats.interval)).ToString("0.##") + " /秒 · 间隔 " + stats.interval.ToString("0.##") + " 秒";
-            if (gun) combat += "\n精度散布 ±" + (stats.spread * Mathf.Rad2Deg).ToString("0.##") + "°（越低越准） · 后坐 " + (stats.recoil * Mathf.Rad2Deg).ToString("0.##") +
+                (gun ? "射速 " : "动作频率 ") + (1f / Mathf.Max(.01f, stats.interval)).ToString("0.##") + " 次/秒 · 间隔 " + stats.interval.ToString("0.##") + " 秒";
+            if (gun) combat += "\n散布 ±" + (stats.spread * Mathf.Rad2Deg).ToString("0.##") + "° · 越低越准 · 后坐力 " + (stats.recoil * Mathf.Rad2Deg).ToString("0.##") +
                 "°\n弹匣 " + target.magazine + " / " + stats.magazine + " · 装填 " + stats.reload.ToString("0.##") + " 秒\n已装：" + (target.magazine > 0 ? EquipmentCatalog.AmmoName(target.loadedAmmo) : "空") +
                 " · 下次：" + EquipmentCatalog.AmmoName(ReloadAmmo(player, target)) + " · 备弹 " + Count(player.items, (int)ReloadAmmo(player, target));
             if (armor)
@@ -611,33 +611,33 @@ namespace DeadCircuit
                 float effectiveArmor = target.durability <= 0 ? 0f : definition.armor;
                 float previousPenalty = worn == null || worn.durability <= 0 ? 0f : EquipmentCatalog.Gear(worn.kind).movePenalty;
                 float effectivePenalty = target.durability <= 0 ? 0f : definition.movePenalty;
-                combat = "防具护甲 " + effectiveArmor.ToString("0.#") + (target.durability <= 0 ? "（已损坏，无防御）" : "") +
-                    " · 移动 -" + (effectivePenalty * 100f).ToString("0.#") + "%\n同槽已穿：" + (worn == null ? "空" : EquipmentCatalog.GearNames[(int)worn.kind] + " · 耐久 " + worn.durability + "%") +
-                    "\n替换护甲差 " + (effectiveArmor - previousArmor).ToString("+0.#;-0.#;0") +
-                    " · 移动惩罚差 " + ((effectivePenalty - previousPenalty) * 100f).ToString("+0.#;-0.#;0") + "%" +
-                    "\n全身有效护甲 " + EquipmentCatalog.ArmorRating(player).ToString("0.#") + " · 总移动惩罚 " + (EquipmentCatalog.MovementPenalty(player) * 100f).ToString("0.#") + "%（上限25%）" +
+                combat = "防具护甲 " + effectiveArmor.ToString("0.#") + (target.durability <= 0 ? " · 已损坏，无防御" : "") +
+                    " · 移速 -" + (effectivePenalty * 100f).ToString("0.#") + "%\n当前同部位防具：" + (worn == null ? "空" : EquipmentCatalog.GearNames[(int)worn.kind] + " · 耐久 " + worn.durability + "%") +
+                    "\n替换后护甲变化 " + (effectiveArmor - previousArmor).ToString("+0.#;-0.#;0") +
+                    " · 移速惩罚变化 " + ((effectivePenalty - previousPenalty) * 100f).ToString("+0.#;-0.#;0") + "%" +
+                    "\n全身有效护甲 " + EquipmentCatalog.ArmorRating(player).ToString("0.#") + " · 总移速惩罚 " + (EquipmentCatalog.MovementPenalty(player) * 100f).ToString("0.#") + "% · 上限25%" +
                     "\n防具独立穿戴；不切换当前武器或工具。";
             }
-            SetFlowText(itemStats, combat + (armor ? "" : "\n属性已计入配件；命中与成长修正由核心结算。"));
+            SetFlowText(itemStats, combat + (armor ? "" : "\n属性已计入配件加成；命中效果与成长加成在攻击时计算。"));
             equipSelected.button.interactable = alive && !active;
-            Set(equipSelected.label, active ? armor ? "已穿戴" : "当前已启用" : armor ? "穿戴所选防具" : definition.tool ? "装备 / 切至工具" : "装备 / 切至武器");
+            Set(equipSelected.label, active ? armor ? "已穿戴" : "使用中" : armor ? "穿戴防具" : definition.tool ? "切换至此工具" : "切换至此武器");
             unequipSelected.button.interactable = alive && armor && active;
             bool stone = target.kind == GearKind.StoneAxe || target.kind == GearKind.StonePickaxe;
             bool repairMaterials = stone ? Count(player.items, (int)ItemKind.Wood) >= 1 && Count(player.items, (int)ItemKind.Ore) >= 1 :
                 Count(player.items, (int)ItemKind.Iron) >= 2 && Count(player.items, (int)ItemKind.Scrap) >= 1;
             repairGear.button.interactable = ready && bench && target.durability < definition.maxDurability && repairMaterials;
-            Set(repairGear.label, stone ? "维修 +25 · 木1 矿1" : "维修 +25 · 铁2 废1");
+            Set(repairGear.label, stone ? "维修 +25\n木材×1 铁矿×1" : "维修 +25\n铁锭×2 废料×1");
             bool salvageSpace = HasSalvageSpace(player, target);
             salvageGear.button.interactable = ready && bench && salvageSpace;
-            Set(salvageGear.label, !salvageSpace ? "回收返还空间不足" : "回收装备");
+            Set(salvageGear.label, !salvageSpace ? "回收空间不足" : "回收装备");
             SetFlowText(equipmentHint, (loading ? "装填中：" + player.reloadRemaining.ToString("0.0") + " 秒；切换装备或操作装备将取消装填。\n" : "") +
-                (bench ? "工作台就绪。" : "维修 / 装配 / 回收需可见工作台。") + "维修恢复 25 耐久；装填作用于当前武器，弹种切换前需卸弹。");
+                (bench ? "工作台可用。" : "维修、装配与回收需在工作台 2.4 格内，且视线畅通。") + "每次维修恢复 25 耐久；装填仅作用于当前武器，换弹种前请先卸弹。");
             if (!gun) return;
             ItemKind nextAmmo = ReloadAmmo(player, target);
             bool selectedCompatible = EquipmentCatalog.AmmoCompatible(target.kind, player.selectedAmmo);
             bool sameAmmo = target.magazine == 0 || target.loadedAmmo == player.selectedAmmo;
             reloadGear.button.interactable = ready && active && !loading && target.durability > 0 && target.magazine < stats.magazine && selectedCompatible && sameAmmo && Count(player.items, (int)nextAmmo) > 0;
-            Set(reloadGear.label, loading && player.reloadingGearId == target.id ? "装填中 " + player.reloadRemaining.ToString("0.0") + "s" : !active ? "先装备为当前武器" : !sameAmmo ? "先卸弹再换弹种" : "装填 R");
+            Set(reloadGear.label, loading && player.reloadingGearId == target.id ? "装填中 " + player.reloadRemaining.ToString("0.0") + "秒" : !active ? "请先装备并使用" : !sameAmmo ? "先卸弹再换弹种" : "装填 R");
             unloadGear.button.interactable = ready && target.magazine > 0 && Count(player.items, (int)target.loadedAmmo) + target.magazine <= WorldSimulator.InventoryLimit;
             for (int i = 0; i < ammoButtons.Count; i++)
             {
@@ -660,7 +660,7 @@ namespace DeadCircuit
                 bool compatible = EquipmentCatalog.PartCompatible(target.kind, (PartKind)i);
                 bool empty = AttachedPart(target, (int)part.slot) < 0;
                 installButtons[i].button.interactable = ready && bench && world.era >= part.era && compatible && empty && Count(player.parts, i) > 0;
-                Set(installButtons[i].label, part.name + " ×" + Count(player.parts, i) + (!compatible ? " · 不兼容" : !empty ? " · 槽已占" : " · 安装"));
+                Set(installButtons[i].label, part.name + " ×" + Count(player.parts, i) + (!compatible ? " · 不适用" : !empty ? " · 槽位已满" : " · 安装"));
                 Tint(installButtons[i], inventoryDetailKind == 2 && selectedPart == i ? Selected : Raised);
             }
         }
@@ -694,7 +694,7 @@ namespace DeadCircuit
                 RecipeDefinition recipe = row.recipe;
                 bool era = PrimitiveCatalog.IsRecipeUnlocked(world, recipe), needsBench = recipe.id > 1;
                 bool materials = CanAfford(player.items, recipe.inputs), space = HasRecipeSpace(player.items, recipe);
-                string state = !era ? PrimitiveCatalog.RecipeRequirement(world, recipe) : needsBench && !bench ? "需工作台 / 视线" : !materials ? "缺少材料" : !space ? "背包已满" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
+                string state = !era ? PrimitiveCatalog.RecipeRequirement(world, recipe) : needsBench && !bench ? "请靠近工作台并保持视线畅通" : !materials ? "缺少材料" : !space ? "背包已满" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
                 row.craft.button.interactable = player.hp > 0f && player.connected && era && (!needsBench || bench) && materials && space && player.interactCooldown <= 0f;
                 Set(row.craft.label, recipe.name + "\n" + state);
                 SetRecipeText(row.details, "输入：" + MaterialText(recipe.inputs, player.items, true) + "\n产出：" + MaterialText(recipe.outputs) +
@@ -715,7 +715,7 @@ namespace DeadCircuit
                 bool canCraft = primitive && (row.part ? EquipmentCatalog.CanCraftPart(world, player, (PartKind)row.kind) : EquipmentCatalog.CanCraft(world, player, (GearKind)row.kind));
                 string reason = world.era < era ? "需" + TechCatalog.EraName(era) : !primitive ? "需原始工艺：" +
                     PrimitiveCatalog.Definition(gear.kind == GearKind.Knife ? PrimitiveTech.Bloomery : PrimitiveTech.Tools).name :
-                    !bench ? "需工作台 / 视线" : !CanAfford(player.items, cost) ? "缺少材料" : !canCraft ? "背包容量 / 状态受限" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
+                    !bench ? "请靠近工作台并保持视线畅通" : !CanAfford(player.items, cost) ? "缺少材料" : !canCraft ? "背包已满或角色无法制作" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
                 row.craft.button.interactable = canCraft && player.interactCooldown <= 0f;
                 Set(row.craft.label, name + "\n" + reason);
                 SetRecipeText(row.details, "成本：" + MaterialText(cost, player.items, true) + "\n" + TechCatalog.EraName(era) + " · 工作台 · " + reason +
@@ -797,7 +797,7 @@ namespace DeadCircuit
             {
                 case GearKind.StoneAxe: case GearKind.SteelAxe: return "工具 · 伐木与近战；使用消耗耐久。";
                 case GearKind.StonePickaxe: case GearKind.SteelPickaxe: return "工具 · 采矿与近战；使用消耗耐久。";
-                case GearKind.Wrench: return "工具 · 设备维护与近战；使用消耗耐久。";
+                case GearKind.Wrench: return "工具 · 设备维护与近战，采集废料和废墙更高效；使用消耗耐久。";
                 case GearKind.Knife: usage = "近战武器 · 不消耗弹药；使用消耗耐久。"; break;
                 default: usage = "远程武器 · 先装备、选择兼容弹种并装填；右键瞄准，R 装填。"; break;
             }
@@ -813,20 +813,20 @@ namespace DeadCircuit
                 var compatible = new List<string>();
                 for (int i = 0; i < EquipmentCatalog.GearNames.Length; i++)
                     if (EquipmentCatalog.AmmoCompatible((GearKind)i, kind)) compatible.Add(EquipmentCatalog.GearNames[i]);
-                string caliber = kind == ItemKind.Ammo ? "对应9×19mm手枪弹；机枪塔沿用此弹药。" :
-                    kind == ItemKind.RifleAmmo ? "对应5.56×45mm步枪弹。" :
-                    kind == ItemKind.Shell ? "对应12号霰弹。" :
-                    kind == ItemKind.PrecisionAmmo ? "对应7.62×51mm狙击步枪弹。" :
-                    "穿甲弹库存按通用类别管理，使用时对应各步枪口径。";
+                string caliber = kind == ItemKind.Ammo ? "9×19mm 手枪弹，也可供机枪塔使用。" :
+                    kind == ItemKind.RifleAmmo ? "5.56×45mm 步枪弹。" :
+                    kind == ItemKind.Shell ? "12号霰弹。" :
+                    kind == ItemKind.PrecisionAmmo ? "7.62×51mm 狙击步枪弹。" :
+                    "通用穿甲弹，可供兼容此弹种的步枪使用。";
                 return "弹药用途：" + string.Join("、", compatible) + "。\n" + caliber +
                     "\n在装备详情中选择弹种并装填；切换已装弹种前先卸弹。";
             }
-            if (kind == ItemKind.Food) return "食物补充饱食度；点击下方「吃食 F」或关闭面板后按 F。";
+            if (kind == ItemKind.Food) return "补充饱食度。点击下方「进食 F」，或关闭面板后按 F。";
             if (kind == ItemKind.Fuel) return "供燃料发电、锅炉与石炉使用；也用于炼钢和化工。";
-            if (kind == ItemKind.Stone) return "原始石料。采集石料堆获得，用于工具、窑炉及建造工艺；按 T 查看研究成本。";
-            if (kind == ItemKind.Clay) return "黏土。采集黏土矿床获得；陶窑投入黏土 4、木炭 1，产出砖 4。";
-            if (kind == ItemKind.Charcoal) return "木炭。炭窑投入木材 4，产出木炭 2；用于陶窑烧砖与原始冶金。";
-            if (kind == ItemKind.Brick) return "砖。陶窑以黏土和木炭烧制，用于建筑及工艺研究；生产验证以实际产出计数。";
+            if (kind == ItemKind.Stone) return "采集石材堆获得。用于工具、窑炉与建造工艺；按 T 查看研究材料。";
+            if (kind == ItemKind.Clay) return "采集黏土矿床获得。陶窑消耗黏土×4、木炭×1，产出陶砖×4。";
+            if (kind == ItemKind.Charcoal) return "炭窑消耗木材×4，产出木炭×2。用于陶窑烧制陶砖与原始冶金。";
+            if (kind == ItemKind.Brick) return "由陶窑消耗黏土和木炭烧制，用于建筑与工艺研究。研究要求的生产数量按累计产出计算。";
             if (kind == ItemKind.NuclearWaste) return "反应堆产物。及时取出并妥善储存，避免设备库存阻塞。";
             var uses = new List<string>();
             foreach (RecipeDefinition recipe in TechCatalog.Recipes) if (Count(recipe.inputs, item) > 0 && !uses.Contains(recipe.name)) uses.Add(recipe.name);
@@ -835,7 +835,7 @@ namespace DeadCircuit
             for (int i = 0; i < EquipmentCatalog.GearNames.Length; i++) if (Count(EquipmentCatalog.Gear((GearKind)i).cost, item) > 0) { equipment = true; break; }
             if (!equipment) for (int i = 0; i < EquipmentCatalog.PartNames.Length; i++) if (Count(EquipmentCatalog.Part((PartKind)i).cost, item) > 0) { equipment = true; break; }
             return (construction ? "建造材料。" : "工业材料。") + (equipment ? "可制作装备 / 配件。" : "") +
-                (uses.Count > 0 ? "\n配方：" + string.Join("、", uses) : "") + "\n制作页查看精确门槛与持有 / 需求；T 查看科技和建造。";
+                (uses.Count > 0 ? "\n配方：" + string.Join("、", uses) : "") + "\n在「制作」页查看所需科技与材料；按 T 查看科技和建造。";
         }
     }
 }

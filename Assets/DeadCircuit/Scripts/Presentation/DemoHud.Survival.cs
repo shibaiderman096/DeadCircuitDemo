@@ -60,7 +60,7 @@ namespace DeadCircuit
             PanelRule(card, 1076, 58);
             survivalStatus = Label("Survival Status", card, "", 22, 66, 1076, 64, 15, Ink);
             survivalStatus.alignment = TextAlignmentOptions.TopLeft;
-            string[] titles = { "食物饮水", "烹饪", "种植", "野生物图鉴" };
+            string[] titles = { "食物与饮水", "烹饪", "种植", "野生动物" };
             string[] names = { "Food", "Cooking", "Farming", "Wildlife" };
             for (int i = 0; i < 4; i++)
             {
@@ -116,7 +116,7 @@ namespace DeadCircuit
         void MakeSurvivalTargets(RectTransform card)
         {
             survivalTarget = Box("Survival Target Selector", card, 22, 190, 350, 402, Recessed, true);
-            Label("Survival Target Heading", survivalTarget, "附近格子 · 点击选择", 12, 4, 326, 28, 16, Accent);
+            Label("Survival Target Heading", survivalTarget, "附近地块 · 点击选择", 12, 4, 326, 28, 16, Accent);
             for (int i = 0; i < survivalCells.Length; i++)
             {
                 int index = i;
@@ -179,14 +179,14 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[0];
             var guide = FlowLabel("Survival Guide", content,
-                "食物来源：用 E 交互耗尽树木、补给箱，寻找浆果 / 苹果 / 蘑菇、蛋 / 原鱼与种子；狩猎后在图鉴页分解取肉。种植需翻土→播种→浇水→成熟→收获；工作台 / 石炉处理原料。旧工业口粮仍在背包使用。",
+                "按 E 采尽树木或搜空补给箱，寻找浆果、苹果、蘑菇、蛋、生鱼与种子；狩猎后在「野生动物」页分解取肉。种植顺序：翻土→播种→浇水→成熟→收获。原料可在工作台或石炉加工；背包中的「食物」请在背包页食用。",
                 680, 106, 14, Muted);
             guide.overflowMode = TextOverflowModes.Overflow;
             survivalWaterText = FlowLabel("Survival Water Inventory", content, "", 680, 52, 15, Accent);
             RectTransform water = FlowRow("Survival Water Actions", content, 680, 86);
-            SurvivalCommand("Survival Drink Clean", water, "饮用净水 +40", 0, 0, 324, "drink", 1);
-            SurvivalCommand("Survival Drink Raw", water, "原水 +30 / 感染 +25", 334, 0, 324, "drink", 0);
-            SurvivalCommand("Survival Collect Water", water, "从所选水格取原水", 0, 44, 658, "collectwater", 0);
+            SurvivalCommand("Survival Drink Clean", water, "喝净水 · 水分 +40", 0, 0, 324, "drink", 1);
+            SurvivalCommand("Survival Drink Raw", water, "喝原水 · 水分 +30 / 感染 +25", 334, 0, 324, "drink", 0);
+            SurvivalCommand("Survival Collect Water", water, "从所选水域取水", 0, 44, 658, "collectwater", 0);
             foreach (var food in SurvivalCatalog.Foods)
             {
                 var entry = food;
@@ -202,9 +202,9 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[1];
             FlowLabel("Survival Cooking Guide", content,
-                "自动选择 2.4 格内、视线畅通且已解锁的工作站占地格。成本从随身库存扣除；操作后保留面板。未满足距离、原料或库存空间时按钮禁用。", 1048, 50, 14, Muted);
+                "自动使用 2.4 格内、视线畅通且已解锁的工作台或石炉，消耗随身原料。距离、原料或库存空间不满足时无法加工；操作后可在本页继续。", 1048, 50, 14, Muted);
             SurvivalRow boil = MakeSurvivalRow("Survival Boil Water", content, -1, 1048, 100, true);
-            Set(boil.action.label, "煮沸一份");
+            Set(boil.action.label, "煮水 ×1");
             SetButtonArt(boil.action, "ui_water", 24);
             boil.action.button.onClick.RemoveAllListeners();
             boil.action.button.onClick.AddListener(() => { DemoAudio.UiClick(); RequestSurvivalStation("boilwater", 0, BuildKind.StoneFurnace); });
@@ -214,7 +214,7 @@ namespace DeadCircuit
                 var entry = recipe;
                 SurvivalRow row = MakeSurvivalRow("Survival Recipe " + recipe.id, content, recipe.id, 1048, 118, true);
                 SetHudArt(row.icon, "food_" + (int)recipe.output);
-                Set(row.action.label, "处理 ×" + recipe.quantity);
+                Set(row.action.label, "加工 ×" + recipe.quantity);
                 SetButtonArt(row.action, "ui_craft", 24);
                 row.action.button.onClick.RemoveAllListeners();
                 row.action.button.onClick.AddListener(() => { DemoAudio.UiClick(); RequestSurvivalStation("cook", entry.id, entry.station); });
@@ -236,18 +236,18 @@ namespace DeadCircuit
                 () => { survivalCrop = (survivalCrop + 1) % SurvivalCatalog.CropCount; RefreshAll(); });
             SetButtonArt(nextCrop, "ui_next", 20);
             RectTransform actions = FlowRow("Survival Farming Actions", content, 680, 126);
-            SurvivalCommand("Survival Till", actions, "1 翻土 · 木材 1", 0, 0, 324, "till", 0);
+            SurvivalCommand("Survival Till", actions, "1 翻土 · 木材×1", 0, 0, 324, "till", 0);
             // Crop is resolved at click time; unlike the other commands its argument changes.
-            UiButton sow = Button("Survival Sow", actions, "2 播种 · 种子 1", 334, 0, 324, 36,
+            UiButton sow = Button("Survival Sow", actions, "2 播种 · 种子×1", 334, 0, 324, 36,
                 () => SurvivalRequest("sow", survivalCrop, survivalX, survivalY));
             SetButtonArt(sow, "ui_seed", 22);
-            SurvivalCommand("Survival Water Raw", actions, "3 浇原水 · 1份", 0, 44, 324, "watercrop", 0);
-            SurvivalCommand("Survival Water Clean", actions, "3 浇净水 · 1份", 334, 44, 324, "watercrop", 1);
+            SurvivalCommand("Survival Water Raw", actions, "3 浇水 · 原水×1", 0, 44, 324, "watercrop", 0);
+            SurvivalCommand("Survival Water Clean", actions, "3 浇水 · 净水×1", 334, 44, 324, "watercrop", 1);
             SurvivalCommand("Survival Harvest", actions, "4 收获成熟作物", 0, 88, 658, "harvest", 0);
             survivalSow = sow.button;
             survivalPlotText = FlowLabel("Survival Selected Plot", content, "", 680, 100, 14, Accent);
             FlowLabel("Survival Farming Guide", content,
-                "左侧选地后可连续操作，不会关闭面板。翻土需草地 / 泥土、木材 1，且地块未被占用。浇水每份 +40 湿度；需湿度至少 12 且温度适宜才生长。枯死作物可重新播种。下方点击已有农田可定位，超距请先关闭面板走近。",
+                "在左侧选地后可连续操作。翻土消耗木材×1，需选择未被占用的草地或泥土。每次浇水增加40湿度；湿度至少12且温度适宜时，作物才会生长。枯死后可重新播种。点击下方农田可选中地块；距离过远时，先关闭面板走近。",
                 680, 108, 14, Muted);
             for (int i = 0; i < SurvivalCatalog.MaxPlots; i++)
             {
@@ -274,7 +274,7 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[3];
             FlowLabel("Survival Wildlife Guide", content,
-                "尸体 · 近身 2.4 格且视线畅通可分解；一次取走剩余肉，库存满则拒绝。狩猎使用原有攻击操作。下方为完整物种图鉴，记录性情与产物，不代表附近已生成。", 1048, 54, 14, Muted);
+                "靠近尸体 2.4 格内，且视线畅通时可分解，一次取走全部剩余肉；库存空间不足时无法分解。狩猎时照常攻击。下方图鉴列出所有物种的性情与产物，当前地区不一定有这些动物。", 1048, 54, 14, Muted);
             survivalCorpseHeading = FlowLabel("Survival Corpse Heading", content, "", 1048, 32, 16, Accent);
             for (int i = 0; i < SurvivalCatalog.MaxCreatures; i++)
             {
@@ -290,7 +290,7 @@ namespace DeadCircuit
             {
                 SurvivalRow row = MakeSurvivalRow("Survival Creature " + (int)creature.kind, content, (int)creature.kind, 1048, 112, false);
                 SetHudArt(row.icon, "creature_" + row.id);
-                string behaviour = creature.temperament == CreatureTemperament.Predator ? (creature.huntsSmallPrey ? "捕食 · 猎小动物、避人" : "捕食 · 会主动追猎") :
+                string behaviour = creature.temperament == CreatureTemperament.Predator ? (creature.huntsSmallPrey ? "捕食 · 躲避人类" : "捕食 · 会主动追猎") :
                     creature.temperament == CreatureTemperament.Defensive ? "防御 · 靠近 " + creature.aggroRange.ToString("0.#") + " 格或受击会反击" :
                     creature.temperament == CreatureTemperament.Docile ? "温和 · 遇险逃离" : "胆小 · 接近即逃";
                 Set(row.text, creature.name + "  /  " + behaviour + (creature.huntsSmallPrey ? " · 捕食小动物" : "") +
@@ -322,12 +322,12 @@ namespace DeadCircuit
             {
                 Set(survivalHudWater, "生存 " + (enabled ? "同步中" : "未启用"));
                 survivalWaterFill.anchorMax = new Vector2(0, 1);
-                Set(survivalHudStatus, calendar + "\n" + (enabled ? "等待主机同步生存状态" : "旧世界：不消耗生存数值\n不补发水、食物或种子"));
+                Set(survivalHudStatus, calendar + "\n" + (enabled ? "正在同步生存状态" : "生存需求未启用\n不消耗需求数值，也不发放生存补给"));
                 survivalHudStatus.color = Muted;
             }
             if (!survivalPanel.gameObject.activeSelf) return;
-            Set(survivalStatus, calendar + "\n" + (!enabled ? "此存档未启用生存：不消耗新增生存数值，也不补发物资。原有生命 / 饱食 / 体力规则保留；本页仅供查阅。" :
-                !ready ? "正在等待主机同步生存状态，操作暂不可用。" :
+            Set(survivalStatus, calendar + "\n" + (!enabled ? "此世界未启用生存需求，本页仅供查阅。生命、饱食与体力仍按原有规则变化；水分、体温等需求不生效，也不会发放生存补给。" :
+                !ready ? "正在同步生存状态，请稍候再操作。" :
                 SurvivalWeatherText(world) + " · 水分 " + needs.thirst.ToString("0") + " · 体温 " + needs.bodyTemperature.ToString("0.0") + "℃" +
                 " · 感染 " + needs.infection.ToString("0") + " · 营养 " + needs.nutrition.ToString("0") +
                 "\n湿润 " + needs.wetness.ToString("0") + " · 干燥 " + needs.dryness.ToString("0") + " · 移速 ×" + needs.movementMultiplier.ToString("0.00") +
@@ -343,7 +343,7 @@ namespace DeadCircuit
                 survivalCommands[i].button.interactable = SurvivalPermit(survivalActions[i], survivalArguments[i], survivalX, survivalY, out _);
             if (survivalTab == 0)
             {
-                Set(survivalWaterText, ready ? "随身原水 " + needs.waterRaw + " / 净水 " + needs.waterClean + " · 原水饮用会增加感染\n在烹饪页煮水：原水 1 + 燃料 1 → 净水 1" : "水库存：未启用或等待同步，不发放物资。");
+                Set(survivalWaterText, ready ? "随身原水 ×" + needs.waterRaw + " / 净水 ×" + needs.waterClean + " · 喝原水会增加感染\n在「烹饪」页煮水：原水×1 + 燃料×1 → 净水×1" : "饮水暂不可用：生存需求未启用或状态仍在同步。不会发放生存补给。");
                 foreach (var row in survivalFoods)
                 {
                     var f = SurvivalCatalog.Food(row.id);
@@ -361,8 +361,8 @@ namespace DeadCircuit
                 (player.notice != survivalPreviousNotice || player.noticeUntil != survivalPreviousNoticeUntil);
             Set(survivalFeedback, CurrentLocalFeedback() && localFeedbackError ? Clean(localFeedback) :
                 newHostNotice ? Clean(player.notice) : CurrentLocalFeedback() ? Clean(localFeedback) : player.noticeUntil > world.elapsed ? Clean(player.notice) :
-                !enabled ? "未启用：所有生存操作关闭。新生成且启用生存的世界才使用上述流程。" :
-                player.interactCooldown > 0 || Time.unscaledTime < survivalSendAt ? "交互冷却中，请稍候…" : "面板不暂停世界；动作由主机验证。操作不会关闭此面板，J / Esc 返回。");
+                !enabled ? "此世界未启用生存需求，无法进行生存操作。请在启用生存需求的世界中使用。" :
+                player.interactCooldown > 0 || Time.unscaledTime < survivalSendAt ? "操作冷却中，请稍候…" : "世界仍在运行。可在此页连续操作，按 J / Esc 返回。");
         }
 
         void RefreshSurvivalTargets(WorldState world, PlayerState player)
@@ -389,10 +389,10 @@ namespace DeadCircuit
             Set(survivalTargetText, "所选：" + target +
                 "\n距离 " + Vector2.Distance(new Vector2(player.x, player.y), new Vector2(survivalX, survivalY)).ToString("0.0") + " / 2.4 格");
             string reason;
-            if (!SurvivalInReach(world, player, survivalX, survivalY)) reason = "目标超出 2.4 格或视线受阻；请关闭面板走近。";
-            else if (survivalTab == 0) reason = SurvivalGround(world, survivalX, survivalY) == '2' ? "已选水域，可收集原水。净水需在石炉煮沸。" : "请在附近格子中选择标有「水」的格子。";
-            else if (FindSurvivalPlot(world, survivalX, survivalY) != null) reason = "已选农田。播种 / 浇水 / 收获使用本格，不会取消作物选择。";
-            else { SurvivalPermit("till", 0, survivalX, survivalY, out reason); if (reason.Length == 0) reason = "可翻土，消耗木材 1。随后选择作物播种。"; }
+            if (!SurvivalInReach(world, player, survivalX, survivalY)) reason = "目标超出 2.4 格或视线受阻，请关闭面板走近，并避开障碍。";
+            else if (survivalTab == 0) reason = SurvivalGround(world, survivalX, survivalY) == '2' ? "已选水域，可收集原水。用石炉煮沸可获得净水。" : "请在左侧选择标有「水」的地块。";
+            else if (FindSurvivalPlot(world, survivalX, survivalY) != null) reason = "已选农田。播种、浇水和收获均作用于此地块，所选作物保持不变。";
+            else { SurvivalPermit("till", 0, survivalX, survivalY, out reason); if (reason.Length == 0) reason = "可翻土，消耗木材×1。随后选择作物播种。"; }
             Set(survivalTargetHelp, reason);
         }
 
@@ -407,14 +407,14 @@ namespace DeadCircuit
                 bool can = SurvivalPermit(action, recipe == null ? 0 : row.id, x, y, out string reason);
                 var n = player.needs;
                 var cost = new StringBuilder();
-                if (recipe == null) cost.Append("原水 ").Append(n == null ? 0 : n.waterRaw).Append("/1");
+                if (recipe == null) cost.Append("原水 ×").Append(n == null ? 0 : n.waterRaw).Append("/1");
                 else for (int i = 0; i < recipe.foods.Length; i++) if (recipe.foods[i] > 0)
-                { if (cost.Length > 0) cost.Append(" · "); cost.Append(SurvivalCatalog.Food(i).name).Append(' ').Append(Count(n?.foods, i)).Append('/').Append(recipe.foods[i]); }
-                cost.Append(" · 净水 ").Append(n == null ? 0 : n.waterClean).Append('/').Append(recipe == null ? 0 : recipe.cleanWater);
-                cost.Append(" · 燃料 ").Append(Count(player.items, (int)ItemKind.Fuel)).Append('/').Append(recipe == null ? 1 : recipe.fuel);
+                { if (cost.Length > 0) cost.Append(" · "); cost.Append(SurvivalCatalog.Food(i).name).Append(" ×").Append(Count(n?.foods, i)).Append('/').Append(recipe.foods[i]); }
+                cost.Append(" · 净水 ×").Append(n == null ? 0 : n.waterClean).Append('/').Append(recipe == null ? 0 : recipe.cleanWater);
+                cost.Append(" · 燃料 ×").Append(Count(player.items, (int)ItemKind.Fuel)).Append('/').Append(recipe == null ? 1 : recipe.fuel);
                 Set(row.text, (recipe == null ? "原水煮沸 → 净水 ×1" : recipe.name + " → " + SurvivalCatalog.Food((int)recipe.output).name + " ×" + recipe.quantity) +
-                    "\n" + cost + "\n" + (kind == BuildKind.Workbench ? "工作台" : "石炉") +
-                    (station ? " " + CellLocationText(world, x, y) : " · 无附近合法工作站") + (can ? " · 就绪" : " · " + reason));
+                    "\n持有/消耗：" + cost + "\n" + (kind == BuildKind.Workbench ? "工作台" : "石炉") +
+                    (station ? " " + CellLocationText(world, x, y) : " · 附近无可用工作站") + (can ? " · 可以加工" : " · " + reason));
                 row.action.button.interactable = station && can;
             }
         }
@@ -423,15 +423,15 @@ namespace DeadCircuit
         {
             var crop = SurvivalCatalog.Crop(survivalCrop);
             SetHudArt(survivalCropIcon, "crop_" + survivalCrop + "_0");
-            Set(survivalCropText, "作物 " + (survivalCrop + 1) + "/" + SurvivalCatalog.CropCount + "：" + crop.name + " · 种子 " + Count(player.needs?.seeds, survivalCrop) +
+            Set(survivalCropText, "作物 " + (survivalCrop + 1) + "/" + SurvivalCatalog.CropCount + "：" + crop.name + " · 种子 ×" + Count(player.needs?.seeds, survivalCrop) +
                 "\n适温 " + crop.minTemperature + "～" + crop.maxTemperature + "℃ · 生长 " + crop.growSeconds + "秒 · 耗水 " + crop.waterPerSecond.ToString("0.###") + "/秒" +
                 "\n收获 " + SurvivalCatalog.Food((int)crop.food).name + " ×" + crop.harvestCount + " / 种子 ×" + crop.seedYield);
             survivalSow.interactable = SurvivalPermit("sow", survivalCrop, survivalX, survivalY, out _);
             var selected = FindSurvivalPlot(world, survivalX, survivalY);
             bool canSow = SurvivalPermit("sow", survivalCrop, survivalX, survivalY, out string sowReason);
             Set(survivalPlotText, (selected == null ? "当前格未开垦。先翻土，再播种。" : SurvivalPlotDescription(selected)) +
-                "\n随身原水 " + (player.needs?.waterRaw ?? 0) + " / 净水 " + (player.needs?.waterClean ?? 0) + " / 木材 " + Count(player.items, (int)ItemKind.Wood) +
-                "\n" + (canSow ? "播种就绪：消耗所选种子 1。" : "播种：" + sowReason));
+                "\n随身原水 ×" + (player.needs?.waterRaw ?? 0) + " / 净水 ×" + (player.needs?.waterClean ?? 0) + " / 木材 ×" + Count(player.items, (int)ItemKind.Wood) +
+                "\n" + (canSow ? "可以播种，消耗所选种子×1。" : "无法播种：" + sowReason));
             var plots = world.survival?.plots;
             for (int i = 0; i < survivalPlots.Count; i++)
             {
@@ -463,7 +463,7 @@ namespace DeadCircuit
                 SetHudArt(row.icon, "creature_" + (int)c.kind);
                 row.action.button.interactable = can;
             }
-            Set(survivalCorpseHeading, index == 0 ? "当前无可分解尸体" : "当前尸体 " + index + " · 走近后分解");
+            Set(survivalCorpseHeading, index == 0 ? "暂无可分解的尸体" : "待分解尸体 " + index + " · 走近后分解");
             for (int i = index; i < survivalCorpses.Count; i++) survivalCorpses[i].root.gameObject.SetActive(false);
         }
 
@@ -482,7 +482,7 @@ namespace DeadCircuit
             survivalPreviousNoticeUntil = bridge.LocalPlayer.noticeUntil;
             Send(action, arg, x, y);
             survivalSendAt = Time.unscaledTime + .4f;
-            if (!CurrentLocalFeedback()) Notify("已发送生存操作请求，结果以主机反馈为准。");
+            if (!CurrentLocalFeedback()) Notify("操作已发送，正在等待结果…");
             RefreshAll();
         }
 
@@ -492,26 +492,26 @@ namespace DeadCircuit
             var w = bridge.World; var p = bridge.LocalPlayer; var n = p?.needs;
             reason = "";
             if (!bridge.IsRunning || w == null || p == null || !p.connected || p.hp <= 0) reason = "角色尚未就绪";
-            else if (w.survival == null || !w.survival.enabled) reason = "此存档未启用生存；不消耗、不补发物资";
-            else if (n == null || !n.initialized) reason = "等待主机同步生存状态";
-            else if (p.interactCooldown > 0 || Time.unscaledTime < survivalSendAt) reason = "交互冷却中";
+            else if (w.survival == null || !w.survival.enabled) reason = "此世界未启用生存需求";
+            else if (n == null || !n.initialized) reason = "正在同步生存状态，请稍候";
+            else if (p.interactCooldown > 0 || Time.unscaledTime < survivalSendAt) reason = "操作冷却中，请稍候";
             if (reason.Length > 0) return false;
             if ((action == "cook" || action == "boilwater") && !PrimitiveCatalog.IsCookingUnlocked(w))
-            { reason = "需原始工艺：" + PrimitiveCatalog.Definition(7).name + "（按 T 研究）"; return false; }
+            { reason = "需先研究" + PrimitiveCatalog.Definition(7).name + "，按 T 查看"; return false; }
             bool cellAction = action == "collectwater" || action == "boilwater" || action == "cook" ||
                 action == "till" || action == "sow" || action == "watercrop" || action == "harvest";
-            if (cellAction && !SurvivalInReach(w, p, x, y)) { reason = "超出 2.4 格或视线受阻"; return false; }
+            if (cellAction && !SurvivalInReach(w, p, x, y)) { reason = "请靠近至 2.4 格内，并保持视线畅通"; return false; }
             switch (action)
             {
                 case "eatfood":
                     var food = SurvivalCatalog.Food(arg);
-                    if (food == null || !food.edible) reason = "此原料需加工";
+                    if (food == null || !food.edible) reason = "此原料需加工后食用";
                     else if (Count(n.foods, arg) < 1) reason = "没有此食物";
                     else if (p.hunger >= 99 && n.thirst >= 99 && n.nutrition >= 99 &&
                         (food.infection >= 0 || n.infection <= 0) && (food.healing <= 0 || p.hp >= WorldSimulator.PlayerMaxHealth(p))) reason = "状态已满，无需食用";
                     break;
                 case "drink":
-                    if (arg < 0 || arg > 1 || (arg == 0 ? n.waterRaw : n.waterClean) < 1) reason = "没有所选水";
+                    if (arg < 0 || arg > 1 || (arg == 0 ? n.waterRaw : n.waterClean) < 1) reason = "所选饮水不足";
                     else if (n.thirst >= 99) reason = "水分已充足";
                     break;
                 case "collectwater":
@@ -519,16 +519,16 @@ namespace DeadCircuit
                     else if (n.waterRaw >= SurvivalCatalog.StackLimit) reason = "原水库存已满";
                     break;
                 case "boilwater":
-                    if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需原始工艺：" + PrimitiveCatalog.Definition(7).name + "（按 T 研究）";
-                    else if (!SurvivalStationAt(w, p, x, y, BuildKind.StoneFurnace)) reason = "需要附近合法石炉";
-                    else if (arg != 0 || n.waterRaw < 1 || Count(p.items, (int)ItemKind.Fuel) < 1) reason = "需要原水 1、燃料 1";
+                    if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需先研究" + PrimitiveCatalog.Definition(7).name + "，按 T 查看";
+                    else if (!SurvivalStationAt(w, p, x, y, BuildKind.StoneFurnace)) reason = "需已解锁的石炉，距离 2.4 格内且视线畅通";
+                    else if (arg != 0 || n.waterRaw < 1 || Count(p.items, (int)ItemKind.Fuel) < 1) reason = "需要原水×1、燃料×1";
                     else if (n.waterClean >= SurvivalCatalog.StackLimit) reason = "净水库存已满";
                     break;
                 case "cook":
                     var recipe = SurvivalCatalog.Recipe(arg);
-                    if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需原始工艺：" + PrimitiveCatalog.Definition(7).name + "（按 T 研究）";
+                    if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需先研究" + PrimitiveCatalog.Definition(7).name + "，按 T 查看";
                     else if (recipe == null) reason = "配方不存在";
-                    else if (!SurvivalStationAt(w, p, x, y, recipe.station)) reason = "需要附近合法工作站";
+                    else if (!SurvivalStationAt(w, p, x, y, recipe.station)) reason = "需已解锁的工作站，距离 2.4 格内且视线畅通";
                     else if (n.waterClean < recipe.cleanWater || Count(p.items, (int)ItemKind.Fuel) < recipe.fuel) reason = "净水或燃料不足";
                     else for (int i = 0; i < recipe.foods.Length; i++)
                     {
@@ -539,12 +539,12 @@ namespace DeadCircuit
                 case "till":
                     if (FindSurvivalPlot(w, x, y) != null) reason = "此处已有农田";
                     else if (w.survival.plots.Count >= SurvivalCatalog.MaxPlots) reason = "农田数量达到上限";
-                    else if (SurvivalGround(w, x, y) != '0' && SurvivalGround(w, x, y) != '1') reason = "只能在草地、泥土翻土";
+                    else if (SurvivalGround(w, x, y) != '0' && SurvivalGround(w, x, y) != '1') reason = "只能在草地或泥土上翻土";
                     else if (SurvivalBuilding(w, x, y) != null || SurvivalNode(w, x, y)) reason = "设备或资源占据此格";
                     else if (w.generatorVersion < WorldGeneration.NaturalOpeningVersion && Math.Abs(x - w.width / 2) <= 1 && Math.Abs(y - (w.height / 2 + 3)) <= 1) reason = "救援区不可开垦";
                     else if (SurvivalActorAt(w, x, y)) reason = "人物或生物占据此格";
-                    else if (Count(p.items, (int)ItemKind.Wood) < 1) reason = "需要木材 1";
-                    else if (w.nextId >= int.MaxValue - 2) reason = "世界实体数量达到上限";
+                    else if (Count(p.items, (int)ItemKind.Wood) < 1) reason = "需要木材×1";
+                    else if (w.nextId >= int.MaxValue - 2) reason = "世界容量已满，无法开垦新农田";
                     break;
                 case "sow": case "watercrop": case "harvest":
                     var plot = FindSurvivalPlot(w, x, y);
@@ -553,7 +553,7 @@ namespace DeadCircuit
                     else if (action == "sow")
                     {
                         if (SurvivalCatalog.Crop(arg) == null || Count(n.seeds, arg) < 1) reason = "所选作物种子不足";
-                        else if (plot.crop >= 0 && plot.health > 0) reason = "已有生长作物，请先收获";
+                        else if (plot.crop >= 0 && plot.health > 0) reason = "地块已有作物，收获后才能播种";
                     }
                     else if (action == "watercrop")
                     {
@@ -563,14 +563,14 @@ namespace DeadCircuit
                     else
                     {
                         var crop = SurvivalCatalog.Crop(plot.crop);
-                        if (crop == null || plot.growth < 1 || plot.health <= 0) reason = "作物未成熟或已枯死";
+                        if (crop == null || plot.growth < 1 || plot.health <= 0) reason = "请等待作物成熟；空田或枯死地块需重新播种";
                         else if (Count(n.foods, (int)crop.food) > SurvivalCatalog.StackLimit - crop.harvestCount ||
                             Count(n.seeds, plot.crop) > SurvivalCatalog.StackLimit - crop.seedYield) reason = "食物或种子库存空间不足";
                     }
                     break;
                 case "butcher":
                     CreatureState corpse = w.survival.creatures.Find(c => c.id == arg);
-                    if (corpse == null || corpse.hp > 0 || corpse.meatLeft <= 0) reason = "尸体已消失或无剩余产物";
+                    if (corpse == null || corpse.hp > 0 || corpse.meatLeft <= 0) reason = "没有可分解的尸体，或已无剩余肉";
                     else if (!SurvivalInReach(w, p, corpse.x, corpse.y)) reason = "走近尸体 2.4 格内并保持视线畅通";
                     else if (Count(n.foods, (int)SurvivalCatalog.Creatures[(int)corpse.kind].food) > SurvivalCatalog.StackLimit - corpse.meatLeft) reason = "肉类库存已满";
                     break;
@@ -651,7 +651,7 @@ namespace DeadCircuit
             if (weather == null) return "天气未同步";
             int kind = (int)weather.kind;
             return (kind >= 0 && kind < SurvivalCatalog.WeatherNames.Count ? SurvivalCatalog.WeatherNames[kind] : "未知天气") +
-                (compact ? " " : " · 天气基温 ") + weather.temperature.ToString("0.0") + "℃";
+                (compact ? " " : " · 天气温度 ") + weather.temperature.ToString("0.0") + "℃";
         }
 
         static string SurvivalRisk(SurvivalPlayerState n)
@@ -668,7 +668,7 @@ namespace DeadCircuit
         static string SurvivalPlotDescription(FarmPlotState plot)
         {
             var crop = SurvivalCatalog.Crop(plot.crop);
-            return (crop == null ? "空田" : crop.name + (plot.health <= 0 ? " · 枯死，可重播" : plot.growth >= 1 ? " · 已成熟" : " · 生长 " + (plot.growth * 100).ToString("0") + "%")) +
+            return (crop == null ? "空田" : crop.name + (plot.health <= 0 ? " · 已枯死，可重新播种" : plot.growth >= 1 ? " · 已成熟" : " · 生长 " + (plot.growth * 100).ToString("0") + "%")) +
                 "\n湿度 " + plot.moisture.ToString("0") + " / 100 · 健康 " + plot.health.ToString("0") + " / 100";
         }
 

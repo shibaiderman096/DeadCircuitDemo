@@ -51,14 +51,14 @@ namespace DeadCircuit
         {
             if(!PetrochemicalCatalog.IsLiquidStorage(b.kind)) return false;
             int item = FluidItem(b.setting);
-            if(item < 0) { Notice(p,"液体类型无效，请配置空管或空罐。"); return true; }
+            if(item < 0) { Notice(p,"未选择液体，请先为管道或储液罐设置液体类型。"); return true; }
             bool empty = TotalItems(b.items) == 0;
             int moved = 0;
             if(empty) moved = TransferIntoBuilding(p.items,b,item,20);
             else for(int i=0;i<DemoCatalog.ItemCount;i++)
                 moved += Transfer(b.items,p.items,i,BufferLimit,InventoryLimit);
-            Notice(p,moved > 0 ? "罐装转移 " + moved + " 单位。" :
-                "液管/储罐仅收发所选液体；按 E 取出，空时装入。");
+            Notice(p,moved > 0 ? "已转移 " + moved + " 单位。" :
+                "管道与储液罐只能装入所选液体。按 E 取出，空置时可装入。");
             return true;
         }
 
@@ -67,10 +67,10 @@ namespace DeadCircuit
             if(!PetrochemicalCatalog.IsLiquidStorage(b.kind)) return false;
             if(arg < 0 || arg >= FluidCount) { Notice(p,"请选择有效液体类型。"); return true; }
             if(!PetrochemicalCatalog.IsBuildUnlocked(State,b.kind)) { Notice(p,"尚未解锁液体输送。"); return true; }
-            if(TotalItems(b.items) != 0) { Notice(p,"请先清空液管/储罐再改液体类型。"); return true; }
+            if(TotalItems(b.items) != 0) { Notice(p,"请先清空管道或储液罐，再更改液体类型。"); return true; }
             foreach(var c in State.cargo)
                 if(c.fromId == b.id || c.toId == b.id)
-                { Notice(p,"仍有进出液体在途，请到货后再配置。"); return true; }
+                { Notice(p,"仍有液体正在运输，请等待送达后再更改设置。"); return true; }
             b.setting = arg;
             Notice(p,"输送液体：" + DemoCatalog.ItemNames[FluidItem(arg)]);
             return true;

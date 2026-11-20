@@ -205,7 +205,7 @@ static partial class Checks
                 var items = (int[])p.items.Clone();
                 sim.Apply(Command(p, "prospect"));
                 Require(sim.State.mvSurvey == 0 && p.interactCooldown == .5f && p.notice.Contains("继续探索") &&
-                    p.notice.Contains("沙漠") && p.notice.Contains("湿地") && p.notice.Contains("沼泽") && p.notice.Contains("河谷"), "absence was not explained: " + absence + ": " + p.notice);
+                    p.notice.Contains("荒漠") && p.notice.Contains("湿地") && p.notice.Contains("沼泽") && p.notice.Contains("河谷"), "absence was not explained: " + absence + ": " + p.notice);
                 Require(TerrainEntityDump(sim.State) == nodes && TerrainMapDump(sim.State) == map && p.items.SequenceEqual(items) &&
                     sim.State.chunks.records.Count == 0 && p.exploredChunks.Count == 0, "negative survey generated oil or explored chunks");
             }
