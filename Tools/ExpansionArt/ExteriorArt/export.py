@@ -143,17 +143,20 @@ def meta_bytes():
         if suffix == 'png':
             readable = text.count('  isReadable: 0')
             text = text.replace('  isReadable: 0', '  isReadable: 1')
-            ppu = text.count('  spritePixelsToUnits: 100')
-            text = text.replace('  spritePixelsToUnits: 100', '  spritePixelsToUnits: 32')
+            text, sprite_modes = re.subn(r'^  spriteMode: \d+$', '  spriteMode: 1', text, flags=re.MULTILINE)
+            text, ppu = re.subn(r'^  spritePixelsToUnits: \d+$',
+                                '  spritePixelsToUnits: 32', text, flags=re.MULTILINE)
             compression = text.count('    textureCompression: 1')
             text = text.replace('    textureCompression: 1', '    textureCompression: 0')
-            check(readable == ppu == 1 and compression >= 3, 'Failed to set texture importer values')
+            check(readable == sprite_modes == ppu == 1 and compression >= 3,
+                  'Failed to set texture importer values')
             check('    filterMode: 0\n' in text and '    enableMipMap: 0\n' in text,
                   'Texture importer must use point filtering without mipmaps')
             compressions = [line.rsplit(': ', 1)[1] for line in text.splitlines()
                             if line.startswith('    textureCompression:')]
             check(len(compressions) >= 4 and set(compressions) == {'0'},
                   'Every platform must disable texture compression')
+            text = '\n'.join(line.rstrip() for line in text.splitlines()) + '\n'
         for existing in PROJECT.joinpath('Assets').rglob('*.meta'):
             if existing == RUNTIME / f'exteriors.{suffix}.meta':
                 continue
@@ -173,7 +176,10 @@ def main():
     files.update(meta_bytes())
     for path, data in files.items():
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
+        if path.suffix == '.png':
+            path.write_bytes(data)
+        else:
+            path.write_text(data.decode('utf-8'), encoding='utf-8')
     report.update(renderer='resvg_py ' + resvg_py.__version__,
                   pngSha256=sha256(png).hexdigest(), sourceSha256=sha256(source).hexdigest(),
                   pixelsPerUnit=32, pivot=[0.5, 0.5])

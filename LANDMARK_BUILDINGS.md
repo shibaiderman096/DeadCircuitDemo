@@ -33,6 +33,7 @@
 自然建筑室外使用蓝图形状生成屋顶、檐口和外墙；高层建筑逐层重复立面并抬高屋顶，地下室数量不改变地上高度。室外屋顶覆盖室内地板和内部陈设、实体，屋顶下的玩家与活动效果也隐藏；进入建筑后外壳收起，显示原本可进入的真实室内。门口保持可见和可通行，加油站泵位、庭院及建筑平面中标出的室外空间保持露天。玩家建造建筑继续使用原有房间表现。
 
 新增独立外观图集由 `Tools/ExpansionArt/ExteriorArt/Sources/exteriors.svg` 和导出脚本生成，不覆盖既有图集。
+2026-11-20 验证：自然建筑外观专项检查 5/5、完整 CoreChecks 685/685 通过，外观图集 10 帧校验通过；Windows 开发版已成功构建。隔离工作树复建受 Unity MCP Git 依赖无法访问 GitHub 阻断，实景 Play 画面仍待核验。
 
 离线布局预览使用实际生成数据与游戏资源拼合，位于 Tools/LandmarkPreview/Review，明确标为非游戏截图。使用 CoreChecks 的 --export-landmarks 参数导出生成数据，再用 Tools/LandmarkPreview/render.py 的 --data 与 --output 参数拼合审查图。
 
