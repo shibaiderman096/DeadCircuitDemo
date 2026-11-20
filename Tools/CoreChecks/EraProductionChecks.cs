@@ -24,7 +24,7 @@ static partial class Checks
                 }
                 machine.items=Copy(r.inputs);
                 if(r.building==BuildKind.StoneFurnace)machine.items[(int)ItemKind.Fuel]=1;else AddRecipePower(state,machine);
-                if(r.building==BuildKind.ChemicalPlant || r.building==BuildKind.CoolingTower)Water(state,10,12);
+                if(TechCatalog.RequiresWater(r.building))Water(state,10,10+DemoCatalog.Height(r.building));
                 var sim=new WorldSimulator(state);var m=Building(sim,machine.id);Advance(sim,r.duration+.15f);
                 for(int i=0;i<DemoCatalog.ItemCount;i++)
                 {
@@ -41,7 +41,7 @@ static partial class Checks
                 var state=Flat(era:r.era);var m=Add(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);
                 for(int i=0;i<DemoCatalog.ItemCount;i++)if(r.outputs[i]>0)m.items[i]=WorldSimulator.BufferLimit;
                 if(m.kind==BuildKind.StoneFurnace)m.items[(int)ItemKind.Fuel]=1;else AddRecipePower(state,m);
-                if(m.kind==BuildKind.ChemicalPlant || m.kind==BuildKind.CoolingTower)Water(state,10,12);
+                if(TechCatalog.RequiresWater(m.kind))Water(state,10,10+DemoCatalog.Height(m.kind));
                 var before=Copy(m.items);var sim=new WorldSimulator(state);Advance(sim,r.duration+1);m=Building(sim,m.id);
                 for(int i=0;i<DemoCatalog.ItemCount;i++)if(i!=(int)ItemKind.Fuel || m.kind!=BuildKind.StoneFurnace)Require(m.items[i]==before[i],$"blocked recipe {r.id} lost/created item {i}");
                 Require(sim.State.produced.All(v=>v==0),$"blocked recipe {r.id} counted phantom production");
@@ -53,17 +53,20 @@ static partial class Checks
             {
                 var state=Flat(era:r.era);var m=Add(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);int missing=Array.FindIndex(r.inputs,v=>v>0);m.items[missing]--;
                 if(m.kind==BuildKind.StoneFurnace)m.items[(int)ItemKind.Fuel]=1;else AddRecipePower(state,m);
-                if(m.kind==BuildKind.ChemicalPlant)Water(state,10,12);
+                if(TechCatalog.RequiresWater(m.kind))Water(state,10,10+DemoCatalog.Height(m.kind));
                 var sim=new WorldSimulator(state);Advance(sim,r.duration+1);m=Building(sim,m.id);
                 for(int i=0;i<DemoCatalog.ItemCount;i++)if(r.outputs[i]>0)Require(m.items[i]==0,$"recipe {r.id} manufactured without all inputs");
                 Require(sim.State.produced.All(v=>v==0),"missing input fabricated production history");
             }
         });
-        Run("all 25 item types travel as conserved real cargo", () =>
+        Run("all item types travel through their compatible solid or liquid ports as conserved cargo", () =>
         {
             for(int item=0;item<DemoCatalog.ItemCount;item++)
             {
-                var state=Flat(era:TechEra.Nuclear);var from=Add(state,BuildKind.Belt,10,10);from.items[item]=1;var to=Add(state,BuildKind.Chest,11,10);
+                var state=Flat(era:TechEra.Nuclear);bool liquid=PetrochemicalCatalog.IsFluid(item);
+                var from=Add(state,liquid?BuildKind.LiquidPipe:BuildKind.Belt,10,10);from.items[item]=1;
+                var to=Add(state,liquid?BuildKind.LiquidTank:BuildKind.Chest,11,10);
+                if(liquid)for(int setting=0;setting<WorldSimulator.FluidCount;setting++)if(WorldSimulator.FluidItem(setting)==item)from.setting=to.setting=setting;
                 var sim=new WorldSimulator(state);var expected=ItemTotals(sim.State);var flight=AwaitCargo(sim,from.id,to.id);Require(flight.item==item,$"wrong cargo item for {item}");
                 for(int n=0;n<20;n++){sim.Step(WorldSimulator.FixedStep);Conserved(sim.State,expected);}
                 Require(Building(sim,to.id).items[item]==1 && Building(sim,from.id).items[item]==0,$"new item {item} failed delivery");
@@ -72,11 +75,16 @@ static partial class Checks
         Run("every machine recipe exports its declared output through its real port", () =>
         {
             foreach(var r in TechCatalog.Recipes.Where(r=>r.building!=BuildKind.Workbench))
+            for(int item=0;item<DemoCatalog.ItemCount;item++)
             {
+                if(r.outputs[item]==0)continue;
                 var state=Flat(era:r.era);var source=Add(state,r.building,10,10);source.recipe=r.id;source.items=Copy(r.outputs);
-                var target=Add(state,BuildKind.Chest,DemoCatalog.OutputX(source),DemoCatalog.OutputY(source));var sim=new WorldSimulator(state);var expected=ItemTotals(sim.State);
+                bool liquid=PetrochemicalCatalog.IsFluid(item);
+                var target=Add(state,liquid?BuildKind.LiquidTank:BuildKind.Chest,DemoCatalog.OutputX(source),DemoCatalog.OutputY(source));
+                if(liquid)for(int setting=0;setting<WorldSimulator.FluidCount;setting++)if(WorldSimulator.FluidItem(setting)==item)target.setting=setting;
+                var sim=new WorldSimulator(state);var expected=ItemTotals(sim.State);
                 for(int n=0;n<65;n++){sim.Step(WorldSimulator.FixedStep);Conserved(sim.State,expected);}
-                Inventory(Building(sim,target.id).items,r.outputs,$"recipe {r.id} export");
+                Require(Building(sim,target.id).items[item]==r.outputs[item],$"recipe {r.id} export item {item}");
             }
         });
         Run("mechanical crushing then primitive smelting improves one real ore to two iron", () =>
@@ -101,8 +109,9 @@ static partial class Checks
         {
             var state=Flat(era:TechEra.Nuclear);var processor=Add(state,BuildKind.NuclearProcessor,10,10);processor.recipe=90;processor.items[(int)ItemKind.UraniumOre]=2;processor.items[(int)ItemKind.Steel]=1;
             Add(state,BuildKind.HighGenerator,7,7).items[(int)ItemKind.Fuel]=1;var reactor=Add(state,BuildKind.Reactor,13,10);var waste=Add(state,BuildKind.Chest,16,10);
-            var tower=Add(state,BuildKind.CoolingTower,13,7);Water(state,13,6);Add(state,BuildKind.DieselGenerator,10,4).items[(int)ItemKind.Fuel]=1;
-            Add(state,BuildKind.Belt,16,7,1);Add(state,BuildKind.Belt,16,8,1);Add(state,BuildKind.Belt,16,9,2);Add(state,BuildKind.Belt,15,9,1);
+            var tower=Add(state,BuildKind.CoolingTower,13,7);Water(state,13,6);Add(state,BuildKind.DieselGenerator,10,4).items[(int)ItemKind.Diesel]=1;
+            tower.items[(int)ItemKind.HotCoolant]=20;tower.items[(int)ItemKind.ProcessWater]=10;
+            foreach(var cell in new[] {(16,7,1),(16,8,1),(16,9,2),(15,9,1)})Add(state,BuildKind.LiquidPipe,cell.Item1,cell.Item2,cell.Item3).setting=8;
             var sim=new WorldSimulator(state);Advance(sim,12);reactor=Building(sim,reactor.id);
             Require(reactor.powerGeneration>0 && reactor.fuel>0,"delivered nuclear fuel/coolant did not start the reactor");Require(Building(sim,waste.id).items[(int)ItemKind.NuclearWaste]==1,"reactor failed to export its real nuclear waste");
             Require(sim.State.produced[(int)ItemKind.NuclearFuel]==1 && sim.State.produced[(int)ItemKind.Coolant]>=4 && sim.State.produced[(int)ItemKind.NuclearWaste]==1,"nuclear chain fabricated or omitted a production stage");
@@ -117,6 +126,6 @@ static partial class Checks
         var kind=tier==0?BuildKind.Waterwheel:tier==1?BuildKind.Boiler:tier==2?BuildKind.Generator:tier==3?BuildKind.DieselGenerator:BuildKind.HighGenerator;
         var source=Add(state,kind,tier==4?6:7,10);
         if(tier<=1){Water(state,7,12);Add(state,tier==0?BuildKind.Shaft:BuildKind.SteamPipe,9,10);}
-        if(TechCatalog.IsFuelBurner(kind))source.items[(int)ItemKind.Fuel]=4;
+        if(TechCatalog.IsFuelBurner(kind))source.items[(int)(kind==BuildKind.DieselGenerator?ItemKind.Diesel:ItemKind.Fuel)]=4;
     }
 }

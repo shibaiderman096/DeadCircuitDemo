@@ -12,6 +12,16 @@ namespace DeadCircuit
             kind = NodeKind.Tree; stock = 0;
             var rule = BiomeResourceCatalog.Get(biome);
             if (rule == null) return false;
+            // Oil is finite node stock, sampled before surface minerals so a
+            // shoreline clay bonus cannot erase its sedimentary preference.
+            // No entity IDs, local RNG or chunk visit order enter this field.
+            if (generatorVersion >= 9 && Unit(seed, x, y, 0x0111u) * 1000 <
+                rule.oilPermille * (.35 + Noise(seed, x, y, 24, 0x0112u) * 1.3))
+            {
+                kind = NodeKind.Oil;
+                stock = SampleOilStock(seed, x, y, biome);
+                return true;
+            }
             double roll = Unit(seed, x, y, 0x7e51u) * 1000;
             // A nonzero background prevents biome/vein boundaries from locking
             // technology; richer deposits follow the same world-space field.
@@ -46,5 +56,14 @@ namespace DeadCircuit
                 : (kind == NodeKind.UraniumOre ? 40 : 80) + (int)(Hash(seed, x, y, 0x570du) % 81);
             return true;
         }
+
+        internal static int SampleOilStock(int seed, int x, int y, BiomeKind biome)
+        {
+            var rule = BiomeResourceCatalog.Get(biome);
+            return rule.oilMinStock + (int)(Hash(seed, x, y, 0x0113u) % (uint)(rule.oilMaxStock - rule.oilMinStock + 1));
+        }
+
+        internal static double OilAccessPriority(int seed, int x, int y, BiomeKind biome) =>
+            Unit(seed, x, y, 0x0114u) / BiomeResourceCatalog.Get(biome).oilPermille;
     }
 }

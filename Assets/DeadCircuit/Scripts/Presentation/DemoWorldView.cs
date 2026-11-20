@@ -576,6 +576,7 @@ namespace DeadCircuit
                     case NodeKind.Stone: case NodeKind.Clay: case NodeKind.Coal: case NodeKind.Limestone: case NodeKind.FireClay: art = "node_ore"; break;
                     case NodeKind.Scrap: art = state.id % 5 == 0 ? "car" : "node_scrap"; break;
                     case NodeKind.Crate: art = "node_crate"; break;
+                    case NodeKind.Oil: art = "node_ore"; break;
                     default: art = "node_wall"; break;
                 }
                 int biome = BiomeAt(world, state.x, state.y);
@@ -597,7 +598,14 @@ namespace DeadCircuit
                     state.kind == NodeKind.Clay ? new Color(1f,.55f,.32f) :
                     state.kind == NodeKind.Coal ? new Color(.3f,.34f,.4f) :
                     state.kind == NodeKind.Limestone ? new Color(.92f,.9f,.72f) :
-                    state.kind == NodeKind.FireClay ? new Color(.83f,.48f,.37f) : Color.white;
+                    state.kind == NodeKind.FireClay ? new Color(.83f,.48f,.37f) :
+                    state.kind == NodeKind.Oil ? new Color(.36f,.28f,.48f) : Color.white;
+                if (state.kind == NodeKind.Oil)
+                {
+                    v.root.name = "油源 / Oil · 采油泵开采";
+                    v.body.transform.localScale = new Vector3(1.3f, .65f, 1f);
+                    v.body.transform.localPosition = new Vector3(0, .05f, 0);
+                }
                 if (state.kind == NodeKind.Stone || state.kind == NodeKind.Clay)
                     v.root.name = state.kind == NodeKind.Stone ? "石料堆 / Stone" : "黏土矿床 / Clay";
                 if (state.kind == NodeKind.Coal || state.kind == NodeKind.Limestone || state.kind == NodeKind.FireClay)

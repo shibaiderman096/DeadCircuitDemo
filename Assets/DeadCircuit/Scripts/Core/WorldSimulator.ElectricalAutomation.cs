@@ -12,6 +12,7 @@ namespace DeadCircuit
         public static bool ElectricalCargoRouteValid(BuildingState from, BuildingState to, int item)
         {
             if (from == null || to == null || item < 0 || item >= DemoCatalog.ItemCount) return false;
+            if (!PetrochemicalCargoRouteValid(from, to, item)) return false;
             if (from.kind != BuildKind.FilterSplitter)
                 return DemoCatalog.Contains(to, DemoCatalog.OutputX(from), DemoCatalog.OutputY(from));
             if (from.setting < 0 || from.setting >= DemoCatalog.ItemCount) return false;

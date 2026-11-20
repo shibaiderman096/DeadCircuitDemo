@@ -396,6 +396,7 @@ namespace DeadCircuit
             machineCluster = FlowLabel("Machine Steam Cluster", content, "", 260, 28, 13, Ink);
             machineCluster.gameObject.SetActive(false);
             MakeLowVoltageMachineControls(content);
+            MakePetrochemistryMachineControls(content);
             machineInfo = FlowLabel("Machine State", content, "", 260, 90, 13, Ink);
             machineRecipe = FlowLabel("Machine Recipe", content, "", 260, 28, 14, Accent);
             machineRecipeFlow = FlowLabel("Machine Recipe Flow", content, "", 260, 60, 13, Ink);
@@ -702,6 +703,7 @@ namespace DeadCircuit
             recipeButton.button.gameObject.SetActive(false);
             bool inRange = (new Vector2(player.x - inspectedX, player.y - inspectedY)).sqrMagnitude <= 2.4f * 2.4f && player.hp > 0f;
             RefreshLowVoltageMachineControls(world, player, building, inRange);
+            if (RefreshPetrochemistryMachineControls(world, player, building, node, inRange)) return;
             interactButton.button.interactable = building != null && inRange;
             repairButton.button.interactable = building != null && inRange && building.hp < WorldSimulator.BuildingMaxHealth(building.kind) &&
                 Count(player.items, building.kind == BuildKind.Wall || building.kind == BuildKind.Door ? 0 : 3) > 0;

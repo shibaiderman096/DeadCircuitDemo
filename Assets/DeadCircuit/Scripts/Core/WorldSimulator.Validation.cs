@@ -54,6 +54,7 @@ namespace DeadCircuit
             CopyWaterProgression(source, s);
             CopySteamProgression(source, s);
             CopyLowVoltageProgression(source, s);
+            CopyPetrochemicalProgression(source, s);
             var entityIds = new HashSet<int>();
             CopyChunks(source,s);
             var occupied = new HashSet<long>();
@@ -63,7 +64,7 @@ namespace DeadCircuit
             {
                 SaveCheck(n != null, "null node"); CheckEntityId(n.id, entityIds, ref highestId);
                 CheckCell(n.x, n.y,source); long cell = WorldTiles.Key(n.x,n.y);
-                SaveCheck((int)n.kind >= 0 && (int)n.kind <= (legacy ? 4 : source.version<11 ? 7 : 12), "node kind");
+                SaveCheck((int)n.kind >= 0 && (int)n.kind <= (legacy ? 4 : source.version<11 ? 7 : (int)NodeKind.Oil), "node kind");
                 char terrain=WorldTiles.Ground(source,n.x,n.y);
                 SaveCheck(occupied.Add(cell) && terrain != '2' && terrain!='?', "overlapping/water node"); solid.Add(cell);
                 SaveCheck(n.stock > 0 && n.stock <= 100000, "node stock"); SaveRange(n.hp, 0.001f, 10000f, "node hp");
@@ -87,7 +88,7 @@ namespace DeadCircuit
                 SaveCheck(TechCatalog.IsFuelBurner(b.kind) || b.kind==BuildKind.Reactor || b.fuel==0f,"fuel in non-burner");
                 if(!legacy)
                 {
-                    SaveCheck(b.setting>=0 && b.setting<=(b.kind==BuildKind.FilterSplitter ? DemoCatalog.ItemCount-1 : b.kind==BuildKind.Transformer || b.kind==BuildKind.Door || b.kind==BuildKind.CircuitBreaker ? 1 : 0),"machine setting");
+                    SaveCheck(b.setting>=0 && b.setting<=(PetrochemicalCatalog.IsLiquidStorage(b.kind) ? FluidCount-1 : b.kind==BuildKind.FilterSplitter ? DemoCatalog.ItemCount-1 : b.kind==BuildKind.Transformer || b.kind==BuildKind.Door || b.kind==BuildKind.CircuitBreaker ? 1 : 0),"machine setting");
                     SaveCheck(source.version<7 || !b.modularBoiler || (b.kind==BuildKind.Boiler && b.fuel==0f),"modular boiler mode");
                     SaveCheck(b.kind!=BuildKind.Transformer || b.setting==0 || source.era>=TechEra.HighVoltage,"unresearched transformer setting");
                     SaveRange(b.temperature,20f,1200f,"machine temperature");
@@ -102,6 +103,8 @@ namespace DeadCircuit
                 int[] items=CopyItems(b.items,BufferLimit,"machine inventory",itemCount);
                 SaveCheck(b.kind!=BuildKind.Belt || TotalItems(items)<=2,"belt capacity");
                 for(int i=0;i<DemoCatalog.ItemCount;i++) if(items[i]!=0) SaveCheck(TechCatalog.Stores(b.kind,i),"incompatible machine inventory");
+                if(PetrochemicalCatalog.IsLiquidStorage(b.kind))
+                    for(int i=0;i<items.Length;i++) SaveCheck(items[i]==0 || i==FluidItem(b.setting),"mixed liquid storage");
                 s.buildings.Add(new BuildingState { id=b.id,x=b.x,y=b.y,kind=b.kind,rotation=b.rotation,footprintVersion=b.footprintVersion,hp=b.hp,progress=b.progress,fuel=b.fuel,items=items,recipe=legacy ? 0 : b.recipe,setting=legacy ? 0 : b.setting,temperature=legacy ? 20f : b.temperature,tripped=!legacy && b.tripped,modularBoiler=source.version>=7 && b.modularBoiler });
                 if(legacy)
                 {
@@ -120,7 +123,7 @@ namespace DeadCircuit
                 BuildingState from, to;
                 SaveCheck(byId.TryGetValue(c.fromId, out from) && byId.TryGetValue(c.toId, out to), "cargo endpoints");
                 to = byId[c.toId]; from = byId[c.fromId];
-                SaveCheck(ElectricalCargoRouteValid(from,to,c.item) && Accepts(to.kind, c.item), "cargo route");
+                SaveCheck(ElectricalCargoRouteValid(from,to,c.item) && Accepts(to.kind, c.item) && (!PetrochemicalCatalog.IsLiquidStorage(to.kind) || c.item==FluidItem(to.setting)), "cargo route");
                 SaveRange(c.fromX, from.x - .5f, from.x + DemoCatalog.Width(from) - .5f, "cargo from x");
                 SaveRange(c.fromY, from.y - .5f, from.y + DemoCatalog.Height(from) - .5f, "cargo from y");
                 SaveRange(c.toX, to.x - .5f, to.x + DemoCatalog.Width(to) - .5f, "cargo to x");
@@ -137,7 +140,7 @@ namespace DeadCircuit
             foreach(CargoState c in s.cargo)
             {
                 BuildingState from=byId[c.fromId];
-                if(from.kind!=BuildKind.MechanicalHopper) continue;
+                if(!ReservesProductionCargoReturn(from,c.item)) continue;
                 int[] incoming; reservations.TryGetValue(from.id,out incoming);
                 SaveCheck(from.items[c.item]+(incoming==null ? 0 : incoming[c.item])<BufferLimit,"loader cargo return capacity");
             }

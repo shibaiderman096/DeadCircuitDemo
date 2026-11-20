@@ -25,7 +25,7 @@ static partial class Checks
         {
             Run($"{era} transmission requires touching links and stops after the link is dismantled", () =>
             {
-                var state=Flat(era:era);Water(state,7,12);var source=Add(state,sourceKind,7,10);if(sourceKind==BuildKind.Boiler)source.items[(int)ItemKind.Fuel]=2;
+                var state=Flat(era:era);Water(state,7,12);var source=Add(state,sourceKind,7,10);if(sourceKind==BuildKind.Boiler)source.items[(int)(source.kind==BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel)]=2;
                 var m=Add(state,machineKind,10,10);m.recipe=recipe;m.items=Copy(TechCatalog.Recipe(recipe).inputs);var sim=new WorldSimulator(state);Advance(sim,1);var target=Building(sim,m.id);
                 Require(Building(sim,source.id).powerGeneration>0 && !target.powered && target.progress==0,"one-cell air gap transmitted mechanical/steam power");
                 var p=Builder(sim);p.x=9;p.y=8;sim.Apply(Command(p,"build",9,10,(int)linkKind));Require(sim.State.buildings.Any(b=>b.kind==linkKind),"connecting link did not build");Advance(sim,TechCatalog.Recipe(recipe).duration+.1f);
@@ -40,7 +40,7 @@ static partial class Checks
             for(int first=0;first<5;first++)for(int second=first+1;second<5;second++)
             {
                 var state=Flat(era:TechEra.Nuclear);var a=Add(state,sources[first],10,10);var b=Add(state,sources[second],13,10);Water(state,10,12);Water(state,13,12);
-                if(TechCatalog.IsFuelBurner(a.kind))a.items[(int)ItemKind.Fuel]=1;if(TechCatalog.IsFuelBurner(b.kind))b.items[(int)ItemKind.Fuel]=1;
+                if(TechCatalog.IsFuelBurner(a.kind))a.items[(int)(a.kind==BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel)]=1;if(TechCatalog.IsFuelBurner(b.kind))b.items[(int)(b.kind==BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel)]=1;
                 var sim=new WorldSimulator(state);Advance(sim,.1f);a=Building(sim,a.id);b=Building(sim,b.id);
                 Require(a.powerGeneration>0 && b.powerGeneration>0,"cross-tier isolation fixture lacks live sources");
                 Require(a.networkId!=0 && b.networkId!=0 && a.networkId!=b.networkId,$"bare tiers {first}/{second} connected");
@@ -53,7 +53,7 @@ static partial class Checks
             var consumers=new[] { BuildKind.MechanicalCrusher,BuildKind.SteamFurnace,BuildKind.Smelter,BuildKind.ChemicalPlant,BuildKind.PrecisionAssembler };
             for(int input=0;input<5;input++)for(int output=0;output<5;output++)if(input!=output)
             {
-                var state=Flat(era:TechEra.Nuclear);var source=Add(state,sources[input],10,10);Water(state,10,12);if(TechCatalog.IsFuelBurner(source.kind))source.items[(int)ItemKind.Fuel]=1;
+                var state=Flat(era:TechEra.Nuclear);var source=Add(state,sources[input],10,10);Water(state,10,12);if(TechCatalog.IsFuelBurner(source.kind))source.items[(int)(source.kind==BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel)]=1;
                 var machine=Add(state,consumers[output],13,10);var r=TechCatalog.DefaultRecipe(machine.kind);machine.items=Copy(r.inputs);machine.recipe=r.id;
                 var sim=new WorldSimulator(state);Advance(sim,r.duration+1);machine=Building(sim,machine.id);
                 Require(Building(sim,source.id).powerGeneration>0,"wrong-tier negative control had no live generation");
@@ -90,7 +90,7 @@ static partial class Checks
         {
             foreach(bool solar in new[] { false,true })
             {
-                var state=Flat(era:TechEra.MediumVoltage);var source=Add(state,solar?BuildKind.SolarPanel:BuildKind.DieselGenerator,7,10);if(!solar)source.items[(int)ItemKind.Fuel]=1;
+                var state=Flat(era:TechEra.MediumVoltage);var source=Add(state,solar?BuildKind.SolarPanel:BuildKind.DieselGenerator,7,10);if(!solar)source.items[(int)(source.kind==BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel)]=1;
                 var transformer=Add(state,BuildKind.Transformer,11,10);var machine=Add(state,BuildKind.Smelter,15,10);machine.items[(int)ItemKind.Ore]=1;
                 var sim=new WorldSimulator(state);Advance(sim,3);source=Building(sim,source.id);transformer=Building(sim,transformer.id);machine=Building(sim,machine.id);
                 Require(transformer.powerGeneration>0 && transformer.powerGeneration<=180.001f,"transformer output exceeded capped 90% conversion");
@@ -101,7 +101,7 @@ static partial class Checks
         });
         Run("parallel transformers share finite upstream power without multiplying energy", () =>
         {
-            var state=Flat(era:TechEra.MediumVoltage);var source=Add(state,BuildKind.DieselGenerator,4,10);source.items[(int)ItemKind.Fuel]=1;Add(state,BuildKind.Transformer,7,10);Add(state,BuildKind.Transformer,7,13);
+            var state=Flat(era:TechEra.MediumVoltage);var source=Add(state,BuildKind.DieselGenerator,4,10);source.items[(int)(source.kind==BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel)]=1;Add(state,BuildKind.Transformer,7,10);Add(state,BuildKind.Transformer,7,13);
             var sim=new WorldSimulator(state);Advance(sim,.1f);var converters=sim.State.buildings.Where(b=>b.kind==BuildKind.Transformer).ToArray();
             Require(converters.All(b=>b.powerGeneration>0),"parallel transformer was starved rather than proportionally supplied");Near(converters.Sum(b=>b.powerGeneration),216,"240 input shared at 90% efficiency");
             Near(sim.State.powerNetworks.Single(n=>n.tier==3).demand,400,"converter input demand not reserved once per transformer");
@@ -115,7 +115,7 @@ static partial class Checks
         });
         Run("HV to MV to LV conversion powers production with both conversion losses", () =>
         {
-            var state=Flat(era:TechEra.HighVoltage);var source=Add(state,BuildKind.HighGenerator,4,10);source.items[(int)ItemKind.Fuel]=1;
+            var state=Flat(era:TechEra.HighVoltage);var source=Add(state,BuildKind.HighGenerator,4,10);source.items[(int)(source.kind==BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel)]=1;
             var high=Add(state,BuildKind.Transformer,7,10);high.setting=1;var low=Add(state,BuildKind.Transformer,10,10);var machine=Add(state,BuildKind.Smelter,14,10);machine.items[(int)ItemKind.Ore]=1;
             var sim=new WorldSimulator(state);Advance(sim,3);Near(Building(sim,high.id).powerGeneration,180,"HV-to-MV capped conversion");Near(Building(sim,low.id).powerGeneration,162,"second converter ignored upstream loss");
             Require(Building(sim,machine.id).items[(int)ItemKind.Iron]==1,"two-stage conversion did not run actual production");Require(sim.State.powerNetworks.Select(n=>n.tier).OrderBy(t=>t).SequenceEqual(new[] { 2,3,4 }),"converter chain collapsed voltage networks");

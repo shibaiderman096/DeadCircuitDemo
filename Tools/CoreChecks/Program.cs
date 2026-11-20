@@ -55,6 +55,12 @@ static partial class Checks
         lvCircuits = era >= TechEra.LowVoltage ? 6 : 0, lvElectric = era >= TechEra.LowVoltage ? 8 : 0,
         lvAutomated = era >= TechEra.LowVoltage ? 4 : 0, lvSorted = era >= TechEra.LowVoltage ? 4 : 0,
         lvProtected = era >= TechEra.LowVoltage ? 4 : 0,
+        mvResearch = era >= TechEra.MediumVoltage ? 255 : 0,
+        mvSurvey = era >= TechEra.MediumVoltage ? 1 : 0,
+        mvExtracted = era >= TechEra.MediumVoltage ? 12 : 0, mvPiped = era >= TechEra.MediumVoltage ? 8 : 0,
+        mvDistilled = era >= TechEra.MediumVoltage ? 12 : 0, mvDiesel = era >= TechEra.MediumVoltage ? 4 : 0,
+        mvPolymer = era >= TechEra.MediumVoltage ? 4 : 0, mvLubricant = era >= TechEra.MediumVoltage ? 2 : 0,
+        mvCooled = era >= TechEra.MediumVoltage ? 4 : 0, mvPowered = era >= TechEra.MediumVoltage ? 4 : 0,
         tick = (long)Math.Round(elapsed / WorldSimulator.FixedStep), nextWaveAt = elapsed + 180f
     };
     static PlayerState Builder(WorldSimulator sim, string id = "p", string name = "P")
@@ -141,6 +147,10 @@ static partial class Checks
         SteamChecks();
         RunSteamResourceChecks();
         LowVoltageChecks();
+        PetrochemicalChecks();
+        PetrochemicalResourceChecks();
+        PetrochemicalFlowChecks();
+        PetrochemicalProgressionChecks();
         ElectricalAutomationChecks();
         RunLowVoltageProgressionChecks();
         CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); CargoChecks(); SaveAndCombatChecks();
@@ -368,7 +378,7 @@ static partial class Checks
             for (int phase = 0; phase < 16; phase++)
             {
                 var state = Flat(phase * 240f / 16, TechEra.MediumVoltage); var panel = Add(state, BuildKind.SolarPanel, 10, 10); var target = Add(state, BuildKind.ChemicalPlant, 14, 10);
-                target.items[(int)ItemKind.Wood] = 10; target.items[(int)ItemKind.Fuel] = 10;
+                target.items[(int)ItemKind.ChemicalFeedstock] = 10; target.items[(int)ItemKind.Coolant] = 10;
                 var sim = new WorldSimulator(state); Advance(sim, .05f); panel = Building(sim,panel.id); target = Building(sim,target.id);
                 Require(float.IsFinite(panel.powerGeneration) && panel.powerGeneration >= 0 && panel.powerGeneration <= 40.001f, "solar output outside 0..40 kW");
                 peak = Math.Max(peak,panel.powerGeneration); Near(target.powerRatio,Math.Min(1,panel.powerGeneration/80),"solar consumer ratio");

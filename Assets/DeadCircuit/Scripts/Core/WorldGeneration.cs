@@ -172,6 +172,7 @@ namespace DeadCircuit
                 Road(ground, reserved, 32, i); Road(ground, reserved, 33, i);
             }
             GenerateSites(state, ground, reserved, occupied);
+            EnsureReachableOil(state, ground, reserved, occupied);
             GenerateResources(state, ground, reserved, occupied);
             state.ground = new string(ground);
             int[] initialX = { 14, 50, 32, 32, 12, 54 }, initialY = { 32, 32, 14, 54, 33, 33 };
@@ -274,6 +275,82 @@ namespace DeadCircuit
             AddStarter(state, occupied, BuildKind.Workbench, 29, 35);
             AddStarter(state, occupied, BuildKind.StoneFurnace, 28, 37);
             AddStarter(state, occupied, BuildKind.Chest, 30, 37);
+        }
+
+        private static void EnsureReachableOil(WorldState state, char[] ground, bool[] reserved, HashSet<int> occupied)
+        {
+            if (state.generatorVersion < 9) return;
+            var blocked = new bool[ground.Length];
+            foreach (int cell in occupied) blocked[cell] = true;
+            foreach (var building in state.buildings)
+                if (building.kind == BuildKind.Door) blocked[building.x + building.y * Size] = false;
+            int[] parents = ResourcePaths(ground, blocked);
+            int selected = -1, selectedPump = -1, bestTier = int.MaxValue; double priority = double.MaxValue;
+            // Pass zero keeps existing dry terrain. Only if none is usable may
+            // pass one establish a single dry shore cell beside connected land.
+            // Both passes stay inside the same 3..60 resource/border contract.
+            for (int pass = 0; pass < 2 && selected < 0; pass++)
+            for (int y = 3; y <= 60; y++) for (int x = 3; x <= 60; x++)
+            {
+                int cell = x + y * Size;
+                if (Tutorial(x, y) || occupied.Contains(cell) || ground[cell] == '3' || ground[cell] == '4') continue;
+                if (pass == 0 && (reserved[cell] || parents[cell] < 0 || ground[cell] == '2')) continue;
+                if (pass == 1 && parents[cell] < 0 && parents[cell - 1] < 0 && parents[cell + 1] < 0 &&
+                    parents[cell - Size] < 0 && parents[cell + Size] < 0) continue;
+                int dx = x - 32, dy = y - 35;
+                if (dx * dx + dy * dy > 48 * 48) continue;
+                int pump = OilPumpSpace(state, ground, occupied, parents, x, y);
+                if (pump < 0) continue;
+                var biome = (BiomeKind)(state.biomes[cell] - '0');
+                bool sampled = ground[cell] != '2' && ChunkTerrain.SampleResource(state.seed, x, y, biome, state.generation, false,
+                    out NodeKind kind, out _, state.generatorVersion) && kind == NodeKind.Oil;
+                int tier = sampled ? 0 : 1;
+                double rank = ChunkTerrain.OilAccessPriority(state.seed, x, y, biome);
+                if (tier > bestTier || tier == bestTier && rank >= priority) continue;
+                selected = cell; selectedPump = pump; bestTier = tier; priority = rank;
+            }
+            if (selected < 0) throw new InvalidOperationException("New world has no reachable natural dry oil location.");
+            int sx = selected % Size, sy = selected / Size;
+            if (ground[selected] == '2')
+            {
+                // One onshore anchor, no fixed tutorial stash or bridge across
+                // water. The 2x2 pump space already exists on connected dry land.
+                ground[selected] = '1';
+                parents = ResourcePaths(ground, blocked);
+            }
+            AddNode(state, occupied, sx, sy, NodeKind.Oil,
+                ChunkTerrain.SampleOilStock(state.seed, sx, sy, (BiomeKind)(state.biomes[selected] - '0')));
+            // Natural scattering must not close this actual approach later.
+            for (int path = parents[selected]; path >= 0; path = parents[path]) reserved[path] = true;
+            int pumpX = selectedPump % Size, pumpY = selectedPump / Size;
+            for (int y = pumpY; y < pumpY + DemoCatalog.Height(BuildKind.OilPump); y++)
+                for (int x = pumpX; x < pumpX + DemoCatalog.Width(BuildKind.OilPump); x++) reserved[x + y * Size] = true;
+        }
+
+        private static int OilPumpSpace(WorldState state, char[] ground, HashSet<int> occupied, int[] parents, int oilX, int oilY)
+        {
+            int width = DemoCatalog.Width(BuildKind.OilPump), height = DemoCatalog.Height(BuildKind.OilPump);
+            for (int py = oilY - height; py <= oilY + 1; py++)
+            for (int px = oilX - width; px <= oilX + 1; px++)
+            {
+                if (px < 0 || py < 0 || px + width > Size || py + height > Size ||
+                    oilX >= px && oilX < px + width && oilY >= py && oilY < py + height) continue;
+                bool clear = true;
+                for (int y = py; y < py + height; y++) for (int x = px; x < px + width; x++)
+                {
+                    int cell = x + y * Size;
+                    if (ground[cell] == '2' || occupied.Contains(cell) || parents[cell] < 0 ||
+                        Math.Abs(x - 32) <= 1 && Math.Abs(y - 35) <= 1 || FloorWorld.IsProtectedCell(state, x, y)) clear = false;
+                    if (state.survival != null && state.survival.enabled)
+                    {
+                        foreach (var plot in state.survival.plots) if (plot.x == x && plot.y == y) clear = false;
+                        foreach (var creature in state.survival.creatures)
+                            if (Math.Abs(creature.x - x) < .8f && Math.Abs(creature.y - y) < .8f) clear = false;
+                    }
+                }
+                if (clear) return px + py * Size;
+            }
+            return -1;
         }
 
         private static BuildingState AddStarter(WorldState state, HashSet<int> occupied, BuildKind kind, int x, int y)

@@ -50,6 +50,7 @@ namespace DeadCircuit
             switch (key)
             {
                 case "node_8": case "node_9": case "node_10": case "node_11": case "node_12": fallback = "node_1"; break;
+                case "node_13": fallback = "node_1"; break;
                 case "machine_36": case "machine_37": fallback = "machine_11"; break;
                 case "machine_38": fallback = "machine_11"; break;
                 case "machine_39": case "machine_40": case "machine_41": fallback = "machine_14"; break;
@@ -60,6 +61,11 @@ namespace DeadCircuit
                 case "machine_49": case "machine_52": fallback = "machine_14"; break;
                 case "machine_50": fallback = "machine_5"; break;
                 case "machine_51": fallback = "machine_8"; break;
+                case "machine_53": case "machine_58": fallback = "machine_34"; break;
+                case "machine_54": fallback = "machine_16"; break;
+                case "machine_55": fallback = "machine_7"; break;
+                case "machine_56": fallback = "machine_18"; break;
+                case "machine_57": fallback = "machine_22"; break;
                 case "item_25": fallback = "item_1"; break;
                 case "item_26": fallback = "item_7"; break;
                 case "item_27": fallback = "item_4"; break;
@@ -74,6 +80,10 @@ namespace DeadCircuit
                 case "item_40": case "item_42": case "item_43": fallback = "item_8"; break;
                 case "item_41": fallback = "item_2"; break;
                 case "item_44": case "item_45": fallback = "item_11"; break;
+                case "item_46": case "item_47": case "item_49":
+                case "item_50": case "item_51": fallback = "item_4"; break;
+                case "item_48": fallback = "item_12"; break;
+                case "item_52": case "item_53": fallback = "item_16"; break;
                 default: return null;
             }
             return sprites.TryGetValue(fallback, out sprite) ? sprite : null;

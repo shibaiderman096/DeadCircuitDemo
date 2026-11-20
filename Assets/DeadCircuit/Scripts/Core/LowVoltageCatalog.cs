@@ -89,7 +89,7 @@ namespace DeadCircuit
             if(s==null || (int)kind<0 || (int)kind>=DemoCatalog.BuildNames.Length) return "无效建筑。";
             if(s.era<TechCatalog.RequiredEra(kind)) return "需要科技时代："+TechCatalog.EraName(TechCatalog.RequiredEra(kind));
             int id=BuildResearch(kind);
-            return id<0 || HasResearch(s,id) ? "" : "需要低压研究："+Definition(id).name;
+            return id<0 || HasResearch(s,id) ? PetrochemicalCatalog.BuildRequirement(s,kind) : "需要低压研究："+Definition(id).name;
         }
         public static bool IsBuildUnlocked(WorldState s,BuildKind kind) => BuildRequirement(s,kind).Length==0;
         public static string RecipeRequirement(WorldState s,RecipeDefinition r)
@@ -100,7 +100,7 @@ namespace DeadCircuit
             int id=r.id==140 || r.id==141 ? -1 : r.id==142 ? (int)LowVoltageTech.Cabling :
                 r.id==144 ? (int)LowVoltageTech.Motors : r.id==145 ? (int)LowVoltageTech.Relays :
                 r.id==147 ? (int)LowVoltageTech.Processing : BuildResearch(r.building);
-            return id<0 || HasResearch(s,id) ? "" : "需要低压研究："+Definition(id).name;
+            return id<0 || HasResearch(s,id) ? PetrochemicalCatalog.RecipeRequirement(s,r) : "需要低压研究："+Definition(id).name;
         }
         public static bool IsRecipeUnlocked(WorldState s,RecipeDefinition r) => RecipeRequirement(s,r).Length==0;
         public static string MediumVoltageRequirement(WorldState s)

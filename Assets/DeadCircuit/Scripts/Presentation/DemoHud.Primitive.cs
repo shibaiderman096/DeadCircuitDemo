@@ -33,6 +33,7 @@ namespace DeadCircuit
             MakeWaterTechnology(content);
             MakeSteamTechnology(content);
             MakeLowVoltageTechnology(content);
+            MakePetrochemistryTechnology(content);
         }
 
         void RefreshPrimitiveTechnology(WorldState world, PlayerState player)
@@ -65,6 +66,7 @@ namespace DeadCircuit
             RefreshWaterTechnology(world, player);
             RefreshSteamTechnology(world, player);
             RefreshLowVoltageTechnology(world, player);
+            RefreshPetrochemistryTechnology(world, player);
         }
 
         static string PrimitivePrerequisites(WorldState world, int mask)
@@ -92,7 +94,8 @@ namespace DeadCircuit
 
         static int DefaultTechnologyEra(WorldState world) => PrimitiveCatalog.Enabled(world) && world.era == TechEra.Primitive
             ? 0 : WaterCatalog.Enabled(world) && world.era == TechEra.Water ? 1 :
-                world.era == TechEra.Steam ? 2 : world.era == TechEra.LowVoltage ? 3 : Mathf.Min((int)world.era + 1, 6);
+                world.era == TechEra.Steam ? 2 : world.era == TechEra.LowVoltage ? 3 :
+                world.era == TechEra.MediumVoltage ? 4 : Mathf.Min((int)world.era + 1, 6);
 
         static string EraResearchRequirement(WorldState world, TechEra target)
         {
@@ -100,7 +103,8 @@ namespace DeadCircuit
             string process = target == TechEra.Water ? PrimitiveCatalog.WaterRequirement(world) :
                 target == TechEra.Steam ? WaterCatalog.SteamRequirement(world) :
                 target == TechEra.LowVoltage ? SteamCatalog.LowVoltageRequirement(world) :
-                target == TechEra.MediumVoltage ? LowVoltageCatalog.MediumVoltageRequirement(world) : "";
+                target == TechEra.MediumVoltage ? LowVoltageCatalog.MediumVoltageRequirement(world) :
+                target == TechEra.HighVoltage ? PetrochemicalCatalog.HighVoltageRequirement(world) : "";
             return string.IsNullOrEmpty(process) || requirement.Contains(process) ? requirement :
                 string.IsNullOrEmpty(requirement) ? process : requirement + "\n" + process;
         }

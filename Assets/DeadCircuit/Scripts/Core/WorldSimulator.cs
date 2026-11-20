@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 15;
+        public const int SaveVersion = 16;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -154,6 +154,8 @@ namespace DeadCircuit
                 case "water": ResearchWater(p, cmd.arg); return;
                 case "steam": ResearchSteam(p, cmd.arg); return;
                 case "lv": ResearchLowVoltage(p, cmd.arg); return;
+                case "mv": ResearchPetrochemical(p, cmd.arg); return;
+                case "prospect": ProspectPetrochemical(p); return;
                 case "mill": Mill(p, cmd.x, cmd.y); return;
                 case "interact": case "build": case "repair": case "dismantle": case "recipe": case "configure":
                     if (p.interactCooldown > 0f || !Inside(cmd.x, cmd.y) ||
@@ -249,6 +251,8 @@ namespace DeadCircuit
             }
             if ((kind == BuildKind.Miner || kind == BuildKind.SteamMiner) && NearbyOre(b) == null)
             { Notice(p, "采矿机需紧邻未耗尽矿脉（含斜邻格）。"); return; }
+            if(kind==BuildKind.OilPump && NearbyPetroleum(b)==null)
+            { Notice(p,"抽油机需紧邻未耗尽油藏（含斜邻格）。"); return; }
             if (TechCatalog.RequiresWater(kind) && !NearWater(b))
             { Notice(p, "必须建在紧邻水面的岸上干地。"); return; }
             int[] cost = DemoCatalog.BuildCost(kind);
@@ -342,6 +346,7 @@ namespace DeadCircuit
             BuildingState b=BuildingAt(x,y);
             if(b==null || !TechCatalog.IsUnlocked(State,b.kind)) return;
             if(ConfigureElectrical(p,b,arg)) return;
+            if(ConfigurePetrochemical(p,b,arg)) return;
             if(b.kind==BuildKind.Door)
             {
                 if(arg==0 || arg==1) SetDoor(p,b,arg);
@@ -355,6 +360,9 @@ namespace DeadCircuit
             RecipeDefinition r=TechCatalog.Recipe(arg);
             if(r==null || r.building!=b.kind || b.kind==BuildKind.Workbench || r.era>State.era) return;
             if(!PrimitiveCatalog.IsRecipeUnlocked(State,r)) { Notice(p,PrimitiveCatalog.RecipeRequirement(State,r)); return; }
+            if(b.recipe!=arg) foreach(var cargo in State.cargo)
+                if(PetrochemicalCatalog.IsFluid(cargo.item) && (cargo.fromId==b.id || cargo.toId==b.id))
+                { Notice(p,"仍有进出液体在途，请到货后再切换配方。"); return; }
             if(b.recipe!=arg) { b.recipe=arg; b.progress=0f; }
             Notice(p,"配方："+r.name);
         }

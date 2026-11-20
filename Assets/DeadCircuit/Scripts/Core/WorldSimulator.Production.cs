@@ -40,6 +40,7 @@ namespace DeadCircuit
             {
                 NodeState n = NodeAt(x, y);
                 if (n == null) { Notice(p, "靠近树、矿、废料堆或补给箱，瞄准后按 E。"); return; }
+                if (n.kind == NodeKind.Oil) { Notice(p, "原油需要紧邻油源的通电抽油机采集。"); return; }
                 int item = n.kind == NodeKind.Crate ? SiteCrateItem(n) : NodeItem(n.kind);
                 GearState tool=EquipmentCatalog.Equipped(p);
                 int bonus=HarvestBonus(tool,n.kind);
@@ -57,6 +58,7 @@ namespace DeadCircuit
                 return;
             }
             int moved = 0;
+            if (InteractPetrochemical(p, b)) return;
             if (InteractElectrical(p, b, arg)) return;
             if(b.kind==BuildKind.Door) { SetDoor(p,b,1-b.setting); return; }
             if (b.kind != BuildKind.Chest && b.kind != BuildKind.MechanicalHopper && b.kind != BuildKind.Belt && b.kind != BuildKind.Wall && b.kind != BuildKind.Turret)
@@ -104,12 +106,12 @@ namespace DeadCircuit
                     for (int i = 0; i < DemoCatalog.ItemCount; i++) moved += Transfer(b.items, p.items, i, BufferLimit, InventoryLimit); break;
                 case BuildKind.MechanicalHopper:
                     for (int i = 0; i < DemoCatalog.ItemCount; i++) moved += Transfer(b.items, p.items, i, BufferLimit, InventoryLimit);
-                    if (moved == 0 && arg >= 0 && arg < DemoCatalog.ItemCount)
+                    if (moved == 0 && arg >= 0 && arg < DemoCatalog.ItemCount && !PetrochemicalCatalog.IsFluid(arg))
                         moved = TransferIntoBuilding(p.items, b, arg, 20);
                     break;
                 case BuildKind.Belt:
                     for (int i = 0; i < DemoCatalog.ItemCount; i++) moved += Transfer(b.items, p.items, i, 2, InventoryLimit);
-                    if (moved == 0 && TotalItems(b.items) == 0 && arg >= 0 && arg < DemoCatalog.ItemCount)
+                    if (moved == 0 && TotalItems(b.items) == 0 && arg >= 0 && arg < DemoCatalog.ItemCount && !PetrochemicalCatalog.IsFluid(arg))
                         moved = TransferIntoBuilding(p.items, b, arg, 1);
                     break;
                 case BuildKind.Wall: Notice(p, "墙体可阻挡丧尸；使用修理操作消耗1木材恢复耐久。"); return;
@@ -126,6 +128,7 @@ namespace DeadCircuit
         }
         private int TransferIntoBuilding(int[] from, BuildingState to, int item, int maximum)
         {
+            if (PetrochemicalCatalog.IsFluid(item) && !Accepts(to,item)) return 0;
             int reserved = 0, totalReserved = 0, returning = 0;
             foreach (CargoState c in State.cargo)
             {
@@ -134,7 +137,7 @@ namespace DeadCircuit
                     totalReserved++;
                     if (c.item == item) reserved++;
                 }
-                if (ReservesCargoReturn(to) && c.fromId == to.id && c.item == item) returning++;
+                if (ReservesProductionCargoReturn(to,c.item) && c.fromId == to.id && c.item == item) returning++;
             }
             if (to.kind == BuildKind.Belt) maximum = Math.Min(maximum, 2 - TotalItems(to.items) - totalReserved);
             return Transfer(from, to.items, item, maximum, BufferLimit - reserved - returning);
@@ -219,6 +222,7 @@ namespace DeadCircuit
         }
         private int FuelItem(BuildingState b)
         {
+            if (b.kind == BuildKind.DieselGenerator) return (int)ItemKind.Diesel;
             if(b.kind==BuildKind.CombustionChamber)
             {
                 if(b.items[(int)ItemKind.Coal]>0) return (int)ItemKind.Coal;
@@ -271,6 +275,7 @@ namespace DeadCircuit
         private static int OutputTier(BuildingState b) => TechCatalog.EnergyTier(b);
         private bool WaterPowerUnlocked(BuildingState b)
         {
+            if(!PetrochemicalCatalog.IsBuildUnlocked(State,b.kind)) return false;
             if(!LowVoltageCatalog.IsBuildUnlocked(State,b.kind)) return false;
             if(!SteamCatalog.IsBuildUnlocked(State,b.kind)) return false;
             if(!WaterCatalog.Enabled(State)) return true;
@@ -368,14 +373,23 @@ namespace DeadCircuit
         private void UpdateProduction()
         {
             cargoIncoming.Clear(); cargoReservationCount=0;
-            foreach(var c in State.cargo) ChangeCargoReservation(c.toId,c.item,1);
+            cargoBuildings.Clear();
+            foreach(var b in productionOrder) cargoBuildings.Add(b.id,b);
+            foreach(var c in State.cargo)
+            {
+                ChangeCargoReservation(c.toId,c.item,1);
+                BuildingState source;
+                if(cargoBuildings.TryGetValue(c.fromId,out source) && ReservesProductionCargoReturn(source,c.item)) ChangeCargoReservation(c.fromId,c.item,1);
+            }
             foreach(BuildingState b in productionOrder)
             {
                 if(b.hp<=0f || !b.powered) continue;
+                if(!PetrochemicalCatalog.IsBuildUnlocked(State,b.kind)) continue;
+                if(PumpPetrochemical(b)) continue;
                 if(b.kind==BuildKind.Miner || b.kind==BuildKind.SteamMiner)
                 {
                     NodeState ore=NearbyOre(b);
-                    if(ore==null) continue;
+                    if(ore==null || ore.kind==NodeKind.Oil) continue;
                     int item=NodeItem(ore.kind);
                     int[] reserved=Incoming(b.id);
                     if(b.items[item]+(reserved==null ? 0 : reserved[item])>=BufferLimit) continue;
@@ -391,7 +405,8 @@ namespace DeadCircuit
                 if(!PrimitiveCatalog.IsBuildUnlocked(State,b.kind) || !PrimitiveCatalog.IsRecipeUnlocked(State,r)) continue;
                 if(!WaterCatalog.IsBuildUnlocked(State,b.kind) || !WaterCatalog.IsRecipeUnlocked(State,r)) continue;
                 if(!LowVoltageCatalog.IsBuildUnlocked(State,b.kind) || !LowVoltageCatalog.IsRecipeUnlocked(State,r)) continue;
-                if((b.kind==BuildKind.CoolingTower || r.id==71) && !NearWater(b)) continue;
+                if(!PetrochemicalCatalog.IsRecipeUnlocked(State,r)) continue;
+                if((b.kind==BuildKind.ChemicalReactor || b.kind==BuildKind.DistillationUnit || b.kind==BuildKind.CoolingTower || r.id==71) && !NearWater(b)) continue;
                 if(!CanRunRecipe(b.items,r,BufferLimit,Incoming(b.id))) continue;
                 float ratio=b.powerRatio;
                 if(b.kind==BuildKind.StoneFurnace)
@@ -410,6 +425,7 @@ namespace DeadCircuit
                 RecordWaterProduction(b,r);
                 RecordSteamProduction(b,r);
                 RecordLowVoltageProduction(b,r);
+                RecordPetrochemicalProduction(b,r);
                 b.progress=0f;
                 if(b.kind==BuildKind.Assembler) foreach(PlayerState p in State.players)
                     if(p.connected && p.hp>0f && DistSq(p.x,p.y,b.x,b.y)<=196f) GainXp(p,2);
@@ -434,7 +450,8 @@ namespace DeadCircuit
         }
         private bool OutputRoom(BuildingState b,int item,int count)
         {
-            int incoming=0; foreach(var c in State.cargo) if(c.toId==b.id && c.item==item) incoming++;
+            int incoming=0; foreach(var c in State.cargo)
+                if(c.item==item && (c.toId==b.id || (c.fromId==b.id && ReservesProductionCargoReturn(b,item)))) incoming++;
             return b.items[item]+incoming<=BufferLimit-count;
         }
         private static int NodeItem(NodeKind kind)
@@ -451,12 +468,15 @@ namespace DeadCircuit
                 case NodeKind.Coal: return (int)ItemKind.Coal;
                 case NodeKind.Limestone: return (int)ItemKind.Limestone;
                 case NodeKind.FireClay: return (int)ItemKind.FireClay;
+                case NodeKind.Oil: return (int)ItemKind.CrudeOil;
                 case NodeKind.Crate: return (int)ItemKind.Food;
                 default: return (int)ItemKind.Scrap;
             }
         }
         private static bool IsOutput(BuildKind kind,int item)
         {
+            if(kind==BuildKind.OilPump) return item==(int)ItemKind.CrudeOil;
+            if(kind==BuildKind.ProcessWaterPump) return item==(int)ItemKind.ProcessWater;
             if(kind==BuildKind.Miner) return item==(int)ItemKind.Ore || item==(int)ItemKind.CopperOre || item==(int)ItemKind.TinOre || item==(int)ItemKind.UraniumOre;
             if(kind==BuildKind.SteamMiner) return TechCatalog.Stores(kind,item);
             if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearWaste;
@@ -475,7 +495,7 @@ namespace DeadCircuit
                 cargoBusySources.Add(c.fromId);
                 if (cargoBuildings.ContainsKey(c.toId)) ChangeCargoReservation(c.toId, c.item, 1);
                 BuildingState source;
-                if (cargoBuildings.TryGetValue(c.fromId,out source) && ReservesCargoReturn(source))
+                if (cargoBuildings.TryGetValue(c.fromId,out source) && ReservesProductionCargoReturn(source,c.item))
                     cargoReturnItems[c.fromId] = c.item;
             }
             // Capture exportable inventory BEFORE any arrival or orphan return. Even a restored
@@ -522,6 +542,7 @@ namespace DeadCircuit
                     if (HasCargoRoom(to, c.item))
                     {
                         to.items[c.item]++;
+                        RecordPetrochemicalDelivery(from,to,c.item);
                         cargoReturnItems.Remove(c.fromId);
                         if (from.kind == BuildKind.MechanicalHopper && WaterCatalog.IsWaterDriven(State,from))
                             State.waterTransported = SaturatingAdd(State.waterTransported,1);
@@ -547,7 +568,7 @@ namespace DeadCircuit
                     duration = (float)Math.Sqrt(DistSq(fromX, fromY, x, y)) / (DemoCatalog.CargoSpeed * (plan.from.kind == BuildKind.MechanicalHopper ? 2f : 1f)) };
                 plan.from.items[plan.item]--;
                 // Reserve the vacated slot until delivery so an orphan can always return normally.
-                if (ReservesCargoReturn(plan.from)) cargoReturnItems[plan.from.id] = plan.item;
+                if (ReservesProductionCargoReturn(plan.from,plan.item)) cargoReturnItems[plan.from.id] = plan.item;
                 ChangeCargoReservation(plan.to.id, plan.item, 1);
                 State.cargo.Add(c);
             }
@@ -555,6 +576,7 @@ namespace DeadCircuit
 
         private float CargoExportRate(BuildingState from)
         {
+            if(!PetrochemicalCatalog.IsBuildUnlocked(State,from.kind)) return 0f;
             if(WaterCatalog.Enabled(State) && !WaterCatalog.IsBuildUnlocked(State,from.kind)) return 0f;
             if(from.kind==BuildKind.FilterSplitter)
                 return LowVoltageCatalog.HasResearch(State,LowVoltageTech.Sorting) && LowVoltageCatalog.IsBuildUnlocked(State,from.kind) && from.powered
@@ -567,7 +589,7 @@ namespace DeadCircuit
         private int CargoExportItem(BuildingState from,BuildingState to)
         {
             for(int i=0;i<DemoCatalog.ItemCount;i++)
-                if(from.items[i]>0 && (from.kind==BuildKind.Chest || from.kind==BuildKind.MechanicalHopper || from.kind==BuildKind.Belt || from.kind==BuildKind.FilterSplitter || CanExportOutput(from,i)) && Accepts(to,i)) return i;
+                if(from.items[i]>0 && (PetrochemicalCatalog.IsLiquidStorage(from.kind) || from.kind==BuildKind.Chest || from.kind==BuildKind.MechanicalHopper || from.kind==BuildKind.Belt || from.kind==BuildKind.FilterSplitter || CanExportOutput(from,i)) && PetrochemicalCargoRouteValid(from,to,i) && Accepts(to,i)) return i;
             return -1;
         }
         private bool CanExportOutput(BuildingState b,int item)
@@ -593,12 +615,15 @@ namespace DeadCircuit
         {
             int[] reserved; cargoIncoming.TryGetValue(b.id, out reserved);
             int returningItem;
-            int returning = ReservesCargoReturn(b) && cargoReturnItems.TryGetValue(b.id,out returningItem) && returningItem == item ? 1 : 0;
+            int returning = ReservesProductionCargoReturn(b,item) && cargoReturnItems.TryGetValue(b.id,out returningItem) && returningItem == item ? 1 : 0;
             if (b.items[item] + (reserved == null ? 0 : reserved[item]) + returning >= BufferLimit) return false;
             return b.kind != BuildKind.Belt || TotalItems(b.items) + (reserved == null ? 0 : TotalItems(reserved)) < 2;
         }
         private bool Accepts(BuildingState b,int item)
         {
+            if(item<0 || item>=DemoCatalog.ItemCount) return false;
+            if(PetrochemicalCatalog.IsLiquidStorage(b.kind)) return PetrochemicalCatalog.IsBuildUnlocked(State,b.kind) && item==FluidItem(b.setting);
+            if(PetrochemicalCatalog.IsFluid(item) && BlocksFluidLogistics(b.kind)) return false;
             if(b.kind==BuildKind.Boiler && b.modularBoiler) return false;
             if(b.kind==BuildKind.Chest || b.kind==BuildKind.MechanicalHopper || b.kind==BuildKind.Belt || b.kind==BuildKind.FilterSplitter) return true;
             if(b.kind==BuildKind.CombustionChamber) return item==(int)ItemKind.Coal || item==(int)ItemKind.Coke || item==(int)ItemKind.Fuel;
@@ -610,8 +635,12 @@ namespace DeadCircuit
         }
         private static bool Accepts(BuildKind kind,int item)
         {
+            if(item<0 || item>=DemoCatalog.ItemCount) return false;
+            if(PetrochemicalCatalog.IsLiquidStorage(kind)) return PetrochemicalCatalog.IsFluid(item);
+            if(PetrochemicalCatalog.IsFluid(item) && BlocksFluidLogistics(kind)) return false;
             if(kind==BuildKind.Chest || kind==BuildKind.MechanicalHopper || kind==BuildKind.Belt || kind==BuildKind.FilterSplitter) return true;
             if(kind==BuildKind.CombustionChamber) return item==(int)ItemKind.Coal || item==(int)ItemKind.Coke || item==(int)ItemKind.Fuel;
+            if(kind==BuildKind.DieselGenerator) return item==(int)ItemKind.Diesel;
             if(TechCatalog.IsFuelBurner(kind) && item==(int)ItemKind.Fuel) return true;
             if(kind==BuildKind.StoneFurnace && item==(int)ItemKind.Charcoal) return true;
             if(kind==BuildKind.Turret) return item==(int)ItemKind.Ammo;
