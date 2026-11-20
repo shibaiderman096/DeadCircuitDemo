@@ -291,7 +291,7 @@ namespace DeadCircuit
             ground = water ? '2' : soil < WorldGenerationCatalog.Biomes[(int)kind].dirtPercent / 100.0 ? '1' : '0';
         }
 
-        private static double Octaves(int seed, int x, int y, int scale, uint channel)
+        private static double Octaves(int seed, double x, double y, int scale, uint channel)
         {
             double sum = 0, weight = 1, total = 0;
             for (int i = 0; i < 4; i++, scale /= 2, weight *= .5)
@@ -299,7 +299,7 @@ namespace DeadCircuit
             return sum / total;
         }
 
-        private static double Noise(int seed, int x, int y, int scale, uint channel)
+        private static double Noise(int seed, double x, double y, int scale, uint channel)
         {
             int ix = (int)Math.Floor((double)x / scale), iy = (int)Math.Floor((double)y / scale);
             double fx = (double)x / scale - ix, fy = (double)y / scale - iy;

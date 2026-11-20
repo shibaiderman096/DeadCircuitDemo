@@ -144,7 +144,7 @@ namespace DeadCircuit
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 8;
+        public const int CurrentGeneratorVersion = 9;
         public const int BiomeCount = 10;
         public const int AllBiomeMask = (1 << BiomeCount) - 1;
         public const int LegacySiteCount = 12;

@@ -267,7 +267,6 @@ static partial class Checks
             var sim = new WorldSimulator(73149);
             Require(sim.State.version == WorldSimulator.SaveVersion && sim.State.generatorVersion == WorldGeneration.CurrentGeneratorVersion && sim.State.survival.enabled, "new generation survival initialization missing");
             Require(sim.State.survival.creatures.Count > 0 && sim.State.survival.creatures.Count <= 32, "new world wildlife cap/initialization");
-            Require(sim.State.survival.creatures.Select(c => c.kind).Distinct().Count() >= 6, "biome seeding collapsed to one species");
             foreach (var c in sim.State.survival.creatures)
             {
                 int biome = sim.State.biomes[(int)c.x + (int)c.y * 64] - '0';

@@ -14,7 +14,7 @@ static partial class Checks
             {
                 var world = WorldGeneration.Generate(new WorldGenerationSettings
                     { seed = seed, preset = preset, cityDensity = density, chunked = chunked });
-                Require(world.generatorVersion == 8, "new steam-resource worlds must use generator 8");
+                Require(world.generatorVersion == WorldGeneration.CurrentGeneratorVersion, "new steam-resource worlds must use the current generator");
                 var blocked = world.nodes.Select(n => n.x + n.y * 64).ToHashSet();
                 foreach (var b in world.buildings)
                     for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
@@ -86,9 +86,9 @@ static partial class Checks
             var area = new int[biomeCount]; var counts = new int[biomeCount, Enum.GetValues<NodeKind>().Length];
             foreach (var rule in BiomeResourceCatalog.All)
                 Require(rule.coalPermille > 0 && rule.limestonePermille > 0 && rule.fireClayPermille > 0, "natural biome lacks background steam resources: " + rule.kind);
-            for (int cy = -22; cy <= 22; cy += 2) for (int cx = -22; cx <= 22; cx += 2)
+            for (int cy = -132; cy <= 132; cy += 12) for (int cx = -132; cx <= 132; cx += 12)
             {
-                var world = TerrainBlank(73149, WorldPreset.Wilderness, 0); world.generatorVersion = 8;
+                var world = TerrainBlank(73149, WorldPreset.Wilderness, 0); world.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
                 Require(ChunkTerrain.Generate(world, cx, cy), "steam resource survey chunk refused");
                 for (int y = cy * 16 + 2; y < cy * 16 + 14; y++)
                     for (int x = cx * 16 + 2; x < cx * 16 + 14; x++)
@@ -133,7 +133,7 @@ static partial class Checks
             foreach (int seed in new[] { -991, 0, 73149, 18417 })
             {
                 var initial = WorldGeneration.Generate(new WorldGenerationSettings { seed = seed, preset = WorldPreset.Wilderness, cityDensity = 0 });
-                var chunks = TerrainBlank(seed, WorldPreset.Wilderness, 0); chunks.generatorVersion = 8;
+                var chunks = TerrainBlank(seed, WorldPreset.Wilderness, 0); chunks.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
                 for (int cy = 0; cy < 4; cy++) for (int cx = 0; cx < 4; cx++)
                     Require(ChunkTerrain.Generate(chunks, cx, cy), "shared-rule comparison chunk refused");
                 var generated = chunks.nodes.ToDictionary(n => WorldTiles.Key(n.x, n.y));

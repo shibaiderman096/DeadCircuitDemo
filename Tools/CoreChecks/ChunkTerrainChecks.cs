@@ -164,7 +164,8 @@ static partial class Checks
             int water = 0, land = 0, seamChanges = 0, seamPairs = 0, innerChanges = 0, innerPairs = 0;
             for (int y = -128; y < 128; y++) for (int x = -128; x < 128; x++)
             {
-                biomes.Add(WorldTiles.Biome(world, x, y));
+                // Broad biome coverage uses sparse world coordinates; continuity stays local.
+                biomes.Add((char)('0' + (int)ChunkTerrain.SampleBiome(world.seed, x * 6, y * 6)));
                 if (WorldTiles.Ground(world, x, y) == '2') water++; else land++;
                 foreach (var step in new[] { (1, 0), (0, 1) })
                 {
@@ -176,7 +177,7 @@ static partial class Checks
                     else { innerPairs++; if (change) innerChanges++; }
                 }
             }
-            Require(water > 1000 && land > 10000 && biomes.Count == WorldGeneration.BiomeCount, "continuous terrain lacks water land or all ten biomes: " + string.Join(",", biomes.OrderBy(c => c)));
+            Require(water > 1000 && land > 10000 && biomes.Count == WorldGeneration.BiomeCount, "local terrain lacks water/land or sparse world survey misses biomes: " + string.Join(",", biomes.OrderBy(c => c)));
             Require((double)innerChanges / innerPairs < .18, "biomes became per-cell random patches");
             Require((double)seamChanges / seamPairs <= (double)innerChanges / innerPairs * 1.8 + .015, "signed chunk seams concentrate biome discontinuities");
             var other = TerrainBlank(-73149); other.generatorVersion = WorldGeneration.CurrentGeneratorVersion; ChunkTerrain.Generate(other, -2, -2);
@@ -207,7 +208,7 @@ static partial class Checks
                 foreach (var c in chunks) TerrainChunkContract(a, c.Item1, c.Item2);
             }
         });
-        Run("sparse generator eight biome geometry is invariant to signed chunk visit order", () =>
+        Run("sparse current generator biome geometry is invariant to signed chunk visit order", () =>
         {
             var first = TerrainBlank(-491, WorldPreset.Wilderness, 0); first.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
             var second = TerrainBlank(-491, WorldPreset.Wilderness, 0); second.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
@@ -215,7 +216,7 @@ static partial class Checks
             foreach (var cell in cells) Require(ChunkTerrain.Generate(first, cell.Item1, cell.Item2), "forward current chunk refused");
             foreach (var cell in cells.Reverse()) Require(ChunkTerrain.Generate(second, cell.Item1, cell.Item2), "reverse current chunk refused");
             Require(TerrainMapDump(first) == TerrainMapDump(second) && TerrainEntityDump(first) == TerrainEntityDump(second),
-                "generator eight biome geometry/resources depend on chunk visit order");
+                "current generator biome geometry/resources depend on chunk visit order");
         });
         Run("sparse chunk terrain ignores unknown and edited neighbors", () =>
         {

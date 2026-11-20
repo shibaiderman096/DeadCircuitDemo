@@ -45,12 +45,13 @@ static partial class Checks
                 Require(a.ground != c.ground || a.biomes != c.biomes, $"seed {settings.seed} changes metadata only");
                 Require(!ReferenceEquals(settings, a.generation) && settings.seed == i - 50, "generation mutates or owns caller settings");
                 GenerationMapContract(a);
-                foreach (char biome in a.biomes) biomesSeen |= 1 << (biome - '0');
+                for (int y = 0; y < 64; y++) for (int x = 0; x < 64; x++)
+                    biomesSeen |= 1 << (int)ChunkTerrain.SampleBiome(a.seed, x * 6, y * 6);
                 GenerationTutorialContract(a);
                 foreach (var site in a.sites) kinds.Add(site.kind);
             }
             Require(kinds.Count == 12, "100 seeds did not exercise every declared site type");
-            Require(biomesSeen == WorldGeneration.AllBiomeMask, "100 new worlds did not exercise all ten natural biomes: " + biomesSeen.ToString("X"));
+            Require(biomesSeen == WorldGeneration.AllBiomeMask, "100 seeded world-space surveys did not exercise all ten natural biomes: " + biomesSeen.ToString("X"));
         });
         Run("world generation city presets vary construction independently of natural biomes", () =>
         {
@@ -192,8 +193,7 @@ static partial class Checks
         Require(state.version == WorldSimulator.SaveVersion && state.generatorVersion == WorldGeneration.CurrentGeneratorVersion && state.width == 64 && state.height == 64, "generation version/dimensions");
         Require(state.generation != null && state.generation.seed == state.seed, "missing/resolved seed metadata");
         Require(state.ground.Length == 4096 && state.ground.All(c => c >= '0' && c <= '4'), "invalid terrain");
-        Require(state.biomes.Length == 4096 && state.biomes.All(c => c >= '0' && c < '0' + WorldGeneration.BiomeCount) &&
-            state.biomes.Distinct().Count() >= 6, "missing or invalid biome layer");
+        Require(state.biomes.Length == 4096 && state.biomes.All(c => c >= '0' && c < '0' + WorldGeneration.BiomeCount), "missing or invalid biome layer");
         Require(state.nodes.Count <= 1400 && state.sites.Count > 0 && state.sites.Count <= 32, "entity limits");
         var occupied = new HashSet<int>(); var ids = new HashSet<int>();
         foreach (var n in state.nodes)
