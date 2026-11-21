@@ -39,6 +39,7 @@ namespace DeadCircuit
                 case 3: return LowVoltageCatalog.HasResearch(world, node.researchId);
                 case 4: return PetrochemicalCatalog.HasResearch(world, node.researchId);
                 case 5: return PrecisionCatalog.HasResearch(world, node.researchId);
+                case 6: return NuclearCatalog.HasResearch(world, node.researchId);
                 default: return false;
             }
         }
@@ -98,6 +99,7 @@ namespace DeadCircuit
                 case 3: return LowVoltageCatalog.All.Length;
                 case 4: return PetrochemicalCatalog.All.Length;
                 case 5: return PrecisionCatalog.All.Length;
+                case 6: return NuclearCatalog.All.Length;
                 default: return 0;
             }
         }
@@ -112,6 +114,7 @@ namespace DeadCircuit
                 case 3: return LowVoltageCatalog.ResearchRequirement(world, player, node.researchId);
                 case 4: return PetrochemicalCatalog.ResearchRequirement(world, player, node.researchId);
                 case 5: return PrecisionCatalog.ResearchRequirement(world, player, node.researchId);
+                case 6: return NuclearCatalog.ResearchRequirement(world, player, node.researchId);
                 default: return "无法识别这项研究。";
             }
         }
@@ -179,6 +182,7 @@ namespace DeadCircuit
             foreach (var d in LowVoltageCatalog.All) AddResearch(nodes, 3, (int)d.id, d.name, d.description, d.prerequisites, d.cost, "lv");
             foreach (var d in PetrochemicalCatalog.All) AddResearch(nodes, 4, (int)d.id, d.name, d.description, d.prerequisites, d.cost, "mv");
             foreach (var d in PrecisionCatalog.All) AddResearch(nodes, 5, (int)d.id, d.name, d.description, d.prerequisites, d.cost, "hv");
+            foreach (var d in NuclearCatalog.All) AddResearch(nodes, 6, (int)d.id, d.name, d.description, d.prerequisites, d.cost, "nuclear");
 
             // These masks mirror each catalog's era acceptance rule.
             AddEraParents(nodes, 1, (1 << (int)PrimitiveTech.Bronze) | (1 << (int)PrimitiveTech.Bloomery) |

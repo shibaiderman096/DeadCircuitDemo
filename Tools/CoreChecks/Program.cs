@@ -168,6 +168,7 @@ static partial class Checks
         PetrochemicalProgressionChecks();
         PrecisionChecks();
         PrecisionProgressionChecks();
+        NuclearProgressionChecks();
         QuartzResourceChecks();
         ElectricalAutomationChecks();
         RunLowVoltageProgressionChecks();

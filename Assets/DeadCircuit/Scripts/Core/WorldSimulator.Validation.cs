@@ -56,6 +56,7 @@ namespace DeadCircuit
             CopyLowVoltageProgression(source, s);
             CopyPetrochemicalProgression(source, s);
             CopyPrecisionProgression(source, s);
+            CopyNuclearProgression(source, s);
             var entityIds = new HashSet<int>();
             CopyChunks(source,s);
             var occupied = new HashSet<long>();
@@ -85,7 +86,8 @@ namespace DeadCircuit
                 }
                 SaveRange(b.hp, 0.001f, BuildingMaxHealth(b.kind), "building hp");
                 SaveRange(b.progress,0f,TechCatalog.SelectedRecipe(b)?.duration ?? 4f,"machine progress");
-                SaveRange(b.fuel,0f,b.kind==BuildKind.HighGenerator ? 10.01f : 20.01f,"fuel seconds");
+                float fuelLimit=b.kind==BuildKind.Reactor ? NuclearCatalog.FuelSeconds(s) : b.kind==BuildKind.HighGenerator ? 10f : 20f;
+                SaveRange(b.fuel,0f,fuelLimit+.01f,"fuel seconds");
                 SaveCheck(TechCatalog.IsFuelBurner(b.kind) || b.kind==BuildKind.Reactor || b.fuel==0f,"fuel in non-burner");
                 if(!legacy)
                 {
@@ -99,12 +101,17 @@ namespace DeadCircuit
                     SaveCheck(source.version>=12 || r==null || r.id<110 || r.id>115,"water recipe requires v12");
                     SaveCheck(b.recipe==0 || (r!=null && r.building==b.kind && b.kind!=BuildKind.Workbench),"machine recipe");
                     SaveCheck(r==null || r.era<=source.era,"unresearched machine recipe");
+                    SaveCheck(r==null || NuclearCatalog.IsRecipeUnlocked(s,r),"unresearched nuclear recipe");
                     if(r!=null) SaveRange(b.progress,0f,r.duration,"recipe progress");
-                    if(b.kind==BuildKind.Reactor) SaveRange(b.progress,0f,ReactorCoolantSeconds+.001f,"reactor coolant reserve");
+                    if(b.kind==BuildKind.Reactor) SaveRange(b.progress,0f,NuclearCatalog.CoolantSeconds(source)+.001f,"reactor coolant reserve");
                 }
-                int[] items=CopyItems(b.items,BufferLimit,"machine inventory",itemCount);
+                int[] items=CopyItems(b.items,NuclearCatalog.WasteVaultCapacity(source),"machine inventory",itemCount);
                 SaveCheck(b.kind!=BuildKind.Belt || TotalItems(items)<=2,"belt capacity");
-                for(int i=0;i<DemoCatalog.ItemCount;i++) if(items[i]!=0) SaveCheck(TechCatalog.Stores(b.kind,i),"incompatible machine inventory");
+                for(int i=0;i<DemoCatalog.ItemCount;i++)
+                {
+                    SaveCheck(items[i]<=NuclearCatalog.ItemCapacity(source,b.kind,i),"machine item capacity");
+                    if(items[i]!=0) SaveCheck(TechCatalog.Stores(b.kind,i),"incompatible machine inventory");
+                }
                 if(PetrochemicalCatalog.IsLiquidStorage(b.kind))
                     for(int i=0;i<items.Length;i++) SaveCheck(items[i]==0 || i==FluidItem(b.setting),"mixed liquid storage");
                 s.buildings.Add(new BuildingState { id=b.id,x=b.x,y=b.y,kind=b.kind,rotation=b.rotation,footprintVersion=b.footprintVersion,hp=b.hp,progress=b.progress,fuel=b.fuel,items=items,recipe=legacy ? 0 : b.recipe,setting=legacy ? 0 : b.setting,temperature=legacy ? 20f : b.temperature,tripped=!legacy && b.tripped,modularBoiler=source.version>=7 && b.modularBoiler });
@@ -127,6 +134,8 @@ namespace DeadCircuit
                 to = byId[c.toId]; from = byId[c.fromId];
                 SaveCheck(ElectricalCargoRouteValid(from,to,c.item) && Accepts(to.kind, c.item) &&
                     (!PetrochemicalCatalog.IsLiquidStorage(to.kind) || c.item==FluidItem(to.setting)), "cargo route");
+                SaveCheck(from.kind!=BuildKind.NuclearWasteVault || c.item!=(int)ItemKind.NuclearWaste ||
+                    NuclearCatalog.CanTransferVaultWaste(source),"nuclear vault transfer research");
                 SaveRange(c.fromX, from.x - .5f, from.x + DemoCatalog.Width(from) - .5f, "cargo from x");
                 SaveRange(c.fromY, from.y - .5f, from.y + DemoCatalog.Height(from) - .5f, "cargo from y");
                 SaveRange(c.toX, to.x - .5f, to.x + DemoCatalog.Width(to) - .5f, "cargo to x");
@@ -135,7 +144,7 @@ namespace DeadCircuit
                 int[] reserved;
                 if (!reservations.TryGetValue(to.id, out reserved)) { reserved = new int[DemoCatalog.ItemCount]; reservations.Add(to.id, reserved); }
                 reserved[c.item]++;
-                SaveCheck(to.items[c.item] + reserved[c.item] <= BufferLimit &&
+                SaveCheck(to.items[c.item] + reserved[c.item] <= NuclearCatalog.ItemCapacity(source,to.kind,c.item) &&
                     (to.kind != BuildKind.Belt || TotalItems(to.items) + TotalItems(reserved) <= 2), "cargo reservation capacity");
                 s.cargo.Add(new CargoState { id = c.id, fromId = c.fromId, toId = c.toId, item = c.item,
                     fromX = c.fromX, fromY = c.fromY, toX = c.toX, toY = c.toY, progress = c.progress, duration = c.duration });
@@ -145,7 +154,8 @@ namespace DeadCircuit
                 BuildingState from=byId[c.fromId];
                 if(!ReservesProductionCargoReturn(from,c.item)) continue;
                 int[] incoming; reservations.TryGetValue(from.id,out incoming);
-                SaveCheck(from.items[c.item]+(incoming==null ? 0 : incoming[c.item])<BufferLimit,"loader cargo return capacity");
+                SaveCheck(from.items[c.item]+(incoming==null ? 0 : incoming[c.item])<
+                    NuclearCatalog.ItemCapacity(source,from.kind,c.item),"loader cargo return capacity");
             }
             var playerIds = new HashSet<string>(StringComparer.Ordinal);
             var seats = new HashSet<int>();

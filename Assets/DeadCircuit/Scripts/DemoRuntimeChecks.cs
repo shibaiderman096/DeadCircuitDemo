@@ -221,6 +221,7 @@ namespace DeadCircuit
                     foreach (PrecisionTech precisionTech in PrecisionCatalog.All.Select(d => d.id))
                         yield return ResearchQaPrecision(bridge, precisionTech);
                 }
+                if (target == TechEra.Nuclear) yield return CheckQaNuclearResearch(bridge);
                 if (Active("Technology Panel")) yield return Press(Key.T);
             }
             yield return BuildQaNuclearFacility(bridge);
@@ -355,6 +356,9 @@ namespace DeadCircuit
             Require(bridge.IsRunning && bridge.IsHost && bridge.LocalPlayer != null && Path.GetFullPath(bridge.SavePath) == qaSavePath &&
                 bridge.World.generation.worldName == qaWorldName && bridge.World.seed == 73149, "load confirmation restores the selected isolated QA world");
             Require(bridge.World.era == TechEra.Nuclear && bridge.LocalPlayer.items.Length == DemoCatalog.ItemNames.Length && bridge.LocalPlayer.attributes[1] == 1 && bridge.LocalPlayer.skills[0] == 1 && bridge.World.buildings.Count == buildings, "selected world restores technology, materials, personal growth and factory");
+            Require(NuclearCatalog.HasResearch(bridge.World, NuclearTech.UraniumEnrichment) &&
+                PrimitiveCatalog.IsRecipeUnlocked(bridge.World, TechCatalog.Recipe(92)),
+                "selected world restores the nuclear study and its recipe unlock");
             VerifyRestoredEquipment(bridge.LocalPlayer);
             yield return PointAtWorld(32, 34);
             RequireDefaultHud();
@@ -547,7 +551,7 @@ namespace DeadCircuit
                 "technology tree content allows manual node placement");
 
             string[] prefixes = { "Primitive Research ", "Water Research ", "Steam Research ",
-                "Low Voltage Research ", "Petrochemical Research ", "Precision Node " };
+                "Low Voltage Research ", "Petrochemical Research ", "Precision Node ", "Nuclear Research " };
             var expected = new HashSet<string>(TechnologyTreeModel.All.Select(node => node.IsEra
                 ? "Era Node " + node.era : prefixes[node.era] + node.researchId));
             var nodes = content.GetComponentsInChildren<Button>(true);
@@ -559,6 +563,34 @@ namespace DeadCircuit
                 lines[0].GetComponent<CanvasRenderer>() != null && lines[0].paths.Count > 0,
                 "technology tree has one active renderer with dependency connections");
             return lines[0].paths.Count;
+        }
+
+        IEnumerator CheckQaNuclearResearch(GameBridge bridge)
+        {
+            var world = bridge.World;
+            var player = bridge.LocalPlayer;
+            var workbench = world.buildings.First(b => b.kind == BuildKind.Workbench);
+            player.x = DemoCatalog.CenterX(workbench);
+            player.y = DemoCatalog.CenterY(workbench) + 1.1f;
+
+            int researchId = (int)NuclearTech.UraniumEnrichment;
+            var recipe = TechCatalog.Recipe(92);
+            GrantSamples(player, NuclearCatalog.Definition(researchId).cost);
+            yield return SelectQaTechnologyEra((int)TechEra.Nuclear);
+            yield return new WaitForSecondsRealtime(.6f);
+            Click("Nuclear Research " + researchId);
+            yield return null;
+            Require(!FindButton("Research Button").interactable && !PrimitiveCatalog.IsRecipeUnlocked(world, recipe),
+                "nuclear research and its recipe are locked without production evidence");
+
+            // Supply only the evidence in the isolated QA world; research still goes through the HUD.
+            world.produced[(int)ItemKind.NuclearFuel] = 2;
+            yield return new WaitForSecondsRealtime(.2f);
+            Click("Research Button");
+            yield return new WaitForSecondsRealtime(.7f);
+            Require(NuclearCatalog.HasResearch(world, researchId) && PrimitiveCatalog.IsRecipeUnlocked(world, recipe),
+                "nuclear research button unlocks the efficient fuel recipe");
+            Debug.Log("DEMO_NUCLEAR_TREE_QA_PASS evidenceGate=true recipeUnlock=true");
         }
 
         IEnumerator ResearchQaWater(GameBridge bridge, WaterTech id)
@@ -694,6 +726,8 @@ namespace DeadCircuit
             }
             Require(approached,"dry QA approach for "+kind);
             yield return new WaitForSecondsRealtime(.3f);
+            // Ambient zombies spawn even with waves disabled. Keep the construction fixture deterministic.
+            bridge.World.zombies.Clear();
             bridge.Send(new PlayerCommand { action="build",arg=(int)kind,x=x,y=y,rotation=rotation });
             Require(bridge.World.buildings.Any(b=>b.kind==kind && b.x==x && b.y==y),"actual build command: "+kind+" "+player.notice);
             yield return new WaitForSecondsRealtime(.3f);
@@ -775,10 +809,10 @@ namespace DeadCircuit
         }
         static IEnumerator Press(Key key)
         {
-            Require(Keyboard.current != null, "QA keyboard");
-            InputSystem.QueueStateEvent(Keyboard.current, new KeyboardState(key));
+            var keyboard = Keyboard.current ?? InputSystem.AddDevice<Keyboard>("Demo QA Keyboard");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(key));
             yield return null;
-            InputSystem.QueueStateEvent(Keyboard.current, new KeyboardState());
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
             yield return null;
             yield return new WaitForSecondsRealtime(.15f);
         }

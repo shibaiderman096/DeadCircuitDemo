@@ -24,7 +24,8 @@ namespace DeadCircuit
         static readonly string[] TreeResearchNames =
         {
             "Primitive Research ", "Water Research ", "Steam Research ",
-            "Low Voltage Research ", "Petrochemical Research ", "Precision Node "
+            "Low Voltage Research ", "Petrochemical Research ", "Precision Node ",
+            "Nuclear Research "
         };
         static readonly BuildKind[] TreeEraIcons =
         {
@@ -38,7 +39,8 @@ namespace DeadCircuit
             new[] { "machine_44", "machine_45", "machine_46", "machine_47", "machine_48", "item_39", "machine_15", "machine_35" },
             new[] { "machine_6", "item_42", "item_44", "machine_52", "item_45", "machine_5", "machine_50", "machine_51" },
             new[] { "ui_research", "machine_53", "machine_56", "item_50", "item_12", "item_51", "machine_24", "machine_30" },
-            new[] { "item_56", "item_57", "item_58", "item_13", "machine_27", "item_61", "item_60", "machine_26" }
+            new[] { "item_56", "item_57", "item_58", "item_13", "machine_27", "item_61", "item_60", "machine_26" },
+            new[] { "machine_27", "machine_28", "machine_61", "machine_62", "item_61", "machine_30", "machine_28", "machine_62" }
         };
 
         sealed class TreeCard

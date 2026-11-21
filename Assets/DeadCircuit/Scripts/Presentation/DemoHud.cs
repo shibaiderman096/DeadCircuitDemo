@@ -365,7 +365,7 @@ namespace DeadCircuit
             });
             RectTransform content = ScrollContent("Machine Scroll View", machinePanel, 10, 44, 284, 260, out machineScroll);
             // Safety stays at the top of the viewport, even when inventory needs scrolling.
-            machineSafety = FlowLabel("Machine Safety", content, "", 260, 52, 14, Amber);
+            machineSafety = FlowLabel("Machine Safety", content, "", 260, 112, 14, Amber);
             machineCluster = FlowLabel("Machine Steam Cluster", content, "", 260, 28, 13, Ink);
             machineCluster.gameObject.SetActive(false);
             MakeLowVoltageMachineControls(content);
@@ -373,7 +373,7 @@ namespace DeadCircuit
             MakePrecisionMachineControls(content);
             machineInfo = FlowLabel("Machine State", content, "", 260, 90, 13, Ink);
             machineRecipe = FlowLabel("Machine Recipe", content, "", 260, 28, 14, Accent);
-            machineRecipeFlow = FlowLabel("Machine Recipe Flow", content, "", 260, 60, 13, Ink);
+            machineRecipeFlow = FlowLabel("Machine Recipe Flow", content, "", 260, 102, 13, Ink);
             machineContents = FlowLabel("Machine Contents", content, "", 260, 48, 13, Ink);
             machineHint = FlowLabel("Machine Hint", content, "", 260, 62, 12, Muted);
             recipeButton = Button("Cycle Machine Recipe", machinePanel, "切换配方", 12, 312, 280, 30, CycleRecipe);
@@ -746,18 +746,36 @@ namespace DeadCircuit
                     bool cooling = coolant > 0 || building.progress > 0f;
                     bool nuclearFuel = Count(building.items, (int)ItemKind.NuclearFuel) > 0 || building.fuel > 0f;
                     bool running = building.powerGeneration > 0f;
+                    float tripTemperature = NuclearCatalog.TripTemperature(world);
                     string state = building.tripped ? "已停堆 · 正在降温" : running ? "运行中" :
                         !cooling ? "停机 · 缺少冷却液" : !nuclearFuel ? "待机 · 缺少核燃料" : "待机 · 检查控制台和出料连接";
                     SetFlowText(machineRecipeFlow, "输入：核燃料、冷却液\n产出：高压电力、核废料、热冷却液" +
+                        "\n当前输出上限：" + NuclearCatalog.PowerOutput(world).ToString("0") + " kW · 单份燃料运行 " + NuclearCatalog.FuelSeconds(world).ToString("0") + " 秒" +
                         "\n箭头正前方：直连核废料专用仓。" +
                         "\n面朝箭头时的右侧：用热冷却液管道接到靠近水源的冷却塔，再用独立的冷却液管道接回反应堆。" +
                         "\n冷却塔需中压(MV)供电和工艺水。" +
                         "\n启用同一高压(HV)电网中的反应堆控制台，确保控制台由外部电源足额供电。");
+                    string diagnostics;
+                    if (NuclearCatalog.HasResearch(world, NuclearTech.CoreDiagnostics))
+                    {
+                        BuildingState console = world.buildings.Find(candidate => candidate.kind == BuildKind.ReactorControlConsole &&
+                            candidate.networkId != 0 && candidate.networkId == building.networkId && candidate.setting == 1 &&
+                            candidate.powered && candidate.powerRatio >= 1f);
+                        int vaultX = DemoCatalog.OutputX(building), vaultY = DemoCatalog.OutputY(building);
+                        BuildingState vault = world.buildings.Find(candidate => candidate.kind == BuildKind.NuclearWasteVault &&
+                            DemoCatalog.Contains(candidate,vaultX,vaultY));
+                        int stagedWaste = Count(building.items,(int)ItemKind.NuclearWaste);
+                        diagnostics = "外部供电联锁：" + (console == null ? "未满足" : "就绪") +
+                            "\n燃料库存 " + Count(building.items,(int)ItemKind.NuclearFuel) + " · 剩余燃烧 " + building.fuel.ToString("0.0") + " 秒" +
+                            "\n冷却库存 " + coolant + " · 剩余冷却 " + building.progress.ToString("0.0") + " 秒 · 热冷却液 " + Count(building.items,(int)ItemKind.HotCoolant) +
+                            "\n废料：堆内 " + stagedWaste + " · 专用仓 " + (vault == null ? "未连接" :
+                                Count(vault.items,(int)ItemKind.NuclearWaste) + " / " + NuclearCatalog.WasteVaultCapacity(world));
+                    }
+                    else diagnostics = "堆芯监测未校准 · 研究“堆芯监测”可查看联锁、冷却储备与废料仓读数。";
                     SetFlowText(machineSafety, "温度 " + building.temperature.ToString("0") + "℃ · " + state +
-                        "\n冷却液 " + coolant + " 单位 · 剩余冷却时间 " + building.progress.ToString("0.0") + " 秒" +
-                        "\n堆内核废料 " + Count(building.items, (int)ItemKind.NuclearWaste) + " 件" +
-                        "\n达到 900℃时自动停堆，降至 300℃后可重新运行。");
-                    machineSafety.color = building.tripped || building.temperature >= 700f || !running && !cooling ? Danger : running ? Accent : Amber;
+                        "\n" + diagnostics +
+                        "\n停堆温度 " + tripTemperature.ToString("0") + "℃ · 降至 300℃后可重新运行。");
+                    machineSafety.color = building.tripped || building.temperature >= tripTemperature * .8f || !running && !cooling ? Danger : running ? Accent : Amber;
                 }
                 return;
             }

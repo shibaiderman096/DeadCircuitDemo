@@ -15,7 +15,8 @@ namespace DeadCircuit
             // This opt-in fixture uses the separate QA save, with explicit material grants.
             PrepareQaPlot(bridge.World, true);
             var p = bridge.LocalPlayer;
-            for (int i = 0; i < p.items.Length; i++) p.items[i] = 100;
+            for (int i = 0; i < p.items.Length; i++)
+                if (i != (int)ItemKind.NuclearWaste) p.items[i] = 100;
             yield return BuildQa(bridge, BuildKind.Workbench, 30, 28);
             yield return new WaitForSecondsRealtime(.6f);
             yield return ClickHudTool("Open Inventory");

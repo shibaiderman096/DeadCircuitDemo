@@ -103,6 +103,7 @@ namespace DeadCircuit
 
         public static string RecipeRequirement(WorldState s,RecipeDefinition recipe)
         {
+            if(recipe==null) return "无法识别这项配方。";
             switch(recipe.id)
             {
                 case 170: case 171: return Missing(s,PrecisionTech.Silicon);
@@ -112,7 +113,7 @@ namespace DeadCircuit
                 case 175: return Missing(s,PrecisionTech.Assembly);
                 case 176: return Missing(s,PrecisionTech.Control);
                 case 177: return Missing(s,PrecisionTech.Alloys);
-                default: return "";
+                default: return NuclearCatalog.RecipeRequirement(s,recipe);
             }
         }
 

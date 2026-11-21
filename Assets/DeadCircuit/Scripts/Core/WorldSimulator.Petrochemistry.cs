@@ -37,8 +37,14 @@ namespace DeadCircuit
         {
             if(from == null || to == null || from == to || item < 0 || item >= DemoCatalog.ItemCount) return false;
             if(item == (int)ItemKind.NuclearWaste)
-                return from.kind == BuildKind.Reactor && to.kind == BuildKind.NuclearWasteVault &&
+            {
+                if(to.kind != BuildKind.NuclearWasteVault) return false;
+                bool reactorOutput = from.kind == BuildKind.Reactor &&
                     DemoCatalog.Contains(to,DemoCatalog.OutputX(from),DemoCatalog.OutputY(from));
+                bool vaultTransfer = from.kind == BuildKind.NuclearWasteVault &&
+                    DemoCatalog.Contains(to,DemoCatalog.OutputX(from),DemoCatalog.OutputY(from));
+                return reactorOutput || vaultTransfer;
+            }
             if(from.kind==BuildKind.Reactor && item!=(int)ItemKind.HotCoolant) return false;
             bool sourceStorage = PetrochemicalCatalog.IsLiquidStorage(from.kind);
             bool targetStorage = PetrochemicalCatalog.IsLiquidStorage(to.kind);
@@ -62,7 +68,8 @@ namespace DeadCircuit
         // All liquid flights reserve a source slot, including pump and multi-output machine
         // flights: a downstream disappearance must not lose fluid after a new batch completes.
         private static bool ReservesProductionCargoReturn(BuildingState b, int item) =>
-            ReservesCargoReturn(b) || PetrochemicalCatalog.IsFluid(item) || (b.kind==BuildKind.Reactor && item==(int)ItemKind.NuclearWaste);
+            ReservesCargoReturn(b) || PetrochemicalCatalog.IsFluid(item) ||
+            ((b.kind==BuildKind.Reactor || b.kind==BuildKind.NuclearWasteVault) && item==(int)ItemKind.NuclearWaste);
 
         private bool InteractPetrochemical(PlayerState p, BuildingState b)
         {

@@ -35,7 +35,7 @@ namespace DeadCircuit
         public int steamResearch, steamCoked, steamRefractory, steamPigIron, steamSteel, steamPlates, steamFittings, steamDriven;
         public int lvResearch, lvWire, lvInsulators, lvCable, lvCoils, lvMotors, lvRelays, lvCircuits, lvElectric, lvAutomated, lvSorted, lvProtected;
         public int mvResearch, mvSurvey, mvExtracted, mvPiped, mvDistilled, mvDiesel, mvPolymer, mvLubricant, mvCooled, mvPowered;
-        public int hvResearch, hvPowered;
+        public int hvResearch, hvPowered, nuclearResearch;
         public ChunkWorldState chunks = new ChunkWorldState();
         public WorldGenerationSettings generation;
         public int generatorVersion;

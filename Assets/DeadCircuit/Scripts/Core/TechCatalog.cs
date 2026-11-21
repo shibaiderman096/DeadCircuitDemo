@@ -199,6 +199,7 @@ namespace DeadCircuit
             R(80,"高压控制模块",TechEra.HighVoltage,BuildKind.PrecisionAssembler,4f,DemoCatalog.Materials(ItemKind.AdvancedCircuit,2,ItemKind.PrecisionPart,2,ItemKind.Coolant,1),DemoCatalog.Materials(ItemKind.ControlModule,2,ItemKind.HotCoolant,1)),
             R(90,"核燃料加工",TechEra.Nuclear,BuildKind.NuclearProcessor,4f,DemoCatalog.Materials(ItemKind.UraniumOre,2,ItemKind.Steel,1),DemoCatalog.Materials(ItemKind.NuclearFuel,1)),
             R(91,"冷却液回收（近水）",TechEra.MediumVoltage,BuildKind.CoolingTower,3f,DemoCatalog.Materials(ItemKind.HotCoolant,2,ItemKind.ProcessWater,1),DemoCatalog.Materials(ItemKind.Coolant,2)),
+            R(92,"高效核燃料加工",TechEra.Nuclear,BuildKind.NuclearProcessor,4f,DemoCatalog.Materials(ItemKind.UraniumOre,3,ItemKind.Steel,2,ItemKind.HeatAlloy,1),DemoCatalog.Materials(ItemKind.NuclearFuel,2)),
             R(110,"鼓风碎矿炼铁",TechEra.Water,BuildKind.BlastFurnace,3f,DemoCatalog.Materials(ItemKind.CrushedOre,1,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Iron,3)),
             R(111,"鼓风炼铜",TechEra.Water,BuildKind.BlastFurnace,3f,DemoCatalog.Materials(ItemKind.CopperOre,2,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Copper,3)),
             R(112,"鼓风炼锡",TechEra.Water,BuildKind.BlastFurnace,3f,DemoCatalog.Materials(ItemKind.TinOre,2,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Tin,3)),

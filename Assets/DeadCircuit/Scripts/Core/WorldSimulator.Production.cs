@@ -5,7 +5,6 @@ namespace DeadCircuit
 {
     public sealed partial class WorldSimulator
     {
-        private const float ReactorCoolantSeconds = 2f;
         private struct ItemTransfer
         {
             public BuildingState from, to;
@@ -310,7 +309,9 @@ namespace DeadCircuit
         private float ReactorOutput(BuildingState b,bool consume,bool interlocked)
         {
             // Latch the hot input before passive cooling can hide an exact-limit trip.
-            bool tripped=b.tripped || b.temperature>=900f;
+            float tripTemperature=NuclearCatalog.TripTemperature(State);
+            float coolantSeconds=NuclearCatalog.CoolantSeconds(State);
+            bool tripped=b.tripped || b.temperature>=tripTemperature;
             float temperature=Math.Max(20f,b.temperature-FixedStep*(tripped ? 18f : 4f));
             if(tripped && temperature<=300f) tripped=false;
             float coolant=b.progress, fuel=b.fuel;
@@ -330,20 +331,20 @@ namespace DeadCircuit
                         b.items[(int)ItemKind.HotCoolant]++;
                         RecordProduced((int)ItemKind.HotCoolant,1);
                     }
-                    coolant=ReactorCoolantSeconds;
-                    temperature=Math.Max(20f,temperature-45f*ReactorCoolantSeconds);
+                    coolant=coolantSeconds;
+                    temperature=Math.Max(20f,temperature-45f*coolantSeconds);
                 }
                 if (newFuel)
                 {
                     if(consume) { b.items[(int)ItemKind.NuclearFuel]--; b.items[(int)ItemKind.NuclearWaste]++; RecordProduced((int)ItemKind.NuclearWaste,1); }
-                    fuel=20f;
+                    fuel=NuclearCatalog.FuelSeconds(State);
                 }
                 float fraction=Clamp(Math.Min(coolant,fuel)/FixedStep,0f,1f);
                 temperature+=45f*FixedStep*fraction;
-                if(temperature>=900f) { tripped=true; canRun=false; }
+                if(temperature>=tripTemperature) { tripped=true; canRun=false; }
                 if(consume) { b.progress=Math.Max(0f,coolant-FixedStep*fraction); b.fuel=Math.Max(0f,fuel-FixedStep*fraction); }
                 if(consume) { b.temperature=temperature; b.tripped=tripped; }
-                return canRun ? 1200f*fraction : 0f;
+                return canRun ? NuclearCatalog.PowerOutput(State)*fraction : 0f;
             }
             if(consume) { b.temperature=temperature; b.tripped=tripped; }
             return 0f;
@@ -542,14 +543,14 @@ namespace DeadCircuit
             foreach (BuildingState other in productionOrder)
                 if (other.kind==BuildKind.Reactor && NuclearVaultAt(other)==vault) stored+=other.items[item];
             foreach (CargoState cargo in State.cargo)
-                if (cargo.toId==vault.id && cargo.item==item) stored++;
-            return stored<BufferLimit;
+                if ((cargo.toId==vault.id || cargo.fromId==vault.id) && cargo.item==item) stored++;
+            return stored<NuclearCatalog.WasteVaultCapacity(State);
         }
         private bool OutputRoom(BuildingState b,int item,int count)
         {
             int incoming=0; foreach(var c in State.cargo)
                 if(c.item==item && (c.toId==b.id || (c.fromId==b.id && ReservesProductionCargoReturn(b,item)))) incoming++;
-            return b.items[item]+incoming<=BufferLimit-count;
+            return b.items[item]+incoming<=NuclearCatalog.ItemCapacity(State,b.kind,item)-count;
         }
         private static int NodeItem(NodeKind kind)
         {
@@ -578,6 +579,7 @@ namespace DeadCircuit
             if(kind==BuildKind.Miner) return item==(int)ItemKind.Ore || item==(int)ItemKind.CopperOre || item==(int)ItemKind.TinOre || item==(int)ItemKind.UraniumOre;
             if(kind==BuildKind.SteamMiner) return TechCatalog.Stores(kind,item);
             if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearWaste || item==(int)ItemKind.HotCoolant;
+            if(kind==BuildKind.NuclearWasteVault) return item==(int)ItemKind.NuclearWaste;
             foreach(var r in TechCatalog.Recipes) if(r.building==kind && kind!=BuildKind.Workbench && r.outputs[item]>0) return true;
             return false;
         }
@@ -703,6 +705,7 @@ namespace DeadCircuit
 
         private int CargoExportItem(BuildingState from,BuildingState to)
         {
+            if(from.kind==BuildKind.NuclearWasteVault && !NuclearCatalog.CanTransferVaultWaste(State)) return -1;
             for(int i=0;i<DemoCatalog.ItemCount;i++)
                 if(from.items[i]>0 && (PetrochemicalCatalog.IsLiquidStorage(from.kind) || from.kind==BuildKind.Chest || from.kind==BuildKind.MechanicalHopper || from.kind==BuildKind.Belt || from.kind==BuildKind.FilterSplitter || CanExportOutput(from,i)) && PetrochemicalCargoRouteValid(from,to,i) && Accepts(to,i)) return i;
             return -1;
@@ -731,7 +734,7 @@ namespace DeadCircuit
             int[] reserved; cargoIncoming.TryGetValue(b.id, out reserved);
             int returningItem;
             int returning = ReservesProductionCargoReturn(b,item) && cargoReturnItems.TryGetValue(b.id,out returningItem) && returningItem == item ? 1 : 0;
-            if (b.items[item] + (reserved == null ? 0 : reserved[item]) + returning >= BufferLimit) return false;
+            if (b.items[item] + (reserved == null ? 0 : reserved[item]) + returning >= NuclearCatalog.ItemCapacity(State,b.kind,item)) return false;
             return b.kind != BuildKind.Belt || TotalItems(b.items) + (reserved == null ? 0 : TotalItems(reserved)) < 2;
         }
         private bool Accepts(BuildingState b,int item)

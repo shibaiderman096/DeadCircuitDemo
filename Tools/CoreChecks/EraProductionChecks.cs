@@ -10,7 +10,7 @@ static partial class Checks
             (2,TechEra.Primitive),(3,TechEra.Primitive),(10,TechEra.Primitive),(11,TechEra.Primitive),(12,TechEra.Primitive),
             (13,TechEra.Water),(20,TechEra.Water),(30,TechEra.Steam),(31,TechEra.Steam),(32,TechEra.Steam),(33,TechEra.Steam),
             (40,TechEra.LowVoltage),(41,TechEra.LowVoltage),(42,TechEra.LowVoltage),(43,TechEra.LowVoltage),(50,TechEra.LowVoltage),(60,TechEra.LowVoltage),
-            (70,TechEra.MediumVoltage),(71,TechEra.MediumVoltage),(80,TechEra.HighVoltage),(90,TechEra.Nuclear),(91,TechEra.MediumVoltage),
+            (70,TechEra.MediumVoltage),(71,TechEra.MediumVoltage),(80,TechEra.HighVoltage),(90,TechEra.Nuclear),(91,TechEra.MediumVoltage),(92,TechEra.Nuclear),
             (52,TechEra.LowVoltage),(53,TechEra.LowVoltage),(54,TechEra.MediumVoltage),(55,TechEra.HighVoltage),(56,TechEra.LowVoltage),(57,TechEra.LowVoltage),
             (170,TechEra.HighVoltage),(171,TechEra.HighVoltage),(172,TechEra.HighVoltage),(173,TechEra.HighVoltage),
             (174,TechEra.HighVoltage),(175,TechEra.HighVoltage),(176,TechEra.HighVoltage),(177,TechEra.HighVoltage)
@@ -19,7 +19,7 @@ static partial class Checks
             Run($"era {era} recipe {id} consumes inputs and completes a real output batch", () =>
             {
                 var r=TechCatalog.Recipe(id);Require(r!=null && r.era==era,$"required {era} recipe {id} missing or moved to a different era");
-                var state=Flat(era:r.era);var machine=Add(state,r.building,10,10);machine.recipe=r.building==BuildKind.Workbench?0:r.id;
+                var state=RecipeFixture(r);var machine=Add(state,r.building,10,10);machine.recipe=r.building==BuildKind.Workbench?0:r.id;
                 if(r.building==BuildKind.Workbench)
                 {
                     var manual=new WorldSimulator(state);var p=manual.AddPlayer("p","P");p.x=8;p.y=10;p.items=Copy(r.inputs);manual.Apply(Command(p,"craft",arg:r.id));Inventory(p.items,r.outputs,$"manual recipe {r.id}");return;
@@ -40,8 +40,8 @@ static partial class Checks
         {
             foreach(var r in TechCatalog.Recipes.Where(r=>r.building!=BuildKind.Workbench))
             {
-                var state=Flat(era:r.era);var m=Add(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);
-                for(int i=0;i<DemoCatalog.ItemCount;i++)if(r.outputs[i]>0)m.items[i]=WorldSimulator.BufferLimit;
+                var state=RecipeFixture(r);var m=Add(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);
+                for(int i=0;i<DemoCatalog.ItemCount;i++)if(r.outputs[i]>0)m.items[i]=WorldSimulator.BufferLimit-r.outputs[i]+1;
                 if(m.kind==BuildKind.StoneFurnace)m.items[(int)ItemKind.Fuel]=1;else AddRecipePower(state,m);
                 if(TechCatalog.RequiresWater(m.kind))Water(state,10,10+DemoCatalog.Height(m.kind));
                 var before=Copy(m.items);var sim=new WorldSimulator(state);Advance(sim,r.duration+1);m=Building(sim,m.id);
@@ -53,7 +53,7 @@ static partial class Checks
         {
             foreach(var r in TechCatalog.Recipes.Where(r=>r.building!=BuildKind.Workbench && r.inputs.Any(v=>v>0)))
             {
-                var state=Flat(era:r.era);var m=Add(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);int missing=Array.FindIndex(r.inputs,v=>v>0);m.items[missing]--;
+                var state=RecipeFixture(r);var m=Add(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);int missing=Array.FindIndex(r.inputs,v=>v>0);m.items[missing]--;
                 if(m.kind==BuildKind.StoneFurnace)m.items[(int)ItemKind.Fuel]=1;else AddRecipePower(state,m);
                 if(TechCatalog.RequiresWater(m.kind))Water(state,10,10+DemoCatalog.Height(m.kind));
                 var sim=new WorldSimulator(state);Advance(sim,r.duration+1);m=Building(sim,m.id);
@@ -81,7 +81,7 @@ static partial class Checks
             for(int item=0;item<DemoCatalog.ItemCount;item++)
             {
                 if(r.outputs[item]==0)continue;
-                var state=Flat(era:r.era);var source=Add(state,r.building,10,10);source.recipe=r.id;source.items=Copy(r.outputs);
+                var state=RecipeFixture(r);var source=Add(state,r.building,10,10);source.recipe=r.id;source.items=Copy(r.outputs);
                 bool liquid=PetrochemicalCatalog.IsFluid(item);
                 var target=Add(state,liquid?BuildKind.LiquidTank:BuildKind.Chest,DemoCatalog.OutputX(source),DemoCatalog.OutputY(source));
                 if(liquid)for(int setting=0;setting<WorldSimulator.FluidCount;setting++)if(WorldSimulator.FluidItem(setting)==item)target.setting=setting;
@@ -124,6 +124,17 @@ static partial class Checks
             Require(totals[(int)ItemKind.Coolant]+totals[(int)ItemKind.HotCoolant]==6 && totals[(int)ItemKind.ProcessWater]<20,"coolant loop lost mass, made new coolant, or did not debit process water");
             Require(Building(sim,processor.id).items[(int)ItemKind.UraniumOre]==0 && Building(sim,processor.id).items[(int)ItemKind.Steel]==0,"nuclear processing did not debit ore/steel");
         });
+    }
+
+    static WorldState RecipeFixture(RecipeDefinition recipe)
+    {
+        var state=Flat(era:recipe.era);
+        if(recipe.id==92)
+        {
+            state.produced[(int)ItemKind.NuclearFuel]=2;
+            state.nuclearResearch=NuclearBit(NuclearTech.UraniumEnrichment);
+        }
+        return state;
     }
 
     static void AddRecipePower(WorldState state, BuildingState machine)

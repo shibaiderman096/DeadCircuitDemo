@@ -15,6 +15,7 @@ static partial class Checks
             CheckCrafts(3, "lv", LowVoltageCatalog.All.Select(d => ((int)d.id, d.name, d.description, d.prerequisites, d.cost)));
             CheckCrafts(4, "mv", PetrochemicalCatalog.All.Select(d => ((int)d.id, d.name, d.description, d.prerequisites, d.cost)));
             CheckCrafts(5, "hv", PrecisionCatalog.All.Select(d => ((int)d.id, d.name, d.description, d.prerequisites, d.cost)));
+            CheckCrafts(6, "nuclear", NuclearCatalog.All.Select(d => ((int)d.id, d.name, d.description, d.prerequisites, d.cost)));
             Require(nodes.Length == craftCount + 7, "extra or missing technology nodes");
 
             for (int era = 0; era <= 6; era++)
@@ -29,7 +30,7 @@ static partial class Checks
             var checkedKeys = new HashSet<int>();
             var active = new HashSet<int>();
             foreach (var node in nodes) Visit(node);
-            Require(TechnologyTreeModel.Find(-1) == null && TechnologyTreeModel.Find(601) == null, "unknown key resolved");
+            Require(TechnologyTreeModel.Find(-1) == null && TechnologyTreeModel.Find(609) == null, "unknown key resolved");
 
             void CheckCrafts(int era, string command, IEnumerable<(int id, string name, string description, int mask, int[] cost)> catalog)
             {

@@ -156,6 +156,7 @@ namespace DeadCircuit
                 case "lv": ResearchLowVoltage(p, cmd.arg); return;
                 case "mv": ResearchPetrochemical(p, cmd.arg); return;
                 case "hv": ResearchPrecision(p, cmd.arg); return;
+                case "nuclear": ResearchNuclear(p, cmd.arg); return;
                 case "prospect": ProspectPetrochemical(p); return;
                 case "mill": Mill(p, cmd.x, cmd.y); return;
                 case "interact": case "build": case "repair": case "dismantle": case "recipe": case "configure":
