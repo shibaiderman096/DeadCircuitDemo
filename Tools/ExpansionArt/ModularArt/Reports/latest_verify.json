@@ -1,16 +1,16 @@
 {
   "status": "pass",
-  "sprites": 25,
-  "uniqueKeys": 25,
-  "uniqueFrames": 25,
+  "sprites": 23,
+  "uniqueKeys": 23,
+  "uniqueFrames": 23,
   "size": [
     288,
-    144
+    108
   ],
   "logicalPixels": 32,
   "pitch": 36,
   "gutter": 2,
-  "sourceRectangles": 2204,
+  "sourceRectangles": 2154,
   "integerGrid": true,
   "paletteColors": 24,
   "usedColors": 17,
@@ -19,7 +19,7 @@
   "partialAlphaPixels": 0,
   "offPalettePixels": 0,
   "gutterOpaquePixels": 0,
-  "unusedSlots": 7,
+  "unusedSlots": 1,
   "unusedSlotOpaquePixels": 0,
   "wallMasks": 16,
   "wallCoverageMinMax": [
@@ -55,11 +55,11 @@
       2
     ]
   },
-  "legacySpriteCount": 241,
+  "legacySpriteCount": 206,
   "legacyKeyCollisions": 0,
   "protectedFilesChecked": 7,
-  "pngSHA256": "50e936c4853cbec3281eed096b84d103edf125c44ed6e0cd90efc000bf7bfb43",
-  "svgSHA256": "0cd59e6c129dc339ae158d1af2c93551b2380cde5a40ba4cf9c3fcff5bb0856a",
+  "pngSHA256": "68f8f04fbfe9728a62eac1bbdfe594f1d0c3420ded239ea9246952706f2830ae",
+  "svgSHA256": "6e09ce00a69d77ec8171b190d80bd8f87270aec63d2c4ae1a6beaaaed252768f",
   "frames": [
     {
       "key": "machine_31",
@@ -175,29 +175,6 @@
       "key": "floor_room",
       "opaquePixels": 1024,
       "sha256": "060db8a3b81409f1552fbf909323572ae86722a51cbbfd576d83ba904a22af57"
-    },
-    {
-      "key": "roof_tile",
-      "opaquePixels": 1024,
-      "sha256": "894784d9282e5b4869174d32eb91f1a4da7da6eef6479a9aaec5fa03c71543e5"
-    },
-    {
-      "key": "cluster_link",
-      "opaquePixels": 192,
-      "sha256": "04e2763a7c152e7f7f32cd00d764e08cfc88248634211538581719e1579dab49"
     }
-  ],
-  "repeatSourceGenerationIdentical": true,
-  "renderMetadata": "Renders\\run_004\\codeart-meta.json",
-  "art_source": "code",
-  "disclosure": "code-drawn, no image model",
-  "reviewSheets": [
-    "Review\\module_footprints_4x.png",
-    "Review\\module_footprints_native.png",
-    "Review\\modules_contact_1x.png",
-    "Review\\modules_contact_4x.png",
-    "Review\\modules_native_light_dark.png",
-    "Review\\room_assembly_3x.png",
-    "Review\\room_assembly_native.png"
   ]
 }

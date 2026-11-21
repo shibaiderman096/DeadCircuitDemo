@@ -1,6 +1,6 @@
 {
   "width": 288,
-  "height": 144,
+  "height": 108,
   "sprites": [
     {
       "name": "machine_31",
@@ -160,20 +160,6 @@
       "name": "floor_room",
       "x": 218,
       "y": 74,
-      "w": 32,
-      "h": 32
-    },
-    {
-      "name": "roof_tile",
-      "x": 254,
-      "y": 74,
-      "w": 32,
-      "h": 32
-    },
-    {
-      "name": "cluster_link",
-      "x": 2,
-      "y": 110,
       "w": 32,
       "h": 32
     }

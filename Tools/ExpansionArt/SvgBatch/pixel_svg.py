@@ -1,4 +1,4 @@
-"""Original integer-grid SVG authoring. PNGs are exported by svg_render.py, not Pillow."""
+"""Integer-grid SVG authoring; the current exporter rasterizes with local resvg."""
 from pathlib import Path
 from html import escape
 import json
@@ -60,9 +60,8 @@ class Sprite:
             out[grown&~mask]=NAMES.index('ink')
         return out
 
-def export_svg(stem,sprites,cols=16):
+def build_svg(stem,sprites,cols=16):
     rows=math.ceil(len(sprites)/cols);w=cols*36;h=rows*36
-    sources=ROOT/'Sources';sources.mkdir(exist_ok=True)
     parts=[f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" shape-rendering="crispEdges">',
            '<style>'+''.join('.c-'+n+'{fill:'+v+'}' for n,v in PALETTE.items())+'</style>']
     atlas={'width':w,'height':h,'sprites':[]}; catalog=[]
@@ -83,7 +82,13 @@ def export_svg(stem,sprites,cols=16):
         atlas['sprites'].append({'name':s.name,'x':x,'y':y,'w':32,'h':32})
         catalog.append({'name':s.name,'label':s.label,'pivot':[.5,.5],'pixelsPerUnit':32})
     parts.append('</svg>')
-    (sources/(stem+'.svg')).write_text('\n'.join(parts),encoding='utf-8')
+    return '\n'.join(parts), atlas, catalog
+
+
+def export_svg(stem,sprites,cols=16):
+    source,atlas,catalog=build_svg(stem,sprites,cols)
+    sources=ROOT/'Sources';sources.mkdir(exist_ok=True)
+    (sources/(stem+'.svg')).write_text(source,encoding='utf-8')
     (sources/(stem+'.layout.json')).write_text(json.dumps(atlas,indent=2),encoding='utf-8')
     (sources/(stem+'.catalog.json')).write_text(json.dumps(catalog,indent=2),encoding='utf-8')
-    return {'atlas':stem,'sprites':len(sprites),'width':w,'height':h}
+    return {'atlas':stem,'sprites':len(sprites),'width':atlas['width'],'height':atlas['height']}

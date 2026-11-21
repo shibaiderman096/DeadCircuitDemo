@@ -72,10 +72,11 @@ def review_sheets(png_path, layout):
     # checker backgrounds, human-readable review labels and footprint grids.
     font = ImageFont.load_default(size=11)
     names = [e["name"] for e in layout["sprites"]]
+    rows = (len(names)+7)//8
     for scale in (1, 4):
         side = 32*scale
         cw, ch = max(100, side+16), side+42
-        sheet = Image.new("RGB", (8*cw, 4*ch), "#192829")
+        sheet = Image.new("RGB", (8*cw, rows*ch), "#192829")
         draw = ImageDraw.Draw(sheet)
         for i, key in enumerate(names):
             x, y = (i % 8)*cw, (i//8)*ch

@@ -258,33 +258,9 @@ def floor_room():
     return s
 
 
-def roof_tile():
-    s = Sprite("roof_tile", "Rusted roof tiles / one tile, no building facade", role="roof")
-    s.rect(0, 0, 32, 32, "soil")
-    for y in range(0, 32, 8):
-        s.rect(0, y, 32, 1, "tan").rect(0, y+1, 32, 5, "rust")
-        s.rect(0, y+6, 32, 1, "brown")
-        for x in range((y//8 % 2)*8, 32, 16):
-            s.rect(x, y+1, 1, 6, "soil")
-            s.rect(x+1, y+1, 1, 4, "brown")
-            s.dot(x+4, y+2, "tan")
-    return s
-
-
-def cluster_link():
-    s = Sprite("cluster_link", "Cluster connection / separate overlay marker", role="marker")
-    # A small coupler, intentionally mostly transparent.
-    s.rect(8, 13, 16, 6, "ink").rect(9, 14, 14, 4, "cyan")
-    s.rect(10, 14, 12, 1, "ice")
-    for x in (5, 22):
-        s.rect(x, 10, 5, 12, "ink").rect(x+1, 11, 3, 10, "steel")
-        s.rect(x+1, 11, 3, 1, "light").dot(x+2, 13, "teal").dot(x+2, 19, "light")
-    return s
-
-
 def all_sprites():
     return [door(False), door(True), chamber(), chimney(), pump(), engine(),
-            *(wall(i) for i in range(16)), floor_room(), roof_tile(), cluster_link()]
+            *(wall(i) for i in range(16)), floor_room()]
 
 
 def write_sources():

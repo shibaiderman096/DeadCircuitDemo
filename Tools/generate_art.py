@@ -5,7 +5,7 @@ and rasterized into Tools/protagonist-sheet.png for the atlas builder. Terrain a
 environment props are authored in Tools/scene-art/*.svg; remaining art uses Pillow.
 Weapon and equipment icon SVGs live in Tools/weapon-art and Tools/equipment-art.
 
-Run: python Tools/generate_art.py
+Run: python Tools/generate_art.py [--base-only]
 Outputs only Assets/DeadCircuit/Resources/Art. Atlas rectangles use PNG top-left
 coordinates; atlas.json also records a bottom-left normalized Sprite pivot.
 """
@@ -300,22 +300,6 @@ def decoration(kind):
         for x, y, s in ((18, 35, 7), (34, 41, 10), (38, 28, 6), (22, 46, 5)):
             d.polygon([(x-s, y+2), (x-s+2, y-s), (x+3, y-s+1), (x+s, y+4)], fill=INK)
             d.polygon([(x-s+2, y), (x-s+4, y-s+2), (x+2, y-s+1), (x+s-2, y+1)], fill='#777965')
-    elif kind == 'barrel':
-        d.rectangle((24, 24, 40, 48), fill=INK)
-        d.rectangle((26, 24, 38, 47), fill=RUST)
-        d.ellipse((24, 19, 40, 29), fill=ORANGE, outline=INK, width=2)
-        for y in (31, 42):
-            d.line((25, y, 39, y), fill=STEEL, width=2)
-        d.rectangle((29, 34, 35, 38), fill=CREAM)
-    elif kind == 'decals':
-        d.polygon([(7, 46), (14, 43), (22, 45), (29, 42), (38, 45),
-                   (45, 40), (55, 43), (51, 48), (41, 49), (33, 52),
-                   (21, 50), (13, 53), (7, 51)], fill=DARK)
-        d.rectangle((12, 46, 20, 48), fill=STEEL)
-        d.rectangle((28, 44, 37, 46), fill='#685841')
-        d.rectangle((46, 42, 52, 44), fill=RUST)
-        d.rectangle((19, 51, 24, 53), fill=CREAM)
-        d.rectangle((39, 49, 43, 51), fill=ORANGE)
     elif kind == 'shadow':
         d.ellipse((9, 23, 55, 43), fill=(7, 18, 19, 100))
         d.ellipse((16, 27, 48, 39), fill=(7, 18, 19, 65))
@@ -466,13 +450,13 @@ def environment_overrides():
         raise ValueError(f'environment.svg must render at 256x192, got {sheet.size}')
     names = ('tree_0', 'tree_1', 'tree_2', 'node_ore',
              'node_scrap', 'node_crate', 'node_wall', 'car',
-             'tuft', 'rubble', 'barrel', 'decals')
+             'tuft', 'rubble')
     return {name: sheet.crop(((index % 4) * CELL, (index // 4) * CELL,
                               (index % 4 + 1) * CELL, (index // 4 + 1) * CELL)).copy()
             for index, name in enumerate(names)}
 
 
-def main(weapons_only=False, equipment_only=False, avatar_only=False):
+def main(weapons_only=False, equipment_only=False, avatar_only=False, base_only=False):
     from generate_weapon_art import generate as generate_weapons
     from generate_equipment_art import generate as generate_equipment
     from generate_avatar_art import generate as generate_avatar
@@ -515,7 +499,7 @@ def main(weapons_only=False, equipment_only=False, avatar_only=False):
     for kind in ('wall', 'generator', 'miner', 'belt', 'smelter', 'assembler', 'turret', 'chest'):
         for rotation in range(4):
             add(f'build_{kind}_{rotation}', machine(kind, rotation), 52, (.5, .5))
-    for name in ('car', 'tuft', 'rubble', 'barrel', 'decals', 'shadow', 'arrow', 'rotor',
+    for name in ('car', 'tuft', 'rubble', 'shadow', 'arrow', 'rotor',
                  'turret_barrel', 'glow', 'ring', 'hit', 'blood', 'pixel'):
         add(name, decoration(name))
     for i in range(7):
@@ -541,9 +525,10 @@ def main(weapons_only=False, equipment_only=False, avatar_only=False):
                           atlas_size=atlas.size, terrain_tiles=40, edge_tiles=20,
                           files={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in
                                  (OUT/'sprites.png', OUT/'terrain.png', OUT/'atlas.json')}), ensure_ascii=False))
-    generate_weapons()
-    generate_equipment()
-    generate_avatar()
+    if not base_only:
+        generate_weapons()
+        generate_equipment()
+        generate_avatar()
 
 
 if __name__ == '__main__':
@@ -551,6 +536,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=__doc__)
     scope = parser.add_mutually_exclusive_group()
+    scope.add_argument('--base-only', action='store_true', help='Generate only the base sprites and terrain atlases')
     scope.add_argument('--weapons-only', action='store_true', help='Generate only the dedicated weapon atlas')
     scope.add_argument('--equipment-only', action='store_true', help='Generate only the equipment icon atlas')
     scope.add_argument('--avatar-only', action='store_true', help='Generate only the modular survivor atlas')
@@ -562,6 +548,7 @@ if __name__ == '__main__':
         runpy.run_path(str(Path(__file__).parent / 'ExpansionArt/ExteriorArt/export.py'),
                        run_name='__main__')
         raise SystemExit(0)
-    main(weapons_only=args.weapons_only, equipment_only=args.equipment_only, avatar_only=args.avatar_only)
+    main(weapons_only=args.weapons_only, equipment_only=args.equipment_only, avatar_only=args.avatar_only,
+         base_only=args.base_only)
 
 

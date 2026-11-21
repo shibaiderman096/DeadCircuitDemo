@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="288" height="144" viewBox="0 0 288 144" shape-rendering="crispEdges">
+<svg xmlns="http://www.w3.org/2000/svg" width="288" height="108" viewBox="0 0 288 108" shape-rendering="crispEdges">
 <style>.c-ink{fill:#192829}.c-dark{fill:#253b3b}.c-shadow{fill:#344a43}.c-steel{fill:#536a68}.c-light{fill:#8ba39a}.c-cream{fill:#ddd5ac}.c-white{fill:#eee9d3}.c-soil{fill:#503e32}.c-brown{fill:#76533b}.c-tan{fill:#aa8054}.c-sand{fill:#c4ab75}.c-rust{fill:#9b5338}.c-amber{fill:#e59a50}.c-gold{fill:#edc566}.c-red{fill:#b75446}.c-rose{fill:#d68169}.c-leaf{fill:#527445}.c-green{fill:#739650}.c-olive{fill:#81824a}.c-teal{fill:#80d8bc}.c-cyan{fill:#4c9e9b}.c-ice{fill:#aed5d2}.c-blue{fill:#497b86}.c-purple{fill:#796175}</style>
 <g id="machine_31" transform="translate(2 2)"><title>Closed doorway / Door</title>
 <rect class="c-ink" x="2" y="9" width="4" height="14"/>
@@ -2199,59 +2199,5 @@
 <rect class="c-steel" x="23" y="9" width="2" height="1"/>
 <rect class="c-steel" x="7" y="7" width="1" height="1"/>
 <rect class="c-dark" x="27" y="26" width="1" height="1"/>
-</g>
-<g id="roof_tile" transform="translate(254 74)"><title>Rusted roof tiles / one tile, no building facade</title>
-<rect class="c-soil" x="0" y="0" width="32" height="32"/>
-<rect class="c-tan" x="0" y="0" width="32" height="1"/>
-<rect class="c-rust" x="0" y="1" width="32" height="5"/>
-<rect class="c-brown" x="0" y="6" width="32" height="1"/>
-<rect class="c-soil" x="0" y="1" width="1" height="6"/>
-<rect class="c-brown" x="1" y="1" width="1" height="4"/>
-<rect class="c-tan" x="4" y="2" width="1" height="1"/>
-<rect class="c-soil" x="16" y="1" width="1" height="6"/>
-<rect class="c-brown" x="17" y="1" width="1" height="4"/>
-<rect class="c-tan" x="20" y="2" width="1" height="1"/>
-<rect class="c-tan" x="0" y="8" width="32" height="1"/>
-<rect class="c-rust" x="0" y="9" width="32" height="5"/>
-<rect class="c-brown" x="0" y="14" width="32" height="1"/>
-<rect class="c-soil" x="8" y="9" width="1" height="6"/>
-<rect class="c-brown" x="9" y="9" width="1" height="4"/>
-<rect class="c-tan" x="12" y="10" width="1" height="1"/>
-<rect class="c-soil" x="24" y="9" width="1" height="6"/>
-<rect class="c-brown" x="25" y="9" width="1" height="4"/>
-<rect class="c-tan" x="28" y="10" width="1" height="1"/>
-<rect class="c-tan" x="0" y="16" width="32" height="1"/>
-<rect class="c-rust" x="0" y="17" width="32" height="5"/>
-<rect class="c-brown" x="0" y="22" width="32" height="1"/>
-<rect class="c-soil" x="0" y="17" width="1" height="6"/>
-<rect class="c-brown" x="1" y="17" width="1" height="4"/>
-<rect class="c-tan" x="4" y="18" width="1" height="1"/>
-<rect class="c-soil" x="16" y="17" width="1" height="6"/>
-<rect class="c-brown" x="17" y="17" width="1" height="4"/>
-<rect class="c-tan" x="20" y="18" width="1" height="1"/>
-<rect class="c-tan" x="0" y="24" width="32" height="1"/>
-<rect class="c-rust" x="0" y="25" width="32" height="5"/>
-<rect class="c-brown" x="0" y="30" width="32" height="1"/>
-<rect class="c-soil" x="8" y="25" width="1" height="6"/>
-<rect class="c-brown" x="9" y="25" width="1" height="4"/>
-<rect class="c-tan" x="12" y="26" width="1" height="1"/>
-<rect class="c-soil" x="24" y="25" width="1" height="6"/>
-<rect class="c-brown" x="25" y="25" width="1" height="4"/>
-<rect class="c-tan" x="28" y="26" width="1" height="1"/>
-</g>
-<g id="cluster_link" transform="translate(2 110)"><title>Cluster connection / separate overlay marker</title>
-<rect class="c-ink" x="8" y="13" width="16" height="6"/>
-<rect class="c-cyan" x="9" y="14" width="14" height="4"/>
-<rect class="c-ice" x="10" y="14" width="12" height="1"/>
-<rect class="c-ink" x="5" y="10" width="5" height="12"/>
-<rect class="c-steel" x="6" y="11" width="3" height="10"/>
-<rect class="c-light" x="6" y="11" width="3" height="1"/>
-<rect class="c-teal" x="7" y="13" width="1" height="1"/>
-<rect class="c-light" x="7" y="19" width="1" height="1"/>
-<rect class="c-ink" x="22" y="10" width="5" height="12"/>
-<rect class="c-steel" x="23" y="11" width="3" height="10"/>
-<rect class="c-light" x="23" y="11" width="3" height="1"/>
-<rect class="c-teal" x="24" y="13" width="1" height="1"/>
-<rect class="c-light" x="24" y="19" width="1" height="1"/>
 </g>
 </svg>

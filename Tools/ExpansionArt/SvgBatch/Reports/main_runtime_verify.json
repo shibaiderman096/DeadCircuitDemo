@@ -1,1 +1,458 @@
-{"status": "pass", "sprites": 241, "uniqueFrames": 241, "atlases": [{"atlas": "icons", "sprites": 90, "size": [576, 216], "sha256": "16bf80d4b170cccbce0a472b6448013315ea9146f0e89f1e2a49032815aad108"}, {"atlas": "world", "sprites": 151, "size": [576, 360], "sha256": "0a9b5a411489e6885eeb2bdca69fbaf00f5577b36972ab4885e77a453258eb5f"}], "enumContracts": {"FoodKind": 31, "GearKind": 19, "PartKind": 7, "ItemKind": 25, "NodeKind": 8, "CreatureKind": 12}, "sourcePixelEquality": true, "transparentGutters": true}
+{
+  "status": "pass",
+  "sprites": 206,
+  "uniqueFrames": 206,
+  "atlases": [
+    {
+      "atlas": "icons",
+      "sprites": 82,
+      "size": [
+        576,
+        216
+      ],
+      "sha256": "b7b63e882efd0c3479d1d462df947a8eb35d44953d96b76ebb458c25c41b8217"
+    },
+    {
+      "atlas": "world",
+      "sprites": 124,
+      "size": [
+        576,
+        288
+      ],
+      "sha256": "bfe76a92ee5c2bc837fc6982ff4b326eefea50fc2868b6eb8ad3c6adc75abcf2"
+    }
+  ],
+  "runtimeCoverage": {
+    "FoodKind": {
+      "total": 31,
+      "directFrames": 31,
+      "fallbackOrAlias": [],
+      "groundPickupPresentation": [],
+      "unresolved": []
+    },
+    "GearKind": {
+      "total": 20,
+      "directFrames": 19,
+      "fallbackOrAlias": [
+        {
+          "key": "gear_19",
+          "enum": "RadiationSuit",
+          "uses": "gear_17"
+        }
+      ],
+      "groundPickupPresentation": [],
+      "unresolved": []
+    },
+    "PartKind": {
+      "total": 7,
+      "directFrames": 7,
+      "fallbackOrAlias": [],
+      "groundPickupPresentation": [],
+      "unresolved": []
+    },
+    "ItemKind": {
+      "total": 66,
+      "directFrames": 25,
+      "fallbackOrAlias": [
+        {
+          "key": "item_25",
+          "enum": "Stone",
+          "uses": "item_1"
+        },
+        {
+          "key": "item_26",
+          "enum": "Clay",
+          "uses": "item_7"
+        },
+        {
+          "key": "item_27",
+          "enum": "Charcoal",
+          "uses": "item_4"
+        },
+        {
+          "key": "item_28",
+          "enum": "Brick",
+          "uses": "item_3"
+        },
+        {
+          "key": "item_29",
+          "enum": "IronPlate",
+          "uses": "item_2"
+        },
+        {
+          "key": "item_30",
+          "enum": "Gear",
+          "uses": "item_3"
+        },
+        {
+          "key": "item_31",
+          "enum": "Bearing",
+          "uses": "item_3"
+        },
+        {
+          "key": "item_32",
+          "enum": "Coal",
+          "uses": "item_4"
+        },
+        {
+          "key": "item_33",
+          "enum": "Limestone",
+          "uses": "item_1"
+        },
+        {
+          "key": "item_34",
+          "enum": "FireClay",
+          "uses": "item_1"
+        },
+        {
+          "key": "item_35",
+          "enum": "Coke",
+          "uses": "item_4"
+        },
+        {
+          "key": "item_36",
+          "enum": "RefractoryBrick",
+          "uses": "item_3"
+        },
+        {
+          "key": "item_37",
+          "enum": "PigIron",
+          "uses": "item_2"
+        },
+        {
+          "key": "item_38",
+          "enum": "SteelPlate",
+          "uses": "item_2"
+        },
+        {
+          "key": "item_39",
+          "enum": "PipeFitting",
+          "uses": "item_3"
+        },
+        {
+          "key": "item_40",
+          "enum": "CopperWire",
+          "uses": "item_8"
+        },
+        {
+          "key": "item_41",
+          "enum": "Insulator",
+          "uses": "item_2"
+        },
+        {
+          "key": "item_42",
+          "enum": "Cable",
+          "uses": "item_8"
+        },
+        {
+          "key": "item_43",
+          "enum": "Coil",
+          "uses": "item_8"
+        },
+        {
+          "key": "item_44",
+          "enum": "Motor",
+          "uses": "item_11"
+        },
+        {
+          "key": "item_45",
+          "enum": "Relay",
+          "uses": "item_11"
+        },
+        {
+          "key": "item_46",
+          "enum": "CrudeOil",
+          "uses": "item_4"
+        },
+        {
+          "key": "item_47",
+          "enum": "LightFraction",
+          "uses": "item_4"
+        },
+        {
+          "key": "item_48",
+          "enum": "ChemicalFeedstock",
+          "uses": "item_12"
+        },
+        {
+          "key": "item_49",
+          "enum": "HeavyFraction",
+          "uses": "item_4"
+        },
+        {
+          "key": "item_50",
+          "enum": "Diesel",
+          "uses": "item_4"
+        },
+        {
+          "key": "item_51",
+          "enum": "Lubricant",
+          "uses": "item_4"
+        },
+        {
+          "key": "item_52",
+          "enum": "ProcessWater",
+          "uses": "item_16"
+        },
+        {
+          "key": "item_53",
+          "enum": "HotCoolant",
+          "uses": "item_16"
+        },
+        {
+          "key": "item_54",
+          "enum": "Quartz",
+          "uses": "item_1"
+        },
+        {
+          "key": "item_55",
+          "enum": "IndustrialSilicon",
+          "uses": "item_10"
+        },
+        {
+          "key": "item_56",
+          "enum": "PureSilicon",
+          "uses": "item_20"
+        },
+        {
+          "key": "item_57",
+          "enum": "Wafer",
+          "uses": "item_2"
+        },
+        {
+          "key": "item_58",
+          "enum": "Semiconductor",
+          "uses": "item_11"
+        },
+        {
+          "key": "item_59",
+          "enum": "PrecisionPart",
+          "uses": "item_3"
+        },
+        {
+          "key": "item_60",
+          "enum": "ControlModule",
+          "uses": "item_13"
+        },
+        {
+          "key": "item_61",
+          "enum": "HeatAlloy",
+          "uses": "item_9"
+        },
+        {
+          "key": "item_62",
+          "enum": "UraniumConcentrate",
+          "uses": "item_14"
+        },
+        {
+          "key": "item_63",
+          "enum": "Branch",
+          "uses": "deco_6"
+        },
+        {
+          "key": "item_64",
+          "enum": "LooseStone",
+          "uses": "node_1"
+        },
+        {
+          "key": "item_65",
+          "enum": "DryGrass",
+          "uses": "crop_3_1"
+        }
+      ],
+      "groundPickupPresentation": [],
+      "unresolved": []
+    },
+    "NodeKind": {
+      "total": 18,
+      "directFrames": 8,
+      "fallbackOrAlias": [
+        {
+          "key": "node_8",
+          "enum": "Stone",
+          "uses": "node_1"
+        },
+        {
+          "key": "node_9",
+          "enum": "Clay",
+          "uses": "node_1"
+        },
+        {
+          "key": "node_10",
+          "enum": "Coal",
+          "uses": "node_1"
+        },
+        {
+          "key": "node_11",
+          "enum": "Limestone",
+          "uses": "node_1"
+        },
+        {
+          "key": "node_12",
+          "enum": "FireClay",
+          "uses": "node_1"
+        },
+        {
+          "key": "node_13",
+          "enum": "Oil",
+          "uses": "node_1"
+        },
+        {
+          "key": "node_14",
+          "enum": "Quartz",
+          "uses": "node_1"
+        }
+      ],
+      "groundPickupPresentation": [
+        "node_15",
+        "node_16",
+        "node_17"
+      ],
+      "unresolved": []
+    },
+    "BuildKind": {
+      "total": 66,
+      "directFrames": 36,
+      "fallback": [
+        {
+          "key": "machine_36",
+          "uses": "machine_11"
+        },
+        {
+          "key": "machine_37",
+          "uses": "machine_11"
+        },
+        {
+          "key": "machine_38",
+          "uses": "machine_11"
+        },
+        {
+          "key": "machine_39",
+          "uses": "machine_14"
+        },
+        {
+          "key": "machine_40",
+          "uses": "machine_14"
+        },
+        {
+          "key": "machine_41",
+          "uses": "machine_14"
+        },
+        {
+          "key": "machine_42",
+          "uses": "machine_34"
+        },
+        {
+          "key": "machine_43",
+          "uses": "machine_7"
+        },
+        {
+          "key": "machine_44",
+          "uses": "machine_11"
+        },
+        {
+          "key": "machine_45",
+          "uses": "machine_11"
+        },
+        {
+          "key": "machine_46",
+          "uses": "machine_11"
+        },
+        {
+          "key": "machine_47",
+          "uses": "machine_11"
+        },
+        {
+          "key": "machine_48",
+          "uses": "machine_14"
+        },
+        {
+          "key": "machine_49",
+          "uses": "machine_14"
+        },
+        {
+          "key": "machine_50",
+          "uses": "machine_5"
+        },
+        {
+          "key": "machine_51",
+          "uses": "machine_8"
+        },
+        {
+          "key": "machine_52",
+          "uses": "machine_14"
+        },
+        {
+          "key": "machine_53",
+          "uses": "machine_34"
+        },
+        {
+          "key": "machine_54",
+          "uses": "machine_16"
+        },
+        {
+          "key": "machine_55",
+          "uses": "machine_7"
+        },
+        {
+          "key": "machine_56",
+          "uses": "machine_18"
+        },
+        {
+          "key": "machine_57",
+          "uses": "machine_22"
+        },
+        {
+          "key": "machine_58",
+          "uses": "machine_34"
+        },
+        {
+          "key": "machine_59",
+          "uses": "machine_4"
+        },
+        {
+          "key": "machine_60",
+          "uses": "machine_20"
+        }
+      ],
+      "knownMissingStandalone": [
+        "machine_61",
+        "machine_62"
+      ],
+      "compositeMachines": [
+        "machine_63",
+        "machine_64",
+        "machine_65"
+      ]
+    },
+    "CreatureKind": {
+      "total": 12,
+      "directFrames": 12
+    },
+    "CropKind": {
+      "total": 8,
+      "directFrames": 16
+    }
+  },
+  "authoringEquality": true,
+  "sourcePixelEquality": true,
+  "transparentGutters": true,
+  "coverageNote": "Integrity passes with reported fallbacks and known missing art; this does not claim every enum has a dedicated image.",
+  "baseline": {
+    "ref": "94e702ccca747172346539aaddb652cb6c7922cf",
+    "atlases": {
+      "world": {
+        "retainedPixelIdentical": 124,
+        "removed": 27,
+        "registrationPreserved": true,
+        "metaUnchangedIgnoringCRLF": true
+      },
+      "icons": {
+        "retainedPixelIdentical": 82,
+        "removed": 8,
+        "registrationPreserved": true,
+        "metaUnchangedIgnoringCRLF": true
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# Keep deterministic atlas output byte-identical after Windows checkouts.
+Assets/DeadCircuit/Resources/Art/Expansion/icons.json text eol=lf
+Assets/DeadCircuit/Resources/Art/Expansion/world.json text eol=lf
+Tools/ExpansionArt/SvgBatch/Sources/icons.svg text eol=lf
+Tools/ExpansionArt/SvgBatch/Sources/icons.layout.json text eol=lf
+Tools/ExpansionArt/SvgBatch/Sources/icons.catalog.json text eol=lf
+Tools/ExpansionArt/SvgBatch/Sources/world.svg text eol=lf
+Tools/ExpansionArt/SvgBatch/Sources/world.layout.json text eol=lf
+Tools/ExpansionArt/SvgBatch/Sources/world.catalog.json text eol=lf

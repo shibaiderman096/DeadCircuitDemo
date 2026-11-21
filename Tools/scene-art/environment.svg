@@ -132,28 +132,4 @@
     <path d="M12 51h5v2h-5zM29 51h8v2h-8zM47 49h6v2h-6z" fill="#685841"/>
     <path d="M20 54h4v2h-4zM41 54h4v2h-4z" fill="#9b5338"/>
   </g>
-  <g id="barrel" transform="translate(128 128)">
-    <!-- Corroded drum with a broken hazard band. -->
-    <path d="M20 24h4v-3h16v3h4v5h2v19h-3v5H21v-5h-3V29h2z" fill="#192829"/>
-    <path d="M23 25h18v3h2v18h-2v4H22v-4h-2V28h3z" fill="#9b5338"/>
-    <path d="M24 26h13v2H24zM22 30h3v14h-3z" fill="#b16643"/>
-    <path d="M21 32h22v4H21z" fill="#e59a50"/>
-    <path d="M21 33h7v2h-7zM34 33h8v2h-8z" fill="#192829"/>
-    <path d="M21 42h22v3H21z" fill="#536a68"/>
-    <path d="M23 43h17v1H23z" fill="#8ba39a"/>
-    <path d="M24 22h16v3H24zM24 48h16v3H24z" fill="#253b3b"/>
-    <path d="M26 23h4v2h-4zM36 23h3v2h-3z" fill="#8ba39a"/>
-    <path d="M37 27h3v2h-3zM27 38h4v3h-4z" fill="#685841"/>
-    <path d="M36 27h3v2h-3z" fill="#ddd5ac"/>
-  </g>
-  <g id="decals" transform="translate(192 128)">
-    <!-- Flat, subdued ground marks: cracked paint, grit and a partial hazard scuff. -->
-    <path d="M7 48h8v2H7zM12 46h2v2h-2zM15 50h5v2h-5z" fill="#536a68"/>
-    <path d="M28 44h10v2H28zM34 46h2v3h-2zM25 49h9v2h-9zM39 48h5v2h-5z" fill="#685841"/>
-    <path d="M46 39h3v2h-3zM49 41h5v2h-5zM53 43h4v2h-4z" fill="#253b3b"/>
-    <path d="M10 39h4v2h-4zM14 41h5v2h-5z" fill="#798054"/>
-    <path d="M20 53h4v2h-4zM43 53h7v2h-7zM55 50h4v2h-4z" fill="#9b5338"/>
-    <path d="M18 37h2v2h-2zM40 42h2v2h-2zM7 53h5v2H7z" fill="#ddd5ac"/>
-    <path d="M30 45h2v2h-2zM50 48h2v2h-2z" fill="#e59a50"/>
-  </g>
 </svg>

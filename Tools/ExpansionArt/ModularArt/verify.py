@@ -15,7 +15,7 @@ PROJECT = ROOT.parents[2]
 RUNTIME = PROJECT / "Assets/DeadCircuit/Resources/Art/Expansion"
 NS = "{http://www.w3.org/2000/svg}"
 KEYS = {"machine_31", "door_open", "machine_32", "machine_33",
-        "machine_34", "machine_35", "floor_room", "roof_tile", "cluster_link"}
+        "machine_34", "machine_35", "floor_room"}
 KEYS.update(f"wall_{i}" for i in range(16))
 
 
@@ -38,10 +38,12 @@ def verify(png_path=None):
     catalog = json.loads((ROOT / "Sources/modules.catalog.json").read_text(encoding="utf-8"))
     if png_path.resolve() == (RUNTIME / "modules.png").resolve():
         assert layout == json.loads((RUNTIME / "modules.json").read_text(encoding="utf-8"))
-    assert (layout["width"], layout["height"]) == (288, 144)
+    sprite_count = len(KEYS)
+    size = (8*36, ((sprite_count+7)//8)*36)
+    assert (layout["width"], layout["height"]) == size
     sprites = layout["sprites"]
-    assert len(sprites) == len(catalog) == 25
-    assert len({e["name"] for e in sprites}) == 25
+    assert len(sprites) == len(catalog) == sprite_count
+    assert len({e["name"] for e in sprites}) == sprite_count
     assert {e["name"] for e in sprites} == KEYS
     assert [e["name"] for e in sprites] == [e["name"] for e in catalog]
     footprints = {e["name"]: e["footprint"] for e in catalog}
@@ -52,8 +54,8 @@ def verify(png_path=None):
     source_path = ROOT / "Sources/modules.svg"
     source = ET.parse(source_path).getroot()
     assert source.tag == NS+"svg"
-    assert source.attrib == {"width": "288", "height": "144",
-                             "viewBox": "0 0 288 144", "shape-rendering": "crispEdges"}
+    assert source.attrib == {"width": str(size[0]), "height": str(size[1]),
+                             "viewBox": f"0 0 {size[0]} {size[1]}", "shape-rendering": "crispEdges"}
     assert all(e.tag in {NS+t for t in ("svg", "style", "g", "title", "rect")}
                for e in source.iter()), "Forbidden SVG element (bitmap/text/filter/gradient/etc.)"
     styles = source.findall(NS+"style")
@@ -64,10 +66,10 @@ def verify(png_path=None):
     assert ''.join(f'.c-{n}{{fill:{c}}}' for n, c in rules) == css
     colors = {"c-"+n: (*bytes.fromhex(c[1:]), 255) for n, c in palette.items()}
     groups = source.findall(NS+"g")
-    assert len(groups) == 25 and len(list(source)) == 26
+    assert len(groups) == sprite_count and len(list(source)) == sprite_count+1
     assert [g.get("id") for g in groups] == [e["name"] for e in sprites]
     with Image.open(png_path) as png:
-        assert png.mode == "RGBA" and png.size == (288, 144)
+        assert png.mode == "RGBA" and png.size == size
         actual = np.array(png)
     expected = np.zeros_like(actual)
     content_mask = np.zeros(actual.shape[:2], dtype=bool)
@@ -75,6 +77,7 @@ def verify(png_path=None):
     rect_count = 0
     for i, (entry, meta, group) in enumerate(zip(sprites, catalog, groups)):
         key, x, y = entry["name"], entry["x"], entry["y"]
+        assert meta["pixelsPerUnit"] == 32 and meta["pivot"] == [0.5, 0.5], key
         assert set(entry) == {"name", "x", "y", "w", "h"}
         assert all(type(entry[n]) is int for n in ("x", "y", "w", "h"))
         assert (entry["w"], entry["h"]) == (32, 32)
@@ -171,24 +174,24 @@ def verify(png_path=None):
             if mask & 4:
                 assert np.array_equal(frames[key][:, -1], frames[f"wall_{mask}"][:, 0])
     assert np.count_nonzero(frames["floor_room"][:, :, 3]) == 1024
-    assert np.count_nonzero(frames["roof_tile"][:, :, 3]) == 1024
 
     legacy_keys = []
     for stem in ("icons", "world"):
         legacy = json.loads((RUNTIME / f"{stem}.json").read_text(encoding="utf-8"))
         legacy_keys.extend(e["name"] for e in legacy["sprites"])
-    assert len(legacy_keys) == len(set(legacy_keys)) == 241
+    assert len(legacy_keys) == len(set(legacy_keys)), "duplicate keys in other atlases"
     assert not (set(legacy_keys) & KEYS), "legacy atlas key collision"
     baseline_path = ROOT / "Reports/protected_baseline.json"
     baseline = json.loads(baseline_path.read_text(encoding="utf-8")) if baseline_path.exists() else {}
-    for rel, digest in baseline.items():
-        assert sha(PROJECT / rel) == digest, f"protected file changed: {rel}"
-    return {"status": "pass", "sprites": 25, "uniqueKeys": 25, "uniqueFrames": len(digests),
-            "size": [288, 144], "logicalPixels": 32, "pitch": 36, "gutter": 2,
+    changed = [rel for rel, digest in baseline.items()
+               if not (PROJECT / rel).is_file() or sha(PROJECT / rel) != digest]
+    assert not changed, f"protected files changed: {changed}"
+    return {"status": "pass", "sprites": sprite_count, "uniqueKeys": sprite_count, "uniqueFrames": len(digests),
+            "size": list(size), "logicalPixels": 32, "pitch": 36, "gutter": 2,
             "sourceRectangles": rect_count, "integerGrid": True, "paletteColors": len(palette),
             "usedColors": len(rgba_values), "sourcePixelEquality": True,
             "sourcePixelMismatches": mismatches, "partialAlphaPixels": 0, "offPalettePixels": 0,
-            "gutterOpaquePixels": 0, "unusedSlots": 7, "unusedSlotOpaquePixels": 0,
+            "gutterOpaquePixels": 0, "unusedSlots": (size[0]//36)*(size[1]//36)-sprite_count, "unusedSlotOpaquePixels": 0,
             "wallMasks": 16, "wallCoverageMinMax": [min(wall_coverage), max(wall_coverage)],
             "wallAdjacentEdgePairs": edge_pairs, "wallEdgePixelsCompared": edge_pixels,
             "wallSeamMismatches": 0, "doorOpenClearPassageWidth": passage_width,

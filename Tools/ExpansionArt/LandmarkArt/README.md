@@ -33,7 +33,7 @@
 | `Sources/landmarks_review.svg` | 每个资源并列放在暗底和亮底；无文字 |
 | `Sources/floor_tiling_review.svg` | 六类地板各自 3×3 平铺；无文字 |
 | `Review/*_1x.png`, `Review/*_4x.png` | 原尺寸与 4× 最近邻审查图 |
-| `Reports/protected_baseline.json` | 首次写入前记录的 81 个旧美术文件 SHA-256；绝不自动重置 |
+| `Reports/protected_baseline.json` | 81个既有美术文件的保护哈希；禁止导出时自动重置，获授权的资源维护须逐项核对并显式更新 |
 | `Reports/renderer_doctor.json` | 本机 resvg-py conformance doctor 结果 |
 | `Reports/run_NNN/` | 每次导出的完整 lint/render 命令、独立校验及结果哈希 |
 | `Reports/reproducibility_baseline.json` | 首次导出时的 73 个源/运行时/审查图文件哈希 |
@@ -41,6 +41,8 @@
 | `Reports/latest_verify.json` | 最近成功导出的机器可读验证结果 |
 | `Reports/visual_review.json` | 主智能体静态图审查记录与局限 |
 | `codeart-meta.json` | SVG 源哈希、美术来源声明、渲染元数据和验证报告指针 |
+
+2026-11-22按用户要求清理未使用素材时，核对所有保留切片的像素后，仅同步本次变更所涉及的保护哈希；历史run目录和未变动项目保持原值。world、icons、modules三份PNG导入设置的保护哈希此前落后于已提交的fba429a，本次核对其与HEAD一致后同步哈希，不修改导入设置或GUID。地标的57个资源、源图、运行图及复现基准均未改变。
 
 运行时仅写入以下 4 个文件：
 

@@ -18,7 +18,7 @@ Original SVG/code-drawn pixel art; no image model, imported bitmap, gradient, fi
 
 ## Contents
 
-25 unique keys in an 8-column, 288x144 atlas. Every content rectangle is 32x32, placed at `column*36+2, row*36+2`. Each cell has a transparent 2px gutter on every side. Seven unused cells remain fully transparent.
+23 unique keys in an 8-column, 288x108 atlas. Every content rectangle is 32x32, placed at `column*36+2, row*36+2`. Each cell has a transparent 2px gutter on every side. One unused cell remains fully transparent. The unused roof and coupling overlays have been retired from the generator, SVG, catalog, runtime atlas and current review sheets.
 
 | Key | Visual / footprint |
 | --- | --- |
@@ -30,14 +30,12 @@ Original SVG/code-drawn pixel art; no image model, imported bitmap, gradient, fi
 | `machine_35` | Steam cylinder, crosshead, crank and open flywheel; 3x2 |
 | `wall_0` .. `wall_15` | Thin connected stone/metal wall segments; bit 0 east, bit 1 north, bit 2 west, bit 3 south |
 | `floor_room` | One repeatable interior concrete floor tile |
-| `roof_tile` | One roof shingle tile, without a house silhouette or facade |
-| `cluster_link` | Separate mostly-transparent module coupling overlay |
 
 The largest wall mask covers 540/1024 pixels (52.73%); even the four-way junction leaves corner areas transparent. Straight walls occupy only a narrow band, separate from floor and roof layers. Both door states match the wall east/west edge profile. The open door does not paint a lintel or sill across its passage. Rotate the sprite at integration time if an east/west passage is needed.
 
 The door jambs occupy `x=2..5` and `x=26..29`, with identical RGBA pixels in both states over `y=9..22`. The side-swung leaf is behind the west jamb and never enters `x=6..25`. The closed panel fills this complete 20px gap over `y=11..20`. The independent checker measures the longest run of columns transparent through all 32 rows instead of reporting a hard-coded width. Against the supplied 0.56-cell collision diameter (17.92px at 32px/cell), the centered opening leaves 2.08px total visual clearance, or 1.04px per side. This is static pixel clearance, not a runtime collision test.
 
-The width revision changes only `machine_31` and `door_open`; all other 23 frame hashes, the layout JSON and both equipment footprint review images remain unchanged. `Reports/door_width_revision.json` records the comparison against `Reports/door_width_revision_baseline.json`. Previous render runs are retained as history.
+The historical door-width revision changed only `machine_31` and `door_open` in the then-25-frame atlas. `Reports/door_width_revision.json` records that comparison against `Reports/door_width_revision_baseline.json`. Previous render runs and reports retain their original layouts as history. Retiring the two unused overlays preserves every pixel, label, footprint, pivot and PPU of the remaining 23 frames; their slot coordinates also stay unchanged while the fourth atlas row is removed.
 
 Machine source frames follow the existing normalized 32x32 convention. The view scales that frame to its world footprint. The engine's source flywheel is correspondingly narrow (12x18), becoming circular when its source frame is scaled to 3x2 cells. `Review/module_footprints_native.png` shows these exact nearest-neighbor footprint scales; grid lines are QA overlays only.
 
@@ -70,14 +68,15 @@ Use `export.py` to publish, since it runs validation before copying the rendered
 
 ## Verification and limits
 
-`Reports/latest_verify.json` reports exact counts, per-frame hashes/opaque areas, atlas/source hashes and the associated renderer run. It checks:
+`verify.py` prints current counts, per-frame hashes/opaque areas and atlas/source hashes. `Reports/latest_verify.json` records the current 23-frame check. Root `codeart-meta.json` records the current source hash and maintenance render check; its historical renderer pointer and prior run folders retain the previous full export. The read-only checker validates:
 
-- Exactly the 25 requested keys; unique frame pixels and no collisions with the existing 241 keys.
+- Exactly the 23 current keys; unique frame pixels and no collisions with the current icons/world keys, whose count may change independently.
 - Integer canvas, viewBox, translations, rectangle geometry and source palette; a restrictive SVG element/attribute allowlist rejects bitmap, text, external resources, gradients, opacity and filters.
 - PNG equality with an independently reconstructed image from parsed SVG rectangles, including zero opaque gutter/unused-cell pixels and binary alpha.
 - All 16 exact E/N/W/S occupancy masks and 128 possible east/west or north/south matching wall-edge pairs (4096 RGBA pixels), plus 32 wall/door joins.
 - Measured open-door continuous passage of at least 20px across all 32 rows (`x=6..25`), visual clearance against the supplied player diameter, identical jamb pixels in both states and a closed barrier filling the complete gap.
 - Chamber/pump/engine footprint metadata.
+- Centered pivots and 32 pixels per unit for every retained frame.
 - Seven pre-existing atlas/source files retain their baseline SHA-256 hashes.
 - Repeating SVG generation preserves source bytes.
 

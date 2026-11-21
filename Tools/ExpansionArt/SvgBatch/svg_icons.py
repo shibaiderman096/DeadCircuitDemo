@@ -250,26 +250,5 @@ def item(i):
         s.rect(3,21,26,8,'dark');bullet(s,6,5,20,'steel','cyan');bullet(s,16,2,23,'steel','teal');s.rect(23,19,4,7,'red').rect(24,21,2,3,'cream')
     return s
 
-def ui(i):
-    names=['ui_panel','ui_button','ui_button_down','ui_slot','ui_slot_selected','ui_windowframe','ui_tooltip','ui_progress']
-    s=Sprite(names[i],names[i],False)
-    if i in (0,5,6):
-        s.rect(1,2,30,28,'ink').rect(2,3,28,26,'steel').rect(3,4,26,24,'dark').rect(4,9,24,18,'shadow')
-        s.rect(4,5,24,3,'cyan' if i==5 else 'steel').rect(5,11,1,13,'steel')
-        if i==5:s.rect(25,5,3,3,'amber').dot(26,6,'ink')
-        if i==6:s.rect(3,4,26,2,'amber').rect(7,29,5,2,'ink')
-        if i==0:
-            for x,y in [(3,4),(27,4),(3,26),(27,26)]:s.dot(x,y,'light')
-    elif i in (1,2):
-        y=12 if i==2 else 10
-        s.rect(1,y,30,13,'ink').rect(2,y+1,28,11,'steel').rect(3,y+2,26,8,'shadow' if i==2 else 'cyan').rect(3,y+10,26,2,'dark')
-        s.rect(5,y+3,22,1,'light').rect(4,y+5,2,3,'amber')
-    elif i in (3,4):
-        s.rect(1,1,30,30,'ink').rect(2,2,28,28,'amber' if i==4 else 'steel').rect(4,4,24,24,'dark').rect(5,5,22,22,'shadow')
-        for x,y in [(5,5),(24,5),(5,24),(24,24)]:s.rect(x,y,3,3,'tan' if i==4 else 'steel')
-    elif i==7:
-        s.rect(1,12,30,9,'ink').rect(2,13,28,7,'steel').rect(3,14,26,5,'dark').rect(4,15,17,3,'teal').rect(22,14,1,5,'amber')
-    return s
-
 def all_icons():
-    return [food(i) for i in range(31)]+[gear(i) for i in range(19)]+[part(i) for i in range(7)]+[item(i) for i in range(25)]+[ui(i) for i in range(8)]
+    return [food(i) for i in range(31)]+[gear(i) for i in range(19)]+[part(i) for i in range(7)]+[item(i) for i in range(25)]

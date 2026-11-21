@@ -8,8 +8,6 @@ CREATURES='Hare Deer Boar Chicken Wolf Bear Fox Goat Cattle Sheep Duck Pheasant'
 ENEMIES='Walker Sprinter Brute Crawler Spitter Armored Burning Screamer Hazmat Frost Bomber NightElite'.split()
 ENEMY_NAMES_ZH=['普通丧尸','快跑丧尸','暴徒丧尸','爬行丧尸','喷吐丧尸','装甲丧尸','燃烧丧尸','尖啸丧尸','防化感染者','冻伤丧尸','自爆丧尸','夜行精英']
 ENEMY_PREFIXES=['普通','快跑','暴徒','爬行','喷吐','装甲','燃烧','尖啸','防化','冻伤','自爆','夜行']
-SITES='Residence Shop Warehouse Workshop Clinic Farmhouse GasStation PoliceStation School Apartment Greenhouse Substation'.split()
-SITE_NAMES_ZH=['住宅','商店','仓库','车间','诊所','农舍','加油站','警局','学校','公寓','温室','变电站']
 BIOMES='Meadow DeciduousForest ConiferousForest Desert Wetland Tundra'.split()
 
 def crop(i,stage):
@@ -167,105 +165,6 @@ def enemy(i):
         s.rect(14,19,8,6,'purple').rect(15,20,2,4,'dark').rect(3,26,4,2,'cream').rect(26,26,4,2,'cream')
     return s
 
-def bolt(s,x,y):s.rect(x,y,1,1,'light')
-def site(i):
-    # Entrances/front facades, ordered by WorldGenerationCatalog.Sites.
-    # Industrial devices are a separate machine_* contract.
-    s=Sprite('site_'+str(i),SITES[i]+' / '+SITE_NAMES_ZH[i]+' entrance')
-    if i==0:
-        # Gabled cottage, chimney, porch lamp and domestic window.
-        s.rect(6,12,21,17,'tan').rect(22,4,3,7,'soil')
-        for x,y,w in [(13,4,7),(10,6,13),(7,8,19),(4,10,25)]:s.rect(x,y,w,3,'rust')
-        s.rect(7,13,19,1,'sand').rect(17,19,6,10,'dark').dot(21,24,'gold')
-        s.rect(9,17,5,6,'blue').rect(11,17,1,6,'light').rect(9,19,5,1,'light')
-        s.rect(16,17,9,2,'brown').rect(6,28,22,2,'steel').dot(25,20,'gold')
-    elif i==1:
-        # Broad shopfront, striped canvas awning, display and glazed entry.
-        s.rect(4,7,25,22,'tan').rect(5,5,23,4,'dark').rect(11,6,11,2,'gold')
-        s.rect(3,11,27,6,'cream')
-        for x in [4,10,16,22,28]:s.rect(x,11,2,6,'rust')
-        s.rect(6,19,12,8,'dark').rect(7,20,10,5,'cyan')
-        s.rect(8,23,3,2,'sand').rect(13,22,3,3,'leaf')
-        s.rect(21,18,6,11,'dark').rect(22,19,4,6,'blue').dot(25,26,'amber').rect(4,28,25,2,'soil')
-    elif i==2:
-        # Wide loading bay with corrugated shutter and lintel windows.
-        s.rect(3,10,27,19,'steel').rect(5,7,23,3,'light').rect(10,5,13,2,'light')
-        s.rect(6,12,21,4,'dark')
-        for x in [7,12,17,22]:s.rect(x,13,3,2,'cyan')
-        s.rect(7,18,20,10,'dark').rect(9,19,16,8,'light')
-        for y in [21,24]:s.rect(9,y,16,1,'steel')
-        s.rect(4,27,25,3,'soil').rect(4,23,4,4,'brown').rect(5,24,2,1,'sand')
-    elif i==3:
-        # Sawtooth factory roof and repair-bay frontage with spanner sign.
-        s.rect(3,12,26,17,'brown')
-        for x in [3,12,21]:
-            s.rect(x,10,8,4,'steel').rect(x+3,7,5,3,'steel').rect(x+6,5,2,4,'light')
-        s.rect(5,18,12,11,'dark').rect(6,19,10,8,'steel')
-        for y in [21,24]:s.rect(6,y,10,1,'light')
-        s.rect(20,20,6,9,'dark').rect(19,13,8,5,'ink')
-        s.rect(21,14,4,1,'cream').rect(20,15,3,2,'cream').rect(23,16,2,1,'cream')
-        s.rect(3,28,26,2,'soil')
-    elif i==4:
-        # Pale clinic, high medical cross and double glass doors.
-        s.rect(5,9,23,20,'light').rect(4,7,25,3,'cream').rect(12,3,9,9,'cream')
-        s.rect(15,4,3,7,'red').rect(13,6,7,3,'red')
-        s.rect(12,18,9,11,'dark').rect(13,19,7,8,'cyan').rect(16,19,1,9,'light')
-        s.rect(7,16,3,6,'blue').rect(23,16,3,6,'blue').rect(4,28,25,2,'steel')
-    elif i==5:
-        # Gambrel barn front, loft and cross-braced timber doors.
-        s.rect(6,13,21,16,'rust').rect(4,11,25,4,'brown').rect(7,7,19,4,'brown').rect(11,4,11,3,'tan')
-        s.rect(14,10,6,5,'dark').rect(15,11,4,3,'gold').rect(10,18,14,11,'dark')
-        s.rect(11,19,12,9,'brown').rect(16,19,1,9,'sand')
-        s.line(11,19,16,27,'sand').line(22,19,17,27,'sand')
-        s.rect(4,25,5,4,'gold').rect(4,26,5,1,'tan').rect(6,25,1,4,'tan')
-    elif i==6:
-        # Fuel canopy over forecourt, pump and attached convenience kiosk.
-        s.rect(18,14,11,15,'tan').rect(17,12,13,3,'rust').rect(23,18,4,11,'dark')
-        s.rect(19,18,3,5,'cyan').rect(4,10,2,18,'steel').rect(15,10,2,18,'steel')
-        s.rect(2,7,27,5,'cream').rect(2,10,27,2,'rust').rect(11,8,9,1,'gold')
-        s.rect(7,19,5,9,'red').rect(8,20,3,3,'light').rect(8,24,3,1,'dark')
-        s.rect(12,20,2,1,'dark').rect(13,21,1,5,'dark').rect(3,28,26,2,'soil')
-    elif i==7:
-        # Civic precinct entrance, shield badge, paired blue warning lights.
-        s.rect(5,10,23,19,'steel').rect(4,8,25,3,'light').rect(11,5,12,9,'dark')
-        s.rect(14,6,6,5,'gold').rect(15,11,4,2,'gold').rect(16,7,2,4,'blue')
-        s.rect(12,19,10,10,'dark').rect(13,20,8,7,'blue').rect(17,20,1,8,'light')
-        for x in [7,24]:s.rect(x,17,2,6,'cyan').rect(x,14,2,2,'teal')
-        s.rect(3,29,27,1,'light')
-    elif i==8:
-        # Low school wings, central bell tower and open-book entry plaque.
-        s.rect(3,14,27,15,'tan').rect(2,12,28,3,'rust').rect(12,8,10,21,'sand')
-        s.rect(11,7,12,3,'brown').rect(14,3,6,5,'brown').rect(15,4,4,3,'gold')
-        s.rect(14,22,6,7,'dark').rect(13,14,4,5,'cream').rect(18,14,4,5,'cream').rect(17,15,1,5,'soil')
-        for x in [5,25]:s.rect(x,18,3,5,'blue').rect(x,20,3,1,'light')
-        s.rect(10,28,14,2,'steel')
-    elif i==9:
-        # Tall, narrow multi-storey apartment block with repeated balconies.
-        s.rect(7,4,20,25,'brown').rect(6,3,22,3,'steel')
-        for y in [8,14,20]:
-            for x in [10,20]:s.rect(x,y,4,4,'blue').rect(x,y,4,1,'light')
-            s.rect(8,y+4,17,1,'tan')
-        s.rect(15,24,5,5,'dark').rect(14,23,7,1,'steel').dot(18,27,'gold')
-        s.rect(6,29,22,1,'light')
-    elif i==10:
-        # Stepped glazed arch, structural mullions, planted rows and glass door.
-        s.rect(4,12,25,17,'blue').rect(7,8,19,5,'cyan').rect(11,5,11,4,'cyan')
-        s.rect(11,4,11,1,'light').rect(7,7,19,1,'light').rect(4,11,25,1,'light')
-        for x in [4,10,22,28]:s.rect(x,12,1,16,'light')
-        s.rect(16,5,1,24,'light').rect(4,17,25,1,'light').rect(4,27,25,2,'brown')
-        for x in [6,23]:s.rect(x,23,4,3,'soil').rect(x+1,20,2,4,'leaf').rect(x,21,4,1,'green')
-        s.rect(13,19,8,10,'dark').rect(14,20,6,7,'cyan').rect(16,20,1,8,'light').dot(19,24,'gold')
-    elif i==11:
-        # Fenced utility compound entrance, control hut and hazard gate plaque.
-        s.rect(5,11,10,17,'steel').rect(4,9,12,3,'light').rect(7,14,5,4,'cyan').rect(8,21,5,7,'dark')
-        s.rect(20,6,2,13,'brown').rect(17,6,10,2,'steel')
-        for x in [18,24]:s.rect(x,4,2,6,'light').rect(x-1,5,4,1,'cream')
-        for x in [3,16,28]:s.rect(x,18,1,12,'steel')
-        s.rect(3,20,26,1,'light').rect(3,28,26,1,'light')
-        for x in [6,10,13,19,23,26]:s.rect(x,21,1,7,'steel')
-        s.rect(17,21,9,6,'gold').rect(21,21,2,2,'ink').rect(20,23,2,2,'ink').dot(21,25,'ink')
-    return s
-
 def biome(i):
     s=Sprite('biome_'+str(i),BIOMES[i]+' ecology cluster')
     if i==0:
@@ -336,31 +235,13 @@ def terrain(i):
     yy,xx=np.indices((32,32));s.p=terrain_field(i,xx,yy).astype(np.int16)
     return s
 
-def deco(i):
-    labels=['berry shrub','felled stump','fallen log','ore outcrop','reed fan','mushroom patch','dead tree','hazard barrel']
-    s=Sprite('deco_'+str(i),labels[i])
-    if i==0:
-        for x,y in [(6,16),(12,11),(19,15),(10,21)]:s.oval(x,y,10,8,'leaf')
-        for x,y in [(9,18),(18,16),(17,22)]:s.rect(x,y,2,2,'red')
-        s.rect(15,26,3,3,'brown')
-    elif i==1:
-        s.rect(8,14,16,13,'brown').oval(6,10,20,9,'tan').oval(10,12,12,5,'sand').rect(12,14,8,1,'brown').rect(7,25,4,4,'soil').rect(23,25,4,4,'soil')
-    elif i==2:
-        s.rect(5,12,23,12,'brown').rect(7,13,19,2,'tan').oval(3,12,9,12,'sand').oval(5,14,5,8,'tan').rect(7,16,1,4,'brown').rect(18,9,3,5,'soil')
-    elif i==3:
-        s.rect(5,18,23,10,'steel').rect(8,12,15,10,'steel').rect(16,8,8,9,'light').rect(7,20,7,3,'rust').rect(18,13,3,6,'amber').rect(20,23,5,3,'brown')
-    elif i==4:
-        for x,y in [(6,11),(10,6),(15,3),(20,7),(25,12)]:s.line(16,28,x,y,'leaf').rect(x,y,1,5,'green')
-    elif i==5:
-        for x,y,z in [(5,18,8),(15,11,12),(20,19,8)]:
-            s.rect(x+z//2-1,y+4,3,7,'cream').oval(x,y,z,6,'rust').rect(x+2,y+1,2,1,'amber')
-    elif i==6:
-        s.rect(14,8,5,21,'soil').line(15,17,7,9,'brown',2).line(17,12,23,6,'brown',2).rect(6,5,2,7,'brown').rect(23,3,2,7,'brown').rect(15,2,3,9,'brown').rect(10,28,13,2,'soil')
-    elif i==7:
-        s.rect(8,6,17,22,'steel').rect(7,5,19,3,'light').rect(7,25,19,3,'dark').rect(9,13,15,8,'amber').line(10,14,14,20,'ink',2).line(18,14,22,20,'ink',2).rect(11,9,1,3,'light').rect(20,8,3,2,'brown')
+def dead_tree():
+    # Also consumed by the item_63 / Branch fallback and ground pickups.
+    s=Sprite('deco_6','dead tree')
+    s.rect(14,8,5,21,'soil').line(15,17,7,9,'brown',2).line(17,12,23,6,'brown',2).rect(6,5,2,7,'brown').rect(23,3,2,7,'brown').rect(15,2,3,9,'brown').rect(10,28,13,2,'soil')
     return s
 
-FX=['rain','snow','dust','fog','muzzle','spark','flame','ice','soil','poison','wave','lightning','ember','fire_large','frost_cloud','ice_shard','hit_flesh','hit_metal','hit_wood','muzzle_shotgun','muzzle_rifle','muzzle_sniper','explosion','smoke']
+FX=['rain','snow','dust','fog','muzzle','spark','flame','ice','soil','poison','wave','muzzle_shotgun','muzzle_rifle','muzzle_sniper','explosion','smoke']
 def burst(s,c,arms):
     for x,y,xx,yy,w in arms:s.line(x,y,xx,yy,c,w)
 
@@ -388,9 +269,8 @@ def fx(i):
     elif name=='spark':
         burst(s,'gold',[(13,17,5,9,1),(16,13,20,4,1),(19,17,28,14,1),(18,20,24,26,1),(12,21,7,27,1)])
         s.rect(13,14,5,6,'cream').rect(11,16,9,2,'gold').rect(25,7,2,2,'amber')
-    elif name in ('flame','fire_large'):
-        large=name=='fire_large';s.rect(10 if not large else 6,22,14 if not large else 21,6,'rust').rect(8,18,18,8,'rust').rect(11,12,13,12,'amber').rect(16,6 if large else 9,6,14,'amber').rect(18,3 if large else 7,3,8,'gold').rect(13,19,9,7,'gold').rect(16,20,4,6,'cream')
-        if large:s.rect(6,12,3,8,'amber').rect(26,17,2,7,'amber').rect(10,8,2,3,'rust')
+    elif name=='flame':
+        s.rect(10,22,14,6,'rust').rect(8,18,18,8,'rust').rect(11,12,13,12,'amber').rect(16,9,6,14,'amber').rect(18,7,3,8,'gold').rect(13,19,9,7,'gold').rect(16,20,4,6,'cream')
     elif name=='ice':
         s.rect(14,5,3,23,'ice').rect(5,15,22,3,'ice').line(7,7,24,24,'cyan').line(7,24,24,7,'cyan').rect(12,12,7,7,'cream').rect(14,14,3,3,'teal')
     elif name=='soil':
@@ -402,21 +282,6 @@ def fx(i):
     elif name=='wave':
         for x,y,w in [(4,12,9),(15,10,12),(6,20,14),(22,19,7)]:s.rect(x,y,w,2,'cyan').rect(x+1,y-2,w-3,2,'ice')
         s.rect(13,15,5,1,'teal').rect(3,26,13,1,'blue')
-    elif name=='lightning':
-        s.rect(17,2,7,4,'ice').rect(14,6,8,5,'ice').rect(11,11,10,5,'cream').rect(15,16,6,3,'gold').rect(12,19,6,5,'gold').rect(9,24,5,5,'amber')
-    elif name=='ember':
-        for x,y,w,h in [(6,21,2,5),(15,12,3,4),(24,5,2,4),(21,23,2,3),(9,6,1,2)]:s.rect(x,y,w,h,'rust').rect(x,y,1,h-1,'gold')
-    elif name=='frost_cloud':
-        s.oval(3,18,17,10,'blue').oval(10,11,16,14,'ice').oval(21,19,8,8,'cyan').rect(7,23,13,2,'ice').rect(9,8,1,5,'cream').rect(7,10,5,1,'cream').rect(23,7,2,2,'ice')
-    elif name=='ice_shard':
-        s.rect(13,3,5,6,'cream').rect(11,9,8,13,'ice').rect(13,22,5,6,'cyan').rect(11,13,3,6,'teal').rect(23,15,3,9,'blue').rect(6,20,2,8,'ice')
-    elif name=='hit_flesh':
-        s.rect(11,12,10,9,'red').rect(8,15,15,4,'rust').line(8,11,4,6,'red',2).line(23,12,27,8,'rose',2).rect(25,24,3,3,'red').rect(8,25,2,4,'rust').rect(13,14,3,2,'rose')
-    elif name=='hit_metal':
-        s.rect(12,13,8,8,'steel').rect(14,15,4,4,'dark');burst(s,'cream',[(10,12,5,5,1),(22,12,27,6,1),(24,19,29,22,1),(12,24,8,28,1)])
-        s.rect(20,23,2,3,'amber')
-    elif name=='hit_wood':
-        for x,y,w,h in [(12,12,7,10),(4,7,3,7),(24,5,3,6),(25,23,4,3),(6,22,3,5)]:s.rect(x,y,w,h,'tan').rect(x,y,1,h,'brown')
     elif name=='explosion':
         s.rect(8,6,18,18,'rust').rect(4,10,24,13,'rust').rect(9,24,15,4,'brown').rect(10,8,13,15,'amber').rect(7,13,19,7,'gold').rect(13,12,7,8,'cream').rect(3,4,3,3,'amber').rect(26,27,3,2,'rust')
     elif name=='smoke':
@@ -425,6 +290,6 @@ def fx(i):
 
 def all_world():
     return ([terrain(i) for i in range(6)]+[biome(i) for i in range(6)]+
-            [site(i) for i in range(12)]+[crop(i,j) for i in range(8) for j in range(2)]+
+            [crop(i,j) for i in range(8) for j in range(2)]+
             [creature(i) for i in range(12)]+[enemy(i) for i in range(12)]+
-            [deco(i) for i in range(8)]+[fx(i) for i in range(len(FX))])
+            [dead_tree()]+[fx(i) for i in range(len(FX))])

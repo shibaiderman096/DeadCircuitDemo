@@ -3,8 +3,22 @@
   "placeholder": false,
   "disclosure": "code-drawn, no image model",
   "source": "Sources/modules.svg",
-  "sourceSHA256": "0cd59e6c129dc339ae158d1af2c93551b2380cde5a40ba4cf9c3fcff5bb0856a",
-  "rendererMetadata": "Renders\\run_004\\codeart-meta.json",
+  "sourceSHA256": "6e09ce00a69d77ec8171b190d80bd8f87270aec63d2c4ae1a6beaaaed252768f",
   "verification": "Reports/latest_verify.json",
-  "limits": "Static SVG/PNG/contact-sheet review only; no Unity, Play, game executable or build."
+  "limits": "Static SVG/PNG/contact-sheet review only; no Unity, Play, game executable or build.",
+  "historicalRendererMetadata": "Renders\\run_004\\codeart-meta.json",
+  "renderer": {
+    "backend": "resvg_py",
+    "version": "0.5.0",
+    "currentSourcePixelEquality": true
+  },
+  "maintenance": {
+    "date": "2026-11-22",
+    "removedKeys": [
+      "roof_tile",
+      "cluster_link"
+    ],
+    "retainedFrames": 23,
+    "retainedPixelIdenticalToPreCleanup": true
+  }
 }

@@ -118,9 +118,9 @@ def draw_icon(name: str) -> Image.Image:
         r(draw, (14, 14, 20, 18), OUTLINE)
         r(draw, (18, 13, 27, 19), AMBER)
         v(draw, 21, 8, 14, AMBER, 2); v(draw, 21, 19, 24, AMBER, 2)
-    elif name == "ui_cancel" or name == "ui_close":
+    elif name == "ui_cancel":
         outline_box(draw, 4, 4, 27, 27, (36, 58, 47, 255))
-        cross(draw, RED if name == "ui_cancel" else CYAN)
+        cross(draw, RED)
     elif name == "ui_create":
         outline_box(draw, 5, 16, 23, 27, AMBER)
         r(draw, (8, 19, 20, 22), CYAN)
@@ -222,10 +222,6 @@ def draw_icon(name: str) -> Image.Image:
         outline_box(draw, 17, 10, 28, 22, AMBER)
         r(draw, (14, 13, 18, 19), (0, 0, 0, 0))
         v(draw, 15, 9, 23, OUTLINE, 2)
-    elif name == "ui_armor":
-        p(draw, [(16, 4), (26, 8), (24, 22), (16, 28), (8, 22), (6, 8)], OUTLINE)
-        p(draw, [(16, 7), (23, 10), (21, 20), (16, 24), (11, 20), (9, 10)], CYAN)
-        h(draw, 12, 20, 14, AMBER, 2); v(draw, 15, 10, 21, AMBER, 2)
     else:
         raise ValueError(name)
 
@@ -236,9 +232,9 @@ NAMES = [
     "ui_new_world", "ui_load_world", "ui_network", "ui_settings", "ui_quit", "ui_back",
     "ui_random", "ui_refresh", "ui_join", "ui_cancel", "ui_create", "ui_technology",
     "ui_inventory", "ui_growth", "ui_inspect", "ui_help", "ui_session", "ui_survival",
-    "ui_save", "ui_close", "ui_research", "ui_craft", "ui_repair", "ui_dismantle",
+    "ui_save", "ui_research", "ui_craft", "ui_repair", "ui_dismantle",
     "ui_eat", "ui_water", "ui_seed", "ui_harvest", "ui_prev", "ui_next",
-    "ui_equip", "ui_salvage", "ui_reload", "ui_attach", "ui_detach", "ui_armor",
+    "ui_equip", "ui_salvage", "ui_reload", "ui_attach", "ui_detach",
 ]
 
 
