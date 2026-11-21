@@ -274,7 +274,7 @@ namespace DeadCircuit
         }
         private static void CopyEquipment(PlayerState source,PlayerState target,HashSet<int> ids,ref int highestId)
         {
-            SaveCheck(source.gear!=null && source.gear.Count<=EquipmentCatalog.MaxGear,"gear list");
+            SaveCheck(source.gear!=null && source.gear.Count<=InventoryWeight.MaxSavedGear,"gear list");
             target.parts=CopyStats(source.parts,EquipmentCatalog.PartNames.Length,InventoryLimit,"part inventory");
             foreach(GearState g in source.gear)
             {

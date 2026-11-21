@@ -39,10 +39,10 @@ namespace DeadCircuit
             if (p.needs.initialized) return;
             p.needs.initialized = true;
             if (!grantStartingSupplies) return;
-            p.needs.waterClean = Math.Min(SurvivalCatalog.StackLimit, p.needs.waterClean + 2);
-            p.needs.foods[(int)FoodKind.Berries] = Math.Min(SurvivalCatalog.StackLimit, p.needs.foods[(int)FoodKind.Berries] + 3);
+            AddSurvivalCleanWater(p, 2);
+            AddSurvivalFood(p, FoodKind.Berries, 3);
             for (int i = 0; i < SurvivalCatalog.CropCount; i++)
-                p.needs.seeds[i] = Math.Min(SurvivalCatalog.StackLimit, p.needs.seeds[i] + 2);
+                AddSurvivalSeeds(p, (CropKind)i, 2);
         }
 
         private void ResetSurvivalAfterRespawn(PlayerState p)
@@ -76,7 +76,7 @@ namespace DeadCircuit
                 case "eatfood": ConsumeSurvivalFood(p, cmd.arg); break;
                 case "drink": DrinkSurvivalWater(p, cmd.arg); break;
                 case "collectwater":
-                    if (cmd.arg == 0 && SurvivalReach(p, cmd.x, cmd.y) && WorldTiles.Ground(State, cmd.x, cmd.y) == '2' && p.needs.waterRaw < SurvivalCatalog.StackLimit)
+                    if (cmd.arg == 0 && SurvivalReach(p, cmd.x, cmd.y) && CanCollectSurvivalWater(p, cmd.x, cmd.y))
                     { p.needs.waterRaw++; SurvivalActionDone(p, "收集一份原水；饮用前请煮沸。"); }
                     break;
                 case "boilwater": BoilSurvivalWater(p, cmd); break;
@@ -116,8 +116,9 @@ namespace DeadCircuit
         {
             if (!PrimitiveCatalog.IsCookingUnlocked(State)) { Notice(p,"需要研究：烹饪净水"); return; }
             var n = p.needs;
-            if (cmd.arg != 0 || n.waterRaw < 1 || n.waterClean >= SurvivalCatalog.StackLimit ||
-                p.items[(int)ItemKind.Fuel] < 1 || !SurvivalStation(p, cmd.x, cmd.y, BuildKind.StoneFurnace)) return;
+            if (cmd.arg != 0 || n.waterRaw < 1 || p.items[(int)ItemKind.Fuel] < 1 ||
+                !SurvivalStation(p, cmd.x, cmd.y, BuildKind.StoneFurnace)) return;
+            // Raw and clean water weigh the same; the exchange only removes the fuel's weight.
             n.waterRaw--; n.waterClean++; p.items[(int)ItemKind.Fuel]--;
             SurvivalActionDone(p, "一份原水煮成一份净水，消耗一份燃料。");
         }
@@ -129,16 +130,40 @@ namespace DeadCircuit
             if (recipe == null || !SurvivalStation(p, cmd.x, cmd.y, recipe.station) ||
                 n.waterClean < recipe.cleanWater || p.items[(int)ItemKind.Fuel] < recipe.fuel) return;
             for (int i = 0; i < SurvivalCatalog.FoodCount; i++)
-            {
-                int after = n.foods[i] - recipe.foods[i] + ((int)recipe.output == i ? recipe.quantity : 0);
-                if (n.foods[i] < recipe.foods[i] || after > SurvivalCatalog.StackLimit) return;
-            }
-            // All gates precede every write; synchronous host execution makes this atomic.
+                if (n.foods[i] < recipe.foods[i]) return;
+            if (!InventoryWeight.CanFit(p, InventoryWeight.CookingDeltaGrams(recipe))) { Notice(p, "背包负重不足，无法带走烹饪产物。"); return; }
             for (int i = 0; i < SurvivalCatalog.FoodCount; i++) n.foods[i] -= recipe.foods[i];
             n.foods[(int)recipe.output] += recipe.quantity; n.waterClean -= recipe.cleanWater;
             p.items[(int)ItemKind.Fuel] -= recipe.fuel;
             SurvivalActionDone(p, "已处理：" + recipe.name);
         }
+
+        private static void AddSurvivalFood(PlayerState p, FoodKind kind, int amount) =>
+            p.needs.foods[(int)kind] += Math.Min(amount, InventoryWeight.Allowance(p, InventoryWeight.Grams(kind)));
+
+        private static void AddSurvivalSeeds(PlayerState p, CropKind kind, int amount) =>
+            p.needs.seeds[(int)kind] += Math.Min(amount, InventoryWeight.Allowance(p, InventoryWeight.Grams(kind)));
+
+        private static void AddSurvivalCleanWater(PlayerState p, int amount) =>
+            p.needs.waterClean += Math.Min(amount, InventoryWeight.Allowance(p, InventoryWeight.WaterGrams));
+
+        // Shared by actions and target selection. Reach and line of sight are checked separately.
+        private bool CanCollectSurvivalWater(PlayerState p, int x, int y) =>
+            WorldTiles.Ground(State, x, y) == '2' && InventoryWeight.CanFit(p, InventoryWeight.WaterGrams);
+
+        private bool CanHarvestSurvivalPlot(PlayerState p, FarmPlotState plot, out SurvivalCropDefinition crop)
+        {
+            crop = plot == null ? null : SurvivalCatalog.Crop(plot.crop);
+            if (crop == null || plot.growth < 1 || plot.health <= 0 ||
+                BuildingAt(plot.x, plot.y) != null || NodeAt(plot.x, plot.y) != null) return false;
+            long grams = (long)crop.harvestCount * InventoryWeight.Grams(crop.food) +
+                (long)crop.seedYield * InventoryWeight.Grams(crop.kind);
+            return InventoryWeight.CanFit(p, grams);
+        }
+
+        private static bool CanButcherSurvivalCreature(PlayerState p, CreatureState corpse) =>
+            corpse != null && corpse.hp <= 0 && corpse.meatLeft > 0 && InventoryWeight.CanFit(p,
+                (long)corpse.meatLeft * InventoryWeight.Grams(SurvivalCatalog.Creatures[(int)corpse.kind].food));
 
         private void SurvivalActionDone(PlayerState p, string text) { p.interactCooldown = .4f; Notice(p, text); }
         private bool SurvivalReach(PlayerState p, int x, int y) => Inside(x, y) &&
@@ -281,6 +306,13 @@ namespace DeadCircuit
                 State.survival.plots.Add(new FarmPlotState { id = id, x = cmd.x, y = cmd.y });
                 SurvivalActionDone(p, "已开垦一格农田，消耗一份木材制作简易农具。"); return;
             }
+            if (cmd.action == "harvest")
+            {
+                if (cmd.arg != 0 || !CanHarvestSurvivalPlot(p, plot, out var crop)) return;
+                n.foods[(int)crop.food] += crop.harvestCount; n.seeds[plot.crop] += crop.seedYield;
+                plot.crop = -1; plot.growth = 0; plot.health = 100;
+                SurvivalActionDone(p, "收获食材与可再播种的种子。"); return;
+            }
             if (plot == null || BuildingAt(plot.x, plot.y) != null || NodeAt(plot.x, plot.y) != null) return;
             if (cmd.action == "sow")
             {
@@ -295,16 +327,6 @@ namespace DeadCircuit
                 if (cmd.arg == 0) n.waterRaw--; else n.waterClean--;
                 plot.moisture = Math.Min(100, plot.moisture + 40);
                 SurvivalActionDone(p, "已浇水，消耗一份水。");
-            }
-            else if (cmd.action == "harvest")
-            {
-                var crop = SurvivalCatalog.Crop(plot.crop);
-                if (cmd.arg != 0 || crop == null || plot.growth < 1 || plot.health <= 0 ||
-                    n.foods[(int)crop.food] > SurvivalCatalog.StackLimit - crop.harvestCount ||
-                    n.seeds[plot.crop] > SurvivalCatalog.StackLimit - crop.seedYield) return;
-                n.foods[(int)crop.food] += crop.harvestCount; n.seeds[plot.crop] += crop.seedYield;
-                plot.crop = -1; plot.growth = 0; plot.health = 100;
-                SurvivalActionDone(p, "收获食材与可再播种的种子。");
             }
         }
 
@@ -408,7 +430,7 @@ namespace DeadCircuit
                 if (c.id != id || c.hp > 0 || c.meatLeft <= 0 || DistSq(p.x, p.y, c.x, c.y) > Reach * Reach ||
                     !LineClear(p.x, p.y, c.x, c.y, RoundCell(c.x), RoundCell(c.y))) continue;
                 var definition = SurvivalCatalog.Creatures[(int)c.kind];
-                if (p.needs.foods[(int)definition.food] > SurvivalCatalog.StackLimit - c.meatLeft) return;
+                if (!CanButcherSurvivalCreature(p, c)) return;
                 p.needs.foods[(int)definition.food] += c.meatLeft; c.meatLeft = 0; creatures.RemoveAt(i);
                 SurvivalActionDone(p, "已采集：" + definition.name + "的肉。"); return;
             }
@@ -597,9 +619,9 @@ namespace DeadCircuit
             var n = source.needs; SaveCheck(n != null, "player needs");
             SaveCheck(n.foods != null && n.foods.Length == SurvivalCatalog.FoodCount &&
                 n.seeds != null && n.seeds.Length == SurvivalCatalog.CropCount, "survival inventory length");
-            foreach (int value in n.foods) SaveCheck(value >= 0 && value <= SurvivalCatalog.StackLimit, "food inventory");
-            foreach (int value in n.seeds) SaveCheck(value >= 0 && value <= SurvivalCatalog.StackLimit, "seed inventory");
-            SaveCheck(n.waterRaw >= 0 && n.waterRaw <= SurvivalCatalog.StackLimit && n.waterClean >= 0 && n.waterClean <= SurvivalCatalog.StackLimit, "water inventory");
+            foreach (int value in n.foods) SaveCheck(value >= 0 && value <= InventoryLimit, "food inventory");
+            foreach (int value in n.seeds) SaveCheck(value >= 0 && value <= InventoryLimit, "seed inventory");
+            SaveCheck(n.waterRaw >= 0 && n.waterRaw <= InventoryLimit && n.waterClean >= 0 && n.waterClean <= InventoryLimit, "water inventory");
             SaveRange(n.thirst, 0, 100, "thirst"); SaveRange(n.wetness, 0, 100, "wetness"); SaveRange(n.bodyTemperature, 25, 45, "body temperature");
             SaveRange(n.infection, 0, 100, "infection"); SaveRange(n.dryness, 0, 100, "dryness"); SaveRange(n.nutrition, 0, 100, "nutrition");
             SaveRange(n.movementMultiplier, .1f, 1, "survival movement multiplier"); SaveRange(n.hungerMultiplier, 1, 3, "survival hunger multiplier");

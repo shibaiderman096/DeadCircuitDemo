@@ -8,11 +8,13 @@ namespace DeadCircuit
     {
         TextMeshProUGUI modularMachineState;
         static readonly BuildKind[] BlueprintBuildings = { BuildKind.LargeSteamFurnace, BuildKind.LargeAssemblyPlant, BuildKind.LargeOreProcessor };
-        RectTransform blueprintBuildingMenu;
+        RectTransform blueprintMenu, blueprintBuildingMenu, blueprintBuildingChoices, blueprintModuleChoices, blueprintChoiceControls;
         readonly UiButton[] blueprintBuildingButtons = new UiButton[3];
         UiButton openBlueprintBuildings;
-        UnityEngine.UI.ScrollRect blueprintBuildingScroll, modularPaletteScroll;
-        bool blueprintBuildingsOpen;
+        UnityEngine.UI.ScrollRect blueprintChoiceScroll, modularPaletteScroll;
+        UiButton blueprintScrollLeft, blueprintScrollRight;
+        TextMeshProUGUI blueprintChoicePosition;
+        bool blueprintBuildingsOpen, blueprintScrollDragging;
         RectTransform modularPalette, modularPaletteBody, modularContinueRow, modularUnloadControls;
         TextMeshProUGUI modularPaletteTitle, modularPaletteSummary, modularPaletteCost, modularPaletteIssue, modularPaletteHelp;
         readonly UiButton[] modularRoleButtons = new UiButton[8];
@@ -25,6 +27,7 @@ namespace DeadCircuit
         public bool BlueprintModulesMenuOpen => modularPalette != null && modularPalette.gameObject.activeInHierarchy;
         public bool BlueprintModulesMenuCollapsed => BlueprintModulesMenuOpen && modularPaletteCollapsed;
         public BuildKind? BlueprintMenuBuilding => BlueprintModulesMenuOpen ? bridge.BuildSelection : null;
+        public UnityEngine.UI.ScrollRect BlueprintChoiceScroll => blueprintChoiceScroll;
 
         void MakeBlueprintBuildingMenu()
         {
@@ -32,28 +35,141 @@ namespace DeadCircuit
             openBlueprintBuildings = Button("Open Blueprint Buildings", game, "建筑蓝图", 18, 252, 202, 36, OpenBlueprintBuildings, true);
             SetButtonArt(openBlueprintBuildings, "ui_create", 22);
             openBlueprintBuildings.button.gameObject.SetActive(false);
-            blueprintBuildingMenu = Box("Blueprint Building Menu", game, 0, 184, 286, 454, HudSurface, true);
-            TopRight(blueprintBuildingMenu, 18, 184, 286, 454);
-            PanelRule(blueprintBuildingMenu, 286, 40);
+            // One persistent outer panel and selection viewport serve BOTH stages.
+            blueprintMenu = Box("Blueprint Menu", game, 0, 184, 286, 454, HudSurface, true);
+            TopRight(blueprintMenu, 18, 184, 286, 454);
+            PanelRule(blueprintMenu, 286, 40);
+            AddPanelFrame(blueprintMenu);
+            blueprintBuildingMenu = NewRect("Blueprint Building Menu", blueprintMenu);
+            Stretch(blueprintBuildingMenu);
             SetHudArt(MakeHudArt("Blueprint Buildings Icon", blueprintBuildingMenu, 12, 11, 20), "ui_create");
             Label("Blueprint Buildings Title", blueprintBuildingMenu, "建筑蓝图", 40, 8, 168, 26, 18, Accent, FontStyles.Bold);
             Button("Close Blueprint Buildings", blueprintBuildingMenu, "关闭", 230, 8, 44, 26, CancelBuild);
             Label("Blueprint Buildings Step", blueprintBuildingMenu, "01 选择建筑  >  02 选择模块", 12, 48, 262, 24, 14, Accent);
-            Label("Blueprint Buildings Hint", blueprintBuildingMenu, "选择一台建筑，再逐格规划内部模块。", 12, 74, 262, 24, 13, Muted);
-            RectTransform content = ScrollContent("Blueprint Buildings Scroll View", blueprintBuildingMenu, 8, 106, 270, 280, out blueprintBuildingScroll);
+            Label("Blueprint Buildings Hint", blueprintBuildingMenu, "左右滑动选建筑，再选择内部模块。", 12, 74, 262, 24, 13, Muted);
+            MakeBlueprintChoiceScroll();
+            blueprintBuildingChoices = MakeBlueprintChoiceContent("Blueprint Building Choices", BlueprintBuildings.Length, 220);
             for (int i = 0; i < BlueprintBuildings.Length; i++)
             {
                 BuildKind kind = BlueprintBuildings[i];
-                RectTransform row = FlowRow("Blueprint Building Row " + kind, content, 242, 82);
-                UiButton choice = Button("Blueprint Building " + kind, row, "", 0, 0, 242, 78, () => SelectBlueprintBuilding(kind));
+                UiButton choice = Button("Blueprint Building " + kind, blueprintBuildingChoices, "", 6 + i * 228, 6, 220, 84, () => SelectBlueprintBuilding(kind));
+                SetButtonArt(choice, "ui_create", 28);
                 choice.label.alignment = TextAlignmentOptions.MidlineLeft;
                 choice.label.fontSize = choice.label.fontSizeMax = 15;
-                Stretch(choice.label.rectTransform, 10, 4, 8, 4);
+                choice.label.fontSizeMin = 12;
                 blueprintBuildingButtons[i] = choice;
             }
-            Label("Blueprint Buildings Footer", blueprintBuildingMenu, "画蓝图免费 · 退出绘制后 E 逐格投料\n返回或关闭只停止绘图，已放蓝图保留。", 12, 394, 262, 48, 13, Muted);
-            AddPanelFrame(blueprintBuildingMenu);
+            Label("Blueprint Buildings Details Heading", blueprintBuildingMenu, "建筑说明 · 上下滚动", 12, 262, 262, 20, 12, Muted);
+            RectTransform details = ScrollContent("Blueprint Buildings Details Scroll View", blueprintBuildingMenu, 8, 286, 270, 156, out var detailsScroll);
+            GuardBlueprintScrollDrag(detailsScroll);
+            SetFlowText(FlowLabel("Blueprint Buildings Footer", details, "", 242, 120, 13, Ink),
+                "先选建筑，再逐格规划模块。未解锁建筑会显示研究条件。\n\n画蓝图免费；先放控制器，再补其他模块。退出绘制后用 E 逐格投料。\n\n返回或关闭只停止绘图，已放蓝图保留。");
             blueprintBuildingMenu.gameObject.SetActive(false);
+        }
+
+        void MakeBlueprintChoiceScroll()
+        {
+            RectTransform root = Box("Blueprint Choice Scroll View", blueprintMenu, 8, 120, 270, 96, Recessed, true);
+            blueprintChoiceScroll = root.gameObject.AddComponent<UnityEngine.UI.ScrollRect>();
+            blueprintChoiceScroll.horizontal = true;
+            blueprintChoiceScroll.vertical = false;
+            blueprintChoiceScroll.movementType = UnityEngine.UI.ScrollRect.MovementType.Clamped;
+            blueprintChoiceScroll.scrollSensitivity = 26f;
+            RectTransform viewport = Box("Viewport", root, 0, 0, 270, 96, Color.white, true);
+            Stretch(viewport);
+            viewport.gameObject.AddComponent<UnityEngine.UI.Mask>().showMaskGraphic = false;
+            blueprintChoiceScroll.viewport = viewport;
+            blueprintChoiceScroll.onValueChanged.AddListener(_ => RefreshBlueprintChoiceNavigation());
+            GuardBlueprintScrollDrag(blueprintChoiceScroll);
+            blueprintChoiceControls = NewRect("Blueprint Choice Navigation", blueprintMenu);
+            Place(blueprintChoiceControls, 0, 222, 286, 28);
+            blueprintScrollLeft = Button("Blueprint Scroll Left", blueprintChoiceControls, "←", 8, 0, 36, 28, () => ScrollBlueprintChoices(-1));
+            blueprintScrollRight = Button("Blueprint Scroll Right", blueprintChoiceControls, "→", 242, 0, 36, 28, () => ScrollBlueprintChoices(1));
+            blueprintChoicePosition = Label("Blueprint Scroll Position", blueprintChoiceControls, "左右拖动", 48, 0, 190, 28, 12, Muted);
+            blueprintChoicePosition.alignment = TextAlignmentOptions.Center;
+        }
+
+        RectTransform MakeBlueprintChoiceContent(string name, int count, float cardWidth)
+        {
+            RectTransform content = NewRect(name, blueprintChoiceScroll.viewport);
+            Place(content, 0, 0, count * cardWidth + (count - 1) * 8 + 12, 96);
+            content.gameObject.SetActive(false);
+            return content;
+        }
+
+        void GuardBlueprintScrollDrag(UnityEngine.UI.ScrollRect scroll)
+        {
+            // Keep a UI drag captured even when the pointer leaves the panel over the world.
+            var trigger = scroll.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+            var begin = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.BeginDrag };
+            begin.callback.AddListener(_ => blueprintScrollDragging = true);
+            trigger.triggers.Add(begin);
+            var end = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.EndDrag };
+            end.callback.AddListener(_ => { blueprintScrollDragging = false; GuardBlueprintUi(); });
+            trigger.triggers.Add(end);
+        }
+
+        void ResetBlueprintChoiceScroll()
+        {
+            if (blueprintChoiceScroll == null || blueprintChoiceScroll.content == null) return;
+            blueprintChoiceScroll.StopMovement();
+            blueprintChoiceScroll.content.anchoredPosition = Vector2.zero;
+            blueprintChoiceScroll.horizontalNormalizedPosition = 0f;
+        }
+
+        void SetBlueprintChoiceStage(bool buildings, bool modules)
+        {
+            bool expanded = buildings || modules && !modularPaletteCollapsed;
+            blueprintMenu.gameObject.SetActive(buildings || modules);
+            blueprintBuildingMenu.gameObject.SetActive(buildings);
+            modularPalette.gameObject.SetActive(modules);
+            blueprintBuildingChoices.gameObject.SetActive(buildings);
+            blueprintModuleChoices.gameObject.SetActive(modules);
+            blueprintChoiceScroll.gameObject.SetActive(expanded);
+            blueprintChoiceControls.gameObject.SetActive(expanded);
+            if (!expanded && blueprintScrollDragging)
+            {
+                blueprintScrollDragging = false;
+                GuardBlueprintUi();
+            }
+            RectTransform next = buildings ? blueprintBuildingChoices : blueprintModuleChoices;
+            if ((buildings || modules) && blueprintChoiceScroll.content != next)
+            {
+                blueprintChoiceScroll.StopMovement();
+                blueprintChoiceScroll.content = next;
+                ResetBlueprintChoiceScroll();
+            }
+            // Only the explicit fold action changes the height; both stages use 286 x 454.
+            TopRight(blueprintMenu, 18, 184, 286, modules && modularPaletteCollapsed ? 120 : 454);
+            RefreshBlueprintChoiceNavigation();
+        }
+
+        void RefreshBlueprintChoiceNavigation()
+        {
+            if (blueprintChoiceScroll == null || blueprintChoiceScroll.content == null || blueprintChoicePosition == null) return;
+            float maximum = Mathf.Max(0f, blueprintChoiceScroll.content.rect.width - blueprintChoiceScroll.viewport.rect.width);
+            float offset = Mathf.Clamp(-blueprintChoiceScroll.content.anchoredPosition.x, 0f, maximum);
+            float step = blueprintBuildingsOpen ? 228f : 240f;
+            int pages = Mathf.CeilToInt(maximum / step) + 1;
+            int page = Mathf.Clamp(Mathf.RoundToInt(offset / step), 0, pages - 1);
+            Set(blueprintChoicePosition, (blueprintBuildingsOpen ? "建筑 " : "模块 ") + (page + 1) + "/" + pages + " 页 · 左右拖动");
+            blueprintScrollLeft.button.interactable = offset > .5f;
+            blueprintScrollRight.button.interactable = offset < maximum - .5f;
+        }
+
+        void ScrollBlueprintChoices(int direction)
+        {
+            if (!CanUseBlueprintMenus() || AnyPanelOpen() || blueprintChoiceScroll.content == null) return;
+            float maximum = Mathf.Max(0f, blueprintChoiceScroll.content.rect.width - blueprintChoiceScroll.viewport.rect.width);
+            float step = blueprintBuildingsOpen ? 228f : 240f;
+            float offset = Mathf.Clamp(-blueprintChoiceScroll.content.anchoredPosition.x, 0f, maximum);
+            int page = Mathf.RoundToInt(offset / step);
+            int lastPage = Mathf.CeilToInt(maximum / step);
+            float target = Mathf.Min(maximum, Mathf.Clamp(page + direction, 0, lastPage) * step);
+            blueprintChoiceScroll.StopMovement();
+            blueprintChoiceScroll.horizontalNormalizedPosition = maximum > 0f ? target / maximum : 0f;
+            GuardBlueprintUi();
+            RefreshBlueprintChoiceNavigation();
         }
 
         bool CanUseBlueprintMenus() => bridge != null && bridge.IsRunning && bridge.World != null && bridge.LocalPlayer != null &&
@@ -78,7 +194,7 @@ namespace DeadCircuit
             toolsTray.gameObject.SetActive(false);
             Set(toolsToggle.label, "菜单");
             HideInspector();
-            ResetScroll(blueprintBuildingScroll);
+            ResetBlueprintChoiceScroll();
             GuardBlueprintUi();
             RefreshAll();
         }
@@ -93,6 +209,7 @@ namespace DeadCircuit
         {
             blueprintBuildingsOpen = false;
             modularPaletteCollapsed = false;
+            ResetBlueprintChoiceScroll();
             ResetScroll(modularPaletteScroll);
             GuardBlueprintUi();
         }
@@ -100,7 +217,10 @@ namespace DeadCircuit
         void CloseBlueprintMenus()
         {
             blueprintBuildingsOpen = false;
+            blueprintScrollDragging = false;
             modularPaletteCollapsed = false;
+            if (blueprintMenu != null) blueprintMenu.gameObject.SetActive(false);
+            if (blueprintChoiceScroll != null) blueprintChoiceScroll.StopMovement();
             if (blueprintBuildingMenu != null) blueprintBuildingMenu.gameObject.SetActive(false);
             if (modularPalette != null) modularPalette.gameObject.SetActive(false);
             if (openBlueprintBuildings != null) openBlueprintBuildings.button.gameObject.SetActive(false);
@@ -109,10 +229,9 @@ namespace DeadCircuit
         void MakeModularPalette()
         {
             MakeBlueprintBuildingMenu();
-            // Shares the inspector's side lane; never covers the bottom construction card.
-            modularPalette = Box("Modular Blueprint Palette", game, 0, 184, 286, 454, HudSurface, true);
-            TopRight(modularPalette, 18, 184, 286, 454);
-            PanelRule(modularPalette, 286, 40);
+            // Stages have no surface or frame of their own; the shared viewport stays put.
+            modularPalette = NewRect("Modular Blueprint Palette", blueprintMenu);
+            Stretch(modularPalette);
             Label("Modular Palette Heading", modularPalette, "02 选择模块", 12, 8, 164, 26, 17, Accent, FontStyles.Bold);
             modularPaletteFold = Button("Fold Modular Palette", modularPalette, "收起", 178, 8, 44, 26, () =>
             {
@@ -125,40 +244,44 @@ namespace DeadCircuit
             UiButton back = Button("Blueprint Back To Buildings", modularPalette, "返回建筑", 8, 82, 270, 30, OpenBlueprintBuildings);
             SetButtonArt(back, "ui_back", 18);
             modularPaletteBody = NewRect("Modular Palette Body", modularPalette);
-            Place(modularPaletteBody, 0, 120, 286, 334);
-            RectTransform content = ScrollContent("Modular Palette Scroll View", modularPaletteBody, 8, 0, 270, 216, out modularPaletteScroll);
-            for (int row = 0; row < 4; row++)
+            Place(modularPaletteBody, 0, 258, 286, 196);
+            blueprintModuleChoices = MakeBlueprintChoiceContent("Blueprint Module Choices", modularRoleButtons.Length, 112);
+            string[] roleArt = { "ui_settings", "ui_create", "ui_craft", "ui_inventory", "ui_back", "ui_technology", "ui_repair", "ui_refresh" };
+            for (int index = 0; index < modularRoleButtons.Length; index++)
             {
-                RectTransform pair = FlowRow("Modular Role Row " + row, content, 242, 44);
-                for (int column = 0; column < 2; column++)
-                {
-                    int index = row * 2 + column;
-                    MachineModuleRole role = ModularMachinePresentation.PaletteRoles[index];
-                    modularRoleButtons[index] = Button("Modular Role " + role, pair, "", column * 122, 0, 118, 40, () => SelectModularPaletteRole(role));
-                    modularRoleButtons[index].label.fontSize = modularRoleButtons[index].label.fontSizeMax = 14;
-                }
+                MachineModuleRole role = ModularMachinePresentation.PaletteRoles[index];
+                UiButton choice = Button("Modular Role " + role, blueprintModuleChoices, "", 6 + index * 120, 6, 112, 84, () => SelectModularPaletteRole(role));
+                SetHudArt(MakeHudArt("Module Icon", choice.button.transform, 40, 10, 32), roleArt[index]);
+                Place(choice.label.rectTransform, 4, 54, 104, 24);
+                choice.label.fontSize = choice.label.fontSizeMax = 13;
+                choice.label.fontSizeMin = 12;
+                choice.label.textWrappingMode = TextWrappingModes.NoWrap;
+                modularRoleButtons[index] = choice;
             }
+            Label("Modular Details Scroll Hint", modularPaletteBody, "材料与说明 · 上下滚动", 12, 38, 262, 18, 12, Muted);
+            RectTransform content = ScrollContent("Modular Palette Scroll View", modularPaletteBody, 8, 60, 270, 60, out modularPaletteScroll);
+            GuardBlueprintScrollDrag(modularPaletteScroll);
             modularPaletteSummary = FlowLabel("Modular Palette Requirements", content, "", 246, 40, 13, Ink);
             modularPaletteCost = FlowLabel("Modular Selected Role Cost", content, "", 246, 64, 13, Ink);
-            modularPaletteIssue = Label("Modular Formation Issue", modularPaletteBody, "", 12, 220, 262, 38, 12, Amber);
+            modularPaletteIssue = Label("Modular Formation Issue", modularPaletteBody, "", 12, 0, 262, 34, 12, Amber);
             modularPaletteHelp = FlowLabel("Modular Drawing Help", content, "", 246, 88, 12, Muted);
-            modularNewBlueprint = Button("New Modular Blueprint", modularPaletteBody, "新蓝图", 8, 260, 130, 30, () =>
+            modularNewBlueprint = Button("New Modular Blueprint", modularPaletteBody, "新蓝图", 8, 126, 130, 28, () =>
             {
                 if (!CanUseModularPalette()) return;
                 bridge.SelectModularBuilding(bridge.BuildSelection.Value);
                 ShowModularModulePage();
                 RefreshAll();
             });
-            modularErase = Button("Toggle Modular Erase", modularPaletteBody, "擦图：关", 146, 260, 132, 30, () =>
+            modularErase = Button("Toggle Modular Erase", modularPaletteBody, "擦图：关", 146, 126, 132, 28, () =>
             {
                 if (!CanUseModularPalette() || !ModularMachinePresentation.CanErase(bridge.World, bridge.ActiveModularBlueprint)) return;
                 bridge.ModularEraseMode = !bridge.ModularEraseMode;
                 GuardBlueprintUi();
                 RefreshAll();
             });
-            Button("Finish Modular Drawing", modularPaletteBody, "退出绘制 · E 逐格投料", 8, 296, 270, 30, CancelBuild);
-            AddPanelFrame(modularPalette);
+            Button("Finish Modular Drawing", modularPaletteBody, "退出绘制 · E 逐格投料", 8, 160, 270, 28, CancelBuild);
             modularPalette.gameObject.SetActive(false);
+            blueprintMenu.gameObject.SetActive(false);
         }
 
         bool CanUseModularPalette() => CanUseBlueprintMenus() &&
@@ -195,7 +318,8 @@ namespace DeadCircuit
             if (bridge.BuildSelection.HasValue) blueprintBuildingsOpen = false;
             bool unobstructed = !AnyPanelOpen();
             bool showBuildings = blueprintBuildingsOpen && unobstructed;
-            blueprintBuildingMenu.gameObject.SetActive(showBuildings);
+            bool show = selected && unobstructed && !showBuildings;
+            SetBlueprintChoiceStage(showBuildings, show);
             openBlueprintBuildings.button.gameObject.SetActive(unobstructed && !showBuildings && !selected);
             openBlueprintBuildings.button.interactable = eligible;
             if (showBuildings)
@@ -217,10 +341,7 @@ namespace DeadCircuit
                     blueprintBuildingButtons[i].label.color = unlocked ? Ink : Muted;
                 }
             }
-            bool show = selected && unobstructed && !showBuildings;
-            modularPalette.gameObject.SetActive(show);
             if (!show) return;
-            TopRight(modularPalette, 18, 184, 286, modularPaletteCollapsed ? 120 : 454);
             modularPaletteBody.gameObject.SetActive(!modularPaletteCollapsed);
             Set(modularPaletteFold.label, modularPaletteCollapsed ? "展开" : "收起");
             BuildKind kind = bridge.BuildSelection.Value;
@@ -319,12 +440,10 @@ namespace DeadCircuit
             else if (world.cargo != null && world.cargo.Exists(c => c.fromId == building.id || c.toId == building.id)) reason = "尚有在途物品，等待全部到达后再操作。";
             if (reason.Length > 0) return false;
             bool stocked = false;
+            if (!InventoryWeight.CanFit(player, InventoryWeight.MaterialsGrams(building.items)))
+            { reason = "背包共享载重不足，须能一次接收全部库存（上限 120 kg）。"; return false; }
             for (int item = 0; item < building.items.Length; item++)
-            {
                 stocked |= building.items[item] > 0;
-                if (building.items[item] > WorldSimulator.InventoryLimit - Count(player.items, item))
-                { reason = "背包空间不足，须能一次接收全部库存。"; return false; }
-            }
             if (!stocked && building.progress <= 0f)
             { reason = "库存与进度已清空，可直接继续画图。"; return false; }
             return true;
@@ -455,7 +574,7 @@ namespace DeadCircuit
                     if (option.building != building.kind) continue;
                     for (int item = 0; item < DemoCatalog.ItemCount; item++)
                         if (Count(option.outputs, item) > 0 && (recipe == null || Count(recipe.inputs, item) == 0) &&
-                            Count(building.items, item) > 0 && Count(player.items, item) < WorldSimulator.InventoryLimit) return true;
+                            Count(building.items, item) > 0 && InventoryWeight.Allowance(player, InventoryWeight.Grams((ItemKind)item)) > 0) return true;
                 }
             return false;
         }
@@ -466,8 +585,7 @@ namespace DeadCircuit
             if (building.modularModules != null) foreach (var module in building.modularModules)
                 if (module?.paid != null) for (int item = 0; item < Mathf.Min(refund.Length, module.paid.Length); item++) refund[item] += module.paid[item];
             if (world.cargo != null) foreach (var cargo in world.cargo) if (cargo.fromId == building.id || cargo.toId == building.id) refund[cargo.item]++;
-            for (int i = 0; i < refund.Length; i++) if (refund[i] > WorldSimulator.InventoryLimit - Count(player.items, i)) return false;
-            return true;
+            return InventoryWeight.CanFit(player, InventoryWeight.MaterialsGrams(refund));
         }
 
         static string ModularRoleHint(MachineModuleRole role, bool complete, bool cellComplete)

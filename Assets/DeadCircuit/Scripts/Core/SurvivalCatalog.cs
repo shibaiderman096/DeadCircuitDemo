@@ -64,7 +64,7 @@ namespace DeadCircuit
     public static class SurvivalCatalog
     {
         public const int FoodCount = 31, CropCount = 8, CreatureCount = 12, WeatherCount = 10;
-        public const int MaxPlots = 128, MaxCreatures = 32, StackLimit = 999;
+        public const int MaxPlots = 128, MaxCreatures = 32;
         public static readonly IReadOnlyList<string> WeatherNames = Array.AsReadOnly(new[]
             { "晴", "阴", "毛雨", "雨", "雷暴", "雾", "热浪", "寒潮", "雪", "沙尘" });
         public static readonly IReadOnlyList<SurvivalFoodDefinition> Foods = Array.AsReadOnly(new[]

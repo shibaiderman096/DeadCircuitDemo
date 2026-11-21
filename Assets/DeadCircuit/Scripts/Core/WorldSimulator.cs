@@ -14,7 +14,7 @@ namespace DeadCircuit
         public const float FixedStep = 0.05f;
         public const int SaveVersion = 20;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
-        public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
+        public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = InventoryWeight.CapacityGrams / 10, BufferLimit = 200;
         public const int MaxCargo = 1024;
         private const float Reach = 2.4f;
         private const int MaxLevel = 30;
@@ -149,6 +149,7 @@ namespace DeadCircuit
                     Aim(p, cmd.aimX, cmd.aimY);
                     p.aiming=cmd.aiming;
                     Attack(p); return;
+                case "storeitem": StoreBackpackItem(p, cmd.arg); return;
                 case "gearcraft": CraftGear(p,cmd.arg); return;
                 case "partcraft": CraftPart(p,cmd.arg); return;
                 case "equip": EquipGear(p,cmd.arg); return;
@@ -335,8 +336,8 @@ namespace DeadCircuit
                 returned[i] = b.items[i] + (int)Math.Floor(cost[i] * refund * health + 0.00001f);
             }
             foreach (CargoState cargo in State.cargo) if (cargo.fromId == b.id || cargo.toId == b.id) returned[cargo.item]++;
-            for (int i = 0; i < DemoCatalog.ItemCount; i++)
-                if (p.items[i] + returned[i] > InventoryLimit) { Notice(p, "背包空间不足：请留出空间，收回设备库存、运输中的物品和返还建材。"); return; }
+            if (!InventoryWeight.CanFit(p, InventoryWeight.MaterialsGrams(returned)))
+            { Notice(p, "背包负重不足以收回全部库存和建材。"); return; }
             for (int i = 0; i < DemoCatalog.ItemCount; i++) p.items[i] += returned[i];
             State.cargo.RemoveAll(c => c.fromId == b.id || c.toId == b.id);
             State.buildings.Remove(b); RefreshSpatial(); RefreshPower(false); flowRevision = -1;
@@ -354,7 +355,7 @@ namespace DeadCircuit
                 if (!PrimitiveCatalog.IsRecipeUnlocked(State,r)) { Notice(p,PrimitiveCatalog.RecipeRequirement(State,r)); return; }
                 bool bench = EquipmentCatalog.HasWorkbench(State,p);
                 if (!bench) { Notice(p, "请靠近工作台。"); return; }
-                if (!CanRunRecipe(p.items,r,InventoryLimit,null)) { Notice(p, "配方材料不足或背包已满。"); return; }
+                if (!CanPay(p.items, r.inputs) || !InventoryWeight.CanExchange(p, r.inputs, r.outputs)) { Notice(p, "配方材料不足或背包已满。"); return; }
                 Pay(p.items,r.inputs);
                 for(int i=0;i<DemoCatalog.ItemCount;i++) { p.items[i]+=r.outputs[i]; RecordProduced(i,r.outputs[i]); }
                 RecordLowVoltageProduction(null,r);
@@ -370,7 +371,7 @@ namespace DeadCircuit
             int source = arg == 0 ? (int)ItemKind.Wood : (int)ItemKind.Iron;
             int target = arg == 0 ? (int)ItemKind.Fuel : (int)ItemKind.Ammo;
             int take = arg == 0 ? 3 : 1, give = arg == 0 ? 2 : 4;
-            if (p.items[source] < take || p.items[target] > InventoryLimit - give)
+            if (p.items[source] < take || !InventoryWeight.CanFit(p, give * InventoryWeight.Grams((ItemKind)target) - take * InventoryWeight.Grams((ItemKind)source)))
             { Notice(p, "制作失败：材料不足或背包已满。木材×3 → 燃料×2；铁锭×1 → 9mm弹×4。"); return; }
             p.items[source] -= take; p.items[target] += give; p.interactCooldown = 0.5f;
             RecordProduced(target,give);

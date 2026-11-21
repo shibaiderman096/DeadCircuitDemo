@@ -67,26 +67,35 @@ static partial class Checks
                 var tool = EquipGatheringTool(sim, p, GearKind.StonePickaxe);
                 p.attributes[0] = 6; p.skills[2] = 2;
                 int item = (int)resource.Item2, gathered = sim.State.gathered;
-                p.items[item] = WorldSimulator.InventoryLimit - 1;
+                var baseline = Copy(p.items);
+                int unitGrams = InventoryWeight.Grams(resource.Item2);
+                FillBackpackLeaving(p, unitGrams);
+                var full = Copy(p.items);
                 foreach (int hp in new[] { 19, 3 })
                 {
                     sim.Apply(Command(p, "interact", node.x, node.y));
-                    Require(node.hp == hp && node.stock == 3 && p.items[item] == WorldSimulator.InventoryLimit - 1 &&
+                    Require(node.hp == hp && node.stock == 3 && p.items.SequenceEqual(full) &&
                         sim.State.gathered == gathered, "strength/survival damage or partial deposit conservation changed");
                     Advance(sim, .55f);
                 }
                 foreach (int room in new[] { 1, 0 })
                 {
-                    p.items[item] = WorldSimulator.InventoryLimit - room;
+                    p.items = Copy(baseline);
+                    FillBackpackLeaving(p, room * unitGrams);
+                    full = Copy(p.items);
                     sim.Apply(Command(p, "interact", node.x, node.y));
                     Require(sim.State.nodes.Contains(node) && node.hp == 3 && node.stock == 3 && tool.durability == 98 &&
-                        p.items[item] == WorldSimulator.InventoryLimit - room && sim.State.gathered == gathered,
+                        p.items.SequenceEqual(full) && sim.State.gathered == gathered,
                         "refused final hit changed the deposit, inventory or tool");
                     Advance(sim, .55f);
                 }
-                p.items[item] = WorldSimulator.InventoryLimit - 3;
+                p.items = Copy(baseline);
+                FillBackpackLeaving(p, 3 * unitGrams);
+                var expected = Copy(p.items);
+                expected[item] += 3;
                 sim.Apply(Command(p, "interact", node.x, node.y));
-                Require(!sim.State.nodes.Contains(node) && p.items[item] == WorldSimulator.InventoryLimit &&
+                Require(!sim.State.nodes.Contains(node) && p.items.SequenceEqual(expected) &&
+                    InventoryWeight.CarriedGrams(p) == InventoryWeight.CapacityGrams &&
                     sim.State.gathered == gathered + 3 && tool.durability == 97,
                     "a final hit with exactly enough space did not collect the entire deposit");
             }
@@ -199,6 +208,9 @@ static partial class Checks
                 Require(!sim.State.nodes.Contains(node) && p.items[item] == before + stock && sim.State.gathered == gathered + stock &&
                     pick.durability == wear - 3 && p.notice.Contains(DemoCatalog.ItemName(resource.Item2)),
                     "natural future deposit did not yield its entire stock: " + resource.Item2);
+                // This fixture travels to a separate deposit per resource. Between
+                // trips, leave the previous intact haul at camp.
+                p.items[item] = before;
                 Advance(sim, .6f);
             }
         });

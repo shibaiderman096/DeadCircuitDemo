@@ -516,13 +516,12 @@ namespace DeadCircuit
                     break;
                 case "collectwater":
                     if (arg != 0 || SurvivalGround(w, x, y) != '2') reason = "请选择附近水域";
-                    else if (n.waterRaw >= SurvivalCatalog.StackLimit) reason = "原水库存已满";
+                    else if (!InventoryWeight.CanFit(p, InventoryWeight.WaterGrams)) reason = "背包剩余负重不足";
                     break;
                 case "boilwater":
                     if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需先研究" + PrimitiveCatalog.Definition(7).name + "，按 T 查看";
                     else if (!SurvivalStationAt(w, p, x, y, BuildKind.StoneFurnace)) reason = "需已解锁的石炉，距离 2.4 格内且视线畅通";
                     else if (arg != 0 || n.waterRaw < 1 || Count(p.items, (int)ItemKind.Fuel) < 1) reason = "需要原水×1、燃料×1";
-                    else if (n.waterClean >= SurvivalCatalog.StackLimit) reason = "净水库存已满";
                     break;
                 case "cook":
                     var recipe = SurvivalCatalog.Recipe(arg);
@@ -533,8 +532,8 @@ namespace DeadCircuit
                     else for (int i = 0; i < recipe.foods.Length; i++)
                     {
                         if (Count(n.foods, i) < recipe.foods[i]) { reason = "缺少 " + SurvivalCatalog.Food(i).name; break; }
-                        if (Count(n.foods, i) - recipe.foods[i] + ((int)recipe.output == i ? recipe.quantity : 0) > SurvivalCatalog.StackLimit) { reason = "食物库存空间不足"; break; }
                     }
+                    if (reason.Length == 0 && !InventoryWeight.CanFit(p, InventoryWeight.CookingDeltaGrams(recipe))) reason = "背包剩余负重不足";
                     break;
                 case "till":
                     if (FindSurvivalPlot(w, x, y) != null) reason = "此处已有农田";
@@ -564,15 +563,15 @@ namespace DeadCircuit
                     {
                         var crop = SurvivalCatalog.Crop(plot.crop);
                         if (crop == null || plot.growth < 1 || plot.health <= 0) reason = "请等待作物成熟；空田或枯死地块需重新播种";
-                        else if (Count(n.foods, (int)crop.food) > SurvivalCatalog.StackLimit - crop.harvestCount ||
-                            Count(n.seeds, plot.crop) > SurvivalCatalog.StackLimit - crop.seedYield) reason = "食物或种子库存空间不足";
+                        else if (!InventoryWeight.CanFit(p, (long)crop.harvestCount * InventoryWeight.Grams(crop.food) +
+                            (long)crop.seedYield * InventoryWeight.Grams(crop.kind))) reason = "背包剩余负重不足";
                     }
                     break;
                 case "butcher":
                     CreatureState corpse = w.survival.creatures.Find(c => c.id == arg);
                     if (corpse == null || corpse.hp > 0 || corpse.meatLeft <= 0) reason = "没有可分解的尸体，或已无剩余肉";
                     else if (!SurvivalInReach(w, p, corpse.x, corpse.y)) reason = "走近尸体 2.4 格内并保持视线畅通";
-                    else if (Count(n.foods, (int)SurvivalCatalog.Creatures[(int)corpse.kind].food) > SurvivalCatalog.StackLimit - corpse.meatLeft) reason = "肉类库存已满";
+                    else if (!InventoryWeight.CanFit(p, (long)corpse.meatLeft * InventoryWeight.Grams(SurvivalCatalog.Creatures[(int)corpse.kind].food))) reason = "背包剩余负重不足";
                     break;
                 default: reason = "未知生存操作"; break;
             }

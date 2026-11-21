@@ -19,8 +19,7 @@ static partial class Checks
         sim.State.nodes.Clear(); sim.State.buildings.Clear(); sim.State.sites.Clear();
         sim.State.zombies.Clear(); sim.State.survival.creatures.Clear();
         player.needs = new SurvivalPlayerState { initialized = true };
-        player.activeSlot = 2; player.x = -18; player.y = -17; Array.Fill(player.items, 100);
-        player.items[(int)ItemKind.NuclearWaste] = 0;
+        player.activeSlot = 2; player.x = -18; player.y = -17;
         return sim;
     }
 
@@ -52,12 +51,13 @@ static partial class Checks
         {
             var sim = InfiniteSurvivalFixture(out var p); var world = sim.State;
             const int row = -17;
+            int woodBefore = p.items[(int)ItemKind.Wood];
             foreach (var c in new[] { (x: -17, y: row), (x: -16, y: row), (x: 47, y: row - 1) })
             {
                 p.x = c.x - 1; p.y = c.y; p.interactCooldown = 0;
                 sim.Apply(Command(p, "till", c.x, c.y));
             }
-            Require(world.survival.plots.Count == 3 && p.items[(int)ItemKind.Wood] == 97, "signed farming did not create three paid plots");
+            Require(world.survival.plots.Count == 3 && p.items[(int)ItemKind.Wood] == woodBefore - 3, "signed farming did not create three paid plots");
             var source = Saved(world); string before = Dump(source);
             var restored = new WorldSimulator(source);
             Require(restored.State.survival.plots.Select(plot => (plot.x, plot.y)).ToHashSet().SetEquals(
@@ -121,6 +121,10 @@ static partial class Checks
         {
             var sim = InfiniteSurvivalFixture(out var p); var world = sim.State;
             p.x = -18; p.y = -18; var bench = Add(world, BuildKind.Workbench, -16, -18);
+            p.items[(int)ItemKind.Stone] = 2;
+            p.items[(int)ItemKind.Branch] = 2;
+            p.items[(int)ItemKind.LooseStone] = 2;
+            p.items[(int)ItemKind.DryGrass] = 1;
             sim.Apply(Command(p,"primitive",arg:(int)PrimitiveTech.Tools)); Ready(p);
             Require(PrimitiveCatalog.HasResearch(world,PrimitiveTech.Tools),"negative workbench could not research tools");
             Require(EquipmentCatalog.HasWorkbench(world, p), "legacy bounds hid reachable negative workbench");

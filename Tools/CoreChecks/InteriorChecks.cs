@@ -31,6 +31,7 @@ static partial class Checks
         {
             var sim = new WorldSimulator(InteriorBox());
             var player = Builder(sim); player.x = 12; player.y = 8.5f;
+            player.items = DemoCatalog.BuildCost(BuildKind.Door);
             Require(sim.IsBlocked(12, 10) && sim.Interiors.At(12, 12) != null, "closed door fixture lacks blocked entrance or room");
             sim.Apply(Command(player, "interact", 12, 10));
             Require(!sim.IsBlocked(12, 10) && sim.Interiors.At(12, 12) != null, "opening door changed roof topology");

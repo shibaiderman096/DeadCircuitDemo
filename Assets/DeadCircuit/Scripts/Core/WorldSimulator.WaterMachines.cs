@@ -85,7 +85,7 @@ namespace DeadCircuit
             if (!mill.powered || !(mill.powerRatio > 0f)) { Notice(p,"磨坊需要接入有动力的轴系。"); return; }
             int[] foods = p.needs.foods;
             if (foods[(int)FoodKind.Wheat] < 2) { Notice(p,"磨粉需要 2 份小麦。"); return; }
-            if (foods[(int)FoodKind.Flour] > SurvivalCatalog.StackLimit-3) { Notice(p,"食物背包中的面粉容量不足。"); return; }
+            if (!InventoryWeight.CanFit(p, InventoryWeight.MillingDeltaGrams)) { Notice(p,"背包负重不足，无法带走面粉。"); return; }
             foods[(int)FoodKind.Wheat] -= 2;
             foods[(int)FoodKind.Flour] += 3;
             if (WaterCatalog.IsWaterDriven(State,mill)) State.waterMilled = SaturatingAdd(State.waterMilled,3);

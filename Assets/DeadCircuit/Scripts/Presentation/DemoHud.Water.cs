@@ -82,7 +82,7 @@ namespace DeadCircuit
             else if (player.needs == null || !player.needs.initialized) reason = "正在同步食材库存，请稍候。";
             else if (player.interactCooldown > 0f || Time.unscaledTime < waterMillSendAt) reason = "交互冷却中。";
             else if (Count(player.needs.foods, (int)FoodKind.Wheat) < 2) reason = "小麦不足，需要小麦×2。";
-            else if (Count(player.needs.foods, (int)FoodKind.Flour) > SurvivalCatalog.StackLimit - 3) reason = "面粉库存空间不足，请腾出3份容量。";
+            else if (!InventoryWeight.CanFit(player, InventoryWeight.MillingDeltaGrams)) reason = "背包剩余负重不足以带走面粉。";
             if (reason.Length != 0) return false;
             float nearest = float.PositiveInfinity;
             foreach (var building in world.buildings)

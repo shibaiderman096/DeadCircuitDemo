@@ -21,16 +21,14 @@ static partial class Checks
 
     static void ForagingChecks()
     {
-        Run("foraging gathering notice reports actual node biome food and capped receipt", () =>
+        Run("foraging gathering notice reports the node biome food", () =>
         {
             var sim = ForagingFixture(out var p, biome: (int)BiomeKind.Wetland);
             var map = sim.State.biomes.ToCharArray(); map[8 + 10 * 64] = '0'; sim.State.biomes = new string(map);
-            p.needs.foods[(int)FoodKind.Berries] = SurvivalCatalog.StackLimit;
-            p.needs.foods[(int)FoodKind.Mushroom] = SurvivalCatalog.StackLimit - 1;
             sim.Apply(Command(p, "interact", 10, 10));
-            Require(p.notice.Contains("野蘑菇 +1"), "actual capped biome forage absent from notice: " + p.notice);
-            Require(!p.notice.Contains("浆果") && !p.notice.Contains("苹果"), "notice promised overflow or player-cell biome loot");
-            Require(p.needs.foods[(int)FoodKind.Mushroom] == SurvivalCatalog.StackLimit && p.needs.foods[(int)FoodKind.Apple] == 0, "node biome or cap was ignored");
+            int mushrooms = p.needs.foods[(int)FoodKind.Mushroom];
+            Require(mushrooms > 0 && p.notice.Contains("野蘑菇 +" + mushrooms), "actual biome forage absent from notice: " + p.notice);
+            Require(!p.notice.Contains("苹果") && p.needs.foods[(int)FoodKind.Apple] == 0, "forage used the player-cell biome");
         });
         Run("foraging depleted broadleaf tree gives actual apples and berries", () =>
         {
@@ -93,18 +91,24 @@ static partial class Checks
                 Require(p.needs.foods.All(n => n == 0) && p.needs.seeds.All(n => n == 0), "inactive world/player gained forage: " + mode);
             }
         });
-        Run("foraging inventory caps saturate and discarded overflow cannot be recovered", () =>
+        Run("foraging main yield takes priority and only fitting extras appear in the receipt", () =>
         {
-            foreach (int fill in new[] { 998, 999 })
+            foreach (int eggs in new[] { 0, 1 })
             {
-                var sim = ForagingFixture(out var p, NodeKind.Crate); Array.Fill(p.needs.foods, fill); Array.Fill(p.needs.seeds, fill);
+                var sim = ForagingFixture(out var p, NodeKind.Crate);
+                FillSurvivalLoad(p, 500 + eggs * 70); // A ration weighs 500 g, an egg 70 g.
+                int ration = p.items[(int)ItemKind.Food];
+                var seeds = (int[])p.needs.seeds.Clone();
                 sim.Apply(Command(p, "interact", 10, 10));
-                Require(p.needs.foods.All(n => n >= 0 && n <= 999) && p.needs.seeds.All(n => n >= 0 && n <= 999), "forage overflowed stack limits");
-                foreach (var food in new[] { FoodKind.Egg, FoodKind.RawFish, FoodKind.Apple, FoodKind.Berries })
-                    Require(p.needs.foods[(int)food] == 999, "forage did not fill remaining capacity");
-                Array.Fill(p.needs.foods, 0); Array.Fill(p.needs.seeds, 0);
+                Require(sim.State.nodes.Count == 0 && p.items[(int)ItemKind.Food] == ration + 1, "extras displaced the crate's main yield");
+                Require(p.needs.foods[(int)FoodKind.Egg] == eggs && p.needs.foods.Sum() == eggs && p.needs.seeds.SequenceEqual(seeds),
+                    "forage did not truncate to the remaining shared weight");
+                string eggName = SurvivalCatalog.Foods[(int)FoodKind.Egg].name;
+                Require(eggs == 0 ? !p.notice.Contains(eggName) : p.notice.Contains(eggName + " +1"), "receipt did not match actual forage");
+                p.needs.thirst = 10;
+                Advance(sim, .5f); sim.Apply(Command(p, "drink", arg: 1));
                 Advance(sim, .5f); sim.Apply(Command(p, "interact", 10, 10));
-                Require(p.needs.foods.All(n => n == 0) && p.needs.seeds.All(n => n == 0), "overflow was banked on a removed source");
+                Require(p.needs.foods.Sum() == eggs && p.needs.seeds.SequenceEqual(seeds), "overflow was banked on a removed source");
             }
         });
         Run("foraging save restores partial source identically and exhausted source stays exhausted", () =>
@@ -144,14 +148,16 @@ static partial class Checks
             foreach (string mode in new[] { "capacity", "far", "wall", "offline", "dead", "unknown" })
             {
                 var sim = ForagingFixture(out var p);
-                if (mode == "capacity") p.items[(int)ItemKind.Wood] = 999;
+                if (mode == "capacity") FillSurvivalLoad(p, 490);
                 if (mode == "far") p.x = 3;
                 if (mode == "wall") Add(sim.State, BuildKind.Wall, 9, 10);
                 if (mode == "offline") sim.SetConnected(p.id, false);
                 if (mode == "dead") p.hp = 0;
+                var seeds = (int[])p.needs.seeds.Clone();
                 var command = Command(p, "interact", 10, 10); if (mode == "unknown") command.playerId = "unknown";
                 sim.Apply(command);
-                Require(sim.State.nodes.Single().stock == 1 && p.needs.foods.All(n => n == 0) && p.needs.seeds.All(n => n == 0), "invalid interaction obtained forage: " + mode);
+                Require(sim.State.nodes.Single().stock == 1 && p.needs.foods.All(n => n == 0) && p.needs.seeds.SequenceEqual(seeds),
+                    "invalid interaction obtained forage: " + mode);
             }
             var ore = ForagingFixture(out var miner, NodeKind.Ore); ore.Apply(Command(miner, "interact", 10, 10));
             Require(ore.State.nodes.Count == 0 && miner.needs.foods.All(n => n == 0) && miner.needs.seeds.All(n => n == 0), "industrial ore acquired tree/crate forage");

@@ -38,6 +38,16 @@ static partial class Checks
 
     static string SurvivalDump(WorldState world) => JsonSerializer.Serialize(world.survival, Json);
 
+    // Fill within the actual backpack budget while leaving an exact amount for the action under test.
+    static void FillSurvivalLoad(PlayerState player, int freeGrams)
+    {
+        long fill = InventoryWeight.CapacityGrams - InventoryWeight.CarriedGrams(player) - freeGrams;
+        int seedGrams = InventoryWeight.Grams(CropKind.Herb);
+        Require(fill >= 0 && fill % seedGrams == 0, "cannot fill this fixture to the intended weight");
+        player.needs.waterClean += (int)(fill / InventoryWeight.WaterGrams);
+        player.needs.seeds[(int)CropKind.Herb] += (int)(fill % InventoryWeight.WaterGrams) / seedGrams;
+    }
+
     static void SurvivalChecks()
     {
         Run("survival consumes actual food once and retains industrial ration", () =>
@@ -64,18 +74,37 @@ static partial class Checks
                 Add(s, BuildKind.StoneFurnace, 10, 10);
             });
             p.items[(int)ItemKind.Fuel] = 1; p.needs.thirst = 10;
+            FillSurvivalLoad(p, 500);
+            int cleanBefore = p.needs.waterClean;
             sim.Apply(Command(p, "collectwater", 8, 12));
             Require(p.needs.waterRaw == 1, "collection missed reachable water"); Advance(sim, .5f);
             sim.Apply(Command(p, "boilwater", 10, 10));
-            Require(p.needs.waterRaw == 0 && p.needs.waterClean == 1 && p.items[(int)ItemKind.Fuel] == 0, "boil was not a 1:1 atomic transfer");
+            Require(p.needs.waterRaw == 0 && p.needs.waterClean == cleanBefore + 1 && p.items[(int)ItemKind.Fuel] == 0,
+                "a full backpack blocked the weight-reducing water exchange");
             Advance(sim, .5f); sim.Apply(Command(p, "boilwater", 10, 10));
-            Require(p.needs.waterClean == 1, "empty boiling duplicated water");
+            Require(p.needs.waterClean == cleanBefore + 1, "empty boiling duplicated water");
             sim.Apply(Command(p, "drink", arg: 1));
-            Require(p.needs.waterClean == 0 && p.needs.thirst > 49 && p.needs.infection == 0, "clean drinking did not consume safely");
+            Require(p.needs.waterClean == cleanBefore && p.needs.thirst > 49 && p.needs.infection == 0, "clean drinking did not consume safely");
         });
-        Run("survival cooking rejects missing fuel capacity range and occlusion atomically", () =>
+        Run("survival shore collection needs room for one water unit", () =>
         {
-            foreach (string blocked in new[] { "fuel", "capacity", "range", "wall" })
+            var sim = SurvivalFixture(out var p, s =>
+            {
+                var ground = s.ground.ToCharArray(); ground[8 + 12 * 64] = '2'; s.ground = new string(ground);
+            });
+            FillSurvivalLoad(p, 0);
+            int cleanBefore = p.needs.waterClean;
+            sim.Apply(Command(p, "collectwater", 8, 12));
+            Require(p.needs.waterRaw == 0 && p.needs.waterClean == cleanBefore && p.interactCooldown == 0,
+                "full backpack accepted water or spent the interaction");
+            p.needs.thirst = 10;
+            sim.Apply(Command(p, "drink", arg: 1)); Advance(sim, .5f);
+            sim.Apply(Command(p, "collectwater", 8, 12));
+            Require(p.needs.waterRaw == 1 && p.needs.waterClean == cleanBefore - 1, "shore did not supply water once room was freed");
+        });
+        Run("survival cooking rejects missing fuel range and occlusion atomically", () =>
+        {
+            foreach (string blocked in new[] { "fuel", "range", "wall" })
             {
                 var sim = SurvivalFixture(out var p, s =>
                 {
@@ -83,7 +112,6 @@ static partial class Checks
                     if (blocked == "wall") Add(s, BuildKind.Wall, 9, 10);
                 });
                 p.needs.foods[(int)FoodKind.RawMeat] = 2; p.items[(int)ItemKind.Fuel] = blocked == "fuel" ? 0 : 2;
-                if (blocked == "capacity") p.needs.foods[(int)FoodKind.RoastMeat] = 999;
                 if (blocked == "range") p.x = 3;
                 string needs = JsonSerializer.Serialize(p.needs, Json); int fuel = p.items[(int)ItemKind.Fuel];
                 sim.Apply(Command(p, "cook", 10, 10, 0));
@@ -91,8 +119,23 @@ static partial class Checks
             }
             var good = SurvivalFixture(out var actor, s => Add(s, BuildKind.StoneFurnace, 10, 10));
             actor.needs.foods[(int)FoodKind.RawMeat] = 1; actor.items[(int)ItemKind.Fuel] = 1;
+            FillSurvivalLoad(actor, 0);
             good.Apply(Command(actor, "cook", 10, 10, 0));
             Require(actor.needs.foods[(int)FoodKind.RawMeat] == 0 && actor.needs.foods[(int)FoodKind.RoastMeat] == 1 && actor.items[(int)ItemKind.Fuel] == 0, "valid cooking not connected");
+        });
+        Run("survival cooking checks the net weight of a complete recipe", () =>
+        {
+            // Two wheat weigh 240 g and one flour weighs 250 g.
+            foreach (int freeGrams in new[] { 0, 10 })
+            {
+                var sim = SurvivalFixture(out var p, s => Add(s, BuildKind.Workbench, 10, 10));
+                p.needs.foods[(int)FoodKind.Wheat] = 2;
+                FillSurvivalLoad(p, freeGrams);
+                sim.Apply(Command(p, "cook", 10, 10, 6));
+                bool fits = freeGrams == 10;
+                Require(p.needs.foods[(int)FoodKind.Wheat] == (fits ? 0 : 2) &&
+                    p.needs.foods[(int)FoodKind.Flour] == (fits ? 1 : 0), "manual milling did not check the 10 g net gain atomically");
+            }
         });
         Run("survival refuses disconnected dead unknown and invalid commands", () =>
         {
@@ -180,6 +223,26 @@ static partial class Checks
             sim.Apply(Command(p, "sow", 10, 10, (int)CropKind.Carrot));
             Require(p.needs.seeds[(int)CropKind.Carrot] == 1, "harvested seed is not reusable");
         });
+        Run("survival harvest preserves a ripe crop until food and seeds both fit", () =>
+        {
+            var sim = SurvivalFixture(out var p, s => s.survival.plots.Add(new FarmPlotState
+                { id = s.nextId++, x = 10, y = 10, crop = (int)CropKind.Carrot, growth = 1, moisture = 60 }));
+            p.needs.seeds[(int)CropKind.Carrot] = 999;
+            FillSurvivalLoad(p, 540); // Three carrots fit. Their two seeds need another 20 g.
+            var plot = sim.State.survival.plots.Single();
+            sim.Apply(Command(p, "harvest", 10, 10));
+            Require(plot.crop == (int)CropKind.Carrot && plot.growth == 1 && p.interactCooldown == 0 &&
+                p.needs.foods[(int)FoodKind.Carrot] == 0 && p.needs.seeds[(int)CropKind.Carrot] == 999,
+                "rejected harvest removed the crop or granted a partial batch");
+            p.needs.thirst = 10;
+            sim.Apply(Command(p, "drink", arg: 1)); Advance(sim, .5f);
+            sim.Apply(Command(p, "harvest", 10, 10));
+            Require(plot.crop == -1 && p.needs.foods[(int)FoodKind.Carrot] == 3 && p.needs.seeds[(int)CropKind.Carrot] == 1001,
+                "harvest failed after freeing room or still capped seeds at 999");
+            var loaded = new WorldSimulator(Saved(sim.State));
+            Require(loaded.State.players.Single().needs.seeds[(int)CropKind.Carrot] == 1001,
+                "valid seed stack over 999 did not survive save and restore");
+        });
         Run("survival dry and freezing crops cannot grow for free", () =>
         {
             foreach (bool freezing in new[] { false, true })
@@ -217,11 +280,34 @@ static partial class Checks
             int id = sim.State.survival.creatures[0].id;
             p.activeSlot = 0; p.weaponId = 0; p.toolId = 0;
             sim.Apply(new PlayerCommand { playerId = p.id, action = "attack", aimX = 1, aimY = 0 });
-            Require(sim.State.survival.creatures[0].hp == 0, "main melee has not connected DamageCreature");
+            var corpse = sim.State.survival.creatures.Single();
+            Require(corpse.hp == 0, "main melee has not connected DamageCreature");
+            FillSurvivalLoad(p, 250); // Room for one serving, but the corpse has two.
+            sim.Apply(Command(p, "butcher", arg: id));
+            Require(sim.State.survival.creatures.Contains(corpse) && corpse.meatLeft == 2 &&
+                p.needs.foods[(int)FoodKind.RawPoultry] == 0 && p.interactCooldown == 0, "failed butchery consumed or partially looted a carcass");
+            p.needs.thirst = 10;
+            sim.Apply(Command(p, "drink", arg: 1)); Advance(sim, .5f);
             sim.Apply(Command(p, "butcher", arg: id));
             Require(sim.State.survival.creatures.Count == 0 && p.needs.foods[(int)FoodKind.RawPoultry] == 2, "dead chicken did not yield finite meat");
             Advance(sim, .5f); sim.Apply(Command(p, "butcher", arg: id));
             Require(p.needs.foods[(int)FoodKind.RawPoultry] == 2, "carcass replay duplicated meat");
+        });
+        Run("survival zombie kill grants XP when the scrap drop cannot fit", () =>
+        {
+            foreach (int freeGrams in new[] { 440, 450 })
+            {
+                var sim = SurvivalFixture(out var p, s => s.zombies.Add(new ZombieState
+                    { id = s.nextId++, hp = 1, x = 9, y = 10 }));
+                p.activeSlot = 0; p.weaponId = p.toolId = 0;
+                FillSurvivalLoad(p, freeGrams);
+                int scrapBefore = p.items[(int)ItemKind.Scrap], xpBefore = p.xp;
+                sim.Apply(new PlayerCommand { playerId = p.id, action = "attack", aimX = 1, aimY = 0 });
+                Require(sim.State.zombies.Count == 0 && sim.State.kills == 1 && p.xp == xpBefore + 12,
+                    "carried weight affected the kill or experience reward");
+                Require(p.items[(int)ItemKind.Scrap] == scrapBefore + (freeGrams == 450 ? 1 : 0),
+                    "kill reward did not respect the remaining weight");
+            }
         });
         Run("survival world save rejects corrupt graphs and duplicate shared entity ids", () =>
         {
@@ -239,7 +325,7 @@ static partial class Checks
                 s => s.survival.creatures[0].hp = -1, s => s.survival.creatures[0].kind = (CreatureKind)99,
                 s => s.survival.creatures.Add(null), s => s.survival.plots[0].crop = 99,
                 s => s.players[0].needs.foods = new int[1], s => s.players[0].needs.seeds[0] = -1,
-                s => s.players[0].needs.waterClean = 1000, s => s.players[0].needs.thirst = float.PositiveInfinity,
+                s => s.players[0].needs.waterClean = WorldSimulator.InventoryLimit + 1, s => s.players[0].needs.thirst = float.PositiveInfinity,
                 s => s.players[0].needs.bodyTemperature = 0, s => s.nextId = s.survival.creatures[0].id
             })
             {

@@ -110,9 +110,7 @@ namespace DeadCircuit
         {
             if (player == null || building?.modularModules == null || index < 0 || index >= building.modularModules.Count) return false;
             var paid = building.modularModules[index]?.paid;
-            if (paid != null) for (int item = 0; item < paid.Length; item++)
-                if (paid[item] > WorldSimulator.InventoryLimit - (player.items != null && item < player.items.Length ? player.items[item] : 0)) return false;
-            return true;
+            return paid == null || InventoryWeight.CanFit(player, InventoryWeight.MaterialsGrams(paid));
         }
 
         internal static bool InReach(WorldState world, PlayerState player, int tx, int ty, BuildingState ignored)

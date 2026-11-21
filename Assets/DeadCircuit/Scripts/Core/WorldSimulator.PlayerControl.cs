@@ -281,14 +281,12 @@ namespace DeadCircuit
             if (State.survival != null && State.survival.enabled && p.needs != null)
             {
                 if (input.targetKind == PlayerControlTarget.Water)
-                    return p.needs.waterRaw < SurvivalCatalog.StackLimit && WorldTiles.Ground(State, input.targetX, input.targetY) == '2';
+                    return CanCollectSurvivalWater(p, input.targetX, input.targetY);
                 if (input.targetKind == PlayerControlTarget.Plot)
                 {
                     FarmPlotState plot = SurvivalPlotAt(input.targetX, input.targetY);
-                    var crop = plot == null ? null : SurvivalCatalog.Crop(plot.crop);
-                    if (plot == null || plot.id != input.targetId || crop == null || plot.health <= 0 || plot.growth < 1) return false;
-                    if (p.needs.foods[(int)crop.food] <= SurvivalCatalog.StackLimit - crop.harvestCount &&
-                        p.needs.seeds[plot.crop] <= SurvivalCatalog.StackLimit - crop.seedYield) return true;
+                    if (plot == null || plot.id != input.targetId || plot.crop < 0 || plot.health <= 0 || plot.growth < 1) return false;
+                    if (CanHarvestSurvivalPlot(p, plot, out _)) return true;
                     Notice(p, "背包已满，已停止收获。"); return false;
                 }
                 if (input.targetKind == PlayerControlTarget.Corpse)
@@ -296,7 +294,7 @@ namespace DeadCircuit
                     CreatureState corpse = State.survival.creatures.Find(c => c.id == input.targetId);
                     if (corpse == null || corpse.hp > 0 || corpse.meatLeft <= 0) return false;
                     input.focusX = corpse.x; input.focusY = corpse.y;
-                    if (p.needs.foods[(int)SurvivalCatalog.Creatures[(int)corpse.kind].food] <= SurvivalCatalog.StackLimit - corpse.meatLeft) return true;
+                    if (CanButcherSurvivalCreature(p, corpse)) return true;
                     Notice(p, "背包已满，已停止分解。"); return false;
                 }
             }

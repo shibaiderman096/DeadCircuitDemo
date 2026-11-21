@@ -38,7 +38,6 @@ namespace DeadCircuit
     /// </summary>
     public static class EquipmentCatalog
     {
-        public const int MaxGear = 24;
         public static readonly string[] GearNames = { "石斧", "石镐", "钢斧", "钢镐", "扳手", "KA-BAR 1217军刀", "GLOCK 17手枪", "Mossberg 590霰弹枪", "M4A1卡宾枪", "M24狙击步枪", "布头巾", "皮夹克", "工装裤", "工装靴", "钢盔", "防弹背心", "战术头盔", "战术背心", "战术靴", "核作业防护服" };
         public static readonly string[] PartNames = { "红点瞄具", "四倍瞄具", "消音器", "制退器", "扩容弹匣", "人体工学握把", "精密枪管" };
         public static readonly string[] SlotNames = { "瞄具", "枪口", "弹匣", "握把", "枪管" };
@@ -235,8 +234,10 @@ namespace DeadCircuit
             if (!ValidCrafter(world, player)) return "请确认角色已连接且仍存活。";
             if (!IsHandcraftedTool(kind) && !HasWorkbench(world, player)) return "请靠近工作台，并确保中间没有障碍。";
             if(!(player.interactCooldown<=0f)) return "操作尚未结束，请稍候。";
-            if(player.gear.Count>=MaxGear) return "装备栏已满（最多 24 件）。";
             if(!CanPay(player.items,d.cost)) return "制作材料不足。";
+            if (player.gear.Count >= InventoryWeight.MaxSavedGear) return "请先整理已持有的装备。";
+            long deltaGrams = InventoryWeight.Grams(kind) - InventoryWeight.MaterialsGrams(d.cost);
+            if(!InventoryWeight.CanFit(player,deltaGrams)) return "背包剩余负重不足。";
             return "";
         }
         public static bool CanCraftPart(WorldState world, PlayerState player, PartKind kind) => PartCraftRequirement(world,player,kind).Length==0;
@@ -253,6 +254,8 @@ namespace DeadCircuit
             if(player.parts==null || player.parts.Length!=PartNames.Length) return "配件库存无效。";
             if(player.parts[(int)kind]>=WorldSimulator.InventoryLimit) return "配件库存已满。";
             if(!CanPay(player.items,definition.cost)) return "制作材料不足。";
+            long deltaGrams = InventoryWeight.Grams(kind) - InventoryWeight.MaterialsGrams(definition.cost);
+            if(!InventoryWeight.CanFit(player,deltaGrams)) return "背包剩余负重不足。";
             return "";
         }
         private static bool CanPay(int[] items,int[] cost)

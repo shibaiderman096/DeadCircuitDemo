@@ -9,6 +9,9 @@ static partial class Checks
             var state=Flat(era:TechEra.MediumVoltage); Add(state,BuildKind.Workbench,10,10);
             var sim=new WorldSimulator(state); var p=Builder(sim); p.x=8; p.y=10;
             sim.State.era=TechEra.HighVoltage;
+            p.items = Copy(PrecisionCatalog.Definition(0).cost);
+            var poleCost = DemoCatalog.BuildCost(BuildKind.HighPole);
+            for (int i = 0; i < p.items.Length; i++) p.items[i] += poleCost[i];
             var before=Copy(p.items);
             sim.Apply(Command(p,"build",10,14,(int)BuildKind.HighPole));
             Require(sim.State.buildings.Count==1,"HV era alone unlocked the high grid");

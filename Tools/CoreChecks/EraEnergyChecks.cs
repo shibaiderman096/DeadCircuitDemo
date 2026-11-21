@@ -28,7 +28,7 @@ static partial class Checks
                 var state=Flat(era:era);Water(state,7,12);var source=Add(state,sourceKind,7,10);if(sourceKind==BuildKind.Boiler)source.items[(int)(source.kind==BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel)]=2;
                 var m=Add(state,machineKind,10,10);m.recipe=recipe;m.items=Copy(TechCatalog.Recipe(recipe).inputs);var sim=new WorldSimulator(state);Advance(sim,1);var target=Building(sim,m.id);
                 Require(Building(sim,source.id).powerGeneration>0 && !target.powered && target.progress==0,"one-cell air gap transmitted mechanical/steam power");
-                var p=Builder(sim);p.x=9;p.y=8;sim.Apply(Command(p,"build",9,10,(int)linkKind));Require(sim.State.buildings.Any(b=>b.kind==linkKind),"connecting link did not build");Advance(sim,TechCatalog.Recipe(recipe).duration+.1f);
+                var p=Builder(sim);p.items=DemoCatalog.BuildCost(linkKind);p.x=9;p.y=8;sim.Apply(Command(p,"build",9,10,(int)linkKind));Require(sim.State.buildings.Any(b=>b.kind==linkKind),"connecting link did not build");Advance(sim,TechCatalog.Recipe(recipe).duration+.1f);
                 Require(target.powered && target.items[(int)output]>0,"touching link did not run actual production");
                 sim.Apply(Command(p,"dismantle",9,10));Require(!sim.State.buildings.Any(b=>b.kind==linkKind),"link was not dismantled");float progress=target.progress;int count=target.items[(int)output];Advance(sim,1);
                 Require(!target.powered && target.progress==progress && target.items[(int)output]==count,"dismantled link left phantom transmission");
@@ -139,6 +139,7 @@ static partial class Checks
         Run("nuclear construction and arming use the public Apply boundaries", () =>
         {
             var sim=new WorldSimulator(Flat(era:TechEra.Nuclear));var p=Builder(sim);p.x=8;p.y=10;
+            p.items = DemoCatalog.BuildCost(BuildKind.ReactorControlConsole);
             Ready(p);sim.Apply(Command(p,"build",10,10,(int)BuildKind.ReactorControlConsole));
             var console=sim.State.buildings.Single(b=>b.kind==BuildKind.ReactorControlConsole);Require(console.setting==0,"new nuclear console started armed");
             Ready(p);sim.Apply(Command(p,"configure",10,10,1));Require(console.setting==1,"public configure did not arm the nuclear console");

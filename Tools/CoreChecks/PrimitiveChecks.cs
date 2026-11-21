@@ -38,6 +38,22 @@ static partial class Checks
         sim.Apply(Command(p, action, b.x, b.y, arg));
     }
 
+    // Add unrelated, legal cargo until there is exactly this much free space.
+    static void FillBackpackLeaving(PlayerState p, int freeGrams)
+    {
+        int wood = (int)ItemKind.Wood, ammo = (int)ItemKind.Ammo;
+        int ballast = checked((int)(InventoryWeight.CapacityGrams - freeGrams - InventoryWeight.CarriedGrams(p)));
+        Require(ballast >= 0, "fixture already exceeds the requested backpack weight");
+        int woodGrams = InventoryWeight.Grams(ItemKind.Wood), ammoGrams = InventoryWeight.Grams(ItemKind.Ammo);
+        int logs = ballast / woodGrams;
+        while (logs >= 0 && (ballast - logs * woodGrams) % ammoGrams != 0) logs--;
+        Require(logs >= 0, "fixture cannot reach the requested backpack weight");
+        p.items[wood] += logs;
+        p.items[ammo] += (ballast - logs * woodGrams) / ammoGrams;
+        Require(InventoryWeight.CarriedGrams(p) == InventoryWeight.CapacityGrams - freeGrams,
+            "fixture backpack weight differs from the requested boundary");
+    }
+
     static void PrimitiveChecks()
     {
         Run("primitive bronze recipe belongs to the primitive era", () =>
@@ -126,6 +142,7 @@ static partial class Checks
                 PrimitiveBuild(sim, p, kind, 14, 10);
             }
             var gearWorld = PrimitiveFixture(out var crafter, 31, s => s.produced[(int)ItemKind.Bronze] = 4);
+            crafter.items = DemoCatalog.Materials(ItemKind.Bronze, 2, ItemKind.Brick, 4, ItemKind.Scrap, 1, ItemKind.Iron, 2);
             PrimitiveUnlock(gearWorld, crafter, PrimitiveTech.Bloomery, DemoCatalog.Materials(ItemKind.Bronze, 2, ItemKind.Brick, 4));
             Advance(gearWorld, .55f); int count = crafter.gear.Count; var before = Copy(crafter.items);
             gearWorld.Apply(Command(crafter, "gearcraft", arg: (int)GearKind.Knife));
@@ -176,6 +193,7 @@ static partial class Checks
                     s.produced[(int)ItemKind.Brick] = entry.brick; s.produced[(int)ItemKind.Copper] = entry.copper;
                     s.produced[(int)ItemKind.Tin] = entry.tin; s.produced[(int)ItemKind.Bronze] = entry.bronze;
                 });
+                p.items = Copy(PrimitiveCatalog.Definition(entry.tech).cost);
                 var before = Copy(p.items); sim.Apply(Command(p, "primitive", arg: entry.tech));
                 Require(sim.State.primitiveResearch == (entry.allowed ? entry.mask | (1 << entry.tech) : entry.mask), "research production boundary is wrong for tech " + entry.tech);
                 if (!entry.allowed) Inventory(p.items, before, "near-miss production milestone was charged");
@@ -209,18 +227,35 @@ static partial class Checks
                 }
             }
         });
-        Run("primitive bronze crafting rejects short inputs and full output without side effects", () =>
+        Run("primitive bronze still crafts at full backpack weight", () =>
+        {
+            var sim = PrimitiveFixture(out var p, 31);
+            p.items = DemoCatalog.Materials(ItemKind.Copper, 3, ItemKind.Tin, 1);
+            FillBackpackLeaving(p, 0);
+            var expected = Copy(p.items);
+            expected[(int)ItemKind.Copper] -= 3;
+            expected[(int)ItemKind.Tin] -= 1;
+            expected[(int)ItemKind.Bronze] += 4;
+            sim.Apply(Command(p, "craft", arg: 2));
+            Inventory(p.items, expected, "bronze crafting balance at the weight limit");
+            Require(sim.State.produced[(int)ItemKind.Bronze] == 4 && InventoryWeight.CarriedGrams(p) == InventoryWeight.CapacityGrams,
+                "weight-neutral crafting did not complete at the full backpack weight");
+        });
+        Run("primitive crafting rejects short inputs and insufficient backpack weight without side effects", () =>
         {
             foreach (string rejection in new[] { "short", "full" })
             {
-                var sim = PrimitiveFixture(out var p, 31);
-                if (rejection == "short") p.items[(int)ItemKind.Copper] = 2;
-                if (rejection == "full") p.items[(int)ItemKind.Bronze] = WorldSimulator.InventoryLimit - 3;
+                var sim = PrimitiveFixture(out var p, 63);
+                bool full = rejection == "full";
+                // Bronze trades equal weight. Scrap adds weight and needs room for the net increase.
+                int recipe = full ? 3 : 2;
+                p.items = full ? DemoCatalog.Materials(ItemKind.Iron, 1) : DemoCatalog.Materials(ItemKind.Copper, 2, ItemKind.Tin, 1);
+                if (full) FillBackpackLeaving(p, 3 * InventoryWeight.Grams(ItemKind.Scrap) - InventoryWeight.Grams(ItemKind.Iron) - 5);
                 var before = Copy(p.items); var produced = Copy(sim.State.produced);
-                sim.Apply(Command(p, "craft", arg: 2));
-                Inventory(p.items, before, "rejected bronze craft consumed material: " + rejection);
-                Inventory(sim.State.produced, produced, "rejected bronze craft awarded production");
-                Require(p.interactCooldown == 0, "rejected bronze craft started cooldown");
+                sim.Apply(Command(p, "craft", arg: recipe));
+                Inventory(p.items, before, "rejected craft consumed material: " + rejection);
+                Inventory(sim.State.produced, produced, "rejected craft awarded production");
+                Require(p.interactCooldown == 0, "rejected craft started cooldown");
             }
         });
         Run("primitive kiln refuses full output without consuming input", () =>
@@ -243,7 +278,7 @@ static partial class Checks
         Run("primitive real kiln copper tin bronze iron chain unlocks water", () =>
         {
             var sim = PrimitiveFixture(out var p); Array.Clear(p.items);
-            p.items[(int)ItemKind.Wood] = 200; p.items[(int)ItemKind.Stone] = 100; p.items[(int)ItemKind.Clay] = 100;
+            p.items[(int)ItemKind.Wood] = 55; p.items[(int)ItemKind.Stone] = 24; p.items[(int)ItemKind.Clay] = 28;
             p.items[(int)ItemKind.Ore] = 20; p.items[(int)ItemKind.CopperOre] = 20; p.items[(int)ItemKind.TinOre] = 20;
             PrimitiveUnlock(sim, p, PrimitiveTech.Tools, DemoCatalog.Materials(ItemKind.Wood, 2, ItemKind.Stone, 2));
             PrimitiveUnlock(sim, p, PrimitiveTech.Charcoal, DemoCatalog.Materials(ItemKind.Wood, 4, ItemKind.Stone, 2));
@@ -257,6 +292,7 @@ static partial class Checks
             PrimitiveInteract(sim, p, charcoal);
             PrimitiveUnlock(sim, p, PrimitiveTech.CopperTin, DemoCatalog.Materials(ItemKind.Brick, 2, ItemKind.Charcoal, 1));
             PrimitiveInteract(sim, p, charcoal);
+            p.items[(int)ItemKind.Wood] = Math.Max(p.items[(int)ItemKind.Wood], 22);
             var furnace = PrimitiveBuild(sim, p, BuildKind.StoneFurnace, 22, 10);
             PrimitiveInteract(sim, p, furnace, "recipe", 11);
             Require(furnace.recipe == 11, "researched copper recipe remained closed");
@@ -334,18 +370,25 @@ static partial class Checks
         {
             foreach (var entry in new[] { (node: NodeKind.Stone, item: ItemKind.Stone), (node: NodeKind.Clay, item: ItemKind.Clay) })
             {
-                var sim = PrimitiveFixture(out var p, arrange: s => s.nodes.Add(new NodeState { id = s.nextId++, kind = entry.node, x = 14, y = 10, stock = 6 }));
+                var sim = PrimitiveFixture(out var p, 1, s => s.nodes.Add(new NodeState { id = s.nextId++, kind = entry.node, x = 14, y = 10, stock = 6 }));
+                p.items = Copy(EquipmentCatalog.Gear(GearKind.StonePickaxe).cost);
                 sim.Apply(Command(p, "gearcraft", arg: (int)GearKind.StonePickaxe));
                 var pickaxe = p.gear.Single(g => g.kind == GearKind.StonePickaxe);
                 sim.Apply(Command(p, "equip", arg: pickaxe.id));
-                p.x = 13; p.items[(int)entry.item] = WorldSimulator.InventoryLimit - 5;
+                p.x = 13;
+                int unitGrams = InventoryWeight.Grams(entry.item);
+                FillBackpackLeaving(p, 5 * unitGrams);
+                var full = Copy(p.items);
                 for (int swing = 0; swing < 3; swing++)
                 {
                     Advance(sim, .55f); sim.Apply(Command(p, "interact", 14, 10));
                 }
                 Require(pickaxe.durability == 98 && sim.State.nodes.Single().stock == 6 && sim.State.nodes.Single().hp == 6 &&
-                    sim.State.gathered == 0 && p.items[(int)entry.item] == WorldSimulator.InventoryLimit - 5, "insufficient capacity consumed the last swing or stock");
-                Advance(sim, .55f); p.items[(int)entry.item] = 0; var before = Copy(p.items);
+                    sim.State.gathered == 0, "insufficient capacity consumed the last swing or stock");
+                Inventory(p.items, full, "insufficient capacity changed held items");
+                Advance(sim, .55f); Array.Clear(p.items);
+                FillBackpackLeaving(p, 6 * unitGrams);
+                var before = Copy(p.items);
                 sim.Apply(Command(p, "interact", 14, 10));
                 var expected = Copy(before); expected[(int)entry.item] = 6;
                 Inventory(p.items, expected, "primitive node yielded the wrong resource");
@@ -360,6 +403,7 @@ static partial class Checks
                 b.items[(int)ItemKind.Ore] = 1; b.items[(int)ItemKind.Fuel] = 1;
             });
             var furnace = sim.State.buildings.Single(b => b.kind == BuildKind.StoneFurnace);
+            p.items = DemoCatalog.Materials(ItemKind.Copper, 3, ItemKind.Tin, 1, ItemKind.Wood, 12, ItemKind.Iron, 6);
             var before = Copy(p.items); sim.Apply(Command(p, "primitive", arg: 0));
             Inventory(p.items, before, "legacy bypass accepted unnecessary research payment");
             Require(sim.State.primitiveResearch == 0 && PrimitiveCatalog.WaterRequirement(sim.State).Length == 0, "legacy acquired primitive locks");

@@ -82,6 +82,43 @@ namespace DeadCircuit
                 }
             }
 
+            IEnumerator DragBlueprintChoices(bool buildings)
+            {
+                var scroll = hud.BlueprintChoiceScroll;
+                Canvas.ForceUpdateCanvases();
+                Require(scroll != null && scroll.horizontal && !scroll.vertical &&
+                    scroll.content.rect.width > scroll.viewport.rect.width + 1, "both levels use a horizontally overflowing choice strip");
+                scroll.StopMovement(); scroll.horizontalNormalizedPosition = 0;
+                Canvas.ForceUpdateCanvases(); yield return null;
+                int planned = sim.State.buildings.Count;
+                var corners = new Vector3[4]; scroll.viewport.GetWorldCorners(corners);
+                Vector3 middle = (corners[0] + corners[2]) * .5f;
+                Vector3 a = middle + Vector3.right * (corners[2].x - corners[0].x) * .22f;
+                Vector3 b = middle - Vector3.right * (corners[2].x - corners[0].x) * .22f;
+                Vector3 ChoiceWorld(Vector3 point) => view.WorldCamera.ScreenToWorldPoint(new Vector3(point.x, point.y, -view.WorldCamera.transform.position.z));
+                var target = ChoiceWorld(a); yield return Sample(target.x, target.y, left: true);
+                for (int step = 1; step <= 8; step++)
+                { target = ChoiceWorld(Vector3.Lerp(a, b, step / 8f)); yield return Sample(target.x, target.y, left: true); }
+                target = ChoiceWorld(b); yield return Sample(target.x, target.y);
+                float afterLeft = scroll.horizontalNormalizedPosition;
+                Require(afterLeft > .02f, "dragging choices left reveals later cards");
+                scroll.StopMovement();
+                yield return Sample(target.x, target.y, left: true);
+                for (int step = 1; step <= 8; step++)
+                { target = ChoiceWorld(Vector3.Lerp(b, a, step / 8f)); yield return Sample(target.x, target.y, left: true); }
+                target = ChoiceWorld(a); yield return Sample(target.x, target.y);
+                Require(scroll.horizontalNormalizedPosition < afterLeft - .01f, "dragging choices right returns toward earlier cards");
+                Require(sim.State.buildings.Count == planned && (buildings ? hud.BlueprintBuildingsMenuOpen && !bridge.BuildSelection.HasValue : hud.BlueprintModulesMenuOpen),
+                    "sliding cards does not select a building or paint the world");
+                scroll.StopMovement(); scroll.horizontalNormalizedPosition = 0; refreshHud.Invoke(hud, null);
+                Click("Blueprint Scroll Right"); refreshHud.Invoke(hud, null);
+                float afterArrow = scroll.horizontalNormalizedPosition;
+                Require(afterArrow > .01f, "right navigation button advances the shared strip");
+                Click("Blueprint Scroll Left"); refreshHud.Invoke(hud, null);
+                Require(scroll.horizontalNormalizedPosition < afterArrow, "left navigation button reverses the shared strip");
+                scroll.StopMovement(); scroll.horizontalNormalizedPosition = 0; Canvas.ForceUpdateCanvases();
+            }
+
             // Deliberately asymmetric 3x4 design, with two real holes and an extra casing.
             // The player chooses every cell and port direction; no whole-machine stencil is used.
             var layout = new[] {
@@ -127,7 +164,8 @@ namespace DeadCircuit
                 Require(Active("Blueprint Building Menu") && !Active("Modular Blueprint Palette"),
                     "blueprint entry opens only level one building choices");
                 Require(!bridge.BuildSelection.HasValue, "level one does not activate a world placement brush");
-                RequireBlueprintPanelFits("Blueprint Building Menu");
+                var sharedMenu = Rect("Blueprint Menu").GetEntityId();
+                RequireBlueprintPanelFits("Blueprint Menu");
                 RequireBlueprintEntryDoesNotOverlap();
                 if (machine == 0)
                 {
@@ -137,42 +175,48 @@ namespace DeadCircuit
                     Require(player.x == menuX && player.y == menuY && sim.State.buildings.Count == plannedBeforeMenu,
                         "level one consumes movement and world clicks while choosing a building");
                     yield return Sample(x, y);
+                    yield return DragBlueprintChoices(true);
                     yield return Capture("blueprint-building-menu");
                     Screen.SetResolution(1280, 720, FullScreenMode.Windowed);
                     yield return new WaitForSecondsRealtime(.4f);
                     Canvas.ForceUpdateCanvases(); refreshHud.Invoke(hud, null);
-                    RequireBlueprintPanelFits("Blueprint Building Menu");
+                    RequireBlueprintPanelFits("Blueprint Menu");
                     RequireBlueprintEntryDoesNotOverlap();
                     yield return Capture("blueprint-building-menu-1280");
                     Screen.SetResolution(1440, 900, FullScreenMode.Windowed);
                     yield return new WaitForSecondsRealtime(.4f);
                 }
+                EnsureBlueprintChoiceVisible("Blueprint Building " + kinds[machine]);
                 Click("Blueprint Building " + kinds[machine]);
                 yield return Sample(x, y, ticks: 8);
                 refreshHud.Invoke(hud, null);
                 Require(Active("Modular Blueprint Palette") && !Active("Blueprint Building Menu"),
                     "choosing building replaces level one with its module page");
-                RequireBlueprintPanelFits("Modular Blueprint Palette");
+                Require(Rect("Blueprint Menu").GetEntityId().Equals(sharedMenu), "building selection updates level two in the same existing UI instance");
+                RequireBlueprintPanelFits("Blueprint Menu");
                 if (machine == 0)
                 {
+                    yield return DragBlueprintChoices(false);
                     Click("Fold Modular Palette");
                     refreshHud.Invoke(hud, null);
-                    Require(hud.BlueprintModulesMenuCollapsed && !Active("Modular Palette Body"),
+                    Require(hud.BlueprintModulesMenuCollapsed && !hud.BlueprintChoiceScroll.gameObject.activeInHierarchy,
                         "second level folds its module body without changing the selected building");
                     Click("Fold Modular Palette");
                     refreshHud.Invoke(hud, null);
-                    Require(!hud.BlueprintModulesMenuCollapsed && Active("Modular Palette Body"), "module page expands again");
+                    Require(!hud.BlueprintModulesMenuCollapsed && hud.BlueprintChoiceScroll.gameObject.activeInHierarchy, "module page expands again");
                     Click("Blueprint Back To Buildings");
                     refreshHud.Invoke(hud, null);
                     Require(Active("Blueprint Building Menu") && !bridge.BuildSelection.HasValue && sim.State.buildings.Count == 0,
                         "back returns to building choices without placing or deleting anything");
+                    Require(Rect("Blueprint Menu").GetEntityId().Equals(sharedMenu), "return keeps the same fixed blueprint window");
+                    EnsureBlueprintChoiceVisible("Blueprint Building " + kinds[machine]);
                     Click("Blueprint Building " + kinds[machine]);
                     yield return Sample(x, y, ticks: 8);
                     refreshHud.Invoke(hud, null);
                     Screen.SetResolution(1280, 720, FullScreenMode.Windowed);
                     yield return new WaitForSecondsRealtime(.4f);
                     Canvas.ForceUpdateCanvases(); refreshHud.Invoke(hud, null);
-                    RequireBlueprintPanelFits("Modular Blueprint Palette");
+                    RequireBlueprintPanelFits("Blueprint Menu");
                     RequireBlueprintBottomCardFits();
                     yield return Capture("blueprint-module-menu-1280");
                     var details = (UnityEngine.UI.ScrollRect)QaField(hud, "modularPaletteScroll");
@@ -211,6 +255,7 @@ namespace DeadCircuit
                     var cell = layout[slot]; int mx = x + cell.Item2, my = y + cell.Item3;
                     StandBeside(mx, my);
                     refreshHud.Invoke(hud, null);
+                    EnsureBlueprintChoiceVisible("Modular Role " + cell.Item1);
                     Click("Modular Role " + cell.Item1); bridge.BuildRotation = cell.Item4;
                     Require(bridge.ModularRoleSelection == cell.Item1, "module palette selects requested role");
                     yield return Sample(mx, my, ticks: 8);
@@ -322,7 +367,23 @@ namespace DeadCircuit
             foreach (var device in physicalDevices) if (device.added) InputSystem.EnableDevice(device);
             SetQaField(bridge, "<IsRunning>k__BackingField", false);
             SetQaField(bridge, "<IsHost>k__BackingField", false);
-            Debug.Log("DEMO_MODULAR_QA_PASS held_wrench hierarchical_menu menu_back responsive_ui connected_modules group_frame free_layout sparse_holes extra_casing individual_rotation erase per_cell_e three_machines json_restore");
+            Debug.Log("DEMO_MODULAR_QA_PASS held_wrench same_panel_hierarchy horizontal_drag_both_levels navigation_buttons menu_back responsive_ui connected_modules group_frame free_layout sparse_holes extra_casing individual_rotation erase per_cell_e three_machines json_restore");
+        }
+
+        static void EnsureBlueprintChoiceVisible(string buttonName)
+        {
+            var scroll = GameBridge.Instance.GetComponent<DemoHud>().BlueprintChoiceScroll;
+            Canvas.ForceUpdateCanvases();
+            var button = FindButton(buttonName).GetComponent<RectTransform>();
+            Require(button.IsChildOf(scroll.content), "choice belongs to the active shared strip: " + buttonName);
+            Rect bounds = RelativeBounds(scroll.content, button);
+            float overflow = scroll.content.rect.width - scroll.viewport.rect.width;
+            scroll.StopMovement();
+            scroll.horizontalNormalizedPosition = overflow <= 0 ? 0 : Mathf.Clamp01((bounds.center.x - scroll.content.rect.xMin - scroll.viewport.rect.width * .5f) / overflow);
+            Canvas.ForceUpdateCanvases();
+            Rect visible = RelativeBounds(scroll.viewport, button);
+            Require(visible.center.x >= scroll.viewport.rect.xMin - 1 && visible.center.x <= scroll.viewport.rect.xMax + 1,
+                "choice can be reached inside the horizontal viewport: " + buttonName);
         }
 
         static void RequireBlueprintPanelFits(string name)

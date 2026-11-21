@@ -5,6 +5,12 @@ static partial class Checks
     // All positive LV evidence used below is earned by this player-command route.
     // This deliberately does not inherit Flat's synthetic, fully researched LV fixture.
     static WorldState lvProgressionEarned;
+    static readonly ItemKind[] LvPriorMaterials =
+    {
+        ItemKind.Wood, ItemKind.Stone, ItemKind.Scrap, ItemKind.Food, ItemKind.Clay, ItemKind.Brick,
+        ItemKind.Charcoal, ItemKind.Copper, ItemKind.Iron, ItemKind.Bronze, ItemKind.Steel, ItemKind.IronPlate,
+        ItemKind.SteelPlate, ItemKind.Gear, ItemKind.Bearing, ItemKind.RefractoryBrick, ItemKind.Ore
+    };
     static readonly ItemKind[] LvProgressionItems =
     {
         ItemKind.CopperWire, ItemKind.Insulator, ItemKind.Cable, ItemKind.Coil,
@@ -49,13 +55,10 @@ static partial class Checks
         var sim = new WorldSimulator(s);
         p = sim.AddPlayer("lv-builder", "LV builder");
         Array.Clear(p.items);
-        foreach (var item in new[] { ItemKind.Wood, ItemKind.Stone, ItemKind.Scrap, ItemKind.Food,
-            ItemKind.Clay, ItemKind.Brick, ItemKind.Charcoal, ItemKind.Copper, ItemKind.Iron,
-            ItemKind.Bronze, ItemKind.Steel, ItemKind.IronPlate, ItemKind.SteelPlate, ItemKind.Gear,
-            ItemKind.Bearing, ItemKind.RefractoryBrick, ItemKind.Ore }) p.items[(int)item] = 500;
+        RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.LowVoltage), LvPriorMaterials);
         p.x = 8; p.y = 10;
         Require(sim.State.version == WorldSimulator.SaveVersion && DemoCatalog.ItemCount == 66 && sim.State.produced.Length == 66 && p.items.Length == 66,
-            "LV fixture is not the current v19 66-slot save format");
+            "LV fixture is not the current 66-slot save format");
         Require(LvProgressionEvidence(sim.State).All(n => n == 0), "LV startup inherited earned research/evidence");
         foreach (var item in LvProgressionItems)
             Require(p.items[(int)item] == 0 && sim.State.produced[(int)item] == 0 &&
@@ -78,6 +81,7 @@ static partial class Checks
         Require(recipe != null && recipe.building == BuildKind.Workbench, "invalid workbench recipe " + id);
         for (int n = 0; n < batches; n++)
         {
+            RestockPriorEra(p, recipe.inputs, LvPriorMaterials);
             Advance(sim, .55f); p.x = 8; p.y = 10; var before = Copy(p.items);
             sim.Apply(Command(p, "craft", arg: id));
             for (int i = 0; i < DemoCatalog.ItemCount; i++)
@@ -89,6 +93,7 @@ static partial class Checks
     static void LvProgressionUnlock(WorldSimulator sim, PlayerState p, LowVoltageTech id)
     {
         Advance(sim, .55f); p.x = 8; p.y = 10;
+        RestockPriorEra(p, LowVoltageCatalog.Definition((int)id).cost, LvPriorMaterials);
         var peer = sim.State.players.Single(q => q.id == "lv-peer");
         var peerBefore = Copy(peer.items); var before = Copy(p.items); int mask = sim.State.lvResearch;
         int xp = p.xp, skills = p.skillPoints, attributes = p.attributePoints;
@@ -121,11 +126,16 @@ static partial class Checks
                 }
             // Interact loads every applicable input. Refill only when a batch
             // actually needs input, avoiding an unrealistic flood of spare parts.
-            if (p.items[(int)output] + b.items[(int)output] >= minimum ||
-                Enumerable.Range(0, DemoCatalog.ItemCount).Any(i => b.items[i] < definition.inputs[i]))
+            bool needsInput = Enumerable.Range(0, DemoCatalog.ItemCount).Any(i => b.items[i] < definition.inputs[i]);
+            if (needsInput) RestockPriorEra(p, definition.inputs, LvPriorMaterials, batches: 8);
+            if (p.items[(int)output] + b.items[(int)output] >= minimum || needsInput)
                 LvProgressionAct(sim, p, "interact", b);
             if (p.items[(int)output] >= minimum) break;
-            Ready(p); sim.Apply(Command(p, "eat"));
+            if (p.hunger < 65)
+            {
+                RestockPriorEra(p, DemoCatalog.Materials(ItemKind.Food, 1), LvPriorMaterials);
+                Ready(p); sim.Apply(Command(p, "eat"));
+            }
             Advance(sim, 8);
         }
         Require(p.items[(int)output] >= minimum,
@@ -158,8 +168,8 @@ static partial class Checks
         LvProgressionUnlock(sim, p, LowVoltageTech.Generation);
         LvProgressionUnlock(sim, p, LowVoltageTech.Cabling);
         LvProgressionCraft(sim, p, 142, 32);
-        for (int y = 21; y <= 23; y++) WaterBuild(sim, p, BuildKind.Shaft, 22, y);
-        var winder = WaterBuild(sim, p, BuildKind.WindingBench, 23, 23);
+        for (int y = 21; y <= 23; y++) WaterBuild(sim, p, BuildKind.Shaft, 22, y, LvPriorMaterials);
+        var winder = WaterBuild(sim, p, BuildKind.WindingBench, 23, 23, LvPriorMaterials);
         Require(TechCatalog.EnergyTier(winder) == 0 && DemoCatalog.Demand(winder.kind) == 25, "winder is not a 25-unit mechanical load");
         LvProgressionProduce(sim, p, winder, 143, ItemKind.Coil, 40);
         Require(winder.powered && winder.networkId > 0 && sim.State.lvElectric == 0, "mechanical winding required electricity");
@@ -171,29 +181,30 @@ static partial class Checks
         LvProgressionUnlock(sim, p, LowVoltageTech.Processing);
         LvProgressionUnlock(sim, p, LowVoltageTech.Relays);
         LvProgressionCraft(sim, p, 145, 24);
-        var generator = WaterBuild(sim, p, BuildKind.Generator, 34, 20);
-        var secondGenerator = WaterBuild(sim, p, BuildKind.Generator, 34, 23);
+        var generator = WaterBuild(sim, p, BuildKind.Generator, 34, 20, LvPriorMaterials);
+        var secondGenerator = WaterBuild(sim, p, BuildKind.Generator, 34, 23, LvPriorMaterials);
         LvProgressionCraft(sim, p, 0, 8);
         LvProgressionAct(sim, p, "interact", generator);
         LvProgressionAct(sim, p, "interact", secondGenerator);
-        WaterBuild(sim, p, BuildKind.PowerPole, 38, 22);
-        WaterBuild(sim, p, BuildKind.PowerPole, 40, 22);
-        var crusher = WaterBuild(sim, p, BuildKind.ElectricCrusher, 38, 20);
+        WaterBuild(sim, p, BuildKind.PowerPole, 38, 22, LvPriorMaterials);
+        WaterBuild(sim, p, BuildKind.PowerPole, 40, 22, LvPriorMaterials);
+        var crusher = WaterBuild(sim, p, BuildKind.ElectricCrusher, 38, 20, LvPriorMaterials);
         LvProgressionProduce(sim, p, crusher, 146, ItemKind.CrushedOre, 4);
         Require(generator.powerGeneration > 0 && crusher.powered && sim.State.lvElectric >= 4, "fuel generator did not drive actual crushing");
-        var circuits = WaterBuild(sim, p, BuildKind.CircuitAssembler, 38, 23);
+        var circuits = WaterBuild(sim, p, BuildKind.CircuitAssembler, 38, 23, LvPriorMaterials);
         LvProgressionProduce(sim, p, circuits, 60, ItemKind.Circuit, 18);
         Require(sim.State.lvCircuits >= 18 && sim.State.lvCircuits <= sim.State.lvElectric, "actual relay circuit evidence missing");
         LvProgressionProduce(sim, p, winder, 143, ItemKind.Coil, 8);
         LvProgressionProduce(sim, p, kiln, 140, ItemKind.Insulator, 60);
         LvProgressionCraft(sim, p, 145, 4);
         LvProgressionUnlock(sim, p, LowVoltageTech.Assembly);
+        LvProgressionCraft(sim, p, 142, 8);
         LvProgressionUnlock(sim, p, LowVoltageTech.Sorting);
         LvProgressionUnlock(sim, p, LowVoltageTech.Protection);
-        var assembler = WaterBuild(sim, p, BuildKind.Assembler, 41, 20);
-        var smelter = WaterBuild(sim, p, BuildKind.Smelter, 38, 26);
+        var assembler = WaterBuild(sim, p, BuildKind.Assembler, 41, 20, LvPriorMaterials);
+        var smelter = WaterBuild(sim, p, BuildKind.Smelter, 38, 26, LvPriorMaterials);
         LvProgressionProduce(sim, p, smelter, 147, ItemKind.CopperWire, p.items[(int)ItemKind.CopperWire] + 4);
-        var breaker = WaterBuild(sim, p, BuildKind.CircuitBreaker, 36, 22);
+        var breaker = WaterBuild(sim, p, BuildKind.CircuitBreaker, 36, 22, LvPriorMaterials);
         LvProgressionAct(sim, p, "configure", breaker, 1);
         Require(breaker.setting == 0 && !breaker.tripped, "new player-built breaker could not close");
         int protectedBefore = sim.State.lvProtected, automatedBefore = sim.State.lvAutomated;
@@ -203,11 +214,12 @@ static partial class Checks
             "closed same-network breaker did not certify actual automated output");
         LvProgressionProduce(sim, p, assembler, 149, ItemKind.Motor, p.items[(int)ItemKind.Motor] + 1);
         LvProgressionProduce(sim, p, assembler, 150, ItemKind.Relay, p.items[(int)ItemKind.Relay] + 1);
-        var splitter = WaterBuild(sim, p, BuildKind.FilterSplitter, 41, 24);
-        var destination = WaterBuild(sim, p, BuildKind.Chest, 42, 24);
-        WaterBuild(sim, p, BuildKind.Chest, 41, 25);
+        var splitter = WaterBuild(sim, p, BuildKind.FilterSplitter, 41, 24, LvPriorMaterials);
+        var destination = WaterBuild(sim, p, BuildKind.Chest, 42, 24, LvPriorMaterials);
+        WaterBuild(sim, p, BuildKind.Chest, 41, 25, LvPriorMaterials);
         LvProgressionAct(sim, p, "configure", splitter, (int)ItemKind.Cable);
         // Keep one independently fed electric batch live at the save checkpoint.
+        RestockPriorEra(p, DemoCatalog.Materials(ItemKind.Ore, 8), LvPriorMaterials);
         LvProgressionAct(sim, p, "interact", crusher);
         LvProgressionAct(sim, p, "interact", splitter, (int)ItemKind.Cable);
         Require(sim.State.lvSorted == 0, "loading splitter fabricated delivery evidence");
@@ -220,6 +232,7 @@ static partial class Checks
         LvProgressionAwait(sim, () => sim.State.cargo.Any(c => c.fromId == splitter.id) &&
             sim.State.buildings.Any(b => b.progress > 0 && TechCatalog.EnergyTier(b) == 2),
             "earned save checkpoint lacks active LV processing and matching cargo");
+        RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.MediumVoltage), LvPriorMaterials);
         lvProgressionEarned = Saved(sim.State);
         return Saved(lvProgressionEarned);
     }

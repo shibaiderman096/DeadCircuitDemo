@@ -19,7 +19,7 @@ namespace DeadCircuit
                 int module=ModularMachineCatalog.ModuleAt(b,cmd.x,cmd.y);
                 if(module<0 || ModularMachineCatalog.Role(b,module)!=MachineModuleRole.Controller) { Notice(p,"请对准控制器执行停机清空。"); return; }
                 if(State.cargo.Exists(c=>c.fromId==b.id || c.toId==b.id)) { Notice(p,"仍有在途物品，送达后才能停机清空。"); return; }
-                for(int i=0;i<b.items.Length;i++) if(b.items[i]>InventoryLimit-p.items[i]) { Notice(p,"背包空间不足，停机清空未执行。"); return; }
+                if (!InventoryWeight.CanFit(p, InventoryWeight.MaterialsGrams(b.items))) { Notice(p,"背包空间不足，停机清空未执行。"); return; }
                 for(int i=0;i<b.items.Length;i++) { p.items[i]+=b.items[i]; b.items[i]=0; }
                 b.progress=0f; RefreshPower(false); Notice(p,"已停机清空：取消本批加工并取回全部库存，已消耗维护不返还。"); return;
             }
@@ -32,7 +32,7 @@ namespace DeadCircuit
                 if(index<0) return;
                 var m=b.modularModules[index];
                 if(m.role==MachineModuleRole.Controller && b.modularModules.Count>1) { Notice(p,"请先擦除其他模块，再擦除控制器。"); return; }
-                for(int i=0;i<m.paid.Length;i++) if(m.paid[i]>InventoryLimit-p.items[i]) { Notice(p,"背包空间不足，无法完整退还本格建材。"); return; }
+                if (!InventoryWeight.CanFit(p, InventoryWeight.MaterialsGrams(m.paid))) { Notice(p,"背包空间不足，无法完整退还本格建材。"); return; }
                 for(int i=0;i<m.paid.Length;i++) p.items[i]+=m.paid[i];
                 b.modularModules.RemoveAt(index);
                 if(b.modularModules.Count==0) State.buildings.Remove(b);
@@ -84,7 +84,7 @@ namespace DeadCircuit
                 case MachineModuleRole.Output:
                     // Preserve buffers from an old recipe, but never take selected recipe inputs.
                     for(int i=0;i<DemoCatalog.ItemCount;i++) if(IsOutput(b.kind,i) && (r==null || r.inputs[i]==0))
-                        transferred+=Transfer(b.items,p.items,i,BufferLimit,InventoryLimit);
+                        transferred+=TransferToPlayer(b.items, p, i, BufferLimit);
                     break;
                 case MachineModuleRole.Maintenance:
                     if(!ModularMachineCatalog.HasWrench(p)) { Notice(p,"维护需要手持耐久正常的扳手。"); return; }
@@ -112,7 +112,7 @@ namespace DeadCircuit
             var returned=(int[])b.items.Clone();
             foreach(var module in b.modularModules) for(int i=0;i<returned.Length;i++) returned[i]+=module.paid[i];
             foreach(var c in State.cargo) if(c.fromId==b.id || c.toId==b.id) returned[c.item]++;
-            for(int i=0;i<returned.Length;i++) if(returned[i]>InventoryLimit-p.items[i])
+            if (!InventoryWeight.CanFit(p, InventoryWeight.MaterialsGrams(returned)))
             { Notice(p,"背包空间不足，无法完整收回建材、库存及在途物品。"); return; }
             for(int i=0;i<returned.Length;i++) p.items[i]+=returned[i];
             State.cargo.RemoveAll(c=>c.fromId==b.id || c.toId==b.id); State.buildings.Remove(b);

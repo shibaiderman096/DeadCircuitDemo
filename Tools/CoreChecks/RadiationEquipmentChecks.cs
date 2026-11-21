@@ -12,6 +12,9 @@ static partial class Checks
             s.nuclearResearch = 0;
             if(unlocked) s.nuclearResearch = (1 << (int)NuclearTech.UraniumBeneficiation) |
                 (1 << (int)NuclearTech.RadiationMonitoring) | (1 << (int)NuclearTech.RadiationProtection);
+            p.items = DemoCatalog.Materials(ItemKind.UraniumOre, 2, ItemKind.ControlModule, 1,
+                ItemKind.AdvancedCircuit, 2, ItemKind.CopperWire, 4, ItemKind.Insulator, 2,
+                ItemKind.Polymer, 12, ItemKind.SteelPlate, 8, ItemKind.RefractoryBrick, 4, ItemKind.Iron, 2, ItemKind.Scrap, 1);
             arrange?.Invoke(s, p);
         });
 
@@ -111,7 +114,7 @@ static partial class Checks
             }
         });
 
-        Run("radiation equipment suit respects era and unlocked suit respects full gear inventory", () =>
+        Run("radiation equipment suit respects era and backpack weight", () =>
         {
             var early = EquipmentFixture(out var p, era: TechEra.HighVoltage);
             string before = EquipmentEconomy(p);
@@ -119,12 +122,13 @@ static partial class Checks
             Require(EquipmentEconomy(p) == before, "pre-Nuclear era crafted a suit");
             var full = RadiationEquipmentFixture(out var q, true, (s, player) =>
             {
-                for(int i = 0; i < EquipmentCatalog.MaxGear; i++)
-                    player.gear.Add(new GearState { id = s.nextId++, kind = GearKind.Knife });
+                int gain = InventoryWeight.Grams(GearKind.RadiationSuit) -
+                    (int)InventoryWeight.MaterialsGrams(EquipmentCatalog.Gear(GearKind.RadiationSuit).cost);
+                FillBackpackLeaving(player, gain - 5);
             });
             before = EquipmentEconomy(q);
             full.Apply(Command(q, "gearcraft", arg: (int)GearKind.RadiationSuit));
-            Require(EquipmentEconomy(q) == before, "full gear inventory crafted or charged a suit");
+            Require(EquipmentEconomy(q) == before, "overweight suit crafted or charged materials");
         });
 
         Run("radiation equipment torso replacement and unequip retain the existing vest", () =>
