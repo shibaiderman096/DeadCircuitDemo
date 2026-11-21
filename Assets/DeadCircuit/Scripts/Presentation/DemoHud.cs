@@ -27,7 +27,7 @@ namespace DeadCircuit
         static readonly Color Amber = new Color32(242, 187, 98, 255);
         static readonly Color Danger = new Color32(244, 128, 113, 255);
         static readonly string[] Directions = { "东 →", "北 ↑", "西 ←", "南 ↓" };
-        static readonly string[] Nodes = { "树木", "铁矿脉", "废料堆", "补给箱", "障碍墙", "铜矿脉", "锡矿脉", "铀矿脉", "石料堆", "黏土矿床", "煤矿露头", "石灰石矿床", "耐火黏土矿床", "油源", "石英矿床" };
+        static readonly string[] Nodes = { "树木", "铁矿脉", "废料堆", "补给箱", "障碍墙", "铜矿脉", "锡矿脉", "铀矿脉", "石料堆", "黏土矿床", "煤矿露头", "石灰石矿床", "耐火黏土矿床", "油源", "石英矿床", "树枝", "石头", "干草" };
         static readonly string[] AttributeHelp =
         {
             "强化近战与采集能力", "每点生命上限 +15", "每点体力上限 +8、移速 +0.09",
@@ -35,7 +35,7 @@ namespace DeadCircuit
         };
         static readonly string[] EraDescriptions =
         {
-            "采集木材、石材与黏土，研究工具、烧炭和制陶。完成冶金与建造任务后，即可研究水力。",
+            "先拾取树枝、石头和干草，制作并装备石斧、石镐，再采集木材、石材与黏土。完成冶金与建造任务后，即可研究水力。",
             "在岸边建造水车，用传动轴连接机械设备。加工矿石、青铜与机械零件，为蒸汽工业准备材料。",
             "将燃烧室、锅炉、取水泵与烟囱相邻建造，用蒸汽管为设备供能。蒸汽引擎可将蒸汽转为机械动力。",
             "低压电气化：建立低压发电与输电网络，制造电路，让采矿、冶炼与装配自动运行。",
@@ -350,8 +350,8 @@ namespace DeadCircuit
             FlowLabel("Controls Title", content, "操作速查", 816, 30, 20, Accent);
             SetFlowText(FlowLabel("Controls Text", content, "", 816, 172, 18, Ink),
                 "WASD 移动并打断自动动作 · Shift 冲刺 · 滚轮缩放\n" +
-                "左键 / E：点地移动，点资源走近并采尽，点设备走近交互一次，点丧尸或动物追击\n" +
-                "按住 Space：在附近资源、成熟农田与尸体之间持续工作，不受鼠标位置影响\n" +
+                "左键 / E：点地移动，点地面材料走近拾取，点资源走近采尽，点设备交互，点敌人追击\n" +
+                "按住 Space：就近拾取、采集、收获或分解尸体，不受鼠标位置影响\n" +
                 "按住 F：自动寻找丧尸与敌意动物；Ctrl+F 允许攻击中立动物\n" +
                 "松开 Space / F 即停止对应动作；WASD 可随时打断\n" +
                 "右键：开关门、修理受损设备、取水、收获成熟农田或分解尸体；空地取消动作\n" +
@@ -362,7 +362,7 @@ namespace DeadCircuit
                 "Tab 成长 · J 生存 · H 帮助 · Esc 关闭界面 / 游戏菜单 · F5 保存");
             FlowLabel("Tutorial Title", content, "从原始到核工业", 816, 30, 20, Accent);
             FlowLabel("Production Tutorial", content,
-                "按 T 打开科技研究。采集木材、石材与黏土，研究工具、烧炭和制陶。\n用炭窑烧制木炭，再用陶窑烧制陶砖，逐步研究冶金工艺。\n原始 → 水力 → 蒸汽 → 低压 → 中压 → 高压 → 核工业，按顺序研究。\n传动轴传机械动力，管道传蒸汽；电网匹配电压，核反应堆需冷却。", 816, 124, 18, Ink);
+                "拾取树枝、石头和干草后，按 T → 原始 → 工艺与建造，随身制作并装备石斧、石镐。\n斧采树木和补给箱，镐采矿石、石材和黏土，扳手采废料堆。节点耐久归零才结算产出。\n研究烧炭、制陶和冶金，再依次进入水力、蒸汽、低压、中压、高压和核工业。\n传动轴传机械动力，管道传蒸汽。电网匹配电压，核反应堆需冷却。", 816, 124, 18, Ink);
             helpProgress = FlowLabel("Tutorial Progress", content, "", 816, 76, 16, Muted);
             FlowLabel("HUD Expansion Help", content, "点击底部展开建造栏。右下角菜单可打开其他界面，也可开启设备详情。", 816, 62, 17, Ink);
             FlowLabel("Panel Hint", content, "打开界面时游戏不会暂停。按 Esc 关闭当前界面；再次按下可取消建造或打开游戏菜单。", 816, 56, 16, Amber);
@@ -659,6 +659,7 @@ namespace DeadCircuit
         {
             Set(technologyTitle, TechCatalog.EraName((TechEra)selectedEra) + " · 工艺与建造");
             SetFlowText(technologyDescription, EraDescriptions[selectedEra], 56);
+            RefreshPrimitiveTechnology(world, player);
             RefreshWaterTechnology(world, player);
             RefreshSteamTechnology(world);
             RefreshLowVoltageTechnology(world);
@@ -837,8 +838,12 @@ namespace DeadCircuit
             int resourceBiome = WorldTiles.Biome(world, node.x, node.y) - '0';
             string biomeName = resourceBiome >= 0 && resourceBiome < WorldGenerationCatalog.Biomes.Count
                 ? WorldGenerationCatalog.Biomes[resourceBiome].name : "未知";
-            SetFlowText(machineInfo, "所在群系：" + biomeName + "\n资源余量：" + node.stock);
-            SetFlowText(machineContents, "资源耐久：" + Mathf.CeilToInt(node.hp) + "\n采集工具：" + ResourceToolText(node.kind));
+            bool pickup = DemoCatalog.IsGroundPickup(node.kind);
+            string amountLabel = pickup ? "可拾取" : node.kind == NodeKind.Oil ? "剩余油量" : node.kind == NodeKind.Wall ? "" : "采尽结算";
+            SetFlowText(machineInfo, "所在群系：" + biomeName + (amountLabel.Length == 0 ? "" : "\n" + amountLabel + "：" + node.stock));
+            string durability = pickup || node.kind == NodeKind.Oil || node.kind == NodeKind.Wall ? "" :
+                "节点剩余耐久：" + ResourceDurabilityText(node) + "\n";
+            SetFlowText(machineContents, durability + ResourceToolText(player, node.kind));
             SetFlowText(machineHint, ResourceCollectionHint(world, player, node));
         }
 
@@ -917,7 +922,7 @@ namespace DeadCircuit
             string worldFeedback = showWorldFeedback ? message : "";
             if (showWorldFeedback && Mouse.current != null && !CapturesInput)
             {
-                string targetHint = MouseTargetHint(world);
+                string targetHint = MouseTargetHint(world, player);
                 if (targetHint.Length > 0) worldFeedback = message.Length == 0 ? targetHint : message + "\n" + targetHint;
             }
             Set(feedback, worldFeedback);
@@ -936,7 +941,7 @@ namespace DeadCircuit
             technologyNotice.color = color;
         }
 
-        string MouseTargetHint(WorldState world)
+        string MouseTargetHint(WorldState world, PlayerState player)
         {
             if (bridge.BuildSelection.HasValue) return "";
             var keyboard = Keyboard.current;
@@ -968,7 +973,12 @@ namespace DeadCircuit
                 {
                     if (node.kind == NodeKind.Oil) return "油源 · 邻接通电抽油机开采";
                     if (node.kind == NodeKind.Wall) return "障碍墙 · 无法采集";
-                    return Nodes[(int)node.kind] + " · 左键/E 采尽 · 按住 Space 就近工作";
+                    string name = Nodes[(int)node.kind];
+                    if (DemoCatalog.IsGroundPickup(node.kind))
+                        return name + " ×" + node.stock + " · 左键/E 或 Space 拾取";
+                    return name + " · 耐久 " + ResourceDurabilityText(node) + " · 采尽结算 " + node.stock +
+                        "\n" + ResourceToolText(player, node.kind) +
+                        (EquipmentCatalog.CanHarvest(player, node.kind) ? " · 左键/E 采尽 / 按住 Space 就近采集" : "");
                 }
             if (survivalEnabled)
             {
@@ -981,7 +991,7 @@ namespace DeadCircuit
                     return "成熟农田 · 左键/E 或右键收获";
                 if (WorldTiles.Ground(world, x, y) == '2') return "水域 · 右键取水";
             }
-            return "左键/E 移动 · 按住 Space 工作 / F 战斗 · 右键取消";
+            return PrimitiveHandcraftGoal(world, player) ?? "左键/E 移动或拾取 · 按住 Space 就近工作 / F 战斗 · 右键取消";
         }
 
         static bool IsIntroNotice(string value) => !string.IsNullOrEmpty(value) &&

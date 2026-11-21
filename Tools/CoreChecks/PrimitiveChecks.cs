@@ -58,10 +58,7 @@ static partial class Checks
             Inventory(teammate.items, otherBefore, "teammate was charged for research");
             Require(p.xp == xp && p.attributePoints == attributes && p.skillPoints == skills, "research altered character progression");
             Require(p.interactCooldown > 0, "successful research did not start cooldown");
-            teammate.x = 8; teammate.y = 10;
-            int gear = teammate.gear.Count;
-            sim.Apply(Command(teammate, "gearcraft", arg: (int)GearKind.StoneAxe));
-            Require(teammate.gear.Count == gear + 1 && teammate.gear.Last().kind == GearKind.StoneAxe, "teammate cannot use shared Tools research");
+            Require(PrimitiveCatalog.HasResearch(sim.State, PrimitiveTech.Tools), "teammate cannot use shared Tools research");
             before = Copy(p.items); Ready(p); sim.Apply(Command(p, "primitive", arg: 0));
             Inventory(p.items, before, "duplicate research charged twice");
             Require(sim.State.primitiveResearch == 1, "repeated research changed shared knowledge");
@@ -101,13 +98,10 @@ static partial class Checks
                 Require(sim.State.buildings.Count == 1, "funded locked building constructed: " + kind);
                 Inventory(p.items, before, "locked building paid: " + kind);
             }
-            foreach (GearKind kind in new[] { GearKind.StoneAxe, GearKind.StonePickaxe, GearKind.Knife })
-            {
-                var sim = PrimitiveFixture(out var p); int count = p.gear.Count; var before = Copy(p.items);
-                sim.Apply(Command(p, "gearcraft", arg: (int)kind));
-                Require(p.gear.Count == count, "funded locked equipment crafted: " + kind);
-                Inventory(p.items, before, "locked equipment paid");
-            }
+            var gearSim = PrimitiveFixture(out var smith); var beforeGear = Copy(smith.items);
+            gearSim.Apply(Command(smith, "gearcraft", arg: (int)GearKind.Knife));
+            Require(smith.gear.Count == 0, "funded locked knife crafted");
+            Inventory(smith.items, beforeGear, "locked knife paid");
             var craft = PrimitiveFixture(out var crafter); var materials = Copy(crafter.items);
             craft.Apply(Command(crafter, "craft", arg: 2));
             Inventory(crafter.items, materials, "locked manual bronze bypassed research");
@@ -341,14 +335,21 @@ static partial class Checks
             foreach (var entry in new[] { (node: NodeKind.Stone, item: ItemKind.Stone), (node: NodeKind.Clay, item: ItemKind.Clay) })
             {
                 var sim = PrimitiveFixture(out var p, arrange: s => s.nodes.Add(new NodeState { id = s.nextId++, kind = entry.node, x = 14, y = 10, stock = 6 }));
-                p.x = 13; p.items[(int)entry.item] = WorldSimulator.InventoryLimit;
-                sim.Apply(Command(p, "interact", 14, 10));
-                Require(sim.State.nodes.Single().stock == 6 && sim.State.gathered == 0 && p.items[(int)entry.item] == WorldSimulator.InventoryLimit, "full inventory depleted primitive node");
+                sim.Apply(Command(p, "gearcraft", arg: (int)GearKind.StonePickaxe));
+                var pickaxe = p.gear.Single(g => g.kind == GearKind.StonePickaxe);
+                sim.Apply(Command(p, "equip", arg: pickaxe.id));
+                p.x = 13; p.items[(int)entry.item] = WorldSimulator.InventoryLimit - 5;
+                for (int swing = 0; swing < 3; swing++)
+                {
+                    Advance(sim, .55f); sim.Apply(Command(p, "interact", 14, 10));
+                }
+                Require(pickaxe.durability == 98 && sim.State.nodes.Single().stock == 6 && sim.State.nodes.Single().hp == 6 &&
+                    sim.State.gathered == 0 && p.items[(int)entry.item] == WorldSimulator.InventoryLimit - 5, "insufficient capacity consumed the last swing or stock");
                 Advance(sim, .55f); p.items[(int)entry.item] = 0; var before = Copy(p.items);
                 sim.Apply(Command(p, "interact", 14, 10));
-                var expected = Copy(before); expected[(int)entry.item] = 3;
+                var expected = Copy(before); expected[(int)entry.item] = 6;
                 Inventory(p.items, expected, "primitive node yielded the wrong resource");
-                Require(sim.State.nodes.Single().stock == 3 && sim.State.gathered == 3 && sim.State.produced.Sum() == 0, "harvesting fabricated a production milestone");
+                Require(sim.State.nodes.Count == 0 && sim.State.gathered == 6 && sim.State.produced.Sum() == 0, "harvesting fabricated a production milestone");
             }
         });
         Run("primitive legacy bypass preserves recipe eras and permits existing primitive production", () =>

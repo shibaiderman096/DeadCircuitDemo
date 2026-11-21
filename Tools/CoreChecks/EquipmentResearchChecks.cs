@@ -110,18 +110,22 @@ static partial class Checks
             Require(EquipmentEconomy(player) == before, "shortcut ammunition bypassed basic ammunition research");
         });
 
-        Run("equipment research stone tools use stone for manufacture and repair without charging iron ore", () =>
+        Run("equipment research stone tools handcraft from pickups and repair with wood and stone", () =>
         {
             foreach (var kind in new[] {GearKind.StoneAxe, GearKind.StonePickaxe})
             {
-                var sim = PrimitiveFixture(out var player, 1);
-                Array.Clear(player.items); player.items[(int)ItemKind.Wood] = 4;
+                var sim = PrimitiveFixture(out var player);
+                Array.Clear(player.items); player.items[(int)ItemKind.Wood] = 1;
                 int stoneCost = kind == GearKind.StoneAxe ? 2 : 3;
-                player.items[(int)ItemKind.Stone] = stoneCost + 1;
+                player.items[(int)ItemKind.Stone] = 1;
+                player.items[(int)ItemKind.Branch] = 2;
+                player.items[(int)ItemKind.LooseStone] = stoneCost;
+                player.items[(int)ItemKind.DryGrass] = 1;
                 sim.Apply(Command(player, "gearcraft", arg: (int)kind));
                 var tool = player.gear.Single();
                 Require(tool.kind == kind && player.items[(int)ItemKind.Stone] == 1 &&
-                    player.items[(int)ItemKind.Wood] == 1 && player.items[(int)ItemKind.Ore] == 0,
+                    player.items[(int)ItemKind.Wood] == 1 && player.items[(int)ItemKind.Ore] == 0 &&
+                    player.items[(int)ItemKind.Branch] == 0 && player.items[(int)ItemKind.LooseStone] == 0 && player.items[(int)ItemKind.DryGrass] == 0,
                     "stone-only starting materials could not make the tool");
                 tool.durability = 70; Advance(sim, .6f);
                 sim.Apply(Command(player, "gearrepair", arg: tool.id));
@@ -229,8 +233,8 @@ static partial class Checks
                 var archive = new WorldArchive(folder, Dump, text => JsonSerializer.Deserialize<WorldState>(text, Json));
                 string id = Guid.NewGuid().ToString("N"); archive.Write(id, sim.State);
                 var restored = archive.Read(id);
-                Require(restored.version == 18 && restored.weaponResearch == 4095 && restored.toolResearch == 3,
-                    "v18 archive dropped weapon or tool knowledge");
+                Require(restored.version == WorldSimulator.SaveVersion && restored.weaponResearch == 4095 && restored.toolResearch == 3,
+                    "current archive dropped weapon or tool knowledge");
                 restored.weaponResearch = 0; restored.toolResearch = 0;
                 Require(Dump(sim.State) == before, "restored knowledge mutation reached the source world");
             }

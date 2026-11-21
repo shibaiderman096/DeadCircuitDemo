@@ -13,6 +13,61 @@ static partial class Checks
 
     static void PlayerControlChecks()
     {
+        Run("primitive gathering starts from loose materials and pays once across a shared saved node", () =>
+        {
+            var world = Flat(era: TechEra.Primitive); world.primitiveVersion = 1;
+            var sim = new WorldSimulator(world);
+            var p = sim.AddPlayer("gatherer", "Gatherer");
+            var partner = sim.AddPlayer("partner", "Partner");
+            p.activeSlot = partner.activeSlot = 2;
+            p.x = 10; p.y = 10; partner.x = 10; partner.y = 11;
+            Require(p.gear.Count == 0 && sim.State.buildings.Count == 0, "fixture skipped the handcraft start");
+            var tree = new NodeState { id = sim.State.nextId++, kind = NodeKind.Tree, x = 11, y = 10, stock = 13, hp = 35 };
+            sim.State.nodes.Add(tree);
+            foreach (var (kind, item, x, stock, action) in new[]
+            {
+                (NodeKind.Branch, ItemKind.Branch, 10, 4, "interact"),
+                (NodeKind.LooseStone, ItemKind.LooseStone, 9, 5, "primary"),
+                (NodeKind.DryGrass, ItemKind.DryGrass, 8, 2, "work")
+            })
+            {
+                var pile = new NodeState { id = sim.State.nextId++, kind = kind, x = x, y = 10, stock = stock, hp = 1 };
+                sim.State.nodes.Add(pile);
+                Require(!sim.IsBlocked(x, 10), "loose material blocked walking");
+                sim.Apply(Command(p, action, x, 10)); Advance(sim, .6f);
+                Require(!sim.State.nodes.Contains(pile) && p.items[(int)item] == stock, "bare hands could not pick up " + kind);
+            }
+            var savedMaterials = new WorldSimulator(Saved(sim.State));
+            var restoredPlayer = savedMaterials.State.players.Single(a => a.id == p.id);
+            Require(restoredPlayer.items[(int)ItemKind.LooseStone] == 5 && restoredPlayer.items[(int)ItemKind.DryGrass] == 2,
+                "loose materials did not survive save and restore");
+            foreach (var kind in new[] { GearKind.StoneAxe, GearKind.StonePickaxe })
+            {
+                sim.Apply(Command(p, "gearcraft", arg: (int)kind)); Advance(sim, .6f);
+            }
+            Require(p.gear.Count == 2 && sim.State.primitiveResearch == 0 && p.items.Skip(63).All(n => n == 0),
+                "handcraft required research or did not spend the picked materials");
+            int wood = p.items[(int)ItemKind.Wood];
+            var axe = p.gear.Single(g => g.kind == GearKind.StoneAxe);
+            sim.Apply(Command(p, "equip", arg: axe.id));
+            sim.Apply(Command(p, "interact", 11, 10));
+            Require(tree.hp == 23 && tree.stock == 13 && p.items[(int)ItemKind.Wood] == wood,
+                "first hit paid early or failed to damage the tree");
+            sim = new WorldSimulator(Saved(sim.State));
+            p = sim.State.players.Single(a => a.id == p.id);
+            partner = sim.State.players.Single(a => a.id == partner.id);
+            tree = sim.State.nodes.Single();
+            int partnerWood = partner.items[(int)ItemKind.Wood];
+            Require(tree.hp == 23 && tree.stock == 13, "damaged node was reset by a save");
+            Advance(sim, .6f);
+            sim.Apply(Command(partner, "interact", 11, 10));
+            Require(tree.hp == 23, "a second player harvested with bare hands");
+            sim.Apply(Command(p, "primary", 11, 10)); Advance(sim, 1.2f);
+            Require(sim.State.nodes.Count == 0 && p.items[(int)ItemKind.Wood] == wood + 13 &&
+                partner.items[(int)ItemKind.Wood] == partnerWood, "last hit did not award the entire node to the correct player");
+            sim.Apply(Command(partner, "primary", 11, 10)); Advance(sim, .6f);
+            Require(partner.items[(int)ItemKind.Wood] == partnerWood, "destroyed node paid twice");
+        });
         Run("player control click walk persists through zero movement heartbeat and stops at destination", () =>
         {
             var sim = PlayerControlFixture(out var p);
@@ -28,6 +83,7 @@ static partial class Checks
         Run("player control primary approaches a resource and stops permanently on depletion", () =>
         {
             var sim = PlayerControlFixture(out var p);
+            sim.Apply(Command(p, "equip", arg: p.gear.Single(g => g.kind == GearKind.StonePickaxe).id));
             var node = Ore(sim.State, 16, 10, 7);
             int initial = p.items[(int)ItemKind.Ore];
             sim.Apply(Command(p, "primary", 16, 10)); Advance(sim, 4);
@@ -39,6 +95,7 @@ static partial class Checks
         Run("player control held work searches locally without mouse and expires without refresh", () =>
         {
             var sim = PlayerControlFixture(out var p);
+            sim.Apply(Command(p, "equip", arg: p.gear.Single(g => g.kind == GearKind.StonePickaxe).id));
             Ore(sim.State, 15, 10, 10); int initial = p.items[(int)ItemKind.Ore];
             for (int tick = 0; tick < 70; tick++)
             {

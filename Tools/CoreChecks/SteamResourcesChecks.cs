@@ -5,10 +5,10 @@ static partial class Checks
     // Public seams: new-world generation, sparse chunk generation and real interact commands.
     static void RunSteamResourceChecks()
     {
-        Run("steam resources gather correct items with bare hands and existing pickaxes then deplete", () =>
+        Run("steam resources gather only with durable pickaxes and pay the full deposit on depletion", () =>
         {
             foreach (bool chunked in new[] { false, true })
-            foreach (GearKind? pick in new GearKind?[] { null, GearKind.StonePickaxe, GearKind.SteelPickaxe })
+            foreach (var pick in new[] { GearKind.StonePickaxe, GearKind.SteelPickaxe })
             foreach (var resource in new[] { (NodeKind.Coal, ItemKind.Coal), (NodeKind.Limestone, ItemKind.Limestone), (NodeKind.FireClay, ItemKind.FireClay) })
             {
                 var world = SteamGatherWorld(resource.Item1, chunked);
@@ -16,29 +16,44 @@ static partial class Checks
                 var p = sim.AddPlayer("steam-gatherer", "Miner");
                 var node = sim.State.nodes.Single(n => n.kind == resource.Item1);
                 var crates = sim.State.nodes.Where(n => n.kind == NodeKind.Crate).ToDictionary(n => n.id, n => n.stock);
-                node.stock = 7; p.x = node.x; p.y = node.y - 1;
-                GearState tool = null;
-                if (pick.HasValue)
-                {
-                    tool = p.gear.FirstOrDefault(g => g.kind == pick.Value);
-                    if (tool == null) { tool = new GearState { id = sim.State.nextId++, kind = pick.Value }; p.gear.Add(tool); }
-                    sim.Apply(Command(p, "equip", arg: tool.id));
-                }
-                else sim.Apply(Command(p, "switch", arg: 2));
+                p.x = node.x; p.y = node.y - 1;
                 var before = (int[])p.items.Clone();
-                int gathered = sim.State.gathered, durability = tool?.durability ?? 0;
-                for (int attempt = 0; attempt < 4 && sim.State.nodes.Any(n => n.id == node.id); attempt++)
-                { sim.Apply(Command(p, "interact", node.x, node.y)); Advance(sim, .6f); }
-                Require(p.items[(int)resource.Item2] == before[(int)resource.Item2] + 7 && sim.State.gathered == gathered + 7,
-                    $"gather did not yield exactly seven {resource.Item2} with {pick?.ToString() ?? "bare hands"}: {p.notice}");
-                Require(sim.State.nodes.All(n => n.id != node.id), "depleted steam deposit survived");
-                Require(Enumerable.Range(0, DemoCatalog.ItemCount).All(i => i == (int)resource.Item2 || p.items[i] == before[i]), "gather awarded an unrelated industrial item");
-                Require(crates.All(c => sim.State.nodes.Any(n => n.id == c.Key && n.stock == c.Value)), "steam gather consumed a supply crate");
-                Require(tool == null || tool.durability < durability, "equipped pickaxe was not used");
-                Require(sim.State.era == TechEra.Primitive, "steam ore collection unexpectedly required an era unlock");
-                int final = p.items[(int)resource.Item2];
+                int gathered = sim.State.gathered;
+                foreach (var invalid in new (GearKind? kind, int durability)[]
+                    { (null, 0), (GearKind.StoneAxe, 100), (GearKind.StonePickaxe, 0) })
+                {
+                    var wrongTool = invalid.kind.HasValue ? EquipGatheringTool(sim, p, invalid.kind.Value, invalid.durability) : null;
+                    if (wrongTool == null) sim.Apply(Command(p, "switch", arg: 2));
+                    Ready(p);
+                    sim.Apply(Command(p, "interact", node.x, node.y));
+                    Require(node.hp == 35 && node.stock == 7 && sim.State.nodes.Contains(node) && p.items.SequenceEqual(before) &&
+                        sim.State.gathered == gathered && (wrongTool == null || wrongTool.durability == invalid.durability),
+                        $"invalid tool affected {resource.Item1}: {invalid.kind}, durability {invalid.durability}");
+                    Advance(sim, .55f);
+                }
+                var tool = EquipGatheringTool(sim, p, pick);
+                var partialHp = pick == GearKind.SteelPickaxe ? new[] { 15 } : new[] { 23, 11 };
+                for (int hit = 0; hit < partialHp.Length; hit++)
+                {
+                    sim.Apply(Command(p, "interact", node.x, node.y));
+                    Require(node.hp == partialHp[hit] && node.stock == 7 && sim.State.nodes.Contains(node) &&
+                        tool.durability == 99 - hit && p.items.SequenceEqual(before) && sim.State.gathered == gathered,
+                        $"{pick} hit {hit + 1} on {resource.Item1} did not preserve the full deposit: {p.notice}");
+                    Advance(sim, .55f);
+                }
                 sim.Apply(Command(p, "interact", node.x, node.y));
-                Require(p.items[(int)resource.Item2] == final, "empty steam deposit duplicated stock");
+                before[(int)resource.Item2] += 7;
+                Require(p.items.SequenceEqual(before) && sim.State.gathered == gathered + 7,
+                    $"{pick} did not yield exactly seven {resource.Item2}: {p.notice}");
+                Require(sim.State.nodes.All(n => n.id != node.id), "depleted steam deposit survived");
+                Require(crates.All(c => sim.State.nodes.Any(n => n.id == c.Key && n.stock == c.Value)), "steam gather consumed a supply crate");
+                int remainingDurability = 99 - partialHp.Length;
+                Require(tool.durability == remainingDurability, "final hit did not use the equipped pickaxe");
+                Require(sim.State.era == TechEra.Primitive, "steam ore collection unexpectedly required an era unlock");
+                Advance(sim, .55f);
+                sim.Apply(Command(p, "interact", node.x, node.y));
+                Require(p.items.SequenceEqual(before) && sim.State.gathered == gathered + 7 && tool.durability == remainingDurability,
+                    "empty steam deposit duplicated stock or wore the tool");
             }
         });
         Run("steam resources respect inventory capacity without losing remaining deposit stock", () =>
@@ -48,12 +63,32 @@ static partial class Checks
                 var sim = new WorldSimulator(SteamGatherWorld(resource.Item1, false));
                 var p = sim.AddPlayer("steam-cap", "Miner");
                 var node = sim.State.nodes.Single(n => n.kind == resource.Item1 && n.x == 37 && n.y == 35);
-                node.stock = 3; p.x = node.x; p.y = node.y - 1; p.activeSlot = 2;
-                p.items[(int)resource.Item2] = WorldSimulator.InventoryLimit - 1;
+                node.stock = 3; p.x = node.x; p.y = node.y - 1;
+                var tool = EquipGatheringTool(sim, p, GearKind.StonePickaxe);
+                p.attributes[0] = 6; p.skills[2] = 2;
+                int item = (int)resource.Item2, gathered = sim.State.gathered;
+                p.items[item] = WorldSimulator.InventoryLimit - 1;
+                foreach (int hp in new[] { 19, 3 })
+                {
+                    sim.Apply(Command(p, "interact", node.x, node.y));
+                    Require(node.hp == hp && node.stock == 3 && p.items[item] == WorldSimulator.InventoryLimit - 1 &&
+                        sim.State.gathered == gathered, "strength/survival damage or partial deposit conservation changed");
+                    Advance(sim, .55f);
+                }
+                foreach (int room in new[] { 1, 0 })
+                {
+                    p.items[item] = WorldSimulator.InventoryLimit - room;
+                    sim.Apply(Command(p, "interact", node.x, node.y));
+                    Require(sim.State.nodes.Contains(node) && node.hp == 3 && node.stock == 3 && tool.durability == 98 &&
+                        p.items[item] == WorldSimulator.InventoryLimit - room && sim.State.gathered == gathered,
+                        "refused final hit changed the deposit, inventory or tool");
+                    Advance(sim, .55f);
+                }
+                p.items[item] = WorldSimulator.InventoryLimit - 3;
                 sim.Apply(Command(p, "interact", node.x, node.y));
-                Require(p.items[(int)resource.Item2] == WorldSimulator.InventoryLimit && node.stock == 2, "capacity overflow lost steam resource stock");
-                Advance(sim, .6f); sim.Apply(Command(p, "interact", node.x, node.y));
-                Require(node.stock == 2 && p.items[(int)resource.Item2] == WorldSimulator.InventoryLimit, "full inventory still consumed steam resource stock");
+                Require(!sim.State.nodes.Contains(node) && p.items[item] == WorldSimulator.InventoryLimit &&
+                    sim.State.gathered == gathered + 3 && tool.durability == 97,
+                    "a final hit with exactly enough space did not collect the entire deposit");
             }
         });
         Run("steam resources favor coal forests and tundra limestone valleys and mountains and fire clay wetlands", () =>
@@ -137,8 +172,7 @@ static partial class Checks
                 for (int cx = -10; cx <= 10 && !resources.All(r => world.nodes.Any(n => Future(n) && n.kind == r.Item1)); cx += 2)
                     Require(ChunkTerrain.Generate(world, cx, cy), "future gather fixture chunk refused");
             var sim = new WorldSimulator(world); var p = sim.AddPlayer("steam-natural", "Miner");
-            var pick = new GearState { id = sim.State.nextId++, kind = GearKind.StonePickaxe }; p.gear.Add(pick);
-            sim.Apply(Command(p, "equip", arg: pick.id));
+            var pick = EquipGatheringTool(sim, p, GearKind.StonePickaxe);
             foreach (var resource in resources)
             {
                 var node = sim.State.nodes.First(n => Future(n) && n.kind == resource.Item1);
@@ -151,10 +185,20 @@ static partial class Checks
                 var approach = new[] { (node.x - 1, node.y), (node.x + 1, node.y), (node.x, node.y - 1), (node.x, node.y + 1) }
                     .First(c => reachable.Contains(WorldTiles.Key(c.Item1, c.Item2)));
                 p.x = approach.Item1; p.y = approach.Item2;
-                int before = p.items[(int)resource.Item2], stock = node.stock;
+                int item = (int)resource.Item2, before = p.items[item], stock = node.stock;
+                int wear = pick.durability, gathered = sim.State.gathered;
+                Require(node.hp == 35 && stock > 0, "natural future deposit did not spawn at full durability");
+                foreach (int hp in new[] { 23, 11 })
+                {
+                    sim.Apply(Command(p, "interact", node.x, node.y));
+                    Require(node.hp == hp && node.stock == stock && p.items[item] == before && sim.State.gathered == gathered,
+                        "natural future deposit paid before depletion: " + resource.Item2);
+                    Advance(sim, .55f);
+                }
                 sim.Apply(Command(p, "interact", node.x, node.y));
-                int received = p.items[(int)resource.Item2] - before;
-                Require(received > 0 && node.stock == stock - received && p.notice.Contains(DemoCatalog.ItemName(resource.Item2)), "natural future deposit did not yield " + resource.Item2);
+                Require(!sim.State.nodes.Contains(node) && p.items[item] == before + stock && sim.State.gathered == gathered + stock &&
+                    pick.durability == wear - 3 && p.notice.Contains(DemoCatalog.ItemName(resource.Item2)),
+                    "natural future deposit did not yield its entire stock: " + resource.Item2);
                 Advance(sim, .6f);
             }
         });
@@ -172,8 +216,17 @@ static partial class Checks
             AddFlatInitialChunks(world);
         }
         world.ground = new string('0', 4096);
-        world.nodes.Add(new NodeState { id = world.nextId++, kind = kind, x = 37, y = 35, stock = 7 });
+        world.nodes.Add(new NodeState { id = world.nextId++, kind = kind, x = 37, y = 35, stock = 7, hp = 35 });
         return world;
+    }
+
+    static GearState EquipGatheringTool(WorldSimulator sim, PlayerState player, GearKind kind, int durability = 100)
+    {
+        var tool = new GearState { id = sim.State.nextId++, kind = kind, durability = durability };
+        player.gear.Add(tool);
+        sim.Apply(Command(player, "equip", arg: tool.id));
+        Require(player.activeSlot == 1 && player.toolId == tool.id, "could not equip gathering fixture tool: " + kind);
+        return tool;
     }
 
     static void AddFlatInitialChunks(WorldState world)

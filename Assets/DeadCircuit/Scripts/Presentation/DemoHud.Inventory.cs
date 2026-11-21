@@ -777,7 +777,8 @@ namespace DeadCircuit
                 Set(row.craft.label, name + "\n" + reason);
                 row.research.button.gameObject.SetActive(research != null);
                 string evidence = research == null ? "" : EquipmentResearchCatalog.Evidence(world, research);
-                SetRecipeText(row.details, "成本：" + MaterialText(cost, player.items, true) + "\n" + TechCatalog.EraName(era) + " · 工作台 · " + reason +
+                string station = gear != null && EquipmentCatalog.IsHandcraftedTool(gear.kind) ? "随身" : "工作台";
+                SetRecipeText(row.details, "成本：" + MaterialText(cost, player.items, true) + "\n" + TechCatalog.EraName(era) + " · " + station + " · " + reason +
                     (research == null ? "" : "\n研究实产：" + (string.IsNullOrEmpty(evidence) ? "已满足" : evidence)) +
                     "\n" + (row.part ? EquipmentCatalog.SlotNames[(int)part.slot] + " · " + part.description : EquipmentCatalog.IsArmor(gear.kind) ? "防具位 · " + GearUsage(gear.kind) : gear.tool ? "工具位 · " + GearUsage(gear.kind) : "武器位 · " + GearUsage(gear.kind)));
             }
@@ -858,9 +859,9 @@ namespace DeadCircuit
             string usage;
             switch (kind)
             {
-                case GearKind.StoneAxe: case GearKind.SteelAxe: return "工具 · 伐木与近战；使用消耗耐久。";
-                case GearKind.StonePickaxe: case GearKind.SteelPickaxe: return "工具 · 采矿与近战；使用消耗耐久。";
-                case GearKind.Wrench: return "工具 · 设备维护与近战，采集废料和废墙更高效；使用消耗耐久。";
+                case GearKind.StoneAxe: case GearKind.SteelAxe: return "工具 · 装备后可采集树木和补给箱，也可近战。使用消耗耐久。";
+                case GearKind.StonePickaxe: case GearKind.SteelPickaxe: return "工具 · 装备后可采集矿石、石材和黏土，也可近战。使用消耗耐久。";
+                case GearKind.Wrench: return "工具 · 装备后可采集废料堆，也可用于设备维护和近战。使用消耗耐久。";
                 case GearKind.Knife: usage = "近战武器 · 不消耗弹药；使用消耗耐久。"; break;
                 default: usage = "远程武器 · 先装备、选择兼容弹种并装填；Alt 精确瞄准，按住左键持续手动攻击；R 装填。"; break;
             }
@@ -885,6 +886,8 @@ namespace DeadCircuit
                     "\n在装备详情中选择弹种并装填；切换已装弹种前先卸弹。";
             }
             if (kind == ItemKind.Food) return "补充饱食度。点击下方「进食 V」，或关闭面板后按 V。";
+            if (kind == ItemKind.Branch || kind == ItemKind.LooseStone || kind == ItemKind.DryGrass)
+                return "可空手从地面拾取。按 T → 原始 → 工艺与建造，可随身制作石斧和石镐。";
             if (kind == ItemKind.Fuel) return "供燃料发电、锅炉与石炉使用；也用于炼钢和化工。";
             if (kind == ItemKind.Stone) return "采集石材堆获得。用于工具、窑炉与建造工艺；按 T 查看研究材料。";
             if (kind == ItemKind.Clay) return "采集黏土矿床获得。陶窑消耗黏土×4、木炭×1，产出陶砖×4。";

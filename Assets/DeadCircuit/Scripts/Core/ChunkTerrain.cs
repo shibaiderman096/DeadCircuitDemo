@@ -22,7 +22,10 @@ namespace DeadCircuit
 
         // Stage an entire chunk before checking serialized/entity/ID budgets. A
         // rejected chunk leaves no terrain, entities, ID consumption or revision.
-        public static bool Generate(WorldState world, int chunkX, int chunkY)
+        public static bool Generate(WorldState world, int chunkX, int chunkY) =>
+            Generate(world, chunkX, chunkY, addGroundPickups: true);
+
+        internal static bool Generate(WorldState world, int chunkX, int chunkY, bool addGroundPickups)
         {
             if (world == null) throw new ArgumentNullException(nameof(world));
             if (!ChunkStreaming.Enabled(world) || world.chunks.records == null)
@@ -50,14 +53,16 @@ namespace DeadCircuit
             }
             // Existing entities contribute only local occupancy. They are never
             // moved, removed or renumbered to make room for a generated object.
-            foreach (var node in world.nodes) MarkExisting(region, node.x, node.y, true);
+            foreach (var node in world.nodes) MarkExisting(region, node.x, node.y, !DemoCatalog.IsGroundPickup(node.kind));
             foreach (var b in world.buildings)
                 for (int y = Math.Max(startY, b.y); y < Math.Min(startY + Size, b.y + DemoCatalog.Height(b)); y++)
                     for (int x = Math.Max(startX, b.x); x < Math.Min(startX + Size, b.x + DemoCatalog.Width(b)); x++)
                         MarkExisting(region, x, y, b.kind != BuildKind.Door);
             if (world.generatorVersion >= 4) AddBlueprintSite(region, chunkX, chunkY);
             else AddSite(region, chunkX, chunkY);
-            AddResources(region);
+            int resourceCount = AddResources(region);
+            if (addGroundPickups && world.generatorVersion >= WorldGeneration.GroundPickupVersion)
+                AddGroundPickups(region, resourceCount);
             if (region.nodes.Count > MaxNodesPerChunk ||
                 (long)world.nodes.Count + region.nodes.Count > WorldSimulator.MaxNodes ||
                 (long)world.buildings.Count + region.buildings.Count > WorldSimulator.MaxBuildings ||
@@ -166,7 +171,7 @@ namespace DeadCircuit
         private static int Container(int x, int y, int width, int height, int index) =>
             (index == 1 ? x + width - 2 : x + 1) + (index == 2 ? y + height - 2 : y + 1) * Size;
 
-        private static void AddResources(Region r)
+        private static int AddResources(Region r)
         {
             var candidates = new List<int>();
             for (int y = 2; y < 14; y++) for (int x = 2; x < 14; x++) candidates.Add(x + y * Size);
@@ -185,6 +190,7 @@ namespace DeadCircuit
                 // never seal it off, even in dense forests or narrow coastlines.
                 for (int path = parents[cell]; path >= 0; path = parents[path]) r.reserved[path] = true;
             }
+            return count;
         }
 
         private static bool Resource(Region r, int cell, out NodeKind kind, out int stock)
@@ -231,9 +237,10 @@ namespace DeadCircuit
 
         private static void AddNode(Region r, int cell, NodeKind kind, int stock)
         {
+            bool pickup = DemoCatalog.IsGroundPickup(kind);
             r.nodes.Add(new NodeState { id = r.nextId++, x = r.x + cell % Size, y = r.y + cell / Size,
-                kind = kind, stock = stock, hp = kind == NodeKind.Wall ? 160f : 35f });
-            r.occupied[cell] = true; r.blocked[cell] = true;
+                kind = kind, stock = stock, hp = pickup ? 1f : kind == NodeKind.Wall ? 160f : 35f });
+            r.occupied[cell] = true; r.blocked[cell] = !pickup;
         }
 
         private static void SortCells(List<int> cells, Region r, uint channel)

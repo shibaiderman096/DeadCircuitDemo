@@ -66,7 +66,7 @@ static partial class Checks
         {
             var state = Flat(era: TechEra.Nuclear);
             Add(state, BuildKind.Workbench, 10, 10);
-            var ore = new NodeState { id=state.nextId++, kind=NodeKind.UraniumOre, x=10, y=14, stock=6 };
+            var ore = new NodeState { id=state.nextId++, kind=NodeKind.UraniumOre, x=10, y=14, stock=6, hp=35 };
             state.nodes.Add(ore);
             var plant = Add(state, BuildKind.ChemicalPlant, 10, 20);
             Add(state, BuildKind.DieselGenerator, 7, 20).items[(int)ItemKind.Diesel] = 20;
@@ -85,12 +85,18 @@ static partial class Checks
                 "stockpiled ore bypassed the real mining prerequisite");
             player.items[(int)ItemKind.UraniumOre]=0;
             player.x=8; player.y=14;
-            for(int i=0;i<2;i++)
+            var deposit = sim.State.nodes.Single(n => n.id == ore.id);
+            var pickaxe = EquipGatheringTool(sim, player, GearKind.StonePickaxe);
+            foreach (int hp in new[] { 23, 11 })
             {
                 Ready(player); sim.Apply(Command(player,"interact",10,14)); Advance(sim,.55f);
+                Require(deposit.hp == hp && deposit.stock == 6 && player.items[(int)ItemKind.UraniumOre] == 0 &&
+                    sim.State.nuclearUraniumMined == 0 && sim.State.gathered == 0,
+                    "partial uranium mining paid early or counted toward beneficiation research");
             }
+            Ready(player); sim.Apply(Command(player,"interact",10,14)); Advance(sim,.55f);
             Require(sim.State.nodes.All(n=>n.id!=ore.id) && sim.State.nuclearUraniumMined==6 && sim.State.gathered==6 &&
-                player.items[(int)ItemKind.UraniumOre]==6 && sim.State.produced[(int)ItemKind.UraniumOre]==0,
+                player.items[(int)ItemKind.UraniumOre]==6 && sim.State.produced[(int)ItemKind.UraniumOre]==0 && pickaxe.durability == 97,
                 "finite uranium mining did not record the real mined amount independently of manufactured output");
             player.x=10; player.y=18.8f; Ready(player);
             sim.Apply(Command(player,"recipe",10,20,93));
@@ -135,8 +141,8 @@ static partial class Checks
         {
             bool hasConcentrate = Enum.TryParse("UraniumConcentrate", out ItemKind concentrate);
             bool hasBeneficiation = Enum.TryParse("UraniumBeneficiation", out NuclearTech beneficiation);
-            Require(hasConcentrate && (int)concentrate == 62 && DemoCatalog.ItemCount == 63,
-                "uranium concentrate did not append one persistent material slot");
+            Require(hasConcentrate && (int)concentrate == 62 && DemoCatalog.ItemCount == 66,
+                "uranium concentrate did not retain slot 62 in the current inventory");
             Require(hasBeneficiation && NuclearCatalog.AllResearch == (1 << 11) - 1 && NuclearCatalog.Definition((int)beneficiation) != null,
                 "uranium beneficiation is missing from the nuclear research catalog");
 
@@ -162,7 +168,7 @@ static partial class Checks
             sim.State.produced[(int)concentrate] = 3;
 
             var restored = new WorldSimulator(Saved(sim.State));
-            Require(restored.State.version == WorldSimulator.SaveVersion && restored.State.produced[(int)concentrate] == 3 &&
+            Require(restored.State.version == 19 && restored.State.produced[(int)concentrate] == 3 &&
                 restored.State.players[0].items[(int)concentrate] == 3 && Building(restored, plant.id).items[(int)concentrate] == 2,
                 "current-format save did not preserve uranium concentrate in world counters and inventories");
         });

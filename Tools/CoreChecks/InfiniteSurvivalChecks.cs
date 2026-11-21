@@ -74,31 +74,46 @@ static partial class Checks
 
         Run("infinite survival forage supports every generated version and signed wilderness sources", () =>
         {
+            WorldSimulator CrateFixture(out PlayerState actor, int generator, bool enabled = true)
+            {
+                var fixture = SurvivalFixture(out actor, s =>
+                {
+                    s.generatorVersion = generator;
+                    s.survival.enabled = enabled;
+                    s.nodes.Add(new NodeState { id = s.nextId++, kind = NodeKind.Crate, x = 10, y = 10, stock = 1, hp = 12 });
+                });
+                EquipGatheringTool(fixture, actor, GearKind.StoneAxe);
+                return fixture;
+            }
             for (int generator = 1; generator <= WorldGeneration.CurrentGeneratorVersion; generator++)
             {
-                var legacy = ForagingFixture(out var actor, NodeKind.Crate, generator: generator);
+                var legacy = CrateFixture(out var actor, generator);
                 legacy.Apply(Command(actor, "interact", 10, 10));
-                Require(actor.needs.foods[(int)FoodKind.Egg] >= 2 && actor.needs.foods[(int)FoodKind.RawFish] >= 1,
+                Require(legacy.State.nodes.Count == 0 && actor.needs.foods[(int)FoodKind.Egg] >= 2 && actor.needs.foods[(int)FoodKind.RawFish] >= 1,
                     "generated version has no forage: " + generator);
             }
             var sim = InfiniteSurvivalFixture(out var p); var world = sim.State;
-            world.nodes.Add(new NodeState { id = world.nextId++, kind = NodeKind.Crate, x = -17, y = -17, stock = 1 });
+            EquipGatheringTool(sim, p, GearKind.StoneAxe);
+            world.nodes.Add(new NodeState { id = world.nextId++, kind = NodeKind.Crate, x = -17, y = -17, stock = 1, hp = 12 });
             var reorderedSave = Saved(world); reorderedSave.nodes.Single().id = reorderedSave.nextId++;
             var reordered = new WorldSimulator(reorderedSave); var other = reordered.State.players.Single();
             sim.Apply(Command(p, "interact", -17, -17));
             reordered.Apply(Command(other, "interact", -17, -17));
             Require(world.nodes.Count == 0 && p.needs.foods[(int)FoodKind.Egg] >= 2 && p.needs.foods[(int)FoodKind.RawFish] >= 1,
                 "signed wilderness crate supplied no cooking ingredients");
-            Require(p.needs.foods.SequenceEqual(other.needs.foods) && p.needs.seeds.SequenceEqual(other.needs.seeds),
+            Require(reordered.State.nodes.Count == 0 && p.needs.foods.SequenceEqual(other.needs.foods) && p.needs.seeds.SequenceEqual(other.needs.seeds),
                 "chunk source loot changed with discovery-order entity ID");
             var food = (int[])p.needs.foods.Clone(); p.interactCooldown = 0;
             sim.Apply(Command(p, "interact", -17, -17));
             Require(p.needs.foods.SequenceEqual(food), "exhausted signed source paid twice");
             foreach (bool enabled in new[] { false, true })
             {
-                var inert = ForagingFixture(out var owner, NodeKind.Crate, generator: enabled ? 0 : 1, enabled: enabled);
+                var inert = CrateFixture(out var owner, enabled ? 0 : 1, enabled);
+                int foodBefore = owner.items[(int)ItemKind.Food];
                 inert.Apply(Command(owner, "interact", 10, 10));
-                Require(owner.needs.foods.All(value => value == 0), "legacy or disabled survival acquired forage");
+                Require(inert.State.nodes.Count == 0 && owner.items[(int)ItemKind.Food] == foodBefore + 1 &&
+                    owner.needs.foods.All(value => value == 0) && owner.needs.seeds.All(value => value == 0),
+                    "legacy or disabled survival failed to harvest normal stock without forage");
             }
         });
 

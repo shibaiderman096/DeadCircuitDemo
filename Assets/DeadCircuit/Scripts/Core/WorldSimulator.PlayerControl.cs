@@ -99,11 +99,11 @@ namespace DeadCircuit
                     if (p.interactCooldown > 0) return;
                     Aim(p, (input.targetKind == PlayerControlTarget.Corpse ? input.focusX : input.targetX) - p.x,
                         (input.targetKind == PlayerControlTarget.Corpse ? input.focusY : input.targetY) - p.y);
+                    NodeState target = input.targetKind == PlayerControlTarget.Node ? NodeAt(input.targetX, input.targetY) : null;
+                    float hpBefore = target?.hp ?? 0f;
                     PerformPlayerControlInteraction(p, input);
-                    NodeState node = NodeAt(input.targetX, input.targetY);
-                    bool depleted = input.targetKind == PlayerControlTarget.Node && (node == null || node.id != input.targetId || node.stock <= 0);
-                    if (depleted) StopPlayerControlTarget(p, input, false);
-                    else if (input.targetKind != PlayerControlTarget.Node) StopPlayerControlTarget(p, input, false);
+                    if (target == null || NodeAt(input.targetX, input.targetY) != target) StopPlayerControlTarget(p, input, false);
+                    else if (target.hp == hpBefore) StopPlayerControlTarget(p, input, true);
                     else if (!PlayerControlTargetValid(p, input)) StopPlayerControlTarget(p, input, true);
                     return;
                 }
@@ -218,7 +218,7 @@ namespace DeadCircuit
             for (int y = sy - 6; y <= sy + 6; y++) for (int x = sx - 6; x <= sx + 6; x++)
             {
                 NodeState node = NodeAt(x, y);
-                if (node == null || node.stock <= 0 || node.kind == NodeKind.Wall || node.kind == NodeKind.Oil || BuildingAt(x, y) != null) continue;
+                if (node == null || node.stock <= 0 || !EquipmentCatalog.CanHarvest(p, node.kind) || BuildingAt(x, y) != null) continue;
                 float distance = DistSq(p.x, p.y, x, y);
                 if (distance > best || (distance == best && selected != 0 && selected <= node.id)) continue;
                 best = distance; selected = node.id; tx = x; ty = y; kind = PlayerControlTarget.Node;
@@ -263,11 +263,10 @@ namespace DeadCircuit
             {
                 NodeState node = NodeAt(input.targetX, input.targetY);
                 if (node == null || node.id != input.targetId || node.stock <= 0) return false;
-                if (node.kind == NodeKind.Wall) { Notice(p, "墙体无法采集。"); return false; }
-                if (node.kind == NodeKind.Oil) { Notice(p, "原油需要紧邻油源的通电抽油机采集。"); return false; }
-                int item = node.kind == NodeKind.Crate ? SiteCrateItem(node) : NodeItem(node.kind);
-                if (p.items[item] >= InventoryLimit) { Notice(p, "背包已满，已停止采集。"); return false; }
-                return true;
+                string requirement = HarvestRequirement(p, node.kind);
+                if (requirement.Length == 0) return true;
+                Notice(p, requirement);
+                return false;
             }
             if (input.targetKind == PlayerControlTarget.Building)
             {

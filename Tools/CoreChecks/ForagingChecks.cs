@@ -7,15 +7,15 @@ static partial class Checks
 {
     // Main invokes ForagingChecks() from Program.Main. Every reward is obtained through Apply.
     static WorldSimulator ForagingFixture(out PlayerState player, NodeKind kind = NodeKind.Tree,
-        int stock = 1, int biome = 1, int seed = 73149, int generator = 1, bool enabled = true)
+        int stock = 1, int biome = 1, int seed = 73149, int generator = 1, bool enabled = true, float hp = 12f)
     {
         var sim = SurvivalFixture(out player, s =>
         {
             s.seed = seed; s.generation.seed = seed; s.generatorVersion = generator;
             s.biomes = new string((char)('0' + biome), 4096); s.survival.enabled = enabled;
-            s.nodes.Add(new NodeState { id = s.nextId++, x = 10, y = 10, kind = kind, stock = stock });
+            s.nodes.Add(new NodeState { id = s.nextId++, x = 10, y = 10, kind = kind, stock = stock, hp = hp });
         });
-        player.activeSlot = 2; // bare hands: known three-unit industrial gathering amount
+        sim.Apply(Command(player, "equip", arg: player.gear.Single(g => g.kind == (kind == NodeKind.Ore ? GearKind.StonePickaxe : GearKind.StoneAxe)).id));
         return sim;
     }
 
@@ -61,11 +61,16 @@ static partial class Checks
         });
         Run("foraging partial harvesting gives nothing and exhausted sources never pay twice", () =>
         {
-            var sim = ForagingFixture(out var p, stock: 7); int wood = p.items[(int)ItemKind.Wood];
+            var sim = ForagingFixture(out var p, stock: 7, hp: 35); int wood = p.items[(int)ItemKind.Wood];
+            sim.Apply(Command(p, "switch", arg: 2));
             sim.Apply(Command(p, "interact", 10, 10));
-            Require(sim.State.nodes.Single().stock == 4 && p.needs.foods.All(n => n == 0) && p.needs.seeds.All(n => n == 0), "partial tree paid early");
+            Require(p.items[(int)ItemKind.Wood] == wood && sim.State.nodes.Single().hp == 35f, "bare hands damaged or looted the tree");
+            Advance(sim, .5f);
+            sim.Apply(Command(p, "equip", arg: p.gear.Single(g => g.kind == GearKind.StoneAxe).id));
+            sim.Apply(Command(p, "interact", 10, 10));
+            Require(sim.State.nodes.Single().stock == 7 && p.items[(int)ItemKind.Wood] == wood && p.needs.foods.All(n => n == 0) && p.needs.seeds.All(n => n == 0), "partial tree paid early");
             Advance(sim, .5f); sim.Apply(Command(p, "interact", 10, 10));
-            Require(sim.State.nodes.Single().stock == 1 && p.needs.foods.All(n => n == 0), "second partial harvest paid early");
+            Require(sim.State.nodes.Single().stock == 7 && p.items[(int)ItemKind.Wood] == wood && p.needs.foods.All(n => n == 0), "second partial harvest paid early");
             Advance(sim, .5f); sim.Apply(Command(p, "interact", 10, 10));
             Require(sim.State.nodes.Count == 0 && p.items[(int)ItemKind.Wood] == wood + 7, "industrial stock was not conserved");
             var food = (int[])p.needs.foods.Clone(); var seeds = (int[])p.needs.seeds.Clone();
@@ -104,8 +109,8 @@ static partial class Checks
         });
         Run("foraging save restores partial source identically and exhausted source stays exhausted", () =>
         {
-            var live = ForagingFixture(out var p, NodeKind.Crate, stock: 4);
-            live.Apply(Command(p, "interact", 10, 10)); Require(live.State.nodes.Single().stock == 1, "partial crate fixture");
+            var live = ForagingFixture(out var p, NodeKind.Crate, stock: 4, hp: 24);
+            live.Apply(Command(p, "interact", 10, 10)); Require(live.State.nodes.Single().stock == 4 && live.State.nodes.Single().hp == 12, "partial crate fixture");
             var source = Saved(live.State); string before = Dump(source); var restored = new WorldSimulator(source); var restoredPlayer = restored.State.players.Single();
             Advance(live, .5f); Advance(restored, .5f);
             live.Apply(Command(p, "interact", 10, 10)); restored.Apply(Command(restoredPlayer, "interact", 10, 10));

@@ -143,7 +143,6 @@ namespace DeadCircuit
         {
             switch(kind)
             {
-                case GearKind.StoneAxe: case GearKind.StonePickaxe: return new ResearchRef { domain=ResearchDomain.Industry,era=0,id=(int)PrimitiveTech.Tools };
                 case GearKind.Knife: return new ResearchRef { domain=ResearchDomain.Industry,era=0,id=(int)PrimitiveTech.Bloomery };
                 case GearKind.SteelAxe: case GearKind.SteelPickaxe: return ToolTechCatalog.Reference((int)ToolTech.SteelTools);
                 case GearKind.Wrench: return ToolTechCatalog.Reference((int)ToolTech.MechanicalService);

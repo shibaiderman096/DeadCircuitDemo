@@ -45,22 +45,30 @@ namespace DeadCircuit
             yield return Sample(37, 32, left: true); yield return Sample(37, 32, 55);
             Require(Math.Abs(p.x - 37) < .1f && Math.Abs(p.y - 32) < .1f, "left click moves to ground through idle heartbeats");
             Require(p.attackCooldown == 0, "ground click does not attack");
-            var resource = new NodeState { id = sim.State.nextId++, x = 42, y = 32, kind = NodeKind.Tree, stock = 7, hp = 80 };
+            var branch = new NodeState { id = sim.State.nextId++, x = 38, y = 32, kind = NodeKind.Branch, stock = 2, hp = 1 };
+            sim.State.nodes.Add(branch);
+            yield return Sample(38, 32, left: true); yield return Sample(38, 32, 12);
+            Require(!sim.State.nodes.Contains(branch) && p.items[(int)ItemKind.Branch] == 2, "left click picks up branches with empty hands");
+            var resource = new NodeState { id = sim.State.nextId++, x = 42, y = 32, kind = NodeKind.Tree, stock = 7, hp = 35 };
             sim.State.nodes.Add(resource); int wood = p.items[(int)ItemKind.Wood];
+            yield return Sample(42, 32, left: true); yield return Sample(42, 32, 12);
+            Require(resource.hp == 35 && p.items[(int)ItemKind.Wood] == wood, "bare hands cannot harvest tree");
+            bridge.Send(new PlayerCommand { action = "equip", arg = p.gear.Single(g => g.kind == GearKind.StoneAxe).id });
             yield return Sample(42, 32, left: true); yield return Sample(42, 32, 55);
             Require(!sim.State.nodes.Contains(resource) && p.items[(int)ItemKind.Wood] == wood + 7, "left click approaches and gathers to depletion");
 
             resource = new NodeState { id = sim.State.nextId++, x = 43, y = 32, kind = NodeKind.Tree, stock = 100, hp = 80 };
             sim.State.nodes.Add(resource);
             yield return Sample(25, 25, 8, new[] { Key.Space });
-            Require(resource.stock < 100, "space works independently of the pointer");
-            yield return Sample(25, 25); float stoppedX = p.x, stoppedY = p.y; int stock = resource.stock;
+            Require(resource.hp < 80 && resource.stock == 100, "space damages the tree without paying before depletion");
+            yield return Sample(25, 25); float stoppedX = p.x, stoppedY = p.y; float nodeHp = resource.hp;
             yield return Sample(25, 25, 12);
-            Require(resource.stock == stock && p.x == stoppedX && p.y == stoppedY, "space release stops gathering and movement");
+            Require(resource.hp == nodeHp && p.x == stoppedX && p.y == stoppedY, "space release stops gathering and movement");
             yield return Sample(25, 25, 4, new[] { Key.Space, Key.D });
-            Require(p.x > stoppedX && resource.stock == stock && p.aimX > .9f, "WASD overrides work and faces movement");
+            Require(p.x > stoppedX && resource.hp == nodeHp && p.aimX > .9f, "WASD overrides work and faces movement");
             yield return Sample(25, 25); sim.State.nodes.Clear();
 
+            bridge.Send(new PlayerCommand { action = "switch", arg = 2 });
             int food = p.items[(int)ItemKind.Food]; p.hunger = 20;
             yield return Sample(25, 25, 3, new[] { Key.F });
             Require(p.items[(int)ItemKind.Food] == food && p.attackCooldown == 0, "F without an enemy neither eats nor attacks");
@@ -95,7 +103,7 @@ namespace DeadCircuit
             Require(p.x == stoppedX && p.y == stoppedY, "modal blocks movement and held actions");
             InputSystem.RemoveDevice(keyboard); InputSystem.RemoveDevice(qaMouse);
             bridge.CancelPlayerControl();
-            Debug.Log("DEMO_CONTROLS_QA_PASS click_move gather hold_release wasd fight eat secondary build_cancel aim focus modal");
+            Debug.Log("DEMO_CONTROLS_QA_PASS click_move ground_pickup tool_gather hold_release wasd fight eat secondary build_cancel aim focus modal");
         }
     }
 }

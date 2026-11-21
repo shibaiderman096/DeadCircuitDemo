@@ -152,6 +152,7 @@ namespace DeadCircuit
             RectTransform content = ScrollContent("Technology Scroll View", panel, 0, 0, TreeWidth, 470, out technologyScroll);
             technologyTitle = FlowLabel("Technology Era Title", content, "", 768, 34, 21, Accent);
             technologyDescription = FlowLabel("Technology Description", content, "", 768, 56, 16, Ink);
+            MakePrimitiveTechnology(content);
             MakeWaterTechnology(content);
             MakeSteamTechnology(content);
             MakeLowVoltageTechnology(content);

@@ -26,7 +26,7 @@ namespace DeadCircuit
 
         public static readonly PrimitiveTechnologyDefinition[] All =
         {
-            T(PrimitiveTech.Tools, "石制工具", "解锁石斧、石镐，开启原始工艺研究。", 0,
+            T(PrimitiveTech.Tools, "基础工具", "用简易石制工具取得样品后，开启后续原始工艺研究。", 0,
                 DemoCatalog.Materials(ItemKind.Wood, 2, ItemKind.Stone, 2)),
             T(PrimitiveTech.Charcoal, "木炭烧制", "解锁炭窑，将木材烧成木炭。", 1 << (int)PrimitiveTech.Tools,
                 DemoCatalog.Materials(ItemKind.Wood, 4, ItemKind.Stone, 2)),
@@ -145,7 +145,6 @@ namespace DeadCircuit
         public static bool IsGearUnlocked(WorldState s, GearKind kind)
         {
             if (s == null || (int)kind < 0 || (int)kind >= EquipmentCatalog.GearNames.Length || s.era < EquipmentCatalog.Gear(kind).era) return false;
-            if (kind == GearKind.StoneAxe || kind == GearKind.StonePickaxe) return HasResearch(s, PrimitiveTech.Tools);
             return kind != GearKind.Knife || HasResearch(s, PrimitiveTech.Bloomery);
         }
         public static bool IsCookingUnlocked(WorldState s) => HasResearch(s, PrimitiveTech.Cooking);

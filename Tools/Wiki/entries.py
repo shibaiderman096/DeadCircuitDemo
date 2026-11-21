@@ -122,7 +122,8 @@ class EntryCatalog:
         self.link_equipment_research()
         self.entries['item-2']['summary'] = '铁锭是早期冶金材料，可由铁矿或碎铁矿冶炼取得，用于铁板、机械部件、设备和部分装备制作。'
         self.entries['item-10']['summary'] = '钢是蒸汽时代开始生产的金属材料，用于钢板、工具、枪械、电机与后续工业制造。'
-        self.entries['item-0']['summary'] = '木材是早期开局、工作台、炉窑、木炭与多种设施的基础材料，主要由有限的树木资源取得。'
+        self.entries['item-0']['summary'] = '木材用于工作台、炉窑、木炭与多种设施，主要由持斧砍伐有限的树木资源取得。'
+        self.entries['item-3']['summary'] = '废料可用扳手从废料堆取得，也可在工作台用铁锭加工。'
         for recipe in self.recipes:
             slug = "recipe-" + str(recipe["id"])
             name = recipe["name"]
@@ -179,6 +180,10 @@ class EntryCatalog:
                 entry["ammo"] = f"item-{self.item_ids[gun[0][1].split('.')[-1]]}"
             elif i < 5:
                 entry["category"] = "工具"
+                if name == "StoneAxe":
+                    entry["summary"] = "在T的原始页随身制作并装备，无需工作台或研究。可用于砍树和拆取补给箱。"
+                elif name == "StonePickaxe":
+                    entry["summary"] = "在T的原始页随身制作并装备，无需工作台或研究。可用于开采石材、黏土和矿床。"
             max_durability = re.search(r"d.maxDurability\s*=\s*(\d+)", block)
             entry["facts"].append(("最大耐久", max_durability.group(1) if max_durability else "100"))
         part_source = source.split("public static PartDefinition Part", 1)[1].split("return d;", 1)[0]
