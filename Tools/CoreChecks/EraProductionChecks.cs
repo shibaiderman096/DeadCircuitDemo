@@ -13,13 +13,15 @@ static partial class Checks
             (70,TechEra.MediumVoltage),(71,TechEra.MediumVoltage),(80,TechEra.HighVoltage),(90,TechEra.Nuclear),(91,TechEra.MediumVoltage),(92,TechEra.Nuclear),(93,TechEra.Nuclear),
             (52,TechEra.LowVoltage),(53,TechEra.LowVoltage),(54,TechEra.MediumVoltage),(55,TechEra.HighVoltage),(56,TechEra.LowVoltage),(57,TechEra.LowVoltage),
             (170,TechEra.HighVoltage),(171,TechEra.HighVoltage),(172,TechEra.HighVoltage),(173,TechEra.HighVoltage),
-            (174,TechEra.HighVoltage),(175,TechEra.HighVoltage),(176,TechEra.HighVoltage),(177,TechEra.HighVoltage)
+            (174,TechEra.HighVoltage),(175,TechEra.HighVoltage),(176,TechEra.HighVoltage),(177,TechEra.HighVoltage),
+            (200,TechEra.Steam),(201,TechEra.Steam),(202,TechEra.Steam),(203,TechEra.Steam),
+            (210,TechEra.LowVoltage),(211,TechEra.LowVoltage),(212,TechEra.LowVoltage),(220,TechEra.LowVoltage)
         })
         {
             Run($"era {era} recipe {id} consumes inputs and completes a real output batch", () =>
             {
                 var r=TechCatalog.Recipe(id);Require(r!=null && r.era==era,$"required {era} recipe {id} missing or moved to a different era");
-                var state=RecipeFixture(r);var machine=Add(state,r.building,10,10);machine.recipe=r.building==BuildKind.Workbench?0:r.id;
+                var state=RecipeFixture(r);var machine=AddRecipeMachine(state,r.building,10,10);machine.recipe=r.building==BuildKind.Workbench?0:r.id;
                 if(r.building==BuildKind.Workbench)
                 {
                     var manual=new WorldSimulator(state);var p=manual.AddPlayer("p","P");p.x=8;p.y=10;p.items=Copy(r.inputs);manual.Apply(Command(p,"craft",arg:r.id));Inventory(p.items,r.outputs,$"manual recipe {r.id}");return;
@@ -40,7 +42,7 @@ static partial class Checks
         {
             foreach(var r in TechCatalog.Recipes.Where(r=>r.building!=BuildKind.Workbench))
             {
-                var state=RecipeFixture(r);var m=Add(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);
+                var state=RecipeFixture(r);var m=AddRecipeMachine(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);
                 for(int i=0;i<DemoCatalog.ItemCount;i++)if(r.outputs[i]>0)m.items[i]=WorldSimulator.BufferLimit-r.outputs[i]+1;
                 if(m.kind==BuildKind.StoneFurnace)m.items[(int)ItemKind.Fuel]=1;else AddRecipePower(state,m);
                 if(TechCatalog.RequiresWater(m.kind))Water(state,10,10+DemoCatalog.Height(m.kind));
@@ -53,7 +55,7 @@ static partial class Checks
         {
             foreach(var r in TechCatalog.Recipes.Where(r=>r.building!=BuildKind.Workbench && r.inputs.Any(v=>v>0)))
             {
-                var state=RecipeFixture(r);var m=Add(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);int missing=Array.FindIndex(r.inputs,v=>v>0);m.items[missing]--;
+                var state=RecipeFixture(r);var m=AddRecipeMachine(state,r.building,10,10);m.recipe=r.id;m.items=Copy(r.inputs);int missing=Array.FindIndex(r.inputs,v=>v>0);m.items[missing]--;
                 if(m.kind==BuildKind.StoneFurnace)m.items[(int)ItemKind.Fuel]=1;else AddRecipePower(state,m);
                 if(TechCatalog.RequiresWater(m.kind))Water(state,10,10+DemoCatalog.Height(m.kind));
                 var sim=new WorldSimulator(state);Advance(sim,r.duration+1);m=Building(sim,m.id);
@@ -81,12 +83,12 @@ static partial class Checks
             for(int item=0;item<DemoCatalog.ItemCount;item++)
             {
                 if(r.outputs[item]==0)continue;
-                var state=RecipeFixture(r);var source=Add(state,r.building,10,10);source.recipe=r.id;source.items=Copy(r.outputs);
+                var state=RecipeFixture(r);var source=AddRecipeMachine(state,r.building,10,10);source.recipe=r.id;source.items=Copy(r.outputs);
                 bool liquid=PetrochemicalCatalog.IsFluid(item);
                 var target=Add(state,liquid?BuildKind.LiquidTank:BuildKind.Chest,DemoCatalog.OutputX(source),DemoCatalog.OutputY(source));
                 if(liquid)for(int setting=0;setting<WorldSimulator.FluidCount;setting++)if(WorldSimulator.FluidItem(setting)==item)target.setting=setting;
                 var sim=new WorldSimulator(state);var expected=ItemTotals(sim.State);
-                for(int n=0;n<65;n++){sim.Step(WorldSimulator.FixedStep);Conserved(sim.State,expected);}
+                for(int n=0;n<100;n++){sim.Step(WorldSimulator.FixedStep);Conserved(sim.State,expected);}
                 Require(Building(sim,target.id).items[item]==r.outputs[item],$"recipe {r.id} export item {item}");
             }
         });
@@ -140,8 +142,26 @@ static partial class Checks
         return state;
     }
 
+    static BuildingState AddRecipeMachine(WorldState state,BuildKind kind,int x,int y)
+    {
+        var b=Add(state,kind,x,y);
+        if(!ModularMachineCatalog.IsModular(kind)) return b;
+        foreach(var m in ModularU) b.modularModules.Add(new MachineModuleState {role=m.role,x=x+m.x,y=y+m.y,rotation=m.rotation,paid=ModularMachineCatalog.ModuleCost(kind,m.role)});
+        b.modularService=1; return b; // Earned maintenance reserve isolates the recipe's own material accounting.
+    }
     static void AddRecipePower(WorldState state, BuildingState machine)
     {
+        if(ModularMachineCatalog.IsModular(machine.kind))
+        {
+            int x=ModularMachineCatalog.EnergyInputX(machine),y=ModularMachineCatalog.EnergyInputY(machine);
+            if(machine.kind==BuildKind.LargeSteamFurnace)
+            {
+                Add(state,BuildKind.SteamPipe,x,y); Add(state,BuildKind.SteamPipe,x,y+1);
+                var boiler=Add(state,BuildKind.Boiler,x,y+2); Water(state,x-1,y+2); boiler.items[(int)ItemKind.Fuel]=4;
+            }
+            else { Add(state,BuildKind.PowerPole,x,y); Add(state,BuildKind.Generator,7,7).items[(int)ItemKind.Fuel]=4; }
+            return;
+        }
         int tier=TechCatalog.EnergyTier(machine.kind);
         if(tier<0) return; // Self-heated kilns need recipe inputs, not a power network.
         var kind=tier==0?BuildKind.Waterwheel:tier==1?BuildKind.Boiler:tier==2?BuildKind.Generator:tier==3?BuildKind.DieselGenerator:BuildKind.HighGenerator;

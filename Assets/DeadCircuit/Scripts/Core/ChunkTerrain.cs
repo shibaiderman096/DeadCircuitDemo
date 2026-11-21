@@ -54,7 +54,7 @@ namespace DeadCircuit
             foreach (var b in world.buildings)
                 for (int y = Math.Max(startY, b.y); y < Math.Min(startY + Size, b.y + DemoCatalog.Height(b)); y++)
                     for (int x = Math.Max(startX, b.x); x < Math.Min(startX + Size, b.x + DemoCatalog.Width(b)); x++)
-                        MarkExisting(region, x, y, b.kind != BuildKind.Door);
+                        if(DemoCatalog.Contains(b,x,y)) MarkExisting(region, x, y, b.kind != BuildKind.Door);
             if (world.generatorVersion >= 4) AddBlueprintSite(region, chunkX, chunkY);
             else AddSite(region, chunkX, chunkY);
             AddResources(region);

@@ -18,10 +18,10 @@ namespace DeadCircuit
             {
                 case 140: State.lvInsulators=SaturatingAdd(State.lvInsulators,recipe.outputs[(int)ItemKind.Insulator]); break;
                 case 141: case 147: State.lvWire=SaturatingAdd(State.lvWire,recipe.outputs[(int)ItemKind.CopperWire]); break;
-                case 142: case 148: State.lvCable=SaturatingAdd(State.lvCable,recipe.outputs[(int)ItemKind.Cable]); break;
+                case 142: case 148: case 210: State.lvCable=SaturatingAdd(State.lvCable,recipe.outputs[(int)ItemKind.Cable]); break;
                 case 143: State.lvCoils=SaturatingAdd(State.lvCoils,recipe.outputs[(int)ItemKind.Coil]); break;
-                case 144: case 149: State.lvMotors=SaturatingAdd(State.lvMotors,recipe.outputs[(int)ItemKind.Motor]); break;
-                case 145: case 150: State.lvRelays=SaturatingAdd(State.lvRelays,recipe.outputs[(int)ItemKind.Relay]); break;
+                case 144: case 149: case 211: State.lvMotors=SaturatingAdd(State.lvMotors,recipe.outputs[(int)ItemKind.Motor]); break;
+                case 145: case 150: case 212: State.lvRelays=SaturatingAdd(State.lvRelays,recipe.outputs[(int)ItemKind.Relay]); break;
                 case 60: State.lvCircuits=SaturatingAdd(State.lvCircuits,recipe.outputs[(int)ItemKind.Circuit]); break;
             }
             if(machine==null || !machine.powered || machine.powerRatio<=0f || machine.networkId<=0 || TechCatalog.EnergyTier(machine)!=2) return;
@@ -29,7 +29,7 @@ namespace DeadCircuit
             foreach(int amount in recipe.outputs)
             {
                 State.lvElectric=SaturatingAdd(State.lvElectric,amount);
-                if(machine.kind==BuildKind.Assembler) State.lvAutomated=SaturatingAdd(State.lvAutomated,amount);
+                if(machine.kind==BuildKind.Assembler || machine.kind==BuildKind.LargeAssemblyPlant) State.lvAutomated=SaturatingAdd(State.lvAutomated,amount);
                 if(protectedOutput) State.lvProtected=SaturatingAdd(State.lvProtected,amount);
             }
         }

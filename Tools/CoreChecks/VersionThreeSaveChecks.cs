@@ -89,7 +89,7 @@ static partial class Checks
         {
             var state=Flat(era:TechEra.Nuclear);var console=Add(state,(BuildKind)61,10,10);console.setting=1;var vault=Add(state,(BuildKind)62,13,10);vault.items[(int)ItemKind.NuclearWaste]=3;
             var restored=new WorldSimulator(Saved(state));
-            Require(DemoCatalog.BuildNames.Length==63,"nuclear building catalog did not append both facilities");
+            Require(DemoCatalog.BuildNames.Length==66 && (int)BuildKind.NuclearWasteVault==62,"current catalog lost appended nuclear facilities");
             Require(Building(restored,console.id).setting==1,"current restore lost armed reactor console");
             Require(Building(restored,vault.id).items[(int)ItemKind.NuclearWaste]==3,"current restore lost dedicated waste inventory");
         });

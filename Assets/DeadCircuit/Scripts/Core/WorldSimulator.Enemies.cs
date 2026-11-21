@@ -74,6 +74,18 @@ namespace DeadCircuit
 
         private static float EnemyBuildingDistanceSquared(BuildingState building, float x, float y, out float hitX, out float hitY)
         {
+            if(ModularMachineCatalog.IsModular(building.kind))
+            {
+                float best=float.MaxValue; hitX=building.x; hitY=building.y;
+                foreach(var m in building.modularModules)
+                {
+                    float mx=Math.Max(m.x-.49f,Math.Min(m.x+.49f,x)),my=Math.Max(m.y-.49f,Math.Min(m.y+.49f,y));
+                    float distance=(mx-x)*(mx-x)+(my-y)*(my-y);
+                    if(distance>=best) continue;
+                    best=distance; hitX=mx; hitY=my;
+                }
+                return best;
+            }
             hitX = Math.Max(building.x - .49f, Math.Min(building.x + DemoCatalog.Width(building) - .51f, x));
             hitY = Math.Max(building.y - .49f, Math.Min(building.y + DemoCatalog.Height(building) - .51f, y));
             float dx = hitX - x, dy = hitY - y; return dx * dx + dy * dy;

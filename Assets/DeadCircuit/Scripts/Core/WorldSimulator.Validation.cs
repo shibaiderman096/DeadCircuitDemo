@@ -79,8 +79,10 @@ namespace DeadCircuit
                 CheckCell(b.x, b.y,source);
                 SaveCheck((int)b.kind >= 0 && ((int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : source.version<11 ? 36 : source.version==11 ? 38 : DemoCatalog.BuildNames.Length)) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
                 SaveCheck(b.footprintVersion == 0 || b.footprintVersion == 1, "footprint version");
+                var modularModules=ValidateModularState(source,b);
                 for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
                 {
+                    if(!DemoCatalog.Contains(b,x,y)) continue;
                     CheckCell(x, y,source); long cell = WorldTiles.Key(x,y);char terrain=WorldTiles.Ground(source,x,y);
                     SaveCheck(occupied.Add(cell) && terrain != '2' && terrain!='?', "overlapping/water building");
                     if (!DemoCatalog.Walkable(b)) solid.Add(cell);
@@ -115,7 +117,7 @@ namespace DeadCircuit
                 }
                 if(PetrochemicalCatalog.IsLiquidStorage(b.kind))
                     for(int i=0;i<items.Length;i++) SaveCheck(items[i]==0 || i==FluidItem(b.setting),"mixed liquid storage");
-                s.buildings.Add(new BuildingState { id=b.id,x=b.x,y=b.y,kind=b.kind,rotation=b.rotation,footprintVersion=b.footprintVersion,hp=b.hp,progress=b.progress,fuel=b.fuel,items=items,recipe=legacy ? 0 : b.recipe,setting=legacy ? 0 : b.setting,temperature=legacy ? 20f : b.temperature,tripped=!legacy && b.tripped,modularBoiler=source.version>=7 && b.modularBoiler });
+                s.buildings.Add(new BuildingState { id=b.id,x=b.x,y=b.y,kind=b.kind,rotation=b.rotation,footprintVersion=b.footprintVersion,hp=b.hp,progress=b.progress,fuel=b.fuel,items=items,recipe=legacy ? 0 : b.recipe,setting=legacy ? 0 : b.setting,temperature=legacy ? 20f : b.temperature,tripped=!legacy && b.tripped,modularBoiler=source.version>=7 && b.modularBoiler,modularModules=modularModules,modularService=b.modularService });
                 if(legacy)
                 {
                     if(b.kind==BuildKind.SolarPanel) s.era=TechEra.MediumVoltage;
@@ -141,6 +143,13 @@ namespace DeadCircuit
                 SaveRange(c.fromY, from.y - .5f, from.y + DemoCatalog.Height(from) - .5f, "cargo from y");
                 SaveRange(c.toX, to.x - .5f, to.x + DemoCatalog.Width(to) - .5f, "cargo to x");
                 SaveRange(c.toY, to.y - .5f, to.y + DemoCatalog.Height(to) - .5f, "cargo to y");
+                if(ModularMachineCatalog.IsModular(from.kind) || ModularMachineCatalog.IsModular(to.kind))
+                {
+                    int direction=from.kind==BuildKind.FilterSplitter && c.item!=from.setting ? (from.rotation+1)&3 : CargoOutputDirection(from,c.item);
+                    int targetX=from.kind==BuildKind.FilterSplitter ? from.x+DirectionX[direction] : CargoOutputX(from,c.item);
+                    int targetY=from.kind==BuildKind.FilterSplitter ? from.y+DirectionY[direction] : CargoOutputY(from,c.item);
+                    SaveCheck(c.toX==targetX && c.toY==targetY && c.fromX==targetX-DirectionX[direction] && c.fromY==targetY-DirectionY[direction],"modular cargo physical endpoints");
+                }
                 SaveRange(c.progress, 0f, 1f, "cargo progress"); SaveRange(c.duration, .02f, 8f, "cargo duration");
                 int[] reserved;
                 if (!reservations.TryGetValue(to.id, out reserved)) { reserved = new int[DemoCatalog.ItemCount]; reservations.Add(to.id, reserved); }

@@ -58,7 +58,7 @@ namespace DeadCircuit
             foreach (NodeState n in State.nodes) if (Inside(n.x, n.y)) nodeGrid[Cell(n.x, n.y)] = n;
             foreach (BuildingState b in State.buildings)
                 for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
-                    if (Inside(x, y)) buildingGrid[Cell(x, y)] = b;
+                    if (Inside(x, y) && DemoCatalog.Contains(b,x,y)) buildingGrid[Cell(x, y)] = b;
             RefreshInteriors();
         }
         private bool BlockedAt(int x, int y)
@@ -89,9 +89,9 @@ namespace DeadCircuit
                 if (!CircleBlocked(x, ny, radius)) y = ny;
             }
         }
-        private bool LineClear(float x, float y, float tx, float ty, int ignoreX, int ignoreY)
+        private bool LineClear(float x, float y, float tx, float ty, int ignoreX, int ignoreY, BuildingState ignoreMachine = null)
         {
-            BuildingState ignoredBuilding = BuildingAt(ignoreX, ignoreY);
+            BuildingState ignoredBuilding = ignoreMachine ?? BuildingAt(ignoreX, ignoreY);
             double length = Math.Sqrt(DistSq(x, y, tx, ty));
             int steps = Math.Max(1, (int)Math.Ceiling(length / 0.16));
             for (int i = 1; i <= steps; i++)

@@ -23,7 +23,7 @@ namespace DeadCircuit
                 case 120: State.steamCoked=SaturatingAdd(State.steamCoked,recipe.outputs[(int)ItemKind.Coke]); break;
                 case 121: State.steamRefractory=SaturatingAdd(State.steamRefractory,recipe.outputs[(int)ItemKind.RefractoryBrick]); break;
                 case 122: State.steamPigIron=SaturatingAdd(State.steamPigIron,recipe.outputs[(int)ItemKind.PigIron]); break;
-                case 123: case 30: State.steamSteel=SaturatingAdd(State.steamSteel,recipe.outputs[(int)ItemKind.Steel]); break;
+                case 123: case 30: case 200: State.steamSteel=SaturatingAdd(State.steamSteel,recipe.outputs[(int)ItemKind.Steel]); break;
                 case 124: State.steamPlates=SaturatingAdd(State.steamPlates,recipe.outputs[(int)ItemKind.SteelPlate]); break;
                 case 125: State.steamFittings=SaturatingAdd(State.steamFittings,recipe.outputs[(int)ItemKind.PipeFitting]); break;
             }

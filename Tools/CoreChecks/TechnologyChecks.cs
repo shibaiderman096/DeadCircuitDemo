@@ -104,10 +104,18 @@ static partial class Checks
         {
             foreach(BuildKind kind in Enum.GetValues<BuildKind>().Where(k=>TechCatalog.RequiredEra(k)>TechEra.Primitive))
             {
-                var state=Flat(era:TechEra.Primitive);int w=DemoCatalog.Width(kind),h=DemoCatalog.Height(kind);Water(state,10,10+h);if(kind==BuildKind.Miner || kind==BuildKind.SteamMiner)Ore(state,10+w,10);
+                var state=Flat(era:TechEra.Primitive);int w=DemoCatalog.Width(kind),h=DemoCatalog.Height(kind);if(!ModularMachineCatalog.IsModular(kind)) Water(state,10,10+h);if(kind==BuildKind.Miner || kind==BuildKind.SteamMiner)Ore(state,10+w,10);
                 if(kind==BuildKind.OilPump)state.nodes.Add(new NodeState{id=state.nextId++,kind=NodeKind.Oil,x=10+w,y=10,stock=100});
                 var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var before=Copy(p.items);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==0,$"locked {kind} built");Inventory(p.items,before,$"locked {kind} paid");
-                sim.State.era=TechCatalog.RequiredEra(kind);sim.State.steamResearch=255;sim.State.lvResearch=255;sim.State.mvResearch=255;sim.State.hvResearch=PrecisionCatalog.AllResearch;Ready(p);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{kind} negative control was invalid even when unlocked");Paid(p.items,before,DemoCatalog.BuildCost(kind),$"{kind} construction");
+                if(ModularMachineCatalog.IsModular(kind)) HoldModularWrench(sim,p);
+                sim.State.era=TechCatalog.RequiredEra(kind);sim.State.steamResearch=255;sim.State.lvResearch=255;sim.State.mvResearch=255;sim.State.hvResearch=PrecisionCatalog.AllResearch;Ready(p);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{kind} negative control was invalid even when unlocked");if(ModularMachineCatalog.IsModular(kind))
+                {
+                    Require(p.items.SequenceEqual(before),"free controller plan charged materials");
+                    var machine=sim.State.buildings[0];
+                    foreach(var module in ModularL.Skip(1)) PlanModule(sim,p,machine,module.role,10+module.x,10+module.y,module.rotation);
+                    CompleteModular(sim,p,machine);
+                }
+                Paid(p.items,before,DemoCatalog.BuildCost(kind),$"{kind} construction");
             }
         });
         Run("all era hotbars expose unlocked kinds that actually build and charge correctly", () =>

@@ -15,6 +15,6 @@
 | [地标建筑](LANDMARK_BUILDINGS.md) | 地标、自然建筑外观及入口呈现 |
 | [楼层系统](FLOORS.md) | 建筑楼层、出入口及空间约束 |
 | [模块建筑](MODULAR_BUILDINGS.md) | 墙门、厂房、锅炉模块和蒸汽设施 |
-| [模块工业机器](MODULAR_INDUSTRIAL_MACHINES.md) | 工业机器的模块化设计与后续扩展 |
+| [模块工业机器](MODULAR_INDUSTRIAL_MACHINES.md) | 手持扳手、专属模块菜单、自由绘制蓝图、逐格投料与分期实施 |
 
 返回[项目说明](../README.md)。项目协作规则保留在根目录的 [AGENTS.md](../AGENTS.md)。

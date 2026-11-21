@@ -234,8 +234,10 @@ namespace DeadCircuit
             foreach (var site in world.sites) if ((long)site.x < x + 16 && (long)site.x + site.width > x &&
                 (long)site.y < y + 16 && (long)site.y + site.height > y) return false;
             foreach (var node in world.nodes) if (node.x >= x && node.x < x + 16 && node.y >= y && node.y < y + 16) return false;
-            foreach (var b in world.buildings) if ((long)b.x < x + 16 && (long)b.x + DemoCatalog.Width(b) > x &&
-                (long)b.y < y + 16 && (long)b.y + DemoCatalog.Height(b) > y) return false;
+            foreach (var b in world.buildings)
+                for(int by=Math.Max(y,b.y);by<Math.Min(y+16,b.y+DemoCatalog.Height(b));by++)
+                    for(int bx=Math.Max(x,b.x);bx<Math.Min(x+16,b.x+DemoCatalog.Width(b));bx++)
+                        if(DemoCatalog.Contains(b,bx,by)) return false;
             return true;
         }
 

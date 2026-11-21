@@ -93,7 +93,7 @@ namespace DeadCircuit
                 case BuildKind.MachineTool: return (int)SteamTech.Machining;
                 case BuildKind.SteamPipe: return (int)SteamTech.Piping;
                 case BuildKind.Boiler: case BuildKind.CombustionChamber: case BuildKind.Chimney: case BuildKind.FeedwaterPump: return (int)SteamTech.Boiler;
-                case BuildKind.SteamEngine: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return (int)SteamTech.Drive;
+                case BuildKind.LargeSteamFurnace: case BuildKind.SteamEngine: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return (int)SteamTech.Drive;
                 default: return -1;
             }
         }

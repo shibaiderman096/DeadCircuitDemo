@@ -9,7 +9,11 @@ namespace DeadCircuit
     {
         public static WorldState ForPlayer(WorldState source,string playerId)
         {
-            if(!ChunkStreaming.Enabled(source)) return source;
+            if(!ChunkStreaming.Enabled(source))
+            {
+                if(!source.buildings.Exists(b=>ModularMachineCatalog.IsModular(b.kind))) return source;
+                var detached=source.SnapshotCopy(); detached.buildings=source.buildings.ConvertAll(SnapshotBuilding); return detached;
+            }
             PlayerState local=source.players.Find(p=>p.id==playerId);
             if(local==null) throw new ArgumentException("Unknown snapshot player.",nameof(playerId));
             int cx=WorldTiles.FloorDiv((int)Math.Floor(local.x+.5f),16),cy=WorldTiles.FloorDiv((int)Math.Floor(local.y+.5f),16);
@@ -20,7 +24,10 @@ namespace DeadCircuit
             for(int y=cy-radius;y<=cy+radius;y++) for(int x=cx-radius;x<=cx+radius;x++)
                 if(WorldTiles.TryChunk(source,x,y,out var chunk)) result.chunks.records.Add(chunk);
             result.nodes=source.nodes.FindAll(n=>nearby(n.x,n.y));
-            result.buildings=source.buildings.FindAll(b=>nearby(b.x,b.y));
+            result.buildings=source.buildings.FindAll(b=>ModularMachineCatalog.IsModular(b.kind)
+                ? b.modularModules.Exists(m=>nearby(m.x,m.y))
+                : WorldTiles.FloorDiv(b.x,16)<=cx+radius && WorldTiles.FloorDiv(b.x+DemoCatalog.Width(b)-1,16)>=cx-radius &&
+                  WorldTiles.FloorDiv(b.y,16)<=cy+radius && WorldTiles.FloorDiv(b.y+DemoCatalog.Height(b)-1,16)>=cy-radius).ConvertAll(SnapshotBuilding);
             result.sites=source.sites.FindAll(s=>nearby(s.x,s.y));
             // A floor snapshot carries its ground identity for labels and stairs,
             // without sending that remote location's terrain or live entities.
@@ -47,6 +54,11 @@ namespace DeadCircuit
                 plots=source.survival.plots.FindAll(p=>nearby(p.x,p.y))
             };
             return result;
+        }
+        private static BuildingState SnapshotBuilding(BuildingState b)
+        {
+            if(!ModularMachineCatalog.IsModular(b.kind)) return b;
+            var copy=b.SnapshotCopy(); copy.items=(int[])b.items.Clone(); copy.modularModules=b.modularModules.ConvertAll(m=>new MachineModuleState {role=m.role,x=m.x,y=m.y,rotation=m.rotation,paid=(int[])m.paid.Clone()}); return copy;
         }
     }
 }

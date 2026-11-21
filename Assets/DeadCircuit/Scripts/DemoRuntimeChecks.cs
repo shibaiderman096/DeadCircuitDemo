@@ -44,6 +44,12 @@ namespace DeadCircuit
             string qaSavePath = Path.GetFullPath(bridge.QaSavePath);
             Require(!File.Exists(qaSavePath) && !bridge.IsRunning,
                 "QA starts at the menu with a fresh isolated save path");
+            if (Environment.GetCommandLineArgs().Contains("--demo-modular-qa"))
+            {
+                yield return CheckModularMachines(bridge);
+                Application.Quit(0);
+                yield break;
+            }
             if (Environment.GetCommandLineArgs().Contains("--demo-controls-qa"))
             {
                 yield return CheckPlayerControls(bridge);

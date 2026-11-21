@@ -132,6 +132,8 @@ class ArtBank:
         return self.encoded[resolved]
 
     def img(self, key: str, label: str = "", cls: str = "entity-icon") -> str:
+        if key in ("build_63", "build_64", "build_65"):
+            return f'<span class="{cls} missing-art" role="img" aria-label="{esc(label)}：游戏内按格组合模块，无整机缩略图" title="游戏内按格组合模块，布局见蓝图预览">▦</span>'
         if key in ("build_61", "build_62"):
             return f'<span class="{cls} missing-art" aria-hidden="true" title="当前游戏没有专用图标">◇</span>'
         return f'<img class="{cls}" src="{self.uri(key)}" alt="{esc(label)}" loading="lazy" decoding="async">'

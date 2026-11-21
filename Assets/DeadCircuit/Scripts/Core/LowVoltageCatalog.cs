@@ -76,9 +76,9 @@ namespace DeadCircuit
             switch(kind)
             {
                 case BuildKind.Generator: case BuildKind.PowerPole: case BuildKind.SteamTurbine: case BuildKind.WindingBench: return (int)LowVoltageTech.Generation;
-                case BuildKind.Miner: case BuildKind.Smelter: case BuildKind.ElectricCrusher: return (int)LowVoltageTech.Processing;
+                case BuildKind.LargeOreProcessor: case BuildKind.Miner: case BuildKind.Smelter: case BuildKind.ElectricCrusher: return (int)LowVoltageTech.Processing;
                 case BuildKind.CircuitAssembler: return (int)LowVoltageTech.Relays;
-                case BuildKind.Assembler: case BuildKind.Turret: return (int)LowVoltageTech.Assembly;
+                case BuildKind.LargeAssemblyPlant: case BuildKind.Assembler: case BuildKind.Turret: return (int)LowVoltageTech.Assembly;
                 case BuildKind.FilterSplitter: return (int)LowVoltageTech.Sorting;
                 case BuildKind.CircuitBreaker: return (int)LowVoltageTech.Protection;
                 default: return -1;

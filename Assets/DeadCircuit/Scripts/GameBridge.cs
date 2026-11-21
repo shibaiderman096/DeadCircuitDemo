@@ -259,6 +259,7 @@ namespace DeadCircuit
             var mouse = Mouse.current;
             var player = LocalPlayer;
             if (player == null) return;
+            RefreshModularDrawing();
             bool blocked = keyboard == null || !focused || (hud != null && hud.CapturesKeyboard);
             // The bridge runs before the HUD; consume panel-opening keys in this frame too.
             if (!blocked && (keyboard.bKey.wasPressedThisFrame || keyboard.tKey.wasPressedThisFrame ||
@@ -318,6 +319,8 @@ namespace DeadCircuit
                     if (BuildSelection.HasValue) Action("build", (int)BuildSelection.Value);
                     else if (!precisionAim) Action("primary");
                 }
+                else if (mouse.leftButton.isPressed && CanPaintNextModularCell())
+                    Action("build", (int)BuildSelection.Value);
                 float scroll = mouse.scroll.ReadValue().y;
                 if (Mathf.Abs(scroll) > 0 && view?.WorldCamera != null)
                     view.WorldCamera.orthographicSize = Mathf.Clamp(view.WorldCamera.orthographicSize - scroll * .012f, 6, 16);
@@ -342,6 +345,11 @@ namespace DeadCircuit
         void Action(string action, int arg = 0)
         {
             Vector2 point = MouseWorld;
+            if (action == "build" && BuildSelection.HasValue && ModularMachineCatalog.IsModular(BuildSelection.Value))
+            {
+                DrawModularCell(Mathf.FloorToInt(point.x + .5f), Mathf.FloorToInt(point.y + .5f));
+                return;
+            }
             Send(new PlayerCommand { action = action, x = Mathf.FloorToInt(point.x + .5f), y = Mathf.FloorToInt(point.y + .5f), arg = arg,
                 rotation = BuildRotation, aimX = point.x - (LocalPlayer?.x ?? 0), aimY = point.y - (LocalPlayer?.y ?? 0),
                 aiming = !BuildSelection.HasValue && Keyboard.current != null &&

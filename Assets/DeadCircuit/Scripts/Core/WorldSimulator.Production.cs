@@ -14,7 +14,7 @@ namespace DeadCircuit
         private sealed class PowerLayout
         {
             public BuildingState building;
-            public int id, x, y, width, height, tier, setting;
+            public int id, x, y, width, height, tier, setting, rotation;
             public BuildKind kind;
             public bool unlocked;
             public PowerNetworkState network;
@@ -59,6 +59,7 @@ namespace DeadCircuit
                 Notice(p, "采集 " + DemoCatalog.ItemNames[item] + " +" + amount + forage);
                 return;
             }
+            if(ModularMachineCatalog.IsModular(b.kind)) { InteractModular(p,b,x,y); return; }
             int moved = 0;
             if (InteractPetrochemical(p, b)) return;
             if (InteractElectrical(p, b, arg)) return;
@@ -167,7 +168,7 @@ namespace DeadCircuit
             for(int i=0;!changed && i<productionOrder.Count;i++)
             {
                 BuildingState b=productionOrder[i]; PowerLayout old=powerLayout[i];
-                changed=old.building!=b || old.id!=b.id || old.kind!=b.kind || old.x!=b.x || old.y!=b.y || old.setting!=b.setting || old.width!=DemoCatalog.Width(b) || old.height!=DemoCatalog.Height(b) || old.unlocked!=WaterPowerUnlocked(b);
+                changed=old.building!=b || old.id!=b.id || old.kind!=b.kind || old.x!=b.x || old.y!=b.y || old.setting!=b.setting || old.rotation!=b.rotation || old.width!=DemoCatalog.Width(b) || old.height!=DemoCatalog.Height(b) || old.unlocked!=WaterPowerUnlocked(b);
             }
             if(changed) RebuildPowerLayout();
             State.powerNetworks.Clear();
@@ -354,6 +355,7 @@ namespace DeadCircuit
         private static int OutputTier(BuildingState b) => TechCatalog.EnergyTier(b);
         private bool WaterPowerUnlocked(BuildingState b)
         {
+            if(ModularMachineCatalog.IsModular(b.kind)) return ModularReadyForPower(b);
             if(!PetrochemicalCatalog.IsBuildUnlocked(State,b.kind)) return false;
             if(!LowVoltageCatalog.IsBuildUnlocked(State,b.kind)) return false;
             if(!SteamCatalog.IsBuildUnlocked(State,b.kind)) return false;
@@ -375,7 +377,7 @@ namespace DeadCircuit
             {
                 BuildingState b=productionOrder[i];
                 bool unlocked=WaterPowerUnlocked(b);
-                powerLayout.Add(new PowerLayout { building=b,id=b.id,x=b.x,y=b.y,kind=b.kind,setting=b.setting,tier=OutputTier(b),width=DemoCatalog.Width(b),height=DemoCatalog.Height(b),unlocked=unlocked });
+                powerLayout.Add(new PowerLayout { building=b,id=b.id,x=b.x,y=b.y,kind=b.kind,setting=b.setting,rotation=b.rotation,tier=OutputTier(b),width=DemoCatalog.Width(b),height=DemoCatalog.Height(b),unlocked=unlocked });
                 parents[i]=i; if(unlocked && DemoCatalog.IsPowerNode(b.kind)) nodes.Add(i);
             }
             for(int i=0;i<nodes.Count;i++) for(int j=0;j<i;j++)
@@ -416,8 +418,9 @@ namespace DeadCircuit
             foreach(int index in nodes)
             {
                 var node=powerLayout[index]; if(node==consumer || node.tier!=tier) continue;
+                if(ModularMachineCatalog.IsModular(consumer.kind) && !ModularPowerPort(consumer,node)) continue;
                 float distance=PowerFootprintDistanceSquared(consumer,node);
-                if((tier<2 ? !Touching(consumer,node) : distance>DemoCatalog.SupplyRadius*DemoCatalog.SupplyRadius) || distance>nearest || (distance==nearest && node.id>=nearestId)) continue;
+                if((!ModularMachineCatalog.IsModular(consumer.kind) && (tier<2 ? !Touching(consumer,node) : distance>DemoCatalog.SupplyRadius*DemoCatalog.SupplyRadius)) || distance>nearest || (distance==nearest && node.id>=nearestId)) continue;
                 nearest=distance; nearestId=node.id; result=node.network;
             }
             return result;
@@ -463,6 +466,7 @@ namespace DeadCircuit
             foreach(BuildingState b in productionOrder)
             {
                 if(b.hp<=0f || !b.powered) continue;
+                if(UpdateModularProduction(b)) continue;
                 if(!PetrochemicalCatalog.IsBuildUnlocked(State,b.kind)) continue;
                 if(PumpPetrochemical(b)) continue;
                 if(b.kind==BuildKind.Miner || b.kind==BuildKind.SteamMiner)
@@ -623,10 +627,10 @@ namespace DeadCircuit
                 BuildingState to = BuildingAt(DemoCatalog.OutputX(from), DemoCatalog.OutputY(from));
                 if (to == null || to == from || to.hp <= 0f) continue;
                 // Side loading is allowed, but the front of a belt is exclusively an output.
-                if (to.kind == BuildKind.Belt && ((from.rotation - to.rotation) & 3) == 2) continue;
+                if (to.kind == BuildKind.Belt && ((CargoOutputDirection(from,0) - to.rotation) & 3) == 2) continue;
                 int item = CargoExportItem(from, to);
                 if (item >= 0) cargoPlans.Add(new ItemTransfer { from = from, to = to, item = item,
-                    x = DemoCatalog.OutputX(from), y = DemoCatalog.OutputY(from), direction = from.rotation });
+                    x = DemoCatalog.OutputX(from), y = DemoCatalog.OutputY(from), direction = CargoOutputDirection(from,0) });
             }
             int kept = 0, oldCount = State.cargo.Count;
             for (int i = 0; i < oldCount; i++)
@@ -645,6 +649,7 @@ namespace DeadCircuit
                     continue;
                 }
                 float rate = CargoExportRate(from);
+                if(ModularMachineCatalog.IsModular(to.kind) && to.hp<BuildingMaxHealth(to.kind)) rate=0f;
                 if (rate <= 0f) { State.cargo[kept++] = c; continue; }
                 c.progress = Math.Min(1f, c.progress + FixedStep * rate / c.duration);
                 if (c.progress >= 1f)
@@ -698,6 +703,7 @@ namespace DeadCircuit
 
         private float CargoExportRate(BuildingState from)
         {
+            if(ModularMachineCatalog.IsModular(from.kind) && (!ModularMachineCatalog.IsComplete(from) || from.hp<BuildingMaxHealth(from.kind))) return 0f;
             if(!PetrochemicalCatalog.IsBuildUnlocked(State,from.kind)) return 0f;
             if(WaterCatalog.Enabled(State) && !WaterCatalog.IsBuildUnlocked(State,from.kind)) return 0f;
             if(from.kind==BuildKind.FilterSplitter)
@@ -745,6 +751,12 @@ namespace DeadCircuit
         private bool Accepts(BuildingState b,int item)
         {
             if(item<0 || item>=DemoCatalog.ItemCount) return false;
+            if(ModularMachineCatalog.IsModular(b.kind))
+            {
+                if(!ModularMachineCatalog.IsComplete(b) || b.hp<BuildingMaxHealth(b.kind)) return false;
+                var recipe=TechCatalog.SelectedRecipe(b);
+                return item==(int)ModularMachineCatalog.MaintenanceItem(b.kind) || (recipe!=null && recipe.inputs[item]>0);
+            }
             if(item==(int)ItemKind.NuclearWaste) return b.kind==BuildKind.NuclearWasteVault;
             if(b.kind==BuildKind.NuclearWasteVault) return false;
             if(PetrochemicalCatalog.IsLiquidStorage(b.kind)) return PetrochemicalCatalog.IsBuildUnlocked(State,b.kind) && item==FluidItem(b.setting);

@@ -27,9 +27,9 @@ namespace DeadCircuit
                 case BuildKind.WaterMill: case BuildKind.IrrigationPump: case BuildKind.MechanicalHopper: return TechEra.Water;
                 case BuildKind.CombustionChamber: case BuildKind.Chimney: case BuildKind.FeedwaterPump: case BuildKind.SteamEngine:
                 case BuildKind.CokeOven: case BuildKind.RefractoryKiln: case BuildKind.IronBlastFurnace: case BuildKind.RefiningForge: case BuildKind.MachineTool:
-                case BuildKind.Boiler: case BuildKind.SteamPipe: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return TechEra.Steam;
+                case BuildKind.LargeSteamFurnace: case BuildKind.Boiler: case BuildKind.SteamPipe: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return TechEra.Steam;
                 case BuildKind.WindingBench:
-                case BuildKind.FilterSplitter: case BuildKind.CircuitBreaker: case BuildKind.ElectricCrusher:
+                case BuildKind.LargeAssemblyPlant: case BuildKind.LargeOreProcessor: case BuildKind.FilterSplitter: case BuildKind.CircuitBreaker: case BuildKind.ElectricCrusher:
                 case BuildKind.Generator: case BuildKind.Miner: case BuildKind.Smelter: case BuildKind.Assembler: case BuildKind.Turret: case BuildKind.PowerPole: case BuildKind.SteamTurbine: case BuildKind.CircuitAssembler: return TechEra.LowVoltage;
                 case BuildKind.OilPump: case BuildKind.LiquidPipe: case BuildKind.LiquidTank: case BuildKind.DistillationUnit: case BuildKind.ChemicalReactor: case BuildKind.ProcessWaterPump:
                 case BuildKind.DieselGenerator: case BuildKind.ChemicalPlant: case BuildKind.MediumPole: case BuildKind.Transformer: case BuildKind.CoolingTower: return TechEra.MediumVoltage;
@@ -88,9 +88,9 @@ namespace DeadCircuit
                 case BuildKind.IronBlastFurnace: case BuildKind.RefiningForge: case BuildKind.MachineTool: case BuildKind.WindingBench:
                 case BuildKind.BlastFurnace: case BuildKind.MechanicalPress: case BuildKind.MechanicalWorkshop:
                 case BuildKind.WaterMill: case BuildKind.IrrigationPump: case BuildKind.MechanicalHopper: return 0;
-                case BuildKind.Boiler: case BuildKind.SteamPipe: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return 1;
+                case BuildKind.LargeSteamFurnace: case BuildKind.Boiler: case BuildKind.SteamPipe: case BuildKind.SteamMiner: case BuildKind.SteamFurnace: return 1;
                 case BuildKind.OilPump: case BuildKind.ProcessWaterPump: case BuildKind.DistillationUnit: case BuildKind.ChemicalReactor:
-                case BuildKind.FilterSplitter: case BuildKind.CircuitBreaker: case BuildKind.ElectricCrusher:
+                case BuildKind.LargeAssemblyPlant: case BuildKind.LargeOreProcessor: case BuildKind.FilterSplitter: case BuildKind.CircuitBreaker: case BuildKind.ElectricCrusher:
                 case BuildKind.Generator: case BuildKind.Miner: case BuildKind.Smelter: case BuildKind.Assembler: case BuildKind.Turret: case BuildKind.PowerPole: case BuildKind.SteamTurbine: case BuildKind.CircuitAssembler: case BuildKind.Transformer: return 2;
                 case BuildKind.SiliconRefiner: case BuildKind.ElectronicsBench: case BuildKind.SolarPanel: case BuildKind.DieselGenerator: case BuildKind.ChemicalPlant: case BuildKind.MediumPole: case BuildKind.CoolingTower: return 3;
                 case BuildKind.HighGenerator: case BuildKind.HighPole: case BuildKind.PrecisionAssembler: case BuildKind.NuclearProcessor: case BuildKind.Reactor: case BuildKind.ReactorControlConsole: return 4;
@@ -144,6 +144,8 @@ namespace DeadCircuit
                 if(precision.Length>0) return precision;
             }
             BuildKind required = target == TechEra.Water ? BuildKind.Workbench : target == TechEra.Steam ? BuildKind.MechanicalCrusher : target == TechEra.LowVoltage ? BuildKind.SteamFurnace : target == TechEra.MediumVoltage ? BuildKind.CircuitAssembler : target == TechEra.HighVoltage ? BuildKind.ChemicalPlant : BuildKind.PrecisionAssembler;
+            if(target==TechEra.LowVoltage && s.buildings.Exists(b=>b!=null && b.kind==BuildKind.LargeSteamFurnace &&
+                b.hp==WorldSimulator.BuildingMaxHealth(b.kind) && ModularMachineCatalog.IsComplete(b))) return "";
             return s.buildings.Exists(b => b != null && b.kind == required && b.hp > 0f) ? "" : "需先建造并确保设备完好：" + DemoCatalog.BuildName(required);
         }
         public static bool CanResearch(WorldState s, PlayerState p, TechEra target)
@@ -237,7 +239,15 @@ namespace DeadCircuit
             R(174,"高级电路叠层",TechEra.HighVoltage,BuildKind.ElectronicsBench,4f,DemoCatalog.Materials(ItemKind.Circuit,2,ItemKind.Semiconductor,1,ItemKind.Polymer,1,ItemKind.CopperWire,1),DemoCatalog.Materials(ItemKind.AdvancedCircuit,2)),
             R(175,"精密部件加工",TechEra.HighVoltage,BuildKind.ElectronicsBench,4f,DemoCatalog.Materials(ItemKind.SteelPlate,2,ItemKind.Bearing,1,ItemKind.Lubricant,1),DemoCatalog.Materials(ItemKind.PrecisionPart,2)),
             R(176,"中压控制模块",TechEra.HighVoltage,BuildKind.ElectronicsBench,5f,DemoCatalog.Materials(ItemKind.AdvancedCircuit,2,ItemKind.PrecisionPart,2,ItemKind.Relay,1),DemoCatalog.Materials(ItemKind.ControlModule,1)),
-            R(177,"耐热合金冶炼",TechEra.HighVoltage,BuildKind.SteamFurnace,5f,DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Copper,1,ItemKind.Coke,1),DemoCatalog.Materials(ItemKind.HeatAlloy,2))
+            R(177,"耐热合金冶炼",TechEra.HighVoltage,BuildKind.SteamFurnace,5f,DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Copper,1,ItemKind.Coke,1),DemoCatalog.Materials(ItemKind.HeatAlloy,2)),
+            R(200,"大型蒸汽炼钢",TechEra.Steam,BuildKind.LargeSteamFurnace,4f,DemoCatalog.Materials(ItemKind.PigIron,6,ItemKind.Limestone,2),DemoCatalog.Materials(ItemKind.Steel,6)),
+            R(201,"大型碎矿冶炼",TechEra.Steam,BuildKind.LargeSteamFurnace,2f,DemoCatalog.Materials(ItemKind.CrushedOre,2),DemoCatalog.Materials(ItemKind.Iron,4)),
+            R(202,"大型蒸汽炼铜",TechEra.Steam,BuildKind.LargeSteamFurnace,2f,DemoCatalog.Materials(ItemKind.CopperOre,2),DemoCatalog.Materials(ItemKind.Copper,2)),
+            R(203,"大型蒸汽炼锡",TechEra.Steam,BuildKind.LargeSteamFurnace,2f,DemoCatalog.Materials(ItemKind.TinOre,2),DemoCatalog.Materials(ItemKind.Tin,2)),
+            R(210,"大型电缆装配",TechEra.LowVoltage,BuildKind.LargeAssemblyPlant,3f,DemoCatalog.Materials(ItemKind.CopperWire,8,ItemKind.Insulator,4),DemoCatalog.Materials(ItemKind.Cable,8)),
+            R(211,"大型电机装配",TechEra.LowVoltage,BuildKind.LargeAssemblyPlant,3f,DemoCatalog.Materials(ItemKind.Coil,2,ItemKind.Steel,2,ItemKind.Gear,2,ItemKind.Bearing,2),DemoCatalog.Materials(ItemKind.Motor,2)),
+            R(212,"大型继电器装配",TechEra.LowVoltage,BuildKind.LargeAssemblyPlant,3f,DemoCatalog.Materials(ItemKind.Coil,2,ItemKind.IronPlate,2,ItemKind.Insulator,2),DemoCatalog.Materials(ItemKind.Relay,2)),
+            R(220,"大型铁矿破碎",TechEra.LowVoltage,BuildKind.LargeOreProcessor,2f,DemoCatalog.Materials(ItemKind.Ore,2),DemoCatalog.Materials(ItemKind.CrushedOre,4,ItemKind.Stone,1))
         };
         public static RecipeDefinition Recipe(int id) { foreach(var r in Recipes) if(r.id==id) return r; return null; }
         public static RecipeDefinition DefaultRecipe(BuildKind kind)
@@ -252,6 +262,7 @@ namespace DeadCircuit
         public static bool Stores(BuildKind kind,int item)
         {
             if(item<0 || item>=DemoCatalog.ItemCount) return false;
+            if(ModularMachineCatalog.IsModular(kind) && item==(int)ModularMachineCatalog.MaintenanceItem(kind)) return true;
             if(item==(int)ItemKind.NuclearWaste) return kind==BuildKind.Reactor || kind==BuildKind.NuclearWasteVault;
             if(kind==BuildKind.NuclearWasteVault) return false;
             if(PetrochemicalCatalog.IsLiquidStorage(kind)) return PetrochemicalCatalog.IsFluid(item);

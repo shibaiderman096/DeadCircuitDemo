@@ -276,6 +276,7 @@ namespace DeadCircuit
             radiationStatus.alignment = TextAlignmentOptions.Top;
             radiationStatus.gameObject.SetActive(false);
             MakeInspector();
+            MakeModularPalette();
             buildDetails = Box("Build Details", game, 0, 0, 640, 112, Panel, true);
             BottomCenter(buildDetails, 140, 640, 112);
             RectTransform buildContent = ScrollContent("Build Details Scroll View", buildDetails, 8, 8, 624, 96, out _);
@@ -385,6 +386,7 @@ namespace DeadCircuit
             RectTransform content = ScrollContent("Machine Scroll View", machinePanel, 10, 44, 284, 260, out machineScroll);
             // Safety stays at the top of the viewport, even when inventory needs scrolling.
             machineSafety = FlowLabel("Machine Safety", content, "", 260, 112, 14, Amber);
+            MakeModularMachineControls(content);
             machineCluster = FlowLabel("Machine Steam Cluster", content, "", 260, 28, 13, Ink);
             machineCluster.gameObject.SetActive(false);
             MakeLowVoltageMachineControls(content);
@@ -615,6 +617,7 @@ namespace DeadCircuit
         void RefreshBuild(PlayerState player)
         {
             WorldState world = bridge.World;
+            RefreshModularPalette(world, player);
             int selected = bridge.BuildSelection.HasValue ? (int)bridge.BuildSelection.Value : -1;
             BuildKind[] hotbar = TechCatalog.Hotbar(world.era);
             for (int i = 0; i < slots.Length; i++)
@@ -622,7 +625,7 @@ namespace DeadCircuit
                 bool valid = i < hotbar.Length && (int)hotbar[i] >= 0 && (int)hotbar[i] < costs.Length;
                 int kind = valid ? (int)hotbar[i] : -1;
                 bool unlocked = valid && PrimitiveCatalog.IsBuildUnlocked(world, hotbar[i]);
-                bool affordable = valid && CanAfford(player.items, costs[kind]);
+                bool affordable = valid && (ModularMachineCatalog.IsModular(hotbar[i]) ? ModularMachineCatalog.HasWrench(player) : CanAfford(player.items, costs[kind]));
                 Set(slots[i].label, ((i + 1) % 10) + "\n" + (valid ? DemoCatalog.BuildName(hotbar[i]) + (unlocked ? "" : "\n" + PrimitiveCatalog.BuildRequirement(world, hotbar[i])) : "空"));
                 Tint(slots[i], valid && selected == kind ? Selected : Raised);
                 slots[i].label.color = valid && selected == kind ? Accent : unlocked && affordable ? Ink : Muted;
@@ -636,6 +639,11 @@ namespace DeadCircuit
             buildDetails.gameObject.SetActive(show);
             if (!show)
             {
+                return;
+            }
+            if (ModularMachineCatalog.IsModular((BuildKind)selected))
+            {
+                RefreshModularBuild(player, (BuildKind)selected);
                 return;
             }
             int rotation = ((bridge.BuildRotation % 4) + 4) % 4;
@@ -670,11 +678,15 @@ namespace DeadCircuit
                 if (technologyBuildRows[i].gameObject.activeSelf != visible) technologyBuildRows[i].gameObject.SetActive(visible);
                 if (!visible) continue;
                 bool available = PrimitiveCatalog.IsBuildUnlocked(world, kind);
+                bool modular = ModularMachineCatalog.IsModular(kind);
                 technologyBuildButtons[i].button.interactable = available && player.hp > 0f;
                 string buildRequirement = available ? "选择建造" : PrimitiveCatalog.BuildRequirement(world, kind);
-                Set(technologyBuildButtons[i].label, DemoCatalog.BuildName(kind) + "\n" + (available ? "选择建造" : "工艺未解锁"));
+                Set(technologyBuildButtons[i].label, DemoCatalog.BuildName(kind) + "\n" + (available ? modular ? "选择蓝图" : "选择建造" : "工艺未解锁"));
                 technologyBuildButtons[i].label.color = available ? Accent : Muted;
-                Set(technologyBuildCosts[i], DemoCatalog.Width(kind) + "×" + DemoCatalog.Height(kind) + " 格 · " + MaterialText(costs[i], player.items, true) + "\n" +
+                Set(technologyBuildCosts[i], (modular ? "自由逐格布局 · 最低构型材料参考：" + MaterialText(ModularMachinePresentation.MinimumCost(kind)) +
+                    "\n蓝图免费 / 分批投料 · " + (ModularMachineCatalog.HasWrench(player) ? "手持扳手就绪" : "需装备可用扳手并激活工具槽") +
+                    "\n控制器起画，七种职责各1、机壳至少2，可继续添机壳，最多32格。" :
+                    DemoCatalog.Width(kind) + "×" + DemoCatalog.Height(kind) + " 格 · " + MaterialText(costs[i], player.items, true)) + "\n" +
                     EnergyName(TechCatalog.EnergyTier(kind)) + " · " + DemoCatalog.BuildDescriptions[i] + (available ? "" : "\n" + buildRequirement));
                 float height = Mathf.Max(88, technologyBuildCosts[i].GetPreferredValues(technologyBuildCosts[i].text, 564, float.PositiveInfinity).y + 12);
                 technologyBuildCosts[i].rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height - 8);
@@ -708,6 +720,9 @@ namespace DeadCircuit
                     if (candidate.hp > 0 && candidate.stock > 0 && candidate.x == inspectedX && candidate.y == inspectedY) { node = candidate; break; }
             if (building == null && node == null) { HideInspector(); return; }
             int newId = building != null ? building.id : -1;
+            modularMachineState.gameObject.SetActive(false);
+            modularContinueRow.gameObject.SetActive(false);
+            modularUnloadControls.gameObject.SetActive(false);
             if (inspectedId != newId) ResetScroll(machineScroll);
             machinePanel.gameObject.SetActive(true);
             inspectedId = building != null ? building.id : -1;
@@ -826,6 +841,7 @@ namespace DeadCircuit
                         "\n停堆温度 " + tripTemperature.ToString("0") + "℃ · 降至 300℃后可重新运行。\n" + RadiationFacilityHint(world, building));
                     machineSafety.color = building.tripped || building.temperature >= tripTemperature * .8f || !running && !cooling ? Danger : running ? Accent : Amber;
                 }
+                RefreshModularInspector(world, player, building);
                 return;
             }
             machineRecipe.gameObject.SetActive(false);
@@ -1016,8 +1032,19 @@ namespace DeadCircuit
         {
             if (!bridge.IsRunning || AnyPanelOpen() || bridge.LocalPlayer == null || bridge.LocalPlayer.hp <= 0f) return;
             if (index < 0 || index >= costs.Length || !PrimitiveCatalog.IsBuildUnlocked(bridge.World, (BuildKind)index)) return;
+            bool modular = ModularMachineCatalog.IsModular((BuildKind)index);
+            if (modular && !ModularMachineCatalog.HasWrench(bridge.LocalPlayer))
+            {
+                Notify("画模块蓝图需要装备耐久 > 0 的扳手，并激活工具槽；仅放在背包中无效。", true);
+                return;
+            }
             bridge.CancelPlayerControl();
-            bridge.BuildSelection = (BuildKind)index;
+            if (modular)
+            {
+                bridge.SelectModularBuilding((BuildKind)index);
+                modularPaletteCollapsed = false;
+            }
+            else bridge.BuildSelection = (BuildKind)index;
             guardThroughFrame = Time.frameCount + 1;
             RefreshAll();
         }
@@ -1131,6 +1158,7 @@ namespace DeadCircuit
         void CancelBuild()
         {
             bridge.BuildSelection = null;
+            bridge.ModularEraseMode = false;
             // Keep this right-click consumed after clearing the selection, including the bridge's next input read.
             guardThroughFrame = Time.frameCount + 1;
             RefreshAll();
@@ -1222,6 +1250,7 @@ namespace DeadCircuit
 
         static string MachineFlow(BuildingState building)
         {
+            if (ModularMachineCatalog.IsModular(building.kind)) return "按角色分口操作：原料 → 输入总线；产物 → 输出总线；维护料 → 手动投入维护舱。";
             switch (building.kind)
             {
                 case BuildKind.Generator: case BuildKind.DieselGenerator: case BuildKind.HighGenerator:

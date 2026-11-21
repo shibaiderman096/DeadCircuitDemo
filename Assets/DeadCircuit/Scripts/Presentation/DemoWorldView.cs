@@ -36,6 +36,7 @@ namespace DeadCircuit
             public int stamp;
             public ActorEquipment equipment;
             public SurvivorRig avatar;
+            public ModularMachineVisual modules;
         }
 
         sealed class TraceVisual
@@ -635,6 +636,7 @@ namespace DeadCircuit
                 int w = DemoCatalog.Width(state), h = DemoCatalog.Height(state);
                 for (int y = state.y; y < state.y + h; y++) for (int x = state.x; x < state.x + w; x++)
                 {
+                    if (!DemoCatalog.Contains(state, x, y)) continue;
                     long cell = WorldTiles.Key(x, y);
                     occupied.Add(cell);
                     if (!DemoCatalog.Walkable(state)) solidBuildings.Add(cell);
@@ -649,6 +651,11 @@ namespace DeadCircuit
                 // A machine is fixed geometry, including when its dimensions change on rotation.
                 v.position = v.previous = center; v.root.transform.position = center;
                 SetOrder(v, state.y);
+                if (ModularMachineCatalog.IsModular(state.kind))
+                {
+                    DrawModularMachine(v, state);
+                    continue;
+                }
                 int rotation = ((state.rotation % 4) + 4) % 4;
                 ConfigureMachine(v.body, state);
                 if (state.kind == BuildKind.Door)
@@ -873,6 +880,7 @@ namespace DeadCircuit
             v.body.flipX=false;
             if (v.equipment != null) v.equipment.SetVisible(false);
             if (v.avatar != null) v.avatar.root.gameObject.SetActive(false);
+            if (v.modules != null) v.modules.root.gameObject.SetActive(false);
             v.detail.enabled=v.arrow.enabled=v.lamp.enabled=v.cargo.enabled=v.bar.enabled=v.barBack.enabled=false;
             v.detail.transform.localPosition=Vector3.zero; v.detail.transform.localScale=Vector3.one; v.detail.transform.localRotation=Quaternion.identity;
             v.shadow.enabled=true;
@@ -951,6 +959,7 @@ namespace DeadCircuit
             powerLinks.Clear(); powerTopology=0; focusedNetwork=0;
             observedWorld=null; observedTick=-1; observedElapsed=-1; observedAt=0; visualTime=0;
             ghost.enabled=ghostArrow.enabled=footprint.enabled=ghostRange.enabled=ghostLinkRange.enabled=hoverFootprint.enabled=hoverRing.enabled=false;
+            HideModularPreview();
             foreach (var p in particles) p.sprite.enabled=false;
             ResetWeaponEffects();
             foreach (var line in weaponReticle) if (line != null) line.enabled=false;
@@ -1200,6 +1209,7 @@ namespace DeadCircuit
             int x = Mathf.FloorToInt(mouse.x + .5f), y = Mathf.FloorToInt(mouse.y + .5f);
             bool ui = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             bool selected = bridge.BuildSelection.HasValue && local != null && local.hp > 0 && !ui;
+            if (!selected || !ModularMachineCatalog.IsModular(bridge.BuildSelection.Value)) HideModularPreview();
             ghost.enabled = ghostArrow.enabled = footprint.enabled = selected;
             ghostRange.enabled = ghostLinkRange.enabled = hoverFootprint.enabled = hoverRing.enabled = false;
             focusedNetwork = 0;
@@ -1208,14 +1218,20 @@ namespace DeadCircuit
                 if (DemoCatalog.Contains(b,x,y) && !NaturalInteriorHidden(DemoCatalog.CenterX(b), DemoCatalog.CenterY(b)))
                 { hovered = b; break; }
             int rangeCount = 0, wireCount = 0;
-            if (selected)
+            if (selected && ModularMachineCatalog.IsModular(bridge.BuildSelection.Value))
+            {
+                ghost.enabled = ghostArrow.enabled = footprint.enabled = false;
+                DrawModularPreview(world, local, bridge.BuildSelection.Value, x, y);
+            }
+            else if (selected)
             {
                 var kind = bridge.BuildSelection.Value;
                 int rotation = ((bridge.BuildRotation % 4) + 4) % 4;
                 previewBuilding.kind = kind; previewBuilding.x = x; previewBuilding.y = y; previewBuilding.rotation = rotation;
                 bool valid = CanPreview(world,local,previewBuilding);
                 Color color = valid ? Mint : Danger;
-                ConfigureMachine(ghost,previewBuilding); ghost.color = new Color(color.r,color.g,color.b,.62f);
+                ConfigureMachine(ghost,previewBuilding);
+                ghost.color = new Color(color.r,color.g,color.b,.62f);
                 ghost.transform.position = BuildingCenter(previewBuilding);
                 var dir = new Vector2(DemoCatalog.DirectionX(rotation),DemoCatalog.DirectionY(rotation));
                 ghostArrow.transform.position = (Vector3)(new Vector2(DemoCatalog.OutputX(previewBuilding),DemoCatalog.OutputY(previewBuilding)) - dir * .52f);
@@ -1246,10 +1262,10 @@ namespace DeadCircuit
             {
                 focusedNetwork = hovered.networkId;
                 Color color = hovered.networkId > 0 ? NetworkColor(hovered.networkId) : Amber; color.a = .85f;
-                Outline(hoverFootprint,hovered,color);
+                if (!ModularMachineCatalog.IsModular(hovered.kind)) Outline(hoverFootprint,hovered,color);
                 var node = DemoCatalog.IsPowerNode(hovered.kind) ? hovered :
                     DemoCatalog.Demand(hovered.kind) > 0 && hovered.networkId > 0 ? NearestSupplyNode(hovered,hovered.networkId) : null;
-                if (node != null) ShowSupply(node,ref rangeCount);
+                if (node != null && !ModularMachineCatalog.IsModular(hovered.kind)) ShowSupply(node,ref rangeCount);
             }
             for (int i = rangeCount; i < ranges.Count; i++) ranges[i].enabled = false;
             for (int i = wireCount; i < previewWires.Count; i++) previewWires[i].enabled = false;
@@ -1264,6 +1280,9 @@ namespace DeadCircuit
             foreach (var node in powerNodes)
             {
                 if (TechCatalog.EnergyTier(node) != TechCatalog.EnergyTier(consumer)) continue;
+                if (ModularMachineCatalog.IsModular(consumer.kind) && ModularMachinePresentation.FindRole(consumer, MachineModuleRole.Energy) < 0) continue;
+                if (ModularMachineCatalog.IsModular(consumer.kind) && !DemoCatalog.Contains(node,
+                    ModularMachineCatalog.EnergyInputX(consumer), ModularMachineCatalog.EnergyInputY(consumer))) continue;
                 if (networkId > 0 && node.networkId != networkId) continue;
                 if (radius<=0 && !TouchingFootprints(consumer,node)) continue;
                 float d = FootprintDistanceSquared(consumer,node);
@@ -1317,14 +1336,16 @@ namespace DeadCircuit
 
         bool CanPreview(WorldState world,PlayerState player,BuildingState b)
         {
+            if (ModularMachineCatalog.IsModular(b.kind)) return CanModularPreview(world, player, b.kind, b.x, b.y, out _);
             if (!PrimitiveCatalog.IsBuildUnlocked(world,b.kind)) return false;
             if (TechCatalog.RequiresWater(b.kind) && !TechCatalog.NearWater(world,b)) return false;
-            if (world.buildings != null && world.buildings.Count >= 1024) return false;
+            if (world.buildings != null && world.buildings.Count >= WorldSimulator.MaxBuildings) return false;
             int w = DemoCatalog.Width(b), h = DemoCatalog.Height(b);
             for (int y = b.y; y < b.y + h; y++) for (int x = b.x; x < b.x + w; x++)
             {
                 int ground = Ground(x, y);
                 if (!WorldTiles.Inside(world, x, y) || ground < 0 || ground == 2) return false;
+                if (FloorWorld.IsProtectedCell(world, x, y)) return false;
                 long cell = WorldTiles.Key(x, y);
                 if (occupied.Contains(cell) || blockedNodes.Contains(cell)) return false;
                 if (world.survival!=null && world.survival.enabled)
@@ -1332,7 +1353,8 @@ namespace DeadCircuit
                     foreach (var plot in world.survival.plots) if (plot.x==x && plot.y==y) return false;
                     foreach (var c in world.survival.creatures) if (Mathf.Abs(c.x-x)<.8f && Mathf.Abs(c.y-y)<.8f) return false;
                 }
-                if (Mathf.Abs(x - 32) <= 1 && Mathf.Abs(y - 35) <= 1) return false;
+                if (world.generatorVersion < WorldGeneration.NaturalOpeningVersion &&
+                    Mathf.Abs(x - world.width / 2) <= 1 && Mathf.Abs(y - (world.height / 2 + 3)) <= 1) return false;
                 if (b.kind != BuildKind.Belt)
                 {
                     if (world.players != null) foreach (var p in world.players)
@@ -1357,7 +1379,7 @@ namespace DeadCircuit
             return true;
         }
 
-        bool PreviewLineClear(float px,float py,int x,int y)
+        bool PreviewLineClear(float px,float py,int x,int y,BuildingState ignored = null)
         {
             int steps=Mathf.Max(1,Mathf.CeilToInt(Vector2.Distance(new Vector2(px,py),new Vector2(x,y))/.16f));
             int sx=Mathf.FloorToInt(px+.5f),sy=Mathf.FloorToInt(py+.5f);
@@ -1365,6 +1387,7 @@ namespace DeadCircuit
             {
                 int cx=Mathf.FloorToInt(px+(x-px)*i/steps+.5f),cy=Mathf.FloorToInt(py+(y-py)*i/steps+.5f);
                 if ((cx==x && cy==y) || (cx==sx && cy==sy)) continue;
+                if (ignored != null && DemoCatalog.Contains(ignored, cx, cy)) continue;
                 int ground = Ground(cx, cy);
                 long cell = WorldTiles.Key(cx, cy);
                 if (!WorldTiles.Inside(groundWorld, cx, cy) || ground < 0 || ground == 2 ||

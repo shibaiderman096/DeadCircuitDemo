@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 18;
+        public const int SaveVersion = 19;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -135,6 +135,13 @@ namespace DeadCircuit
             if (p.hp <= 0f) return;
             RefreshSpatial();
             if (ApplySurvival(p, cmd)) return;
+            if(action=="moduleplan" || action=="moduleerase" || action=="moduleunload")
+            {
+                var machine=State.buildings.Find(b=>b.id==cmd.buildingId);
+                if(p.interactCooldown>0f || !Inside(cmd.x,cmd.y) || DistSq(p.x,p.y,cmd.x,cmd.y)>Reach*Reach ||
+                    !LineClear(p.x,p.y,cmd.x,cmd.y,cmd.x,cmd.y,machine)) return;
+                p.interactCooldown=.25f; EditModularPlan(p,cmd,machine); return;
+            }
             switch (action)
             {
                 case "attack":
@@ -264,6 +271,7 @@ namespace DeadCircuit
             BuildKind kind = (BuildKind)cmd.arg;
             if (!TechCatalog.IsUnlocked(State, kind)) { Notice(p, PrimitiveCatalog.BuildRequirement(State,kind)); return; }
             var b = new BuildingState { x = cmd.x, y = cmd.y, rotation = cmd.rotation, kind = kind, footprintVersion = 1, modularBoiler = kind == BuildKind.Boiler };
+            if(ModularMachineCatalog.IsModular(kind)) b.modularModules.Add(new MachineModuleState { role=MachineModuleRole.Controller,x=cmd.x,y=cmd.y,rotation=cmd.rotation });
             if (State.buildings.Count >= MaxBuildings) { Notice(p, "设备数量已达上限。"); return; }
             for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
             {
@@ -279,20 +287,24 @@ namespace DeadCircuit
             { Notice(p,"抽油机需紧邻未耗尽油藏（含斜邻格）。"); return; }
             if (TechCatalog.RequiresWater(kind) && !NearWater(b))
             { Notice(p, "无法建造：设备须紧邻水面，且占地全部位于陆地。"); return; }
-            int[] cost = DemoCatalog.BuildCost(kind);
+            bool modular=ModularMachineCatalog.IsModular(kind);
+            if(modular && !ModularMachineCatalog.HasWrench(p)) { Notice(p,"放置大型蓝图需要手持耐久正常的扳手。"); return; }
+            int[] cost = modular ? new int[DemoCatalog.ItemCount] : DemoCatalog.BuildCost(kind);
             if (!CanPay(p.items, cost)) { Notice(p, "建材不足：" + DemoCatalog.CostText(kind)); return; }
             int id = AllocateId();
             Pay(p.items, cost);
             b.id = id; b.hp = BuildingMaxHealth(kind);
             State.buildings.Add(b); RefreshSpatial(); RefreshPower(false);
             flowRevision = -1;
-            Notice(p, "已建造" + DemoCatalog.BuildName(kind));
+            Notice(p, modular ? "已放置控制器蓝图：" + DemoCatalog.BuildName(kind) + "，从模块菜单继续绘制。" : "已建造" + DemoCatalog.BuildName(kind));
         }
 
         private void Repair(PlayerState p, int x, int y)
         {
             BuildingState b = BuildingAt(x, y);
-            if (b == null || b.hp >= BuildingMaxHealth(b.kind)) return;
+            if (b == null) return;
+            if(ModularMachineCatalog.IsModular(b.kind)) { RepairModular(p,b); return; }
+            if(b.hp >= BuildingMaxHealth(b.kind)) return;
             int material = b.kind == BuildKind.Wall || b.kind == BuildKind.Door ? (int)ItemKind.Wood : (int)ItemKind.Scrap;
             if (p.items[material] < 1) { Notice(p, "修理需要 1 " + DemoCatalog.ItemNames[material]); return; }
             p.items[material]--;
@@ -306,6 +318,7 @@ namespace DeadCircuit
         {
             BuildingState b = BuildingAt(x, y);
             if (b == null) return;
+            if(ModularMachineCatalog.IsModular(b.kind)) { DismantleModular(p,b); return; }
             int[] cost = DemoCatalog.BuildCost(b.kind);
             var returned = new int[DemoCatalog.ItemCount];
             float refund = p.skills[0] >= 3 ? 1f : p.skills[0] >= 2 ? 0.75f : 0.5f;
@@ -403,6 +416,8 @@ namespace DeadCircuit
             RecipeDefinition r=TechCatalog.Recipe(arg);
             if(r==null || r.building!=b.kind || b.kind==BuildKind.Workbench || r.era>State.era) return;
             if(!PrimitiveCatalog.IsRecipeUnlocked(State,r)) { Notice(p,PrimitiveCatalog.RecipeRequirement(State,r)); return; }
+            if(ModularMachineCatalog.IsModular(b.kind) && b.recipe!=arg && State.cargo.Exists(c=>c.fromId==b.id || c.toId==b.id))
+            { Notice(p,"模块机械有在途物品，送达后才能更换配方。"); return; }
             if(b.recipe!=arg) foreach(var cargo in State.cargo)
                 if(PetrochemicalCatalog.IsFluid(cargo.item) && (cargo.fromId==b.id || cargo.toId==b.id))
                 { Notice(p,"仍有液体正在运输，请等待送达后再切换配方。"); return; }

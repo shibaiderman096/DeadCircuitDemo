@@ -19,14 +19,16 @@ namespace DeadCircuit
             kind == BuildKind.Chest || kind == BuildKind.FilterSplitter || kind == BuildKind.MechanicalHopper;
 
         private static int CargoOutputDirection(BuildingState from,int item) =>
-            from.kind==BuildKind.Reactor && item==(int)ItemKind.HotCoolant ? (from.rotation+3)&3 : from.rotation;
+            ModularMachineCatalog.IsModular(from.kind) ? ModularMachineCatalog.OutputDirection(from) : from.kind==BuildKind.Reactor && item==(int)ItemKind.HotCoolant ? (from.rotation+3)&3 : from.rotation;
         private static int CargoOutputX(BuildingState from,int item)
         {
+            if(ModularMachineCatalog.IsModular(from.kind)) return ModularMachineCatalog.OutputX(from);
             int direction=CargoOutputDirection(from,item);
             return direction==0 ? from.x+DemoCatalog.Width(from) : direction==2 ? from.x-1 : from.x+(DemoCatalog.Width(from)-1)/2;
         }
         private static int CargoOutputY(BuildingState from,int item)
         {
+            if(ModularMachineCatalog.IsModular(from.kind)) return ModularMachineCatalog.OutputY(from);
             int direction=CargoOutputDirection(from,item);
             return direction==1 ? from.y+DemoCatalog.Height(from) : direction==3 ? from.y-1 : from.y+(DemoCatalog.Height(from)-1)/2;
         }
@@ -36,6 +38,7 @@ namespace DeadCircuit
         public static bool PetrochemicalCargoRouteValid(BuildingState from, BuildingState to, int item)
         {
             if(from == null || to == null || from == to || item < 0 || item >= DemoCatalog.ItemCount) return false;
+            if(!ModularCargoRouteValid(from,to,item)) return false;
             if(item == (int)ItemKind.NuclearWaste)
             {
                 if(to.kind != BuildKind.NuclearWasteVault) return false;

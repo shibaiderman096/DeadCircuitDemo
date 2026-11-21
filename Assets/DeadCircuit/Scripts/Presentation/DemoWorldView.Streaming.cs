@@ -310,7 +310,8 @@ namespace DeadCircuit
                     b.kind == BuildKind.ClayKiln ? new Color(.97f,.45f,.27f) :
                     b.networkId > 0 ? NetworkEnergized(b.networkId) ? NetworkColor(b.networkId) : new Color(.54f, .33f, .22f) : Amber;
                 for (int y = Mathf.Max(b.y, mapOriginY); y < top; y++)
-                for (int x = Mathf.Max(b.x, mapOriginX); x < right; x++) Plot(x, y, color, true);
+                for (int x = Mathf.Max(b.x, mapOriginX); x < right; x++)
+                    if (DemoCatalog.Contains(b, x, y)) Plot(x, y, color, true);
             }
             if (world.zombies != null) foreach (var z in world.zombies)
                 if (z.hp > 0) Plot(Mathf.FloorToInt(z.x + .5f), Mathf.FloorToInt(z.y + .5f), new Color32(237, 97, 67, 255));

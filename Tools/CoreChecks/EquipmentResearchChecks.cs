@@ -229,8 +229,8 @@ static partial class Checks
                 var archive = new WorldArchive(folder, Dump, text => JsonSerializer.Deserialize<WorldState>(text, Json));
                 string id = Guid.NewGuid().ToString("N"); archive.Write(id, sim.State);
                 var restored = archive.Read(id);
-                Require(restored.version == 18 && restored.weaponResearch == 4095 && restored.toolResearch == 3,
-                    "v18 archive dropped weapon or tool knowledge");
+                Require(restored.version == WorldSimulator.SaveVersion && restored.weaponResearch == 4095 && restored.toolResearch == 3,
+                    "current archive dropped weapon or tool knowledge");
                 restored.weaponResearch = 0; restored.toolResearch = 0;
                 Require(Dump(sim.State) == before, "restored knowledge mutation reached the source world");
             }
