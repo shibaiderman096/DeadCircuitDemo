@@ -7,12 +7,18 @@ namespace DeadCircuit
 {
     public sealed partial class DemoWorldView
     {
-        // Stable QA surface: actual sparse world positions, never a rectangular template.
-        // Visual.modules.cells[index].root, named "Modular Cell <index> <role>".
+        // Stable QA surface: Visual.modules.frame is the ONE enclosing rectangle;
+        // cells[index].connectionMask uses E/N/W/S=1/2/4/8. joinEast/joinNorth
+        // own textured shared joints (west/south are owned by the neighbour).
+        // Sparse cell roots remain actual world positions; the frame fills no gaps.
         sealed class ModularCellVisual
         {
             public Transform root;
             public SpriteRenderer plate, mechanism, inset, arrow, glow, progressBack, progress;
+            public SpriteRenderer foundation, joinEast, joinNorth, joinEastBed, joinNorthBed, seamEast, seamNorth;
+            public readonly SpriteRenderer[] exposedEdges = new SpriteRenderer[4];
+            public int connectionMask;
+            public bool complete;
             public LineRenderer outline;
             public TextMeshPro marker;
         }
@@ -22,7 +28,8 @@ namespace DeadCircuit
             public Transform root;
             public readonly List<ModularCellVisual> cells = new List<ModularCellVisual>();
             public TextMeshPro caption, socketLabel;
-            public LineRenderer socket;
+            public LineRenderer socket, frame;
+            public ModularVisualLayout.Bounds frameBounds;
         }
 
         ModularMachineVisual modularPreview;
@@ -56,6 +63,9 @@ namespace DeadCircuit
         ModularMachineVisual NewModularMachine(Transform parent, string name)
         {
             var visual = new ModularMachineVisual { root = NewRoot(name, parent) };
+            visual.frame = NewLine("Modular Machine Group Frame", 0, .016f, true);
+            visual.frame.transform.SetParent(visual.root, false);
+            visual.frame.positionCount = 4;
             visual.caption = ModularLabel("Modular Machine Hover", visual.root, 4f, .7f, 2f);
             visual.socket = ModularCellOutline("Modular External Port Cell", visual.root);
             visual.socketLabel = ModularLabel("Modular External Port Label", visual.root, 1.18f, .62f, 1.55f);
@@ -65,7 +75,16 @@ namespace DeadCircuit
         ModularCellVisual NewModularCell(ModularMachineVisual machine, int index)
         {
             var cell = new ModularCellVisual { root = NewRoot("Modular Cell " + index, machine.root) };
+            cell.foundation = NewSprite("Module Shared Metal Bed", cell.root, 0);
             cell.plate = NewSprite("Module Plate", cell.root, 0);
+            cell.joinEastBed = NewSprite("Module Join East Bed", cell.root, 0);
+            cell.joinNorthBed = NewSprite("Module Join North Bed", cell.root, 0);
+            cell.joinEast = NewSprite("Module Join East Metal", cell.root, 0);
+            cell.joinNorth = NewSprite("Module Join North Metal", cell.root, 0);
+            cell.seamEast = NewSprite("Module Internal Seam East", cell.root, 0);
+            cell.seamNorth = NewSprite("Module Internal Seam North", cell.root, 0);
+            for (int d = 0; d < 4; d++)
+                cell.exposedEdges[d] = NewSprite("Module Exposed Casing " + d, cell.root, 0);
             cell.mechanism = NewSprite("Module Mechanism", cell.root, 1);
             cell.inset = NewSprite("Module Inset", cell.root, 2);
             cell.arrow = NewSprite("Module Port Arrow", cell.root, 3);
@@ -93,17 +112,35 @@ namespace DeadCircuit
             bool ui = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             int hover = !ui && !bridge.BuildSelection.HasValue ? ModularMachineCatalog.ModuleAt(state, mx, my) : -1;
             bool editing = bridge.BuildSelection.HasValue && ModularMachineCatalog.IsModular(bridge.BuildSelection.Value) && bridge.ModularBlueprintId == state.id;
+            var bounds = ModularVisualLayout.FrameBounds(state);
+            // All bed/rail layers sit below all role icons, including at north/south
+            // joins. Per-cell y sorting would otherwise cover a neighbour's mechanism.
+            int housingOrder = Order(bounds.Top) - 6;
+            int completed = 0;
             for (int i = 0; i < count; i++)
             {
                 var cell = i < visual.cells.Count ? visual.cells[i] : NewModularCell(visual, i);
                 var role = ModularMachineCatalog.Role(state, i);
                 bool built = ModularMachineCatalog.ModuleComplete(state, i);
+                if (built) completed++;
                 cell.root.name = "Modular Cell " + i + " " + role;
                 DrawModularCell(cell, state.kind, role, ModularMachineCatalog.ModuleRotation(state, i),
                     ModularMachineCatalog.ModuleX(state, i), ModularMachineCatalog.ModuleY(state, i), built,
-                    false, true, false, built ? 0f : ModularMachinePresentation.ConstructionRatio(state, i), running, hover == i || editing);
+                    false, true, false, built ? 0f : ModularMachinePresentation.ConstructionRatio(state, i), running, hover == i || editing,
+                    ModularVisualLayout.ConnectionMask(state, i), housingOrder);
+            }
+            // Each shared edge is emitted once. A planned neighbour gets a translucent
+            // rail instead of appearing to have been built by a completed module.
+            for (int i = 0; i < count; i++)
+            {
+                var cell = visual.cells[i];
+                DrawModularJoin(cell, visual, state, i, ModularVisualLayout.East, housingOrder);
+                DrawModularJoin(cell, visual, state, i, ModularVisualLayout.North, housingOrder);
             }
             for (int i = count; i < visual.cells.Count; i++) visual.cells[i].root.gameObject.SetActive(false);
+            bool damaged = state.hp < owner.maxHp - .01f;
+            bool formed = running || count > 0 && ModularMachineCatalog.FormationIssue(state).Length == 0;
+            DrawModularFrame(visual, bounds, housingOrder + 4, hover >= 0 || editing, damaged, formed, completed == count);
             visual.caption.gameObject.SetActive(hover >= 0);
             visual.socket.enabled = false;
             visual.socketLabel.gameObject.SetActive(false);
@@ -112,7 +149,9 @@ namespace DeadCircuit
                 var role = ModularMachineCatalog.Role(state, hover);
                 visual.caption.transform.position = new Vector3(mx, my + .89f, 0);
                 SetModularLabel(visual.caption, ModularMachineCatalog.RoleName(state, hover) +
-                    (ModularMachineCatalog.ModuleComplete(state, hover) ? " · ■已建" : " · ＋待建"), Color.white, 10020);
+                    (visual.cells[hover].complete ? " · ■已建" : " · ＋待建") +
+                    (damaged ? " · 结构损坏" : !formed ? " · 未成形" : completed < count ? " · 施工中" : " · 已成形"),
+                    damaged ? new Color(1f, .73f, .59f) : Color.white, 10020);
                 if (IsModularPort(role))
                     DrawModularSocket(visual, state.kind, role, ModularMachineCatalog.ModuleRotation(state, hover), mx, my,
                         role != MachineModuleRole.Exhaust || ModularMachineCatalog.ExhaustClear(observedWorld, state));
@@ -124,6 +163,7 @@ namespace DeadCircuit
         {
             if (modularPreview == null) modularPreview = NewModularMachine(effectsRoot, "Modular Blueprint Preview");
             modularPreview.root.gameObject.SetActive(true);
+            modularPreview.frame.enabled = false;
             var cell = modularPreview.cells.Count == 0 ? NewModularCell(modularPreview, 0) : modularPreview.cells[0];
             var active = bridge.ActiveModularBlueprint;
             bool erase = bridge.ModularEraseMode;
@@ -132,7 +172,7 @@ namespace DeadCircuit
             int rotation = erase && module >= 0 ? ModularMachineCatalog.ModuleRotation(active, module) : bridge.BuildRotation & 3;
             bool valid = CanModularPreview(world, player, kind, x, y, out string reason);
             cell.root.name = "Modular Cell Preview " + role;
-            DrawModularCell(cell, kind, role, rotation, x, y, false, true, valid, erase, 0f, false, true);
+            DrawModularCell(cell, kind, role, rotation, x, y, false, true, valid, erase, 0f, false, true, 0, 9998);
             // Exactly one cell belongs to the cursor preview, regardless of group size.
             for (int i = 1; i < modularPreview.cells.Count; i++) modularPreview.cells[i].root.gameObject.SetActive(false);
             modularPreview.caption.gameObject.SetActive(true);
@@ -170,7 +210,7 @@ namespace DeadCircuit
         }
 
         void DrawModularCell(ModularCellVisual cell, BuildKind kind, MachineModuleRole role, int rotation, int x, int y,
-            bool built, bool preview, bool valid, bool erase, float ratio, bool running, bool focused)
+            bool built, bool preview, bool valid, bool erase, float ratio, bool running, bool focused, int connectionMask, int housingOrder)
         {
             cell.root.gameObject.SetActive(true);
             cell.root.position = new Vector3(x, y, 0);
@@ -178,12 +218,17 @@ namespace DeadCircuit
             float alpha = preview ? .46f : built ? 1f : .24f;
             Color frame = preview && (!valid || erase) ? Danger : focused ? Amber : built ? new Color(.65f,.75f,.72f) : new Color(.49f,.77f,.82f);
             frame.a = built ? .72f : .8f;
+            cell.connectionMask = preview ? 0 : connectionMask;
+            cell.complete = built;
+            DrawModularHousing(cell, housingOrder, alpha);
             cell.plate.sprite = Machine(BuildKind.Wall, 0);
-            cell.plate.sortingOrder = order;
-            cell.plate.transform.localScale = Vector3.one * .94f;
+            cell.plate.sortingOrder = housingOrder + 1;
+            ModularSpriteRect(cell.plate, 0, 0, .86f, .86f);
             cell.plate.color = new Color(.53f,.61f,.60f, alpha * (role == MachineModuleRole.Casing ? 1f : .62f));
             ConfigureModularMechanism(cell, kind, role, rotation, alpha, order + 1);
-            cell.outline.enabled = preview || !built || focused;
+            // Only the cursor has a single-cell placement outline. Construction,
+            // editing and hover share the machine frame instead of a grid of boxes.
+            cell.outline.enabled = preview;
             cell.outline.sortingOrder = order + 4;
             cell.outline.startWidth = cell.outline.endWidth = focused ? .035f : .018f;
             cell.outline.startColor = cell.outline.endColor = frame;
@@ -222,6 +267,108 @@ namespace DeadCircuit
                 cell.progress.transform.localScale = new Vector3(.20f * ratio,.012f,1f);
                 cell.progress.color = Amber;
             }
+        }
+
+        void DrawModularHousing(ModularCellVisual cell, int order, float alpha)
+        {
+            cell.foundation.sprite = Art("pixel");
+            cell.foundation.sortingOrder = order;
+            cell.foundation.color = new Color(.22f, .30f, .29f, alpha);
+            ModularSpriteRect(cell.foundation, 0, 0, .94f, .94f);
+            // Narrow physical casing lips follow only exposed sides, including hole
+            // edges. They are distinct from the single, padded group annotation.
+            for (int d = 0; d < 4; d++)
+            {
+                var edge = cell.exposedEdges[d];
+                edge.enabled = (cell.connectionMask & (1 << d)) == 0;
+                if (!edge.enabled) continue;
+                bool horizontal = (d & 1) != 0;
+                edge.sprite = Art("pixel");
+                edge.sortingOrder = order + 3;
+                edge.color = d == 1 || d == 2 ? new Color(.55f, .65f, .60f, alpha * .80f) :
+                    new Color(.12f, .19f, .18f, alpha * .90f);
+                ModularSpriteRect(edge, DemoCatalog.DirectionX(d) * .455f, DemoCatalog.DirectionY(d) * .455f,
+                    horizontal ? .94f : .03f, horizontal ? .03f : .94f);
+            }
+            // Reset before drawing shared joints so preview, pool reuse and a removed
+            // neighbour cannot retain a renderer from the previous layout.
+            cell.joinEast.enabled = cell.joinNorth.enabled = cell.joinEastBed.enabled = cell.joinNorthBed.enabled = false;
+            cell.seamEast.enabled = cell.seamNorth.enabled = false;
+        }
+
+        void DrawModularJoin(ModularCellVisual cell, ModularMachineVisual visual, BuildingState state, int moduleIndex, int side, int order)
+        {
+            if ((cell.connectionMask & side) == 0) return;
+            bool east = side == ModularVisualLayout.East;
+            int x = ModularMachineCatalog.ModuleX(state, moduleIndex), y = ModularMachineCatalog.ModuleY(state, moduleIndex);
+            int neighbour = ModularMachineCatalog.ModuleAt(state, x + (east ? 1 : 0), y + (east ? 0 : 1));
+            if (neighbour < 0) return;
+            bool solid = cell.complete && visual.cells[neighbour].complete;
+            float alpha = solid ? 1f : .36f;
+            var bed = east ? cell.joinEastBed : cell.joinNorthBed;
+            var joint = east ? cell.joinEast : cell.joinNorth;
+            var seam = east ? cell.seamEast : cell.seamNorth;
+            float px = east ? .5f : 0, py = east ? 0 : .5f;
+            bed.enabled = joint.enabled = seam.enabled = true;
+            bed.sprite = seam.sprite = Art("pixel");
+            bed.sortingOrder = order + 1;
+            bed.color = new Color(.30f, .39f, .37f, alpha);
+            ModularSpriteRect(bed, px, py, east ? .36f : .72f, east ? .72f : .36f);
+            // Reuse the authored steel plate as a textured coupling over the solid
+            // metal bed. It actually spans the shared boundary, not just a tint.
+            joint.sprite = Art("item_" + (int)ItemKind.SteelPlate);
+            joint.sortingOrder = order + 2;
+            joint.color = new Color(.76f, .83f, .78f, alpha);
+            ModularSpriteRect(joint, px, py, east ? .40f : .76f, east ? .76f : .40f);
+            seam.sortingOrder = order + 3;
+            seam.color = new Color(.23f, .32f, .30f, alpha * .62f);
+            ModularSpriteRect(seam, px, py, east ? .014f : .55f, east ? .55f : .014f);
+        }
+
+        static void ModularSpriteRect(SpriteRenderer renderer, float x, float y, float width, float height)
+        {
+            // Authored sprites use different PPUs/pivots; physical rails must span
+            // exact world dimensions instead of assuming each sprite is one unit.
+            if (renderer.sprite == null) return;
+            var bounds = renderer.sprite.bounds;
+            var scale = new Vector3(width / bounds.size.x, height / bounds.size.y, 1f);
+            renderer.transform.localScale = scale;
+            renderer.transform.localPosition = new Vector3(x - bounds.center.x * scale.x, y - bounds.center.y * scale.y, 0);
+        }
+
+        void DrawModularFrame(ModularMachineVisual visual, ModularVisualLayout.Bounds bounds, int order,
+            bool focused, bool damaged, bool formed, bool complete)
+        {
+            visual.frame.enabled = bounds.HasCells;
+            if (!bounds.HasCells)
+            {
+                visual.frameBounds = bounds;
+                return;
+            }
+            var before = visual.frameBounds;
+            if (!before.HasCells || before.Left != bounds.Left || before.Right != bounds.Right ||
+                before.Bottom != bounds.Bottom || before.Top != bounds.Top)
+            {
+                // World-space positions remain correct if removing an extreme cell
+                // also moves the pooled owner's origin. No per-frame array or mesh.
+                visual.frame.SetPosition(0, new Vector3(bounds.Left, bounds.Bottom, 0));
+                visual.frame.SetPosition(1, new Vector3(bounds.Right, bounds.Bottom, 0));
+                visual.frame.SetPosition(2, new Vector3(bounds.Right, bounds.Top, 0));
+                visual.frame.SetPosition(3, new Vector3(bounds.Left, bounds.Top, 0));
+                visual.frameBounds = bounds;
+            }
+            Color tint = damaged ? new Color(.92f, .54f, .36f, .68f) :
+                !formed ? new Color(.48f, .78f, .86f, .62f) :
+                !complete ? new Color(.58f, .80f, .86f, .58f) : new Color(.70f, .83f, .77f, .56f);
+            if (focused)
+            {
+                tint = Color.Lerp(tint, Amber, .5f);
+                tint.a = .88f;
+            }
+            visual.frame.sortingOrder = order;
+            visual.frame.startColor = visual.frame.endColor = tint;
+            float unitsPerPixel = WorldCamera == null ? 0f : 2f * WorldCamera.orthographicSize / Mathf.Max(1, WorldCamera.pixelHeight);
+            visual.frame.startWidth = visual.frame.endWidth = Mathf.Max(focused ? .026f : .016f, unitsPerPixel * (focused ? 1.5f : 1.1f));
         }
 
         bool CanModularPreview(WorldState world, PlayerState player, BuildKind kind, int x, int y, out string reason)

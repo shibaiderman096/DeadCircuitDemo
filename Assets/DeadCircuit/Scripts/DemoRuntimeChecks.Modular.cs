@@ -58,7 +58,7 @@ namespace DeadCircuit
             // OnDisable hides the view; keep its render roots active while sampling manually.
             typeof(DemoWorldView).GetMethod("SetViewEnabled", flags).Invoke(view, new object[] { true });
 
-            IEnumerator Sample(float x, float y, Key[] keys = null, bool left = false, bool right = false, int ticks = 1)
+            IEnumerator Sample(float x, float y, Key[] keys = null, bool left = false, bool right = false, int ticks = 1, float scrollY = 0f)
             {
                 for (int n = 0; n < ticks; n++)
                 {
@@ -67,6 +67,7 @@ namespace DeadCircuit
                     Vector3 point = camera.WorldToScreenPoint(new Vector3(x, y, 0));
                     InputSystem.QueueStateEvent(keyboard, new KeyboardState(keys ?? Array.Empty<Key>()));
                     InputSystem.QueueStateEvent(qaMouse, new MouseState { position = new Vector2(point.x, point.y),
+                        scroll = new Vector2(0, scrollY),
                         buttons = (ushort)((left ? 1 : 0) | (right ? 2 : 0)) });
                     yield return null;
                     clock.SetValue(bridge, .05f);
@@ -119,10 +120,77 @@ namespace DeadCircuit
                     bridge.Send(new PlayerCommand { action = "switch", arg = 1 });
                     Require(ModularMachineCatalog.HasWrench(player), "equipped active tool slot holds wrench");
                 }
-                bridge.SelectModularBuilding(kinds[machine]);
                 yield return Sample(x, y, ticks: 8);
                 refreshHud.Invoke(hud, null);
-                Require(Active("Modular Blueprint Palette"), "selecting large building opens its module palette");
+                Click("Open Blueprint Buildings");
+                refreshHud.Invoke(hud, null);
+                Require(Active("Blueprint Building Menu") && !Active("Modular Blueprint Palette"),
+                    "blueprint entry opens only level one building choices");
+                Require(!bridge.BuildSelection.HasValue, "level one does not activate a world placement brush");
+                RequireBlueprintPanelFits("Blueprint Building Menu");
+                RequireBlueprintEntryDoesNotOverlap();
+                if (machine == 0)
+                {
+                    float menuX = player.x, menuY = player.y;
+                    int plannedBeforeMenu = sim.State.buildings.Count;
+                    yield return Sample(x, y, new[] { Key.D }, left: true, ticks: 4);
+                    Require(player.x == menuX && player.y == menuY && sim.State.buildings.Count == plannedBeforeMenu,
+                        "level one consumes movement and world clicks while choosing a building");
+                    yield return Sample(x, y);
+                    yield return Capture("blueprint-building-menu");
+                    Screen.SetResolution(1280, 720, FullScreenMode.Windowed);
+                    yield return new WaitForSecondsRealtime(.4f);
+                    Canvas.ForceUpdateCanvases(); refreshHud.Invoke(hud, null);
+                    RequireBlueprintPanelFits("Blueprint Building Menu");
+                    RequireBlueprintEntryDoesNotOverlap();
+                    yield return Capture("blueprint-building-menu-1280");
+                    Screen.SetResolution(1440, 900, FullScreenMode.Windowed);
+                    yield return new WaitForSecondsRealtime(.4f);
+                }
+                Click("Blueprint Building " + kinds[machine]);
+                yield return Sample(x, y, ticks: 8);
+                refreshHud.Invoke(hud, null);
+                Require(Active("Modular Blueprint Palette") && !Active("Blueprint Building Menu"),
+                    "choosing building replaces level one with its module page");
+                RequireBlueprintPanelFits("Modular Blueprint Palette");
+                if (machine == 0)
+                {
+                    Click("Fold Modular Palette");
+                    refreshHud.Invoke(hud, null);
+                    Require(hud.BlueprintModulesMenuCollapsed && !Active("Modular Palette Body"),
+                        "second level folds its module body without changing the selected building");
+                    Click("Fold Modular Palette");
+                    refreshHud.Invoke(hud, null);
+                    Require(!hud.BlueprintModulesMenuCollapsed && Active("Modular Palette Body"), "module page expands again");
+                    Click("Blueprint Back To Buildings");
+                    refreshHud.Invoke(hud, null);
+                    Require(Active("Blueprint Building Menu") && !bridge.BuildSelection.HasValue && sim.State.buildings.Count == 0,
+                        "back returns to building choices without placing or deleting anything");
+                    Click("Blueprint Building " + kinds[machine]);
+                    yield return Sample(x, y, ticks: 8);
+                    refreshHud.Invoke(hud, null);
+                    Screen.SetResolution(1280, 720, FullScreenMode.Windowed);
+                    yield return new WaitForSecondsRealtime(.4f);
+                    Canvas.ForceUpdateCanvases(); refreshHud.Invoke(hud, null);
+                    RequireBlueprintPanelFits("Modular Blueprint Palette");
+                    RequireBlueprintBottomCardFits();
+                    yield return Capture("blueprint-module-menu-1280");
+                    var details = (UnityEngine.UI.ScrollRect)QaField(hud, "modularPaletteScroll");
+                    var detailCorners = new Vector3[4]; details.viewport.GetWorldCorners(detailCorners);
+                    Vector3 screenMiddle = (detailCorners[0] + detailCorners[2]) * .5f;
+                    Vector3 worldMiddle = view.WorldCamera.ScreenToWorldPoint(new Vector3(screenMiddle.x, screenMiddle.y, -view.WorldCamera.transform.position.z));
+                    float scrollBefore = details.verticalNormalizedPosition;
+                    yield return Sample(worldMiddle.x, worldMiddle.y, ticks: 3, scrollY: -120);
+                    Require(details.verticalNormalizedPosition < scrollBefore - .01f, "module detail viewport responds to actual scripted mouse wheel");
+                    details.verticalNormalizedPosition = 0;
+                    Canvas.ForceUpdateCanvases();
+                    Rect detailBounds = RelativeBounds(details.viewport, details.content);
+                    Require(Mathf.Abs(detailBounds.yMin - details.viewport.rect.yMin) < 1f, "scroll reaches the end of the module explanation without permanent cropping");
+                    yield return Capture("blueprint-module-details-1280");
+                    details.verticalNormalizedPosition = 1;
+                    Screen.SetResolution(1440, 900, FullScreenMode.Windowed);
+                    yield return new WaitForSecondsRealtime(.4f);
+                }
                 Require(FindButton("Modular Role Controller").interactable && !FindButton("Modular Role Casing").interactable,
                     "new drawing palette requests its controller first");
                 int[] before = (int[])player.items.Clone();
@@ -158,6 +226,8 @@ namespace DeadCircuit
                     {
                         var preview = GameObject.Find("Modular Blueprint Preview");
                         Require(preview != null, "selected port has a single-cell world preview");
+                        var previewFrame = preview.transform.Find("Modular Machine Group Frame").GetComponent<LineRenderer>();
+                        Require(!previewFrame.enabled, "cursor preview does not draw a second whole-building frame");
                         var socket = preview.transform.Find("Modular External Port Cell");
                         int outward = (cell.Item4 + (cell.Item1 == MachineModuleRole.Input || cell.Item1 == MachineModuleRole.Energy ? 2 : 0)) & 3;
                         Require(socket != null && Mathf.Abs(socket.position.x - mx - DemoCatalog.DirectionX(outward)) < .001f &&
@@ -177,6 +247,7 @@ namespace DeadCircuit
                 }
                 Require(ModularMachineCatalog.ModuleCount(building) == 10, "free layout permits extra casing beyond nine modules");
                 RequireModularVisualCells(building);
+                RequireBlueprintBottomCardFits();
                 Require(!DemoCatalog.Contains(building, x + 1, y - 1) && !sim.IsBlocked(x + 1, y - 1),
                     "hole inside module bounding box stays unreserved and traversable");
                 if (machine == 0)
@@ -187,6 +258,7 @@ namespace DeadCircuit
                     yield return Sample(x - 1, y + 2, left: true);
                     yield return Sample(x - 1, y + 2, ticks: 8);
                     Require(ModularMachineCatalog.ModuleAt(building, x - 1, y + 2) < 0, "erase mode removes just the clicked blueprint cell");
+                    RequireModularVisualCells(building);
                     bridge.SelectModularRole(MachineModuleRole.Casing);
                     yield return Sample(x - 1, y + 2, left: true);
                     yield return Sample(x - 1, y + 2, ticks: 8);
@@ -219,6 +291,29 @@ namespace DeadCircuit
             player.x = 34; player.y = 27;
             yield return Sample(34, 29, ticks: 10);
             yield return Capture("modular-complete-inspector");
+            float originalZoom = view.WorldCamera.orthographicSize;
+            foreach (float zoom in new[] { 16f, 6f })
+            {
+                view.WorldCamera.orthographicSize = zoom; renderView.Invoke(view, null);
+                yield return null;
+                RequireModularVisualCells(sim.State.buildings[1]);
+                if (zoom == 16f) yield return Capture("blueprint-building-frames-zoom16");
+            }
+            view.WorldCamera.orthographicSize = originalZoom; renderView.Invoke(view, null);
+            var existingBlueprint = sim.State.buildings[1];
+            refreshHud.Invoke(hud, null);
+            Click("Continue Modular Blueprint");
+            refreshHud.Invoke(hud, null);
+            Require(hud.BlueprintModulesMenuOpen && bridge.ModularBlueprintId == existingBlueprint.id,
+                "inspector continues an existing machine directly in its second-level module page");
+            Click("Blueprint Back To Buildings");
+            refreshHud.Invoke(hud, null);
+            Require(hud.BlueprintBuildingsMenuOpen && sim.State.buildings.Count == 3 &&
+                ModularMachineCatalog.IsComplete(existingBlueprint), "back preserves all existing paid blueprint modules");
+            Click("Close Blueprint Buildings");
+            refreshHud.Invoke(hud, null);
+            Require(!hud.BlueprintBuildingsMenuOpen && !hud.BlueprintModulesMenuOpen && !bridge.BuildSelection.HasValue,
+                "closing building menu leaves both levels and the world brush inactive");
             var snapshot = JsonUtility.FromJson<WorldState>(JsonUtility.ToJson(sim.State));
             var restored = new WorldSimulator(snapshot);
             Require(restored.State.buildings.Count == 3 && restored.State.buildings.TrueForAll(ModularMachineCatalog.IsComplete),
@@ -227,13 +322,59 @@ namespace DeadCircuit
             foreach (var device in physicalDevices) if (device.added) InputSystem.EnableDevice(device);
             SetQaField(bridge, "<IsRunning>k__BackingField", false);
             SetQaField(bridge, "<IsHost>k__BackingField", false);
-            Debug.Log("DEMO_MODULAR_QA_PASS held_wrench free_layout sparse_holes extra_casing individual_rotation erase per_cell_e three_machines json_restore");
+            Debug.Log("DEMO_MODULAR_QA_PASS held_wrench hierarchical_menu menu_back responsive_ui connected_modules group_frame free_layout sparse_holes extra_casing individual_rotation erase per_cell_e three_machines json_restore");
+        }
+
+        static void RequireBlueprintPanelFits(string name)
+        {
+            var panel = Rect(name);
+            var corners = new Vector3[4]; panel.GetWorldCorners(corners);
+            Require(corners.All(point => point.x >= -1 && point.y >= -1 && point.x <= Screen.width + 1 && point.y <= Screen.height + 1),
+                "blueprint panel stays within the active window: " + name);
+        }
+
+        static void RequireBlueprintEntryDoesNotOverlap()
+        {
+            var entry = Rect("Open Blueprint Buildings");
+            var canvas = entry.GetComponentInParent<Canvas>().GetComponent<RectTransform>();
+            Rect bounds = RelativeBounds(canvas, entry);
+            Require(!bounds.Overlaps(RelativeBounds(canvas, Rect("Vitals"))) &&
+                !bounds.Overlaps(RelativeBounds(canvas, Rect("Survival HUD"))),
+                "blueprint entry has its own space below existing survival cards");
+        }
+
+        static void RequireBlueprintBottomCardFits()
+        {
+            Canvas.ForceUpdateCanvases();
+            var scroll = Rect("Build Details Scroll View").GetComponent<UnityEngine.UI.ScrollRect>();
+            Require(scroll != null && scroll.content.rect.height <= scroll.viewport.rect.height + 1f,
+                "compact current-module cost and controls fit the bottom card without partial lines");
         }
 
         static void RequireModularVisualCells(BuildingState building)
         {
             var owner = GameObject.Find("Modular Machine " + building.id);
             Require(owner != null && owner.activeInHierarchy, "modular world render root is actually visible");
+            var view = GameBridge.Instance.GetComponent<DemoWorldView>();
+            var ownerVisual = ((IDictionary)QaField(view, "buildings"))[building.id];
+            var visual = QaField(ownerVisual, "modules");
+            var cells = (IList)QaField(visual, "cells");
+            var frame = (LineRenderer)QaField(visual, "frame");
+            Require(frame != null && frame.enabled && frame.loop && frame.positionCount == 4 && frame.gameObject.activeInHierarchy,
+                "machine uses one active closed group rectangle");
+            float worldPixel = 2f * view.WorldCamera.orthographicSize / Mathf.Max(1, view.WorldCamera.pixelHeight);
+            Require(frame.startWidth >= worldPixel && frame.startColor.a >= .5f, "group outline remains at least one visible pixel across camera zoom");
+            float minX = building.modularModules.Min(module => module.x) - .5f;
+            float maxX = building.modularModules.Max(module => module.x) + .5f;
+            float minY = building.modularModules.Min(module => module.y) - .5f;
+            float maxY = building.modularModules.Max(module => module.y) + .5f;
+            var points = Enumerable.Range(0, frame.positionCount).Select(index =>
+                frame.useWorldSpace ? frame.GetPosition(index) : frame.transform.TransformPoint(frame.GetPosition(index))).ToArray();
+            Require(points.Min(point => point.x) < minX && points.Max(point => point.x) > maxX &&
+                points.Min(point => point.y) < minY && points.Max(point => point.y) > maxY,
+                "group frame encloses all actual modules with external padding");
+            Require(owner.GetComponentsInChildren<LineRenderer>().Count(line => line.name == "Modular Machine Group Frame" && line.enabled) == 1,
+                "pooled machine does not duplicate its group outline");
             for (int module = 0; module < ModularMachineCatalog.ModuleCount(building); module++)
             {
                 var role = ModularMachineCatalog.Role(building, module);
@@ -244,6 +385,19 @@ namespace DeadCircuit
                     "module renderer occupies its actual freely selected cell");
                 var plate = cell.Find("Module Plate").GetComponent<SpriteRenderer>();
                 Require(plate.enabled && plate.sprite != null && plate.color.a > 0, "module has visible world geometry");
+                int mask = ModularVisualLayout.ConnectionMask(building, module);
+                Require((int)QaField(cells[module], "connectionMask") == mask, "rendered module tracks actual same-group neighbours");
+                foreach (var side in new[] { 1, 2 })
+                {
+                    var join = (SpriteRenderer)QaField(cells[module], side == 1 ? "joinEast" : "joinNorth");
+                    Require(join.enabled == ((mask & side) != 0), "textured connector visibility matches cardinal adjacency");
+                    if (!join.enabled) continue;
+                    Require(join.sprite != null && join.color.a > 0, "connected modules have a visible authored texture");
+                    float boundary = side == 1 ? cell.position.x + .5f : cell.position.y + .5f;
+                    Require(side == 1 ? join.bounds.min.x < boundary && join.bounds.max.x > boundary :
+                        join.bounds.min.y < boundary && join.bounds.max.y > boundary,
+                        "metal connector physically spans the shared module boundary");
+                }
             }
         }
     }

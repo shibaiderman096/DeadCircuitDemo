@@ -139,7 +139,7 @@ namespace DeadCircuit
             {
                 if (!initialized || !isActiveAndEnabled || canvas == null || !canvas.enabled) return false;
                 if (bridge == null || !bridge.IsRunning || Time.frameCount <= guardThroughFrame) return true;
-                if (bridge.LocalPlayer == null || bridge.LocalPlayer.hp <= 0f || AnyPanelOpen()) return true;
+                if (bridge.LocalPlayer == null || bridge.LocalPlayer.hp <= 0f || AnyPanelOpen() || BlueprintBuildingsMenuOpen) return true;
                 return TextInputFocused();
             }
         }
@@ -222,6 +222,7 @@ namespace DeadCircuit
                 if (keyboard.escapeKey.wasPressedThisFrame)
                 {
                     if (AnyPanelOpen()) SetPanel(null, false);
+                    else if (blueprintBuildingsOpen) CancelBuild();
                     else if (bridge.BuildSelection.HasValue) CancelBuild();
                     else SetPanel(session, true);
                 }
@@ -239,7 +240,7 @@ namespace DeadCircuit
                     else if (keyboard.jKey.wasPressedThisFrame) ToggleSurvival();
                 }
             }
-            if (running && !AnyPanelOpen() && bridge.BuildSelection.HasValue &&
+            if (running && !AnyPanelOpen() && (bridge.BuildSelection.HasValue || blueprintBuildingsOpen) &&
                 Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame) CancelBuild();
             if (running != wasRunning || (player != null && (player.hp <= 0f) != death.gameObject.activeSelf))
             {
@@ -509,6 +510,7 @@ namespace DeadCircuit
             if (!running) { RefreshMenu(); return; }
             if (world == null || player == null)
             {
+                CloseBlueprintMenus();
                 buildDetails.gameObject.SetActive(false);
                 machinePanel.gameObject.SetActive(false);
                 Set(feedback, "正在同步世界与角色，请稍候…");
@@ -631,7 +633,7 @@ namespace DeadCircuit
                 slots[i].label.color = valid && selected == kind ? Accent : unlocked && affordable ? Ink : Muted;
                 slots[i].button.interactable = unlocked && player.hp > 0f && !AnyPanelOpen();
             }
-            bool available = player.hp > 0f && !AnyPanelOpen();
+            bool available = player.hp > 0f && !AnyPanelOpen() && !BlueprintBuildingsMenuOpen;
             buildTray.gameObject.SetActive(available && (buildTrayOpen || selected >= 0));
             buildToggle.button.gameObject.SetActive(available);
             Set(buildToggle.label, buildTrayOpen || selected >= 0 ? "收起" : "建造 1–0");
@@ -646,6 +648,7 @@ namespace DeadCircuit
                 RefreshModularBuild(player, (BuildKind)selected);
                 return;
             }
+            buildHelp.gameObject.SetActive(true);
             int rotation = ((bridge.BuildRotation % 4) + 4) % 4;
             SetFlowText(buildTitle, DemoCatalog.BuildNames[selected] + "  ·  " + DemoCatalog.Width((BuildKind)selected, rotation) + "×" + DemoCatalog.Height((BuildKind)selected, rotation) +
                 " 格  ·  朝" + Directions[rotation] + "  [R 旋转]  ·  右键取消");
@@ -698,7 +701,7 @@ namespace DeadCircuit
         void RefreshInspector(WorldState world, PlayerState player)
         {
             var mouse = Mouse.current;
-            if (!inspectorEnabled || AnyPanelOpen() || player.hp <= 0f || bridge.BuildSelection.HasValue || mouse == null)
+            if (!inspectorEnabled || AnyPanelOpen() || BlueprintBuildingsMenuOpen || player.hp <= 0f || bridge.BuildSelection.HasValue || mouse == null)
             {
                 HideInspector();
                 return;
@@ -1052,9 +1055,13 @@ namespace DeadCircuit
             if (modular)
             {
                 bridge.SelectModularBuilding((BuildKind)index);
-                modularPaletteCollapsed = false;
+                ShowModularModulePage();
             }
-            else bridge.BuildSelection = (BuildKind)index;
+            else
+            {
+                blueprintBuildingsOpen = false;
+                bridge.BuildSelection = (BuildKind)index;
+            }
             guardThroughFrame = Time.frameCount + 1;
             RefreshAll();
         }
@@ -1124,6 +1131,7 @@ namespace DeadCircuit
 
         void ClosePanels(bool includeSettings = true)
         {
+            CloseBlueprintMenus();
             inventory.gameObject.SetActive(false);
             if (appearancePanel != null) appearancePanel.gameObject.SetActive(false);
             growth.gameObject.SetActive(false);
@@ -1167,6 +1175,7 @@ namespace DeadCircuit
 
         void CancelBuild()
         {
+            CloseBlueprintMenus();
             bridge.BuildSelection = null;
             bridge.ModularEraseMode = false;
             // Keep this right-click consumed after clearing the selection, including the bridge's next input read.

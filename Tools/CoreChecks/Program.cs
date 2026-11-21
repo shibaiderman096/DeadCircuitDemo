@@ -143,6 +143,7 @@ static partial class Checks
         filters = args.Where(arg=>arg!="--historical").ToArray();
         ModularMachineChecks();
         ModularAuthorityChecks();
+        ModularVisualChecks();
         AppearanceChecks();
         PlayerControlChecks();
         SiteBlueprintDefinitionChecks();

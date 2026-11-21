@@ -7,6 +7,12 @@ namespace DeadCircuit
     public sealed partial class DemoHud
     {
         TextMeshProUGUI modularMachineState;
+        static readonly BuildKind[] BlueprintBuildings = { BuildKind.LargeSteamFurnace, BuildKind.LargeAssemblyPlant, BuildKind.LargeOreProcessor };
+        RectTransform blueprintBuildingMenu;
+        readonly UiButton[] blueprintBuildingButtons = new UiButton[3];
+        UiButton openBlueprintBuildings;
+        UnityEngine.UI.ScrollRect blueprintBuildingScroll, modularPaletteScroll;
+        bool blueprintBuildingsOpen;
         RectTransform modularPalette, modularPaletteBody, modularContinueRow, modularUnloadControls;
         TextMeshProUGUI modularPaletteTitle, modularPaletteSummary, modularPaletteCost, modularPaletteIssue, modularPaletteHelp;
         readonly UiButton[] modularRoleButtons = new UiButton[8];
@@ -14,55 +20,148 @@ namespace DeadCircuit
         TextMeshProUGUI modularUnloadHint;
         bool modularPaletteCollapsed;
 
+        // Read-only QA hooks reflect the visible roots, including parent HUD visibility.
+        public bool BlueprintBuildingsMenuOpen => blueprintBuildingMenu != null && blueprintBuildingMenu.gameObject.activeInHierarchy;
+        public bool BlueprintModulesMenuOpen => modularPalette != null && modularPalette.gameObject.activeInHierarchy;
+        public bool BlueprintModulesMenuCollapsed => BlueprintModulesMenuOpen && modularPaletteCollapsed;
+        public BuildKind? BlueprintMenuBuilding => BlueprintModulesMenuOpen ? bridge.BuildSelection : null;
+
+        void MakeBlueprintBuildingMenu()
+        {
+            // Survival HUD occupies y=134..238 in every status; reserve a 14px gap below it.
+            openBlueprintBuildings = Button("Open Blueprint Buildings", game, "建筑蓝图", 18, 252, 202, 36, OpenBlueprintBuildings, true);
+            SetButtonArt(openBlueprintBuildings, "ui_create", 22);
+            openBlueprintBuildings.button.gameObject.SetActive(false);
+            blueprintBuildingMenu = Box("Blueprint Building Menu", game, 0, 184, 286, 454, HudSurface, true);
+            TopRight(blueprintBuildingMenu, 18, 184, 286, 454);
+            PanelRule(blueprintBuildingMenu, 286, 40);
+            SetHudArt(MakeHudArt("Blueprint Buildings Icon", blueprintBuildingMenu, 12, 11, 20), "ui_create");
+            Label("Blueprint Buildings Title", blueprintBuildingMenu, "建筑蓝图", 40, 8, 168, 26, 18, Accent, FontStyles.Bold);
+            Button("Close Blueprint Buildings", blueprintBuildingMenu, "关闭", 230, 8, 44, 26, CancelBuild);
+            Label("Blueprint Buildings Step", blueprintBuildingMenu, "01 选择建筑  >  02 选择模块", 12, 48, 262, 24, 14, Accent);
+            Label("Blueprint Buildings Hint", blueprintBuildingMenu, "选择一台建筑，再逐格规划内部模块。", 12, 74, 262, 24, 13, Muted);
+            RectTransform content = ScrollContent("Blueprint Buildings Scroll View", blueprintBuildingMenu, 8, 106, 270, 280, out blueprintBuildingScroll);
+            for (int i = 0; i < BlueprintBuildings.Length; i++)
+            {
+                BuildKind kind = BlueprintBuildings[i];
+                RectTransform row = FlowRow("Blueprint Building Row " + kind, content, 242, 82);
+                UiButton choice = Button("Blueprint Building " + kind, row, "", 0, 0, 242, 78, () => SelectBlueprintBuilding(kind));
+                choice.label.alignment = TextAlignmentOptions.MidlineLeft;
+                choice.label.fontSize = choice.label.fontSizeMax = 15;
+                Stretch(choice.label.rectTransform, 10, 4, 8, 4);
+                blueprintBuildingButtons[i] = choice;
+            }
+            Label("Blueprint Buildings Footer", blueprintBuildingMenu, "画蓝图免费 · 退出绘制后 E 逐格投料\n返回或关闭只停止绘图，已放蓝图保留。", 12, 394, 262, 48, 13, Muted);
+            AddPanelFrame(blueprintBuildingMenu);
+            blueprintBuildingMenu.gameObject.SetActive(false);
+        }
+
+        bool CanUseBlueprintMenus() => bridge != null && bridge.IsRunning && bridge.World != null && bridge.LocalPlayer != null &&
+            bridge.LocalPlayer.connected && bridge.LocalPlayer.hp > 0f && ModularMachineCatalog.HasWrench(bridge.LocalPlayer);
+
+        void GuardBlueprintUi()
+        {
+            // A page can disappear on pointer-up; consume the bridge's next input read too.
+            guardThroughFrame = Time.frameCount + 1;
+            if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
+        }
+
+        void OpenBlueprintBuildings()
+        {
+            if (!CanUseBlueprintMenus() || AnyPanelOpen()) return;
+            bridge.CancelPlayerControl();
+            bridge.BuildSelection = null;
+            bridge.ModularEraseMode = false;
+            blueprintBuildingsOpen = true;
+            buildTrayOpen = false;
+            modularPaletteCollapsed = false;
+            toolsTray.gameObject.SetActive(false);
+            Set(toolsToggle.label, "菜单");
+            HideInspector();
+            ResetScroll(blueprintBuildingScroll);
+            GuardBlueprintUi();
+            RefreshAll();
+        }
+
+        void SelectBlueprintBuilding(BuildKind kind)
+        {
+            if (!BlueprintBuildingsMenuOpen || !CanUseBlueprintMenus() || !TechCatalog.IsUnlocked(bridge.World, kind)) return;
+            SelectBuild((int)kind);
+        }
+
+        void ShowModularModulePage()
+        {
+            blueprintBuildingsOpen = false;
+            modularPaletteCollapsed = false;
+            ResetScroll(modularPaletteScroll);
+            GuardBlueprintUi();
+        }
+
+        void CloseBlueprintMenus()
+        {
+            blueprintBuildingsOpen = false;
+            modularPaletteCollapsed = false;
+            if (blueprintBuildingMenu != null) blueprintBuildingMenu.gameObject.SetActive(false);
+            if (modularPalette != null) modularPalette.gameObject.SetActive(false);
+            if (openBlueprintBuildings != null) openBlueprintBuildings.button.gameObject.SetActive(false);
+        }
+
         void MakeModularPalette()
         {
+            MakeBlueprintBuildingMenu();
             // Shares the inspector's side lane; never covers the bottom construction card.
-            modularPalette = Box("Modular Blueprint Palette", game, 0, 184, 286, 430, HudSurface, true);
-            TopRight(modularPalette, 18, 184, 286, 430);
+            modularPalette = Box("Modular Blueprint Palette", game, 0, 184, 286, 454, HudSurface, true);
+            TopRight(modularPalette, 18, 184, 286, 454);
             PanelRule(modularPalette, 286, 40);
-            Label("Modular Palette Heading", modularPalette, "模块蓝图", 12, 8, 164, 26, 17, Accent, FontStyles.Bold);
+            Label("Modular Palette Heading", modularPalette, "02 选择模块", 12, 8, 164, 26, 17, Accent, FontStyles.Bold);
             modularPaletteFold = Button("Fold Modular Palette", modularPalette, "收起", 178, 8, 44, 26, () =>
             {
                 modularPaletteCollapsed = !modularPaletteCollapsed;
+                GuardBlueprintUi();
                 RefreshAll();
             });
             Button("Exit Modular Blueprint", modularPalette, "退出", 230, 8, 44, 26, CancelBuild);
+            modularPaletteTitle = Label("Modular Palette Building", modularPalette, "", 12, 44, 262, 34, 13, Accent);
+            UiButton back = Button("Blueprint Back To Buildings", modularPalette, "返回建筑", 8, 82, 270, 30, OpenBlueprintBuildings);
+            SetButtonArt(back, "ui_back", 18);
             modularPaletteBody = NewRect("Modular Palette Body", modularPalette);
-            Place(modularPaletteBody, 0, 40, 286, 390);
-            RectTransform content = ScrollContent("Modular Palette Scroll View", modularPaletteBody, 8, 4, 270, 292, out _);
-            modularPaletteTitle = FlowLabel("Modular Palette Building", content, "", 246, 34, 15, Accent);
+            Place(modularPaletteBody, 0, 120, 286, 334);
+            RectTransform content = ScrollContent("Modular Palette Scroll View", modularPaletteBody, 8, 0, 270, 216, out modularPaletteScroll);
             for (int row = 0; row < 4; row++)
             {
-                RectTransform pair = FlowRow("Modular Role Row " + row, content, 246, 48);
+                RectTransform pair = FlowRow("Modular Role Row " + row, content, 242, 44);
                 for (int column = 0; column < 2; column++)
                 {
                     int index = row * 2 + column;
                     MachineModuleRole role = ModularMachinePresentation.PaletteRoles[index];
-                    modularRoleButtons[index] = Button("Modular Role " + role, pair, "", column * 124, 0, 120, 44, () => SelectModularPaletteRole(role));
+                    modularRoleButtons[index] = Button("Modular Role " + role, pair, "", column * 122, 0, 118, 40, () => SelectModularPaletteRole(role));
+                    modularRoleButtons[index].label.fontSize = modularRoleButtons[index].label.fontSizeMax = 14;
                 }
             }
-            modularPaletteSummary = FlowLabel("Modular Palette Requirements", content, "", 246, 54, 13, Ink);
+            modularPaletteSummary = FlowLabel("Modular Palette Requirements", content, "", 246, 40, 13, Ink);
             modularPaletteCost = FlowLabel("Modular Selected Role Cost", content, "", 246, 64, 13, Ink);
-            modularPaletteIssue = FlowLabel("Modular Formation Issue", content, "", 246, 64, 13, Amber);
+            modularPaletteIssue = Label("Modular Formation Issue", modularPaletteBody, "", 12, 220, 262, 38, 12, Amber);
             modularPaletteHelp = FlowLabel("Modular Drawing Help", content, "", 246, 88, 12, Muted);
-            modularNewBlueprint = Button("New Modular Blueprint", modularPaletteBody, "新蓝图", 8, 304, 130, 32, () =>
+            modularNewBlueprint = Button("New Modular Blueprint", modularPaletteBody, "新蓝图", 8, 260, 130, 30, () =>
             {
                 if (!CanUseModularPalette()) return;
                 bridge.SelectModularBuilding(bridge.BuildSelection.Value);
-                modularPaletteCollapsed = false;
+                ShowModularModulePage();
                 RefreshAll();
             });
-            modularErase = Button("Toggle Modular Erase", modularPaletteBody, "擦图：关", 146, 304, 132, 32, () =>
+            modularErase = Button("Toggle Modular Erase", modularPaletteBody, "擦图：关", 146, 260, 132, 30, () =>
             {
                 if (!CanUseModularPalette() || !ModularMachinePresentation.CanErase(bridge.World, bridge.ActiveModularBlueprint)) return;
                 bridge.ModularEraseMode = !bridge.ModularEraseMode;
+                GuardBlueprintUi();
                 RefreshAll();
             });
-            Button("Finish Modular Drawing", modularPaletteBody, "退出绘制 · E 逐格投料", 8, 346, 270, 32, CancelBuild);
+            Button("Finish Modular Drawing", modularPaletteBody, "退出绘制 · E 逐格投料", 8, 296, 270, 30, CancelBuild);
+            AddPanelFrame(modularPalette);
             modularPalette.gameObject.SetActive(false);
         }
 
-        bool CanUseModularPalette() => bridge.IsRunning && bridge.LocalPlayer != null && bridge.LocalPlayer.connected && bridge.LocalPlayer.hp > 0f &&
+        bool CanUseModularPalette() => CanUseBlueprintMenus() &&
             !AnyPanelOpen() && bridge.BuildSelection.HasValue && ModularMachineCatalog.IsModular(bridge.BuildSelection.Value) &&
             ModularMachineCatalog.HasWrench(bridge.LocalPlayer);
 
@@ -75,35 +174,65 @@ namespace DeadCircuit
             if (active != null && role != MachineModuleRole.Casing && ModularMachinePresentation.RoleCount(active, role) > 0) return;
             bridge.SelectModularRole(role);
             bridge.ModularEraseMode = false;
+            GuardBlueprintUi();
             RefreshAll();
         }
 
         void RefreshModularPalette(WorldState world, PlayerState player)
         {
             bool selected = bridge.BuildSelection.HasValue && ModularMachineCatalog.IsModular(bridge.BuildSelection.Value);
-            if (selected && !ModularMachineCatalog.HasWrench(player))
+            bool wasOpen = blueprintBuildingsOpen || modularPalette.gameObject.activeSelf;
+            bool eligible = CanUseBlueprintMenus();
+            if (!eligible)
             {
-                bridge.BuildSelection = null;
+                if (selected) bridge.BuildSelection = null;
                 bridge.ModularEraseMode = false;
-                selected = false;
-                Notify("绘制已停止：请装备耐久正常的扳手，并切到工具槽后继续。已画蓝图保留。", true);
+                CloseBlueprintMenus();
+                if ((selected || wasOpen) && bridge.IsRunning && player.hp > 0f && !ModularMachineCatalog.HasWrench(player))
+                    Notify("绘制已停止：请手持耐久正常的扳手。已画蓝图保留。", true);
+                return;
             }
-            bool show = selected && bridge.IsRunning && player.hp > 0f && !AnyPanelOpen();
+            if (bridge.BuildSelection.HasValue) blueprintBuildingsOpen = false;
+            bool unobstructed = !AnyPanelOpen();
+            bool showBuildings = blueprintBuildingsOpen && unobstructed;
+            blueprintBuildingMenu.gameObject.SetActive(showBuildings);
+            openBlueprintBuildings.button.gameObject.SetActive(unobstructed && !showBuildings && !selected);
+            openBlueprintBuildings.button.interactable = eligible;
+            if (showBuildings)
+            {
+                // Browsing is presentation only: no selection, command or blueprint is created.
+                bridge.BuildSelection = null;
+                selected = false;
+                for (int i = 0; i < BlueprintBuildings.Length; i++)
+                {
+                    BuildKind option = BlueprintBuildings[i];
+                    bool unlocked = TechCatalog.IsUnlocked(world, option);
+                    string requirement = world.era < TechCatalog.RequiredEra(option) ?
+                        "需" + TechCatalog.EraName(TechCatalog.RequiredEra(option)) : PrimitiveCatalog.BuildRequirement(world, option);
+                    if (!unlocked && string.IsNullOrEmpty(requirement)) requirement = SteamCatalog.BuildRequirement(world, option);
+                    Set(blueprintBuildingButtons[i].label, DemoCatalog.BuildName(option) +
+                        "\n<size=12>" + (unlocked ? "已解锁" : "未解锁") + " · " + EnergyName(TechCatalog.EnergyTier(option)) +
+                        "\n" + (unlocked ? "选择模块  >" : requirement) + "</size>");
+                    blueprintBuildingButtons[i].button.interactable = unlocked;
+                    blueprintBuildingButtons[i].label.color = unlocked ? Ink : Muted;
+                }
+            }
+            bool show = selected && unobstructed && !showBuildings;
             modularPalette.gameObject.SetActive(show);
             if (!show) return;
-            TopRight(modularPalette, 18, 184, 286, modularPaletteCollapsed ? 40 : 430);
+            TopRight(modularPalette, 18, 184, 286, modularPaletteCollapsed ? 120 : 454);
             modularPaletteBody.gameObject.SetActive(!modularPaletteCollapsed);
             Set(modularPaletteFold.label, modularPaletteCollapsed ? "展开" : "收起");
             BuildKind kind = bridge.BuildSelection.Value;
             BuildingState active = bridge.ActiveModularBlueprint;
             if (active != null && bridge.ModularRoleSelection == MachineModuleRole.Controller && !bridge.ModularEraseMode)
                 bridge.SelectModularRole(MachineModuleRole.Casing);
-            SetFlowText(modularPaletteTitle, DemoCatalog.BuildName(kind) + (active == null ? " · 新蓝图" : " · #" + active.id));
+            Set(modularPaletteTitle, "建筑蓝图 > " + DemoCatalog.BuildName(kind) + " > 模块");
             int count = active == null ? 0 : ModularMachineCatalog.ModuleCount(active);
             bool editable = active == null || ModularMachinePresentation.CanErase(world, active);
-            SetFlowText(modularPaletteSummary, "自由逐格布局 · 已规划 " + count + " / 32 格" +
-                (active == null ? "\n先放 1 个控制器，等待房主确认后再选其他模块。" : "\n当前跨度 " + DemoCatalog.Width(active) + "×" + DemoCatalog.Height(active) + " / 12×12") +
-                "\n七种职责各 1，机壳至少 2；可加机壳，四邻连通成形。");
+            SetFlowText(modularPaletteSummary, (active == null ? "新蓝图 · 先放控制器，等待房主确认。" :
+                "蓝图 #" + active.id + " · " + count + " / 32 格 · " + DemoCatalog.Width(active) + "×" + DemoCatalog.Height(active)) +
+                "\n七种职责各 1，机壳至少 2；四邻连通。");
             for (int i = 0; i < modularRoleButtons.Length; i++)
             {
                 var role = ModularMachinePresentation.PaletteRoles[i];
@@ -111,22 +240,25 @@ namespace DeadCircuit
                 bool available = editable && (active == null ? role == MachineModuleRole.Controller :
                     role != MachineModuleRole.Controller && count < ModularMachineCatalog.MaxModules && (role == MachineModuleRole.Casing || placed == 0));
                 bool chosen = !bridge.ModularEraseMode && bridge.ModularRoleSelection == role;
-                Set(modularRoleButtons[i].label, (chosen ? "● " : "") + ModularMachinePresentation.RoleTitle(kind, role) +
-                    "\n需 " + (role == MachineModuleRole.Casing ? "≥2" : "1") + " · 已放 " + placed);
+                string roleTitle = role == MachineModuleRole.Process && kind == BuildKind.LargeSteamFurnace ? "炉腔" : ModularMachinePresentation.RoleTitle(kind, role);
+                Set(modularRoleButtons[i].label, (chosen ? "● " : "") + roleTitle + " " + placed + (role == MachineModuleRole.Casing ? "/2+" : "/1"));
                 modularRoleButtons[i].button.interactable = available;
                 Tint(modularRoleButtons[i], chosen ? Selected : Raised);
                 modularRoleButtons[i].label.color = chosen ? Accent : available ? Ink : Muted;
             }
             SetFlowText(modularPaletteCost, bridge.ModularEraseMode ? "擦图模式：左键擦除当前格模块。已付建材按服务器规则返还。" :
                 "选中：" + ModularMachinePresentation.RoleTitle(kind, bridge.ModularRoleSelection) + " · " + ModularOrientation(bridge.ModularRoleSelection, bridge.BuildRotation) +
-                "\n本格建设费：" + MaterialText(ModularMachineCatalog.ModuleCost(kind, bridge.ModularRoleSelection)) + "\n画蓝图免费；退出后逐格分批投料。");
+                "\n本格建设费：" + MaterialText(ModularMachineCatalog.ModuleCost(kind, bridge.ModularRoleSelection)) + "\n画蓝图免费；退出后逐格分批投料。" +
+                (active == null ? "" : "\n已规划总量（不预付）：" + MaterialText(ModularMachinePresentation.PlannedCost(active))));
             string issue = active == null ? "尚未建立蓝图：只预览一个控制器格。" : ModularMachineCatalog.FormationIssue(active);
-            SetFlowText(modularPaletteIssue, (!editable ? "绘制锁定：先清空库存、在途与生产进度。\n" : "") +
-                "形成检查：" + (string.IsNullOrEmpty(issue) ? "结构已连通，职责齐全" : issue) +
-                (active == null ? "" : "\n建设：" + ModularMachinePresentation.CompletedModules(active) + " / " + count + " 格已付清"));
+            Set(modularPaletteIssue, !editable ? "绘制锁定：先清空库存、在途与生产进度。" :
+                active == null ? "先放控制器 · 画蓝图不预付建材" :
+                "形成检查：" + (string.IsNullOrEmpty(issue) ? "职责齐全，结构已连通" : issue) +
+                "\n已规划 " + count + " / 32 格 · 已建 " + ModularMachinePresentation.CompletedModules(active) + " 格");
             SetFlowText(modularPaletteHelp, "左键逐格画当前模块，R 只旋转当前模块接口。先画完形状，再退出用 E 对准各格投料。" +
                 "\n输入 / 能源箭头朝内接收，输出 / 排气箭头朝外；外侧接口格不可被本机占用。" +
-                "\n擦图需库存、在途、加工进度均为空；多人可继续画同一机器，房主重检。");
+                "\n擦图需库存、在途、加工进度均为空；多人可继续画同一机器，房主重检。" +
+                (active == null ? "" : "\n形成检查：" + (string.IsNullOrEmpty(issue) ? "通过" : issue)));
             bool eraseAllowed = active != null && ModularMachinePresentation.CanErase(world, active);
             modularErase.button.interactable = eraseAllowed;
             if (!eraseAllowed) bridge.ModularEraseMode = false;
@@ -151,14 +283,11 @@ namespace DeadCircuit
 
         void RefreshModularBuild(PlayerState player, BuildKind kind)
         {
-            BuildingState active = bridge.ActiveModularBlueprint;
             SetFlowText(buildTitle, DemoCatalog.BuildName(kind) + " · " + (bridge.ModularEraseMode ? "擦除单格" :
                 ModularMachinePresentation.RoleTitle(kind, bridge.ModularRoleSelection) + " · " + ModularOrientation(bridge.ModularRoleSelection, bridge.BuildRotation)) + " · R 旋转本模块");
             SetFlowText(buildCost, "本格建设费：" + MaterialText(ModularMachineCatalog.ModuleCost(kind, bridge.ModularRoleSelection)) +
-                (active == null ? "" : "\n已规划总量（不预付）：" + MaterialText(ModularMachinePresentation.PlannedCost(active))));
-            bool wrench = ModularMachineCatalog.HasWrench(player);
-            SetFlowText(buildHelp, (wrench ? "手持扳手就绪" : "需装备扳手并激活工具槽（耐久 > 0）") +
-                " · 蓝图免费 / 分批投料\n左键仅画当前一格，不预铺整机；右侧选模块，右键 / Esc 退出后 E 逐格施工。＋待建 · ■已建 · ×无效。");
+                " · 左键画图 · 右键退出后 E 投料");
+            buildHelp.gameObject.SetActive(false);
         }
 
         void ContinueModularBlueprint()
@@ -170,7 +299,7 @@ namespace DeadCircuit
             if (!ModularMachinePresentation.CanErase(bridge.World, building))
             { Notify("继续画图前须清空整机库存、在途物品和生产进度。", true); return; }
             bridge.EditModularBlueprint(building);
-            modularPaletteCollapsed = false;
+            ShowModularModulePage();
             guardThroughFrame = Time.frameCount + 1;
             HideInspector();
             RefreshAll();
