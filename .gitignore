@@ -1,4 +1,6 @@
 /[Ll]ibrary/
+/.forge/
+/.tmp-*/
 /[Tt]emp/
 /[Oo]bj/
 /[Bb]uilds/
