@@ -38,7 +38,7 @@ python Tools/generate_art.py
 
 ## Project notes
 
-- [Player Wiki](Docs/WIKI.md)
+- [Illustrated Player Wiki (offline HTML)](Docs/WIKI.html)
 - [Reference document index](Docs/README.md)
 - [Development outline](Docs/DEVELOPMENT_OUTLINE.md)
 - [Weapons and tools research](Docs/WEAPONS_TOOLS.md)
@@ -88,7 +88,7 @@ dotnet run --project Tools/CoreChecks/CoreChecks.csproj --configuration Release
 
 ### 项目参考文档
 
-玩家操作与当前玩法见[持续维护的玩家 Wiki](Docs/WIKI.md)。项目大纲、系统设计和验证记录统一放在 [Docs 文档目录](Docs/README.md)，包括[开发总纲](Docs/DEVELOPMENT_OUTLINE.md)和[武器与工具分支](Docs/WEAPONS_TOOLS.md)。文档中的源码、工具路径和运行命令均以项目根目录为基准。
+玩家操作与当前玩法见[HTML图文游戏百科](Docs/WIKI.html)，支持离线阅读、分类导航、图鉴筛选与搜索。[Markdown内容源稿](Docs/WIKI.md)用于持续维护，修改后运行 `python Tools/generate_wiki.py` 同步生成。项目大纲、系统设计和验证记录统一放在 [Docs 文档目录](Docs/README.md)，包括[开发总纲](Docs/DEVELOPMENT_OUTLINE.md)和[武器与工具分支](Docs/WEAPONS_TOOLS.md)。文档中的源码、工具路径和运行命令均以项目根目录为基准。
 
 ### 许可证
 
