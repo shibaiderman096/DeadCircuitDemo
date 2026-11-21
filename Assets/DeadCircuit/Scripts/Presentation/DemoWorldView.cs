@@ -423,7 +423,7 @@ namespace DeadCircuit
             DrawSites(world);
             DrawNodes(world, local);
             DrawBuildings(world);
-            DrawNaturalEntranceGuides(world);
+            DrawNaturalEntranceGuides();
             DrawActors(world, local);
             DrawExpansion(world, local);
             Sweep(nodes); Sweep(buildings); Sweep(zombies);
@@ -738,6 +738,7 @@ namespace DeadCircuit
         void ConfigureMachine(SpriteRenderer renderer, BuildingState b)
         {
             int rotation = ((b.rotation % 4) + 4) % 4;
+            if (b.kind == BuildKind.Door) rotation = DoorVisualRotation(b, rotation);
             float w = DemoCatalog.Width(b), h = DemoCatalog.Height(b);
             Sprite svg = b.kind == BuildKind.Wall ? ConnectedWall(b.x, b.y) :
                 b.kind == BuildKind.Door && b.setting == 1 ? DemoArt.Get("door_open") : DemoArt.Get("machine_" + (int)b.kind);

@@ -24,7 +24,8 @@ namespace DeadCircuit
             SetQaField(bridge, "profileId", "exterior-qa");
             SetQaField(bridge, "<IsHost>k__BackingField", false);
             SetQaField(bridge, "<IsRunning>k__BackingField", true);
-            int cases = 0;
+            int cases = 0, internalDoors = 0, internalDoorSamples = 0;
+            float[] doorwaySamples = { -1, -.49f, 0, .49f, 1 };
             foreach (var kind in new[] { SiteKind.HuntingCabin, SiteKind.Apartment })
             for (int rotation = 0; rotation < 4; rotation++)
             {
@@ -39,59 +40,144 @@ namespace DeadCircuit
                 var shell = (MeshRenderer)QaField(exterior, "renderer");
                 var root = (Transform)QaField(exterior, "root");
                 var layout = (NaturalBuildingLayout)QaField(exterior, "layout");
-                Require(root.gameObject.activeSelf, "outside retains the opaque building shell");
                 var shellVertices = ((Mesh)QaField(exterior, "mesh")).vertices;
                 foreach (var opening in layout.EntryOpenings)
                 for (int i = 0; i < shellVertices.Length; i += 4)
                     Require(shellVertices[i].x >= opening.maxX - .0001f || shellVertices[i + 2].x <= opening.minX + .0001f ||
                         shellVertices[i].y >= opening.maxY - .0001f || shellVertices[i + 2].y <= opening.minY + .0001f,
                         "opaque roof/facade fragments cannot cover the ground-level entry lane");
-                int entries = 0;
-                foreach (var door in world.buildings)
-                {
-                    if (!layout.Entrance(door.x - site.x, door.y - site.y)) continue;
-                    entries++;
-                    var body = EntranceDoorBody(view, door.id);
-                    Require(body.enabled && body.sortingOrder > shell.sortingOrder,
-                        "real entrance door stays above roof/facade: " + kind + "/" + rotation);
-                }
-                Require(entries > 0, "fixture has an exterior entry");
                 var guides = (MeshRenderer)QaField(exterior, "entranceRenderer");
                 var mesh = (Mesh)QaField(exterior, "entrances");
-                Require(guides.enabled && guides.sortingOrder > shell.sortingOrder && mesh.vertexCount >= entries * 16,
-                    "door frames and two approach tiles stay above the shell projection");
-                yield return CaptureEntrance(view, "entrance-" + kind + "-r" + rotation + "-closed");
-                int clearVertices = mesh.vertexCount;
-                Require(layout.EntranceOutward(site.doorX - site.x, site.doorY - site.y, out int dx, out int dy), "primary entry has an approach");
-                var obstruction = new NodeState { id = world.nextId++, kind = NodeKind.Tree,
-                    x = site.doorX + dx, y = site.doorY + dy, hp = 35, stock = 10 };
-                world.nodes.Add(obstruction);
-                yield return RenderEntranceFixture(view, site);
-                Require(mesh.vertexCount < clearVertices, "paved guide stops before a real obstacle");
-                world.nodes.Remove(obstruction);
-                yield return RenderEntranceFixture(view, site);
-                Require(mesh.vertexCount == clearVertices, "guide returns after obstacle removal");
+                void RequireDoorOrientation(BuildingState door, bool verticalWall)
+                {
+                    var body = EntranceDoorBody(view, door.id);
+                    float expected = ((door.rotation & 2) + (verticalWall ? 1 : 0)) * 90f;
+                    Require(Mathf.Abs(Mathf.DeltaAngle(body.transform.localEulerAngles.z, expected)) < .01f,
+                        "doorAlignment: door follows its wall in both states: " + kind + "/" + rotation +
+                        " door=" + door.x + "," + door.y + " setting=" + door.setting);
+                    Require(body.transform.localPosition == Vector3.zero && body.transform.localScale == Vector3.one,
+                        "doorAlignment: rotated door remains centred at one-cell scale");
+                    var preview = (SpriteRenderer)QaField(view, "ghost");
+                    typeof(DemoWorldView).GetMethod("ConfigureMachine", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(view, new object[] { preview, door });
+                    Require(Mathf.Abs(Mathf.DeltaAngle(preview.transform.localEulerAngles.z, expected)) < .01f &&
+                        preview.transform.localPosition == Vector3.zero && preview.transform.localScale == Vector3.one,
+                        "doorAlignment: build preview follows the same wall axis");
+                }
+                void RequireExteriorDetails()
+                {
+                    Require(root.gameObject.activeSelf, "outside retains the opaque building shell: " + kind + "/" + rotation);
+                    int entries = 0;
+                    foreach (var door in world.buildings)
+                    {
+                        if (!layout.Entrance(door.x - site.x, door.y - site.y)) continue;
+                        entries++;
+                        var body = EntranceDoorBody(view, door.id);
+                        Require(body.enabled && body.gameObject.activeInHierarchy && body.sortingOrder > shell.sortingOrder,
+                            "real entrance door stays above roof/facade: " + kind + "/" + rotation);
+                        Require(layout.EntranceOutward(door.x - site.x, door.y - site.y, out int dx, out _),
+                            "doorAlignment: exterior entry has a traversal axis");
+                        RequireDoorOrientation(door, dx != 0);
+                    }
+                    Require(entries > 0, "fixture has an exterior entry");
+                    Require(guides.enabled && guides.sortingOrder > shell.sortingOrder && mesh.vertexCount == entries * 8,
+                        "noApproachTiles: each exterior entry has only threshold and frame quads: " + kind + "/" + rotation);
+                    var vertices = mesh.vertices;
+                    for (int i = 0; i < vertices.Length; i += 4)
+                    {
+                        bool atEntry = false;
+                        foreach (var door in world.buildings)
+                        {
+                            int x = door.x - site.x, y = door.y - site.y;
+                            if (!layout.Entrance(x, y)) continue;
+                            bool withinFrame = true;
+                            for (int j = 0; j < 4; j++)
+                                withinFrame &= Mathf.Abs(vertices[i + j].x - x) <= .6251f &&
+                                    Mathf.Abs(vertices[i + j].y - y) <= .6251f;
+                            if (withinFrame) { atEntry = true; break; }
+                        }
+                        Require(atEntry, "noApproachTiles: quad stays within an exterior door centre +/- .625: " +
+                            kind + "/" + rotation + " quad=" + i / 4);
+                    }
+                }
+                RequireExteriorDetails();
+                if (rotation == 0)
+                    yield return CaptureEntrance(view, "entrance-" + kind + "-r0-closed");
 
                 var primary = world.buildings.Find(b => b.x == site.doorX && b.y == site.doorY);
                 Require(primary != null, "primary door is a real building");
-                primary.setting = 1; // Explicit in-memory render fixture, not a player command.
-                yield return RenderEntranceFixture(view, site);
-                Require(EntranceDoorBody(view, primary.id).sprite.name == "door_open",
-                    "entry overlay preserves actual open-door art");
-                if (rotation == 0 || rotation == 2)
-                    yield return CaptureEntrance(view, "entrance-" + kind + "-r" + rotation + "-open");
+                float outsideX = player.x, outsideY = player.y;
+                for (int setting = 0; setting <= 1; setting++)
+                {
+                    primary.setting = setting; // Explicit in-memory render fixture, not a player command.
+                    yield return RenderEntranceFixture(view, site);
+                    RequireExteriorDetails();
+                    Require(EntranceDoorBody(view, primary.id).sprite.name ==
+                        (setting == 1 ? "door_open" : "machine_" + (int)BuildKind.Door),
+                        "entry overlay preserves actual door art: setting=" + setting);
+                    player.x = site.doorX; player.y = site.doorY;
+                    yield return RenderEntranceFixture(view, site);
+                    Require(!root.gameObject.activeSelf, "stepping into entry reveals the interior: setting=" + setting);
+                    player.x = outsideX; player.y = outsideY;
+                    yield return RenderEntranceFixture(view, site);
+                    RequireExteriorDetails();
+                }
 
-                player.x = site.doorX; player.y = site.doorY;
-                yield return RenderEntranceFixture(view, site);
-                Require(!root.gameObject.activeSelf, "stepping into entry reveals the interior");
-                player.x = site.x + site.width * .5f; player.y = site.y - 4;
-                yield return RenderEntranceFixture(view, site);
-                Require(root.gameObject.activeSelf, "leaving closes the exterior again");
+                // Read the existing room mask independently of Contains, whose
+                // doorway rounding and cutaway behaviour are under test.
+                var interior = (bool[])QaField(layout, "interior");
+                bool InteriorAt(int x, int y) => x >= 0 && y >= 0 && x < site.width && y < site.height &&
+                    interior[x + y * site.width];
+                int caseInternalDoors = 0;
+                for (int y = 0; y < site.height; y++) for (int x = 0; x < site.width; x++)
+                {
+                    if (layout.Cell(x, y) != '+' || layout.Entrance(x, y) || !layout.Covers(x, y)) continue;
+                    var door = world.buildings.Find(b => b.kind == BuildKind.Door && b.x == site.x + x && b.y == site.y + y);
+                    Require(door != null, "internalDoors: covered internal doorway has a real door");
+                    bool horizontal = InteriorAt(x - 1, y) && InteriorAt(x + 1, y);
+                    bool vertical = InteriorAt(x, y - 1) && InteriorAt(x, y + 1);
+                    Require(horizontal != vertical, "internalDoors: doorway has two InteriorAt neighbours on one traversal axis: " +
+                        kind + "/" + rotation + " door=" + x + "," + y);
+                    int dx = horizontal ? 1 : 0, dy = vertical ? 1 : 0;
+                    for (int side = -1; side <= 1; side += 2)
+                    {
+                        int gx = door.x + dx * side, gy = door.y + dy * side;
+                        Require(!world.nodes.Exists(n => n.x == gx && n.y == gy) &&
+                            !world.buildings.Exists(b => b.x == gx && b.y == gy),
+                            "internalDoors: adjacent InteriorAt sample is enterable");
+                    }
+                    for (int setting = 0; setting <= 1; setting++)
+                    {
+                        door.setting = setting; // Never tick the simulator or start a host.
+                        foreach (float offset in doorwaySamples)
+                        {
+                            player.x = door.x + dx * offset; player.y = door.y + dy * offset;
+                            yield return RenderEntranceFixture(view, site);
+                            Require(layout.Contains(player.x - site.x, player.y - site.y) && !root.gameObject.activeSelf,
+                                "internalDoors: room/door samples retain the same cutaway: " + kind + "/" + rotation +
+                                " door=" + x + "," + y + " setting=" + setting + " offset=" + offset);
+                            RequireDoorOrientation(door, horizontal);
+                            internalDoorSamples++;
+                            if (kind == SiteKind.Apartment && rotation == 0 && caseInternalDoors == 0 && setting == 1 && offset == 0)
+                                yield return CaptureEntrance(view, "entrance-Apartment-r0-internal-door-open");
+                        }
+                        player.x = outsideX; player.y = outsideY;
+                        yield return RenderEntranceFixture(view, site);
+                        RequireExteriorDetails();
+                    }
+                    door.setting = 0;
+                    caseInternalDoors++; internalDoors++;
+                }
+                Require(kind != SiteKind.Apartment || caseInternalDoors > 0,
+                    "internalDoors: every Apartment rotation exercises an internal doorway: rotation=" + rotation);
                 cases++;
             }
+            Require(cases == 8 && internalDoors > 0 && internalDoorSamples == internalDoors * 10,
+                "internalDoors: eight fixtures cover five traversal samples in both door states");
             // Do not leave the bridge in a running state during process teardown.
             SetQaField(bridge, "<IsRunning>k__BackingField", false);
-            Debug.Log("DEMO_EXTERIOR_QA_PASS cases=" + cases + " realDoor=guides=openState=cutaway=memoryOnly=true");
+            Debug.Log("DEMO_EXTERIOR_QA_PASS cases=" + cases + " internalDoors=" + internalDoors +
+                " internalDoorSamples=" + internalDoorSamples + " noApproachTiles=true doorAlignment=true realDoor=guides=openState=cutaway=memoryOnly=true");
         }
 
         static WorldState ExteriorFixture(SiteKind kind, int rotation, out SiteState site, out PlayerState player)

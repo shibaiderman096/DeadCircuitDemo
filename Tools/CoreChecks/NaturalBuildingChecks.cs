@@ -19,6 +19,33 @@ static partial class Checks
 
     static void NaturalBuildingChecks()
     {
+        Run("exteriors interior door thresholds never close the indoor cutaway", () =>
+        {
+            int doors = 0;
+            foreach (var plan in SiteBlueprintCatalog.All) for (int rotation = 0; rotation < 4; rotation++)
+            {
+                var shape = NaturalBuildingLayout.Create(ExteriorSite(plan.kind, rotation, -19, -17), true);
+                for (int y = 0; y < shape.height; y++) for (int x = 0; x < shape.width; x++)
+                {
+                    if (shape.Cell(x, y) != '+' || !shape.Covers(x, y) || shape.Entrance(x, y)) continue;
+                    doors++;
+                    foreach (var offset in new[] { (0f, 0f), (-.49f, 0f), (.49f, 0f), (0f, -.49f), (0f, .49f) })
+                        Require(shape.Contains(x + offset.Item1, y + offset.Item2),
+                            $"standing in an internal doorway closes the roof: {plan.kind}/{rotation} at {x},{y}");
+                }
+            }
+            Require(doors > 0, "no interior doorway was exercised");
+        });
+        Run("exteriors indoor cutaway still excludes walls and outdoor yards", () =>
+        {
+            foreach (var plan in SiteBlueprintCatalog.All) for (int rotation = 0; rotation < 4; rotation++)
+            {
+                var shape = NaturalBuildingLayout.Create(ExteriorSite(plan.kind, rotation), true);
+                for (int y = -1; y <= shape.height; y++) for (int x = -1; x <= shape.width; x++)
+                    if (shape.Cell(x, y) == '#' || !shape.Covers(x, y))
+                        Require(!shape.Contains(x, y), "wall/outdoor position exposes a building interior");
+            }
+        });
         Run("exteriors real entrance doors stay above the opaque shell in every rotation", () =>
         {
             foreach (var plan in SiteBlueprintCatalog.All) for (int rotation = 0; rotation < 4; rotation++)

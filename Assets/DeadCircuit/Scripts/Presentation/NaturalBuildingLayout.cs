@@ -14,10 +14,10 @@ namespace DeadCircuit
         public readonly struct EntryOpening
         {
             public readonly float minX, minY, maxX, maxY;
-            public EntryOpening(int x, int y, int dx, int dy, float rise)
+            public EntryOpening(int x, int y, int dy, float rise)
             {
-                minX = x - .625f - (dx < 0 ? 2 : 0); maxX = x + .625f + (dx > 0 ? 2 : 0);
-                minY = y - .625f - (dy < 0 ? 2 : 0); maxY = y + .625f + (dy > 0 ? Math.Max(2, rise) : 0);
+                minX = x - .625f; maxX = x + .625f;
+                minY = y - .625f; maxY = y + .625f + (dy > 0 ? rise : 0);
             }
         }
         readonly List<EntryOpening> entryOpenings = new List<EntryOpening>();
@@ -85,7 +85,7 @@ namespace DeadCircuit
             minY = bottom;
             for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
                 if (EntranceOutward(x, y, out int dx, out int dy))
-                    entryOpenings.Add(new EntryOpening(x, y, dx, dy, Rise));
+                    entryOpenings.Add(new EntryOpening(x, y, dy, Rise));
         }
 
         static bool Boundary(char cell) => cell == '#' || cell == '+';
@@ -100,7 +100,9 @@ namespace DeadCircuit
         public bool Contains(float x, float y)
         {
             int ix = (int)Math.Floor(x + .5f), iy = (int)Math.Floor(y + .5f);
-            return IsInterior(ix, iy) || Entrance(ix, iy);
+            // Internal doors separate rooms but remain part of the indoor
+            // cutaway, just like exterior thresholds. Walls stay excluded.
+            return IsInterior(ix, iy) || Covers(ix, iy) && Cell(ix, iy) == '+';
         }
         public bool Entrance(int x, int y) => x >= 0 && y >= 0 && x < width && y < height && entrances[x + y * width];
 

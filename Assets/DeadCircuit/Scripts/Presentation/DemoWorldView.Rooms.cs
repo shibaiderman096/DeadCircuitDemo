@@ -88,6 +88,17 @@ namespace DeadCircuit
 
         bool HasRoomBoundary(int x, int y) => roomBoundaryCells.Contains(WorldTiles.Key(x, y));
 
+        int DoorVisualRotation(BuildingState door, int rotation)
+        {
+            int horizontal = (HasRoomBoundary(door.x - 1, door.y) ? 1 : 0) +
+                (HasRoomBoundary(door.x + 1, door.y) ? 1 : 0);
+            int vertical = (HasRoomBoundary(door.x, door.y - 1) ? 1 : 0) +
+                (HasRoomBoundary(door.x, door.y + 1) ? 1 : 0);
+            // Both door states and the build preview use the same wall axis.
+            // Keep the selected facing when no single axis is established.
+            return horizontal == vertical ? rotation : (rotation & 2) | (vertical > horizontal ? 1 : 0);
+        }
+
         Sprite ConnectedWall(int x, int y)
         {
             int mask = (HasRoomBoundary(x + 1, y) ? 1 : 0) | (HasRoomBoundary(x, y + 1) ? 2 : 0) |

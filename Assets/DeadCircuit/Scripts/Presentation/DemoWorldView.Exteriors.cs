@@ -14,7 +14,7 @@ namespace DeadCircuit
             public NaturalBuildingLayout layout;
             public SiteState site;
             public ulong geometry, topology;
-            public ulong entranceSignature;
+            public bool entrancesDrawn;
             public int stamp;
             public bool closed;
         }
@@ -80,7 +80,7 @@ namespace DeadCircuit
                     v.root.localPosition = new Vector3(site.x, site.y, 0);
                     v.mesh = NewExteriorMesh(v.root, "Roof and storeys", out v.renderer);
                     v.shadow = NewExteriorMesh(v.root, "Building shadow", out v.shadowRenderer);
-                    v.entrances = NewExteriorMesh(v.root, "Entrance thresholds and approach", out v.entranceRenderer);
+                    v.entrances = NewExteriorMesh(v.root, "Entrance frames and thresholds", out v.entranceRenderer);
                     naturalExteriors[site.id] = v;
                 }
                 v.site = site; v.stamp = stamp;
@@ -112,16 +112,15 @@ namespace DeadCircuit
             foreach (int id in oldNaturalExteriors) { ReleaseNaturalExterior(naturalExteriors[id]); naturalExteriors.Remove(id); }
         }
 
-        // Draw after entity occupancy is refreshed. These are read-only guides
-        // anchored to genuine exterior doors, never new paths or colliders.
-        void DrawNaturalEntranceGuides(WorldState world)
+        // Only the real doorway receives a frame and floor inset. Nothing
+        // extends onto the outdoor approach or creates a new path/collider.
+        void DrawNaturalEntranceGuides()
         {
             Sprite frame = DemoArt.Get("exterior_entry_frame"), paving = DemoArt.Get("exterior_entry_paving");
             if (frame == null || paving == null) return;
             foreach (var v in naturalExteriors.Values)
             {
-                if (!v.closed) continue;
-                ulong signature = 14695981039346656037UL;
+                if (!v.closed || v.entrancesDrawn) continue;
                 exteriorEntranceData.Clear();
                 var layout = v.layout;
                 for (int y = 0; y < layout.height; y++) for (int x = 0; x < layout.width; x++)
@@ -133,22 +132,9 @@ namespace DeadCircuit
                     // still drawn above it, so its actual state stays legible.
                     EntrancePatch(exteriorEntranceData, paving, x, y, 1, rotation);
                     EntrancePatch(exteriorEntranceData, frame, x, y, 1.25f, dx == 0 ? 0 : 1);
-                    for (int step = 1; step <= 2; step++)
-                    {
-                        int px = x + dx * step, py = y + dy * step;
-                        int gx = v.site.x + px, gy = v.site.y + py;
-                        char ground = WorldTiles.Ground(world, gx, gy);
-                        long key = WorldTiles.Key(gx, gy);
-                        bool clear = ground != '?' && ground != '2' && !layout.Covers(px, py) &&
-                            !blockedNodes.Contains(key) && !solidBuildings.Contains(key);
-                        signature = SiteHash(signature, clear ? 1 : 0);
-                        if (!clear) break; // Never paint a path across an obstacle or unknown terrain.
-                        EntrancePatch(exteriorEntranceData, paving, px, py, .875f, rotation);
-                    }
                 }
-                if (v.entranceSignature == signature) continue;
                 UploadExteriorMesh(v.entrances, exteriorEntranceData);
-                v.entranceSignature = signature;
+                v.entrancesDrawn = true;
             }
         }
 
