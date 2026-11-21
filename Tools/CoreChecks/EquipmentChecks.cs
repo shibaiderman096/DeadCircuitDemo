@@ -9,6 +9,11 @@ static partial class Checks
         TechEra era = TechEra.Nuclear, Action<WorldState, PlayerState> arrange = null)
     {
         var state = Flat(era: era); Add(state, BuildKind.Workbench, 30, 35);
+        if(era>=TechEra.Nuclear)
+        {
+            state.nuclearUraniumMined=state.gathered=4;
+            state.nuclearResearch=NuclearBit(NuclearTech.UraniumBeneficiation)|NuclearBit(NuclearTech.RadiationMonitoring)|NuclearBit(NuclearTech.RadiationProtection);
+        }
         var p = new PlayerState { id = "equipment", name = "Equipment", x = 32, y = 35,
             items = Enumerable.Repeat(300, DemoCatalog.ItemCount).ToArray() };
         p.items[(int)ItemKind.NuclearWaste] = 0;
@@ -103,7 +108,7 @@ static partial class Checks
             var gears = new[] { GearKind.StoneAxe, GearKind.StonePickaxe, GearKind.SteelAxe, GearKind.SteelPickaxe, GearKind.Wrench, GearKind.Knife, GearKind.Pistol, GearKind.Shotgun, GearKind.AssaultRifle, GearKind.PrecisionRifle };
             var parts = new[] { PartKind.RedDot, PartKind.Scope4x, PartKind.Suppressor, PartKind.MuzzleBrake, PartKind.ExtendedMag, PartKind.ErgonomicGrip, PartKind.MatchBarrel };
             var slots = new[] { AttachmentSlot.Optic, AttachmentSlot.Muzzle, AttachmentSlot.Magazine, AttachmentSlot.Grip, AttachmentSlot.Barrel };
-            Require(EquipmentCatalog.GearNames.Length == 19 && EquipmentCatalog.PartNames.Length == 7 && EquipmentCatalog.SlotNames.Length == 5, "equipment catalog lengths changed");
+            Require(EquipmentCatalog.GearNames.Length == 20 && (int)GearKind.RadiationSuit==19 && EquipmentCatalog.PartNames.Length == 7 && EquipmentCatalog.SlotNames.Length == 5, "equipment catalog lengths changed");
             for (int i = 0; i < gears.Length; i++) Require((int)gears[i] == i, "gear ordinal changed: " + gears[i]);
             for (int i = 0; i < parts.Length; i++) Require((int)parts[i] == i, "part ordinal changed: " + parts[i]);
             for (int i = 0; i < slots.Length; i++) Require((int)slots[i] == i, "slot ordinal changed: " + slots[i]);
@@ -130,7 +135,7 @@ static partial class Checks
             {
                 var sim = EquipmentFixture(out var p); var d = EquipmentCatalog.Gear(kind); int[] before = Copy(p.items);
                 var made = CraftGear(sim, p, kind); Paid(p.items, before, d.cost, "gear crafting cost");
-                Require(made.durability == 100 && made.magazine == 0 && made.attachments.Length == 5 && made.attachments.All(n => n == -1), "new gear is preloaded or malformed");
+                Require(made.durability == d.maxDurability && made.magazine == 0 && made.attachments.Length == 5 && made.attachments.All(n => n == -1), "new gear is preloaded or malformed");
                 Require(EquipmentCatalog.Find(p, made.id) == made, "crafted ID not retrievable");
                 int missing = Array.FindIndex(d.cost, n => n > 0);
                 var poor = EquipmentFixture(out var q, arrange: (_, player) => player.items[missing] = d.cost[missing] - 1);
@@ -178,10 +183,10 @@ static partial class Checks
             });
         Run("equipment malformed craft indices and full gear inventory cannot mint gear", () =>
         {
-            foreach (int value in new[] { -1, 19, int.MaxValue })
+            foreach (int value in new[] { -1, 20, int.MaxValue })
             {
                 var sim = EquipmentFixture(out var p); string before = EquipmentEconomy(p);
-                sim.Apply(Command(p, "gearcraft", arg: value)); sim.Apply(Command(p, "partcraft", arg: value == 19 ? 7 : value));
+                sim.Apply(Command(p, "gearcraft", arg: value)); sim.Apply(Command(p, "partcraft", arg: value == 20 ? 7 : value));
                 Require(EquipmentEconomy(p) == before, "invalid craft enum changed inventory");
             }
             var full = EquipmentFixture(out var q, arrange: (state, player) =>
@@ -228,7 +233,7 @@ static partial class Checks
         {
             ("null gear list", p => p.gear = null), ("null gear", p => p.gear[0] = null),
             ("zero id", p => p.gear[0].id = 0), ("negative id", p => p.gear[0].id = -1),
-            ("invalid kind", p => p.gear[0].kind = (GearKind)19),
+            ("invalid kind", p => p.gear[0].kind = (GearKind)20),
             ("negative durability", p => p.gear[0].durability = -1), ("excess durability", p => p.gear[0].durability = 101),
             ("negative magazine", p => p.gear[0].magazine = -1), ("excess magazine", p => p.gear[0].magazine = 31),
             ("wrong caliber", p => { p.gear[0].magazine = 1; p.gear[0].loadedAmmo = ItemKind.Shell; }),

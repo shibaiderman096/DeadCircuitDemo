@@ -4,7 +4,7 @@ namespace DeadCircuit
     {
         UraniumEnrichment, FuelAssembly, CoreDiagnostics, ShieldedStorage,
         HeatResistantStructures, ClosedCooling, HeatConversion, WasteTransfer,
-        UraniumBeneficiation
+        UraniumBeneficiation, RadiationMonitoring, RadiationProtection
     }
 
     public sealed class NuclearTechnologyDefinition
@@ -17,7 +17,7 @@ namespace DeadCircuit
 
     public static class NuclearCatalog
     {
-        public const int AllResearch = (1 << 9) - 1;
+        public const int AllResearch = (1 << 11) - 1;
         static int Bit(NuclearTech id) => 1 << (int)id;
         static NuclearTechnologyDefinition T(NuclearTech id, string name, string description, int parents, int[] cost) =>
             new NuclearTechnologyDefinition { id=id, name=name, description=description, prerequisites=parents, cost=cost };
@@ -41,7 +41,11 @@ namespace DeadCircuit
             T(NuclearTech.WasteTransfer, "专用废料转运", "允许核废料在相邻专用仓之间自动转运，仍禁止普通物流和背包收发。", Bit(NuclearTech.ShieldedStorage),
                 DemoCatalog.Materials(ItemKind.SteelPlate,6,ItemKind.RefractoryBrick,4,ItemKind.ControlModule,1)),
             T(NuclearTech.UraniumBeneficiation, "铀矿选冶", "先采集至少4份铀矿，再研究化学浸取；在化工厂将铀矿处理为铀精矿，后续核燃料配方须使用精矿。", 0,
-                DemoCatalog.Materials(ItemKind.UraniumOre,2,ItemKind.SteelPlate,2))
+                DemoCatalog.Materials(ItemKind.UraniumOre,2,ItemKind.SteelPlate,2)),
+            T(NuclearTech.RadiationMonitoring, "辐射监测", "开放核设施附近的环境暴露率、个人累计暴露值与防护读数；可在首次装料前完成。", Bit(NuclearTech.UraniumBeneficiation),
+                DemoCatalog.Materials(ItemKind.ControlModule,1,ItemKind.AdvancedCircuit,2,ItemKind.CopperWire,4)),
+            T(NuclearTech.RadiationProtection, "核作业防护", "解锁核作业防护服制作；正确穿戴且耐久有效时减少80%辐射暴露，持续作业会磨损。", Bit(NuclearTech.RadiationMonitoring),
+                DemoCatalog.Materials(ItemKind.Polymer,4,ItemKind.SteelPlate,2,ItemKind.Insulator,2))
         };
 
         public static NuclearTechnologyDefinition Definition(int id) => id>=0 && id<All.Length ? All[id] : null;
@@ -58,6 +62,8 @@ namespace DeadCircuit
             switch(id)
             {
                 case NuclearTech.UraniumBeneficiation:
+                case NuclearTech.RadiationMonitoring:
+                case NuclearTech.RadiationProtection:
                     return s.nuclearUraniumMined<4 ? "需累计实际开采铀矿×4。" : "";
                 case NuclearTech.UraniumEnrichment:
                 case NuclearTech.CoreDiagnostics:

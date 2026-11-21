@@ -17,6 +17,7 @@ namespace DeadCircuit
     {
         string output;
         static Mouse qaMouse;
+        int qaRadiationSuitId;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void StartChecks()
         {
@@ -255,6 +256,9 @@ namespace DeadCircuit
             yield return Capture("inventory-industrial");
             Click("Close Inventory");
             yield return VerifyEquipment(bridge);
+            // Preserve the original equipment checks, then restore nuclear work protection.
+            yield return WearQaRadiationSuit(bridge);
+            qaArmorIds = (int[])bridge.LocalPlayer.armorIds.Clone();
             // A deterministic factory fixture verifies the new technology gates did not
             // regress powered production, footprint interaction or smooth cargo rendering.
             PrepareQaPlot(bridge.World, true);
@@ -332,6 +336,7 @@ namespace DeadCircuit
             yield return ClickHudTool("Open Session");
             Require(Active("Session Modal") && bridge.GetComponent<DemoHud>().CapturesInput, "session menu consumes world input");
             yield return Capture("session");
+            int radiationSuitDurability = EquipmentCatalog.Find(bridge.LocalPlayer, qaRadiationSuitId).durability;
             Click("Save World");
             Require(Path.GetFullPath(bridge.SavePath) == qaSavePath && File.Exists(qaSavePath), "save button writes the isolated QA world");
             int buildings = bridge.World.buildings.Count;
@@ -367,8 +372,18 @@ namespace DeadCircuit
                 PrimitiveCatalog.IsRecipeUnlocked(bridge.World, TechCatalog.Recipe(93)) &&
                 PrimitiveCatalog.IsRecipeUnlocked(bridge.World, TechCatalog.Recipe(92)) &&
                 bridge.World.nuclearUraniumMined >= 4 && bridge.World.nuclearUraniumMined <= bridge.World.gathered,
-                "selected world restores both nuclear studies, recipe unlocks and real mining evidence");
+                "selected world restores fuel studies, recipe unlocks and real mining evidence");
+            Require(NuclearCatalog.All.Length == 11 && TechnologyTreeModel.All.Length == 66 &&
+                NuclearCatalog.HasResearch(bridge.World, NuclearTech.RadiationMonitoring) &&
+                NuclearCatalog.HasResearch(bridge.World, NuclearTech.RadiationProtection),
+                "selected world restores radiation studies and the eleven-study nuclear catalog");
+            var restoredSuit = EquipmentCatalog.Find(bridge.LocalPlayer, qaRadiationSuitId);
+            Require(restoredSuit != null && restoredSuit.kind == GearKind.RadiationSuit &&
+                restoredSuit.durability == radiationSuitDurability && bridge.LocalPlayer.armorIds[1] == restoredSuit.id &&
+                Mathf.Approximately(RadiationCatalog.Protection(bridge.LocalPlayer), .8f),
+                "selected world restores the crafted suit, durability and worn torso protection");
             VerifyRestoredEquipment(bridge.LocalPlayer);
+            RequireQaRadiationHud();
             yield return PointAtWorld(32, 34);
             RequireDefaultHud();
             yield return Capture("restored");
@@ -591,7 +606,8 @@ namespace DeadCircuit
             yield return SelectQaTechnologyEra((int)TechEra.Nuclear);
             yield return new WaitForSecondsRealtime(.6f);
             Require(TechnologyTreeModel.All.Count(n => !n.IsEra && n.era == (int)TechEra.Nuclear) == NuclearCatalog.All.Length &&
-                NuclearCatalog.All.Length == 9, "technology tree includes all nine nuclear studies");
+                NuclearCatalog.All.Length == 11 && TechnologyTreeModel.All.Count(n => !n.IsEra) == 59 &&
+                TechnologyTreeModel.All.Length == 66, "technology tree includes eleven nuclear studies, 59 studies and seven eras");
             Click("Nuclear Research " + beneficiationId);
             yield return null;
             Require(world.nuclearUraniumMined == 0 && !FindButton("Research Button").interactable &&
@@ -643,7 +659,97 @@ namespace DeadCircuit
             yield return new WaitForSecondsRealtime(.7f);
             Require(NuclearCatalog.HasResearch(world, researchId) && PrimitiveCatalog.IsRecipeUnlocked(world, recipe),
                 "nuclear research button unlocks the efficient fuel recipe");
-            Debug.Log("DEMO_NUCLEAR_TREE_QA_PASS evidenceGate=true recipeUnlock=true");
+            Require(!Active("Radiation Status"), "safe HUD hides unresearched radiation readings");
+            GrantSamples(player, EquipmentCatalog.Gear(GearKind.RadiationSuit).cost);
+            yield return Press(Key.T);
+            yield return ClickHudTool("Open Inventory");
+            Click("Inventory Tab Craft");
+            yield return new WaitForSecondsRealtime(.3f);
+            string suitRequirement = EquipmentCatalog.CraftRequirement(world, player, GearKind.RadiationSuit);
+            Require(!FindButton("Gear Craft " + (int)GearKind.RadiationSuit).interactable && suitRequirement.Contains("核作业防护") &&
+                Rect("Gear Craft " + (int)GearKind.RadiationSuit + " Row").GetComponentsInChildren<TMPro.TextMeshProUGUI>()
+                    .Any(label => label.text != null && label.text.Contains(suitRequirement)),
+                "suit crafting UI shows the authoritative protection research gate despite sufficient materials");
+            Click("Close Inventory");
+            yield return Press(Key.T);
+            foreach (var study in new[] { NuclearTech.RadiationMonitoring, NuclearTech.RadiationProtection })
+            {
+                GrantSamples(player, NuclearCatalog.Definition((int)study).cost);
+                yield return new WaitForSecondsRealtime(.6f);
+                yield return ClickScrolled("Nuclear Research " + (int)study);
+                yield return new WaitForSecondsRealtime(.2f);
+                Require(FindButton("Research Button").interactable && world.nuclearUraniumMined == 4 &&
+                    world.produced[(int)ItemKind.NuclearWaste] == 0 && !world.buildings.Any(b => b.kind == BuildKind.Reactor),
+                    "radiation preparation is available before first reactor startup: " + study);
+                var evidence = Rect("Technology Panel").GetComponentsInChildren<TMPro.TextMeshProUGUI>()
+                    .FirstOrDefault(label => label.text != null && label.text.Contains("首堆装料前即可研究"));
+                Require(evidence != null && !evidence.text.Contains("核燃料 2"),
+                    "radiation preparation progress shows mining evidence without a fuel requirement");
+                Click("Research Button");
+                yield return new WaitForSecondsRealtime(.7f);
+                Require(NuclearCatalog.HasResearch(world, study), "radiation study completes through HUD: " + study);
+            }
+            yield return Press(Key.T);
+            RequireQaRadiationHud();
+            GrantSamples(player, EquipmentCatalog.Gear(GearKind.RadiationSuit).cost);
+            yield return ClickHudTool("Open Inventory");
+            Click("Inventory Tab Craft");
+            yield return new WaitForSecondsRealtime(.3f);
+            yield return ClickScrolled("Gear Craft " + (int)GearKind.RadiationSuit);
+            yield return new WaitForSecondsRealtime(.7f);
+            var suit = player.gear.SingleOrDefault(g => g.kind == GearKind.RadiationSuit);
+            Require(suit != null && suit.durability == EquipmentCatalog.Gear(suit.kind).maxDurability && suit.durability == 150,
+                "craft radiation suit at its 150 durability maximum through the real inventory recipe button");
+            qaRadiationSuitId = suit.id;
+            Click("Close Inventory");
+            yield return null;
+            yield return WearQaRadiationSuit(bridge);
+            Debug.Log("DEMO_NUCLEAR_TREE_QA_PASS evidenceGate=true recipeUnlock=true monitoring=true protection=true suitCraftEquip=true");
+        }
+
+        IEnumerator WearQaRadiationSuit(GameBridge bridge)
+        {
+            yield return ClickHudTool("Open Inventory");
+            Click("Inventory Tab Equipment");
+            yield return new WaitForSecondsRealtime(.25f);
+            yield return ClickScrolled("Gear Slot " + qaRadiationSuitId);
+            yield return new WaitForSecondsRealtime(.2f);
+            RequireButtonIcon("Gear Slot " + qaRadiationSuitId, DemoArt.GetIcon("gear_17").name);
+            yield return ClickScrolled("Equip Selected Gear");
+            yield return new WaitForSecondsRealtime(.4f);
+            var player = bridge.LocalPlayer;
+            Require(player.armorIds[1] == qaRadiationSuitId && Mathf.Approximately(RadiationCatalog.Protection(player), .8f),
+                "inventory equips the radiation suit in the torso slot with eighty percent protection");
+            var suit = EquipmentCatalog.Find(player, qaRadiationSuitId);
+            string durability = suit.durability + " / " + EquipmentCatalog.Gear(suit.kind).maxDurability;
+            Require(Rect("Selected Item Quantity").GetComponent<TMPro.TextMeshProUGUI>().text.Contains(durability) &&
+                FindButton("Armor Slot 1").GetComponentInChildren<TMPro.TextMeshProUGUI>().text.Contains(durability),
+                "suit details and worn slot show current durability against the catalog maximum");
+            var layers = new SurvivorLayer[SurvivorVisuals.Capacity];
+            for (int facing = 0; facing < 4; facing++)
+            {
+                int count = SurvivorVisuals.Sample(player, player.appearance, facing, 0f, false, true, layers, true);
+                Require(count > 0 && layers.Take(count).Any(layer => layer.sprite != null &&
+                    layer.sprite.name == "avatar_armor_17_torso_" + facing),
+                    "radiation suit safely reuses tactical torso art in world and inventory preview: " + facing);
+            }
+            yield return Capture("equipment-radiation-suit");
+            Click("Close Inventory");
+            yield return new WaitForSecondsRealtime(.25f);
+            RequireQaRadiationHud();
+        }
+
+        static void RequireQaRadiationHud()
+        {
+            var label = Rect("Radiation Status").GetComponent<TMPro.TextMeshProUGUI>();
+            Require(label.isActiveAndEnabled && label.text.Contains("环境暴露") && label.text.Contains("累计暴露") &&
+                label.text.Contains("防护效率") && !label.raycastTarget,
+                "monitored HUD shows exposure rate, accumulated dose and protection without capturing world input");
+            Canvas.ForceUpdateCanvases();
+            label.ForceMeshUpdate();
+            Require(label.rectTransform.rect.width <= 540f && label.rectTransform.rect.height <= 36f &&
+                label.rectTransform.rect.height > 0 && !label.isTextOverflowing,
+                "radiation readings wrap inside the existing compact feedback area");
         }
 
         IEnumerator ResearchQaWater(GameBridge bridge, WaterTech id)
@@ -848,8 +954,11 @@ namespace DeadCircuit
                 var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(scroll.viewport, target);
                 var view = scroll.viewport.rect;
                 float shift = bounds.min.y < view.yMin ? view.yMin - bounds.min.y : bounds.max.y > view.yMax ? view.yMax - bounds.max.y : 0f;
+                // Nuclear preparation nodes can be in a later column of the two-axis tree.
+                float shiftX = !scroll.horizontal ? 0f : bounds.min.x < view.xMin ? view.xMin - bounds.min.x :
+                    bounds.max.x > view.xMax ? view.xMax - bounds.max.x : 0f;
                 scroll.StopMovement();
-                Vector3 delta = scroll.content.parent.InverseTransformVector(scroll.viewport.TransformVector(new Vector3(0, shift, 0)));
+                Vector3 delta = scroll.content.parent.InverseTransformVector(scroll.viewport.TransformVector(new Vector3(shiftX, shift, 0)));
                 scroll.content.anchoredPosition += new Vector2(delta.x, delta.y);
                 yield return null;
                 Canvas.ForceUpdateCanvases();

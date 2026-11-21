@@ -100,6 +100,7 @@ namespace DeadCircuit
         TMP_InputField nameField, seedField, ipField;
         TextMeshProUGUI menuStatus, menuAddress, menuSave, playerTitle, clockText, waveText;
         TextMeshProUGUI networkText, feedback, gameStatus, objectives, buildTitle, buildCost, buildHelp;
+        TextMeshProUGUI radiationStatus;
         TextMeshProUGUI machineTitle, machineInfo, machineContents, machineHint;
         TextMeshProUGUI growthSummary, attributeHeading, skillHeading, growthNotice, deathInfo;
         TextMeshProUGUI inventoryNotice, sessionNotice, helpNotice, helpProgress;
@@ -269,6 +270,10 @@ namespace DeadCircuit
             feedback = Label("World Feedback", game, "", 0, 90, 540, 72, 16, Amber);
             TopCenter(feedback.rectTransform, 90, 540, 72);
             feedback.alignment = TextAlignmentOptions.Top;
+            radiationStatus = Label("Radiation Status", game, "", 0, 90, 540, 36, 14, Amber);
+            TopCenter(radiationStatus.rectTransform, 90, 540, 36);
+            radiationStatus.alignment = TextAlignmentOptions.Top;
+            radiationStatus.gameObject.SetActive(false);
             MakeInspector();
             buildDetails = Box("Build Details", game, 0, 0, 640, 112, Panel, true);
             BottomCenter(buildDetails, 140, 640, 112);
@@ -529,6 +534,7 @@ namespace DeadCircuit
 
         void RefreshPlayer(WorldState world, PlayerState player)
         {
+            RefreshRadiationStatus(world, player);
             Set(playerTitle, Clean(player.name) + "  ·  Lv." + player.level);
             SetVital(0, "生命", player.hp, WorldSimulator.PlayerMaxHealth(player));
             SetVital(1, "饱食", player.hunger, 100f);
@@ -549,6 +555,33 @@ namespace DeadCircuit
             Set(eraText, "科技：" + TechCatalog.EraName(world.era) + "  ·  T 查看 / 建造");
             SetFlowText(objectives, (PrimitiveCatalog.Enabled(world) && era == 0 ? "原始工艺 · 按 T 查看研究条件" : era < 6 ? "下一时代 · " + TechCatalog.EraName((TechEra)(era + 1)) : "核工业运行") + "\n" + goal);
             SetFlowText(helpProgress, "当前：" + TechCatalog.EraName(world.era) + "  ·  " + goal + "\n击杀 " + world.kills + "  ·  制造 " + world.manufactured);
+        }
+
+        void RefreshRadiationStatus(WorldState world, PlayerState player)
+        {
+            float ambient = RadiationCatalog.AmbientRate(world, player.x, player.y);
+            bool monitored = NuclearCatalog.HasResearch(world, NuclearTech.RadiationMonitoring);
+            bool visible = player.hp > 0f && (monitored || ambient > 0f || player.radiationDose > 0f);
+            radiationStatus.gameObject.SetActive(visible);
+            // Share the existing 540 x 72 feedback area; the normal HUD footprint stays fixed.
+            TopCenter(feedback.rectTransform, visible ? 126 : 90, 540, visible ? 36 : 72);
+            if (!visible) return;
+            Set(radiationStatus, monitored ?
+                "环境暴露 " + ambient.ToString("0.00") + "/秒 · 累计暴露 " + player.radiationDose.ToString("0.0") + "/" + RadiationCatalog.MaxDose.ToString("0") +
+                "\n防护效率 " + (RadiationCatalog.Protection(player) * 100f).ToString("0") + "% · 累计达" + RadiationCatalog.DamageThreshold.ToString("0") + "后持续受伤" :
+                ambient > 0f ? "危险：附近存在有害环境，请远离核设施并准备防护。" :
+                "危险：身体仍有暴露影响，请撤离并等待恢复。");
+            radiationStatus.color = player.radiationDose >= RadiationCatalog.DamageThreshold ? Danger : ambient > 0f ? Amber : Accent;
+        }
+
+        static string RadiationFacilityHint(WorldState world, BuildingState building)
+        {
+            bool monitored = NuclearCatalog.HasResearch(world, NuclearTech.RadiationMonitoring);
+            float near = RadiationCatalog.AmbientRate(world, DemoCatalog.CenterX(building), DemoCatalog.CenterY(building));
+            return (monitored ? "近场环境暴露 " + near.ToString("0.00") + "/秒（设施中心，未计个人防护）" :
+                "近场风险：活性燃料、核废料库存及在途废料可能危害人员；研究辐射监测后可读数。") +
+                "\n屏蔽提示：废料存入专用仓，研究屏蔽仓体；保持距离并穿戴有效防护服，仍有残余暴露。" +
+                "\n原矿和未使用核燃料不作为辐射源；停堆后仍应检查活性燃料与废料。";
         }
 
         void RefreshWorld(WorldState world)
@@ -714,11 +747,12 @@ namespace DeadCircuit
                 RecipeDefinition recipe = MachineRecipe(building);
                 RecipeDefinition configured = building.kind == BuildKind.Workbench ? null : TechCatalog.SelectedRecipe(building);
                 bool reactor = building.kind == BuildKind.Reactor;
+                bool wasteVault = building.kind == BuildKind.NuclearWasteVault;
                 bool reactorConsole = building.kind == BuildKind.ReactorControlConsole;
                 bool transformer = building.kind == BuildKind.Transformer;
                 machineRecipe.gameObject.SetActive(configured != null || transformer);
                 machineRecipeFlow.gameObject.SetActive(configured != null || reactor);
-                machineSafety.gameObject.SetActive(reactor || reactorConsole || transformer || building.kind == BuildKind.SteamTurbine);
+                machineSafety.gameObject.SetActive(reactor || wasteVault || reactorConsole || transformer || building.kind == BuildKind.SteamTurbine);
                 machineSafety.color = Amber;
                 if (recipe != null)
                 {
@@ -753,6 +787,7 @@ namespace DeadCircuit
                 }
                 if (building.kind == BuildKind.SteamTurbine)
                     SetFlowText(machineSafety, "将蒸汽转为低压电力。\n蒸汽管接输入端，低压电网接输出端。");
+                if (wasteVault) SetFlowText(machineSafety, RadiationFacilityHint(world, building));
                 if (reactor)
                 {
                     int coolant = Count(building.items, (int)ItemKind.Coolant);
@@ -787,7 +822,7 @@ namespace DeadCircuit
                     else diagnostics = "堆芯监测未校准 · 研究“堆芯监测”可查看联锁、冷却储备与废料仓读数。";
                     SetFlowText(machineSafety, "温度 " + building.temperature.ToString("0") + "℃ · " + state +
                         "\n" + diagnostics +
-                        "\n停堆温度 " + tripTemperature.ToString("0") + "℃ · 降至 300℃后可重新运行。");
+                        "\n停堆温度 " + tripTemperature.ToString("0") + "℃ · 降至 300℃后可重新运行。\n" + RadiationFacilityHint(world, building));
                     machineSafety.color = building.tripped || building.temperature >= tripTemperature * .8f || !running && !cooling ? Danger : running ? Accent : Amber;
                 }
                 return;

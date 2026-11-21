@@ -46,7 +46,13 @@ namespace DeadCircuit
         {
             if(p.interactCooldown>0f || arg<0 || arg>=EquipmentCatalog.GearNames.Length) return;
             GearKind kind=(GearKind)arg;
-            if(!EquipmentCatalog.CanCraft(State,p,kind)) { Notice(p,"制作失败：请靠近工作台，并确认已解锁科技、材料充足且装备栏未满（最多 24 件）。"); return; }
+            string requirement=EquipmentCatalog.CraftRequirement(State,p,kind);
+            if(requirement.Length>0)
+            {
+                Notice(p,kind==GearKind.RadiationSuit ? "制作失败："+requirement :
+                    "制作失败：请靠近工作台，并确认已解锁科技、材料充足且装备栏未满（最多 24 件）。");
+                return;
+            }
             GearDefinition d=EquipmentCatalog.Gear(kind);
             int id=AllocateId(); Pay(p.items,d.cost);
             p.gear.Add(new GearState { id=id,kind=kind,loadedAmmo=d.ammo,durability=d.maxDurability });
@@ -165,12 +171,12 @@ namespace DeadCircuit
         {
             if(p.interactCooldown>0f) return;
             GearState g=EquipmentCatalog.Find(p,id);
-            if(g==null || g.durability>=100 || !EquipmentCatalog.HasWorkbench(State,p)) return;
+            if(g==null || g.durability>=EquipmentCatalog.Gear(g.kind).maxDurability || !EquipmentCatalog.HasWorkbench(State,p)) return;
             bool stone=g.kind==GearKind.StoneAxe || g.kind==GearKind.StonePickaxe;
             int[] cost=stone ? DemoCatalog.Materials(ItemKind.Wood,1,ItemKind.Ore,1) : DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Scrap,1);
             if(!CanPay(p.items,cost)) { Notice(p,stone ? "修理需1木材、1铁矿。" : "修理需2铁锭、1废料。"); return; }
             if(p.reloadingGearId==id) CancelReload(p);
-            Pay(p.items,cost); g.durability=Math.Min(100,g.durability+25); p.interactCooldown=.4f; Notice(p,"已修理装备。");
+            Pay(p.items,cost); g.durability=Math.Min(EquipmentCatalog.Gear(g.kind).maxDurability,g.durability+25); p.interactCooldown=.4f; Notice(p,"已修理装备。");
         }
 
         private void SalvageGear(PlayerState p,int id)

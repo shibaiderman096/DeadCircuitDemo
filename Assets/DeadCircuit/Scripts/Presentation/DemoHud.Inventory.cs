@@ -379,7 +379,7 @@ namespace DeadCircuit
             for (int i = 0; i < armorSlots.Length; i++)
             {
                 GearState armor = EquipmentCatalog.Find(player, Count(player.armorIds, i));
-                Set(armorSlots[i].label, armorNames[i] + " · " + (armor == null ? "空槽 · 选择防具" : EquipmentCatalog.GearNames[(int)armor.kind] + "\n耐久 " + armor.durability + "%"));
+                Set(armorSlots[i].label, armorNames[i] + " · " + (armor == null ? "空槽 · 选择防具" : EquipmentCatalog.GearNames[(int)armor.kind] + "\n耐久 " + GearDurability(armor)));
                 armorSlots[i].button.interactable = ready;
                 Tint(armorSlots[i], armor != null && armor.id == selectedGear ? Selected : Raised);
                 armorSlots[i].label.color = armor != null && armor.durability <= 0 ? Danger : Ink;
@@ -522,7 +522,7 @@ namespace DeadCircuit
                 cell.category = GearCategory(gear.kind);
                 cell.quantity = 1;
                 string status = IsWorn(player, gear) ? "防具已穿戴" : player.weaponId == gear.id ? "武器位" : player.toolId == gear.id ? "工具位" : "背包";
-                Set(cell.widget.label, cell.title + "  #" + gear.id + "\n耐久 " + gear.durability + "%" +
+                Set(cell.widget.label, cell.title + "  #" + gear.id + "\n耐久 " + GearDurability(gear) +
                     (EquipmentCatalog.IsGun(gear.kind) ? " · " + gear.magazine + "/" + EquipmentCatalog.Stats(gear).magazine : "") + "\n<size=11>" + status + "</size>");
                 cell.widget.label.color = gear.durability <= 0 ? Danger : Ink;
                 SetButtonArt(cell.widget, "gear_" + (int)gear.kind);
@@ -612,11 +612,14 @@ namespace DeadCircuit
                 float previousPenalty = worn == null || worn.durability <= 0 ? 0f : EquipmentCatalog.Gear(worn.kind).movePenalty;
                 float effectivePenalty = target.durability <= 0 ? 0f : definition.movePenalty;
                 combat = "防具护甲 " + effectiveArmor.ToString("0.#") + (target.durability <= 0 ? " · 已损坏，无防御" : "") +
-                    " · 移速 -" + (effectivePenalty * 100f).ToString("0.#") + "%\n当前同部位防具：" + (worn == null ? "空" : EquipmentCatalog.GearNames[(int)worn.kind] + " · 耐久 " + worn.durability + "%") +
+                    " · 移速 -" + (effectivePenalty * 100f).ToString("0.#") + "%\n当前同部位防具：" + (worn == null ? "空" : EquipmentCatalog.GearNames[(int)worn.kind] + " · 耐久 " + GearDurability(worn)) +
                     "\n替换后护甲变化 " + (effectiveArmor - previousArmor).ToString("+0.#;-0.#;0") +
                     " · 移速惩罚变化 " + ((effectivePenalty - previousPenalty) * 100f).ToString("+0.#;-0.#;0") + "%" +
                     "\n全身有效护甲 " + EquipmentCatalog.ArmorRating(player).ToString("0.#") + " · 总移速惩罚 " + (EquipmentCatalog.MovementPenalty(player) * 100f).ToString("0.#") + "% · 上限25%" +
                     "\n防具独立穿戴；不切换当前武器或工具。";
+                if (target.kind == GearKind.RadiationSuit)
+                    combat += "\n辐射减免 " + (target.durability > 0 ? "80%" : "0% · 耐久耗尽") +
+                        " · 需穿戴在躯干位生效；暴露作业持续磨损。\n制作研究：核作业防护。完好时仍有20%残余暴露，请留意累计暴露并及时撤离。";
             }
             SetFlowText(itemStats, combat + (armor ? "" : "\n属性已计入配件加成；命中效果与成长加成在攻击时计算。"));
             equipSelected.button.interactable = alive && !active;
@@ -626,12 +629,13 @@ namespace DeadCircuit
             bool repairMaterials = stone ? Count(player.items, (int)ItemKind.Wood) >= 1 && Count(player.items, (int)ItemKind.Ore) >= 1 :
                 Count(player.items, (int)ItemKind.Iron) >= 2 && Count(player.items, (int)ItemKind.Scrap) >= 1;
             repairGear.button.interactable = ready && bench && target.durability < definition.maxDurability && repairMaterials;
-            Set(repairGear.label, stone ? "维修 +25\n木材×1 铁矿×1" : "维修 +25\n铁锭×2 废料×1");
+            int repairAmount = Mathf.Clamp(definition.maxDurability - target.durability, 0, 25);
+            Set(repairGear.label, "维修 +" + repairAmount + (stone ? "\n木材×1 铁矿×1" : "\n铁锭×2 废料×1"));
             bool salvageSpace = HasSalvageSpace(player, target);
             salvageGear.button.interactable = ready && bench && salvageSpace;
             Set(salvageGear.label, !salvageSpace ? "回收空间不足" : "回收装备");
             SetFlowText(equipmentHint, (loading ? "装填中：" + player.reloadRemaining.ToString("0.0") + " 秒；切换装备或操作装备将取消装填。\n" : "") +
-                (bench ? "工作台可用。" : "维修、装配与回收需在工作台 2.4 格内，且视线畅通。") + "每次维修恢复 25 耐久；装填仅作用于当前武器，换弹种前请先卸弹。");
+                (bench ? "工作台可用。" : "维修、装配与回收需在工作台 2.4 格内，且视线畅通。") + "每次维修最多恢复 25 耐久，不超过装备上限 " + definition.maxDurability + "；装填仅作用于当前武器，换弹种前请先卸弹。");
             if (!gun) return;
             ItemKind nextAmmo = ReloadAmmo(player, target);
             bool selectedCompatible = EquipmentCatalog.AmmoCompatible(target.kind, player.selectedAmmo);
@@ -711,11 +715,11 @@ namespace DeadCircuit
                 string name = row.part ? part.name : gear.name;
                 TechEra era = row.part ? part.era : gear.era;
                 int[] cost = row.part ? part.cost : gear.cost;
-                bool primitive = row.part || PrimitiveCatalog.IsGearUnlocked(world, (GearKind)row.kind);
-                bool canCraft = primitive && (row.part ? EquipmentCatalog.CanCraftPart(world, player, (PartKind)row.kind) : EquipmentCatalog.CanCraft(world, player, (GearKind)row.kind));
-                string reason = world.era < era ? "需" + TechCatalog.EraName(era) : !primitive ? "需原始工艺：" +
-                    PrimitiveCatalog.Definition(gear.kind == GearKind.Knife ? PrimitiveTech.Bloomery : PrimitiveTech.Tools).name :
-                    !bench ? "请靠近工作台并保持视线畅通" : !CanAfford(player.items, cost) ? "缺少材料" : !canCraft ? "背包已满或角色无法制作" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
+                string requirement = row.part ? "" : EquipmentCatalog.CraftRequirement(world, player, (GearKind)row.kind);
+                bool canCraft = row.part ? EquipmentCatalog.CanCraftPart(world, player, (PartKind)row.kind) : requirement.Length == 0;
+                string reason = row.part ? world.era < era ? "需" + TechCatalog.EraName(era) :
+                    !bench ? "请靠近工作台并保持视线畅通" : !CanAfford(player.items, cost) ? "缺少材料" : !canCraft ? "背包已满或角色无法制作" : "" : requirement;
+                if (reason.Length == 0) reason = player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
                 row.craft.button.interactable = canCraft && player.interactCooldown <= 0f;
                 Set(row.craft.label, name + "\n" + reason);
                 SetRecipeText(row.details, "成本：" + MaterialText(cost, player.items, true) + "\n" + TechCatalog.EraName(era) + " · 工作台 · " + reason +
@@ -764,6 +768,7 @@ namespace DeadCircuit
         static int AttachedPart(GearState gear, int slot) => gear?.attachments != null && slot >= 0 && slot < gear.attachments.Length ? gear.attachments[slot] : -1;
         static ItemKind ReloadAmmo(PlayerState player, GearState gear) => EquipmentCatalog.AmmoCompatible(gear.kind, player.selectedAmmo) ? player.selectedAmmo : EquipmentCatalog.Gear(gear.kind).ammo;
         static int GearCategory(GearKind kind) => EquipmentCatalog.IsArmor(kind) ? 3 : EquipmentCatalog.Gear(kind).tool ? 2 : 1;
+        static string GearDurability(GearState gear) => gear.durability + " / " + EquipmentCatalog.Gear(gear.kind).maxDurability;
         static bool IsWorn(PlayerState player, GearState gear)
         {
             int slot = gear == null ? -1 : EquipmentCatalog.ArmorSlot(gear.kind);
@@ -791,6 +796,8 @@ namespace DeadCircuit
 
         static string GearUsage(GearKind kind)
         {
+            if (kind == GearKind.RadiationSuit)
+                return "躯干防具 · 研究核作业防护后制作；穿戴且耐久有效时减少80%辐射暴露。持续作业磨损，耐久耗尽后防护失效；不能清除已有暴露。";
             if (EquipmentCatalog.IsArmor(kind)) return "防具 · 独立装备格；耐久耗尽后无防御。可在工作台维修或回收。";
             string usage;
             switch (kind)

@@ -29,6 +29,7 @@ namespace DeadCircuit
         public static Sprite GetIcon(string key)
         {
             if (!loaded) Load();
+            if (key == "gear_19") key = "gear_17";
             Sprite icon;
             if (key != null && (key.StartsWith("gear_", StringComparison.Ordinal) || key.StartsWith("part_", StringComparison.Ordinal)) &&
                 sprites.TryGetValue("equipment_icon_" + key, out icon)) return icon;
@@ -38,6 +39,7 @@ namespace DeadCircuit
         public static Sprite Get(string key)
         {
             if (!loaded) Load();
+            if (key == "gear_19") key = "gear_17";
             Sprite sprite;
             if (key == null) return null;
             // Keep inventory, crafting and world-held art on the same weapon family.

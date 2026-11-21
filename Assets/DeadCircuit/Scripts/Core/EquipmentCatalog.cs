@@ -14,7 +14,7 @@ namespace DeadCircuit
         public ItemKind ammo;
         public float damage, range, interval, reload, spread, recoil;
         public int armorSlot = -1;
-        public float armor, movePenalty;
+        public float armor, movePenalty, radiationProtection;
     }
 
     public sealed class PartDefinition
@@ -39,7 +39,7 @@ namespace DeadCircuit
     public static class EquipmentCatalog
     {
         public const int MaxGear = 24;
-        public static readonly string[] GearNames = { "石斧", "石镐", "钢斧", "钢镐", "扳手", "KA-BAR 1217军刀", "GLOCK 17手枪", "Mossberg 590霰弹枪", "M4A1卡宾枪", "M24狙击步枪", "布头巾", "皮夹克", "工装裤", "工装靴", "钢盔", "防弹背心", "战术头盔", "战术背心", "战术靴" };
+        public static readonly string[] GearNames = { "石斧", "石镐", "钢斧", "钢镐", "扳手", "KA-BAR 1217军刀", "GLOCK 17手枪", "Mossberg 590霰弹枪", "M4A1卡宾枪", "M24狙击步枪", "布头巾", "皮夹克", "工装裤", "工装靴", "钢盔", "防弹背心", "战术头盔", "战术背心", "战术靴", "核作业防护服" };
         public static readonly string[] PartNames = { "红点瞄具", "四倍瞄具", "消音器", "制退器", "扩容弹匣", "人体工学握把", "精密枪管" };
         public static readonly string[] SlotNames = { "瞄具", "枪口", "弹匣", "握把", "枪管" };
         public static readonly string[] ArmorSlotNames = { "头部", "躯干", "腿部", "脚部" };
@@ -96,6 +96,10 @@ namespace DeadCircuit
                     d.era=TechEra.HighVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,6,ItemKind.Polymer,6,ItemKind.AdvancedCircuit,2); SetArmor(d,42f,.04f); break;
                 case GearKind.TacticalBoots:
                     d.era=TechEra.MediumVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Polymer,3); SetArmor(d,12f,.005f); break;
+                case GearKind.RadiationSuit:
+                    d.description="穿戴于躯干，耐久大于0时降低80%辐射暴露。";
+                    d.era=TechEra.Nuclear; d.maxDurability=150; d.radiationProtection=.8f;
+                    d.cost=DemoCatalog.Materials(ItemKind.Polymer,6,ItemKind.SteelPlate,2,ItemKind.RefractoryBrick,2); SetArmor(d,8f,.06f); break;
             }
             return d;
         }
@@ -162,7 +166,7 @@ namespace DeadCircuit
             switch(kind)
             {
                 case GearKind.ClothHood: case GearKind.SteelHelmet: case GearKind.TacticalHelmet: return 0;
-                case GearKind.LeatherJacket: case GearKind.ArmorVest: case GearKind.TacticalVest: return 1;
+                case GearKind.LeatherJacket: case GearKind.ArmorVest: case GearKind.TacticalVest: case GearKind.RadiationSuit: return 1;
                 case GearKind.WorkPants: return 2;
                 case GearKind.WorkBoots: case GearKind.TacticalBoots: return 3;
                 default: return -1;
@@ -193,8 +197,24 @@ namespace DeadCircuit
             if(part==PartKind.ErgonomicGrip) return kind!=GearKind.Pistol;
             return true;
         }
-        public static bool CanCraft(WorldState world, PlayerState player, GearKind kind) =>
-            (int)kind>=0 && (int)kind<GearNames.Length && ValidCrafter(world,player) && player.gear.Count<MaxGear && CanPay(player.items,Gear(kind).cost) && world.era>=Gear(kind).era && PrimitiveCatalog.IsGearUnlocked(world,kind);
+        public static bool CanCraft(WorldState world, PlayerState player, GearKind kind) => CraftRequirement(world,player,kind).Length==0;
+        // Shared by the authoritative command and UI: Nuclear era alone never unlocks a suit.
+        // Keep CanCraft's existing signature for callers that only need a boolean.
+        public static string CraftRequirement(WorldState world, PlayerState player, GearKind kind)
+        {
+            if((int)kind<0 || (int)kind>=GearNames.Length) return "无法识别这件装备。";
+            if(world==null) return "世界尚未就绪。";
+            GearDefinition d=Gear(kind);
+            if(world.era<d.era) return "需要科技时代："+TechCatalog.EraName(d.era);
+            if(kind==GearKind.RadiationSuit && !NuclearCatalog.HasResearch(world,NuclearTech.RadiationProtection))
+                return "需要核工业研究："+NuclearCatalog.Definition((int)NuclearTech.RadiationProtection).name;
+            if(!PrimitiveCatalog.IsGearUnlocked(world,kind)) return "需要原始研究："+
+                PrimitiveCatalog.Definition(kind==GearKind.Knife ? PrimitiveTech.Bloomery : PrimitiveTech.Tools).name;
+            if(!ValidCrafter(world,player)) return "请靠近工作台，并确认角色已连接、仍存活且工作台之间没有障碍。";
+            if(player.gear.Count>=MaxGear) return "装备栏已满（最多 24 件）。";
+            if(!CanPay(player.items,d.cost)) return "制作材料不足。";
+            return "";
+        }
         public static bool CanCraftPart(WorldState world, PlayerState player, PartKind kind) =>
             (int)kind>=0 && (int)kind<PartNames.Length && ValidCrafter(world,player) && player.parts!=null && player.parts.Length==PartNames.Length && player.parts[(int)kind]<WorldSimulator.InventoryLimit && CanPay(player.items,Part(kind).cost) && world.era>=Part(kind).era;
         private static bool CanPay(int[] items,int[] cost)
