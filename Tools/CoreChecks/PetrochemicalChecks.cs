@@ -23,7 +23,7 @@ static partial class Checks
         });
         Run("MV research samples cannot replace real exploration and production", () =>
         {
-            var state=Flat();state.era=TechEra.MediumVoltage;Add(state,BuildKind.Workbench,10,10);
+            var state=Flat();state.era=TechEra.MediumVoltage;Add(state,BuildKind.Workbench,10,10);Add(state,BuildKind.ResearchBench,9,12);
             var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;
             sim.Apply(Command(p,"mv",arg:0));
             Require(sim.State.mvResearch==1,"LV graduate cannot research petroleum exploration: "+p.notice);
@@ -37,7 +37,7 @@ static partial class Checks
         {
             for(int variant=0;variant<6;variant++)
             {
-                var state=Flat();state.era=TechEra.MediumVoltage;Add(state,BuildKind.Workbench,10,10);
+                var state=Flat();state.era=TechEra.MediumVoltage;Add(state,BuildKind.Workbench,10,10);Add(state,BuildKind.ResearchBench,9,12);
                 var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;
                 if(variant==0)p.hp=0; else if(variant==1)sim.SetConnected(p.id,false);
                 else if(variant==2)p.x=40;else if(variant==3)p.interactCooldown=1;
@@ -53,7 +53,7 @@ static partial class Checks
         });
         Run("MV invalid research commands preserve technology inventory and personal growth", () =>
         {
-            var state=Flat();state.era=TechEra.MediumVoltage;Add(state,BuildKind.Workbench,10,10);
+            var state=Flat();state.era=TechEra.MediumVoltage;Add(state,BuildKind.Workbench,10,10);Add(state,BuildKind.ResearchBench,9,12);
             var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var before=Copy(p.items);
             foreach(int id in new[] {int.MinValue,-1,8,int.MaxValue}) { sim.Apply(Command(p,"mv",arg:id));sim.Step(WorldSimulator.FixedStep); }
             Require(sim.State.mvResearch==0 && p.skillPoints==1 && p.attributePoints==2,"invalid MV command changed progression");

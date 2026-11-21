@@ -58,6 +58,7 @@ static partial class Checks
     static WorldSimulator EquipmentTechFixture(out PlayerState player, TechEra era = TechEra.HighVoltage,
         Action<WorldState, PlayerState> arrange = null) => EquipmentFixture(out player, era: era, arrange: (state, p) =>
         {
+            Add(state, BuildKind.ResearchBench, 31, 36);
             state.weaponResearch=0; state.toolResearch=0;
             EquipmentIndustrialInputs(state);
             arrange?.Invoke(state, p);
@@ -173,7 +174,7 @@ static partial class Checks
                     case "industrial": sim.State.steamResearch = 0; break;
                     case "weapon parent": id = 1; break;
                     case "bench": player.x = 45; break;
-                    case "wall": Ore(sim.State, 31, 35); break;
+                    case "wall": Ore(sim.State, 32, 36); break;
                     case "dead": player.hp = 0; break;
                     case "disconnected": sim.SetConnected(player.id, false); break;
                     case "cooldown": player.interactCooldown = .4f; break;

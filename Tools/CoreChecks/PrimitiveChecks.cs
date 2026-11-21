@@ -316,6 +316,9 @@ static partial class Checks
             Require(sim.State.era == TechEra.Primitive, "water bypassed Construction research");
             Inventory(p.items, before, "rejected water research charged");
             PrimitiveUnlock(sim, p, PrimitiveTech.Construction, DemoCatalog.Materials(ItemKind.Wood, 4, ItemKind.Stone, 4));
+            Advance(sim, .55f);
+            sim.Apply(Command(p, "build", 9, 12, (int)BuildKind.ResearchBench));
+            Require(sim.State.buildings.Any(building => building.kind == BuildKind.ResearchBench), "Construction research did not unlock the research bench");
             Advance(sim, .55f); before = Copy(p.items);
             sim.Apply(Command(p, "research", arg: (int)TechEra.Water));
             Require(sim.State.era == TechEra.Water, "actual primitive production chain could not unlock Water: " + p.notice);
@@ -333,6 +336,7 @@ static partial class Checks
                     s.produced[(int)ItemKind.Brick] = missing == "brick" ? 3 : 4;
                     s.produced[(int)ItemKind.Charcoal] = missing == "charcoal" ? 1 : 2;
                 });
+                Add(sim.State, BuildKind.ResearchBench, 9, 12);
                 var before = Copy(p.items); sim.Apply(Command(p, "research", arg: (int)TechEra.Water));
                 if (missing == "none")
                 {
@@ -414,6 +418,8 @@ static partial class Checks
             Require(furnace.recipe == 0 && !PrimitiveCatalog.IsRecipeUnlocked(sim.State, TechCatalog.Recipe(13)), "legacy bypass skipped water recipe era");
             Ready(p); p.x = 8; before = Copy(p.items); sim.Apply(Command(p, "craft", arg: 56));
             Inventory(p.items, before, "legacy bypass crafted future-era ammunition");
+            Add(sim.State, BuildKind.ResearchBench, 9, 12);
+            Advance(sim, .55f);
             Ready(p); sim.Apply(Command(p, "research", arg: (int)TechEra.Water));
             Require(sim.State.era == TechEra.Water, "legacy water research acquired production milestones");
         });

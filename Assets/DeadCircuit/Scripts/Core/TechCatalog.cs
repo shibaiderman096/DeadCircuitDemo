@@ -20,7 +20,7 @@ namespace DeadCircuit
         {
             switch (kind)
             {
-                case BuildKind.CharcoalKiln: case BuildKind.ClayKiln:
+                case BuildKind.CharcoalKiln: case BuildKind.ClayKiln: case BuildKind.ResearchBench:
                 case BuildKind.Door: case BuildKind.Wall: case BuildKind.Belt: case BuildKind.Chest: case BuildKind.Workbench: case BuildKind.StoneFurnace: return TechEra.Primitive;
                 case BuildKind.Waterwheel: case BuildKind.Shaft: case BuildKind.MechanicalCrusher:
                 case BuildKind.BlastFurnace: case BuildKind.MechanicalPress: case BuildKind.MechanicalWorkshop:
@@ -148,13 +148,19 @@ namespace DeadCircuit
                 b.hp==WorldSimulator.BuildingMaxHealth(b.kind) && ModularMachineCatalog.IsComplete(b))) return "";
             return s.buildings.Exists(b => b != null && b.kind == required && b.hp > 0f) ? "" : "需先建造并确保设备完好：" + DemoCatalog.BuildName(required);
         }
-        public static bool CanResearch(WorldState s, PlayerState p, TechEra target)
+        public static string ResearchRequirement(WorldState s, PlayerState p, TechEra target)
         {
-            if (p == null || !p.connected || p.hp <= 0f || p.items == null || p.items.Length != DemoCatalog.ItemCount || ResearchRequirement(s,target).Length != 0 || !s.players.Contains(p)) return false;
+            string requirement = ResearchRequirement(s, target);
+            if (requirement.Length != 0) return requirement;
+            if (p == null || !p.connected || !(p.hp > 0f) || p.items == null || p.items.Length != DemoCatalog.ItemCount || !s.players.Contains(p))
+                return "当前角色无法研究，请确认角色已连接且仍存活。";
+            if (!(p.interactCooldown <= 0f)) return "操作尚未结束，请稍候。";
+            if (!EquipmentCatalog.HasResearchBench(s, p)) return "请靠近完好的研究台 2.4 格内，并确保中间没有障碍。";
             int[] cost = ResearchCost(target);
-            for (int i=0;i<cost.Length;i++) if (p.items[i] < cost[i]) return false;
-            return true;
+            for (int i=0;i<cost.Length;i++) if (p.items[i] < cost[i]) return "研究材料不足：" + DemoCatalog.ItemNames[i];
+            return "";
         }
+        public static bool CanResearch(WorldState s, PlayerState p, TechEra target) => ResearchRequirement(s, p, target).Length == 0;
         public static BuildKind[] Hotbar(TechEra era)
         {
             switch (era)
@@ -165,7 +171,7 @@ namespace DeadCircuit
                 case TechEra.MediumVoltage: return new[] { BuildKind.OilPump, BuildKind.LiquidPipe, BuildKind.LiquidTank, BuildKind.ProcessWaterPump, BuildKind.DistillationUnit, BuildKind.ChemicalReactor, BuildKind.DieselGenerator, BuildKind.MediumPole, BuildKind.ChemicalPlant, BuildKind.CoolingTower };
                 case TechEra.HighVoltage: return new[] { BuildKind.SiliconRefiner, BuildKind.ElectronicsBench, BuildKind.HighGenerator, BuildKind.HighPole, BuildKind.PrecisionAssembler, BuildKind.Transformer, BuildKind.SolarPanel, BuildKind.LiquidPipe, BuildKind.Belt, BuildKind.Chest };
                 case TechEra.Nuclear: return new[] { BuildKind.Reactor, BuildKind.ReactorControlConsole, BuildKind.NuclearWasteVault, BuildKind.NuclearProcessor, BuildKind.CoolingTower, BuildKind.HighPole, BuildKind.Transformer, BuildKind.PrecisionAssembler, BuildKind.ChemicalPlant, BuildKind.Belt };
-                default: return new[] { BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.CharcoalKiln, BuildKind.ClayKiln, BuildKind.Chest, BuildKind.Wall, BuildKind.Door, BuildKind.Belt, BuildKind.Workbench, BuildKind.StoneFurnace };
+                default: return new[] { BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.CharcoalKiln, BuildKind.ClayKiln, BuildKind.Chest, BuildKind.Wall, BuildKind.Door, BuildKind.Belt, BuildKind.ResearchBench, BuildKind.StoneFurnace };
             }
         }
         private static RecipeDefinition R(int id, string name, TechEra era, BuildKind building, float duration, int[] inputs, int[] outputs) => new RecipeDefinition { id=id,name=name,era=era,building=building,duration=duration,inputs=inputs,outputs=outputs };

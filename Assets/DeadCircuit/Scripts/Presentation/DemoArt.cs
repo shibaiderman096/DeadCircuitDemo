@@ -54,6 +54,7 @@ namespace DeadCircuit
                 case "node_8": case "node_9": case "node_10": case "node_11": case "node_12": fallback = "node_1"; break;
                 case "node_13": fallback = "node_1"; break;
                 case "node_14": fallback = "node_1"; break;
+                case "machine_63": fallback = "machine_10"; break;
                 case "machine_36": case "machine_37": fallback = "machine_11"; break;
                 case "machine_38": fallback = "machine_11"; break;
                 case "machine_39": case "machine_40": case "machine_41": fallback = "machine_14"; break;

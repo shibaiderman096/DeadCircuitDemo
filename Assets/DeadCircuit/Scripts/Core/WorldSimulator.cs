@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 20;
+        public const int SaveVersion = 21;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = InventoryWeight.CapacityGrams / 10, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -383,7 +383,7 @@ namespace DeadCircuit
         {
             if (p.interactCooldown > 0f || arg < 1 || arg > 6) return;
             TechEra target=(TechEra)arg;
-            string requirement=TechCatalog.ResearchRequirement(State,target);
+            string requirement=TechCatalog.ResearchRequirement(State,p,target);
             if(requirement.Length>0) { Notice(p,requirement); return; }
             if(!TechCatalog.CanResearch(State,p,target)) { Notice(p,"研究材料不足。"); return; }
             // Host serializes commands. Advancing the era before another command rejects replay.

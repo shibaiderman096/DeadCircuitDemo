@@ -267,11 +267,18 @@ namespace DeadCircuit
         private static bool ValidCrafter(WorldState world, PlayerState player) => world!=null && player!=null && world.players!=null && world.players.Contains(player) && player.connected && player.hp>0f && player.gear!=null;
 
         public static bool HasWorkbench(WorldState world, PlayerState player)
+            => HasStation(world, player, BuildKind.Workbench);
+
+        public static bool HasResearchBench(WorldState world, PlayerState player)
+            => HasStation(world, player, BuildKind.ResearchBench);
+
+        static bool HasStation(WorldState world, PlayerState player, BuildKind kind)
         {
             if(world==null || player==null || world.buildings==null || world.nodes==null) return false;
+            if(float.IsNaN(player.x) || float.IsInfinity(player.x) || float.IsNaN(player.y) || float.IsInfinity(player.y)) return false;
             foreach(var bench in world.buildings)
             {
-                if(bench==null || bench.kind!=BuildKind.Workbench || bench.hp<=0f) continue;
+                if(bench==null || bench.kind!=kind || !(bench.hp>0f)) continue;
                 float tx=DemoCatalog.CenterX(bench), ty=DemoCatalog.CenterY(bench), dx=tx-player.x, dy=ty-player.y;
                 if(dx*dx+dy*dy>2.4f*2.4f) continue;
                 int steps=Math.Max(1,(int)Math.Ceiling(Math.Sqrt(dx*dx+dy*dy)/.08)); bool blocked=false;

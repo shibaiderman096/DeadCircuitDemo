@@ -49,6 +49,7 @@ static partial class Checks
         s.waterCrushed = 4; s.waterSmelted = 6; s.waterPressed = 4;
         s.waterGears = 2; s.waterBearings = 2; s.waterTransported = 4;
         Add(s, BuildKind.Workbench, 10, 10);
+        Add(s, BuildKind.ResearchBench, 9, 12);
         Add(s, BuildKind.ClayKiln, 14, 10);
         WaterDrive(s, BuildKind.MachineTool);
         Add(s, BuildKind.SteamFurnace, 50, 50);
@@ -227,7 +228,8 @@ static partial class Checks
         Require(sim.State.lvSorted == destination.items[(int)ItemKind.Cable], "sorted evidence differs from matching arrivals");
         Require(sim.State.lvResearch == 255 && LowVoltageCatalog.MediumVoltageRequirement(sim.State).Length == 0,
             "full player LV chain cannot satisfy MV: " + LowVoltageCatalog.MediumVoltageRequirement(sim.State));
-        Require(TechCatalog.ResearchRequirement(sim.State, TechEra.MediumVoltage).Length == 0, "MV gate rejected earned LV acceptance");
+        p.x=8;p.y=10;Ready(p);
+        Require(TechCatalog.ResearchRequirement(sim.State, p, TechEra.MediumVoltage).Length == 0, "MV gate rejected earned LV acceptance");
         Require(LvProgressionItems.All(item => sim.State.produced[(int)item] > 0), "one LV component was never genuinely produced");
         LvProgressionAwait(sim, () => sim.State.cargo.Any(c => c.fromId == splitter.id) &&
             sim.State.buildings.Any(b => b.progress > 0 && TechCatalog.EnergyTier(b) == 2),
@@ -258,6 +260,7 @@ static partial class Checks
         {
             var source = LvProgressionEarnedState();
             var sim = new WorldSimulator(source); var p = sim.State.players.Single(q => q.id == "lv-builder");
+            p.x=8;p.y=10;Ready(p);
             Advance(sim, .55f); var before = Copy(p.items);
             sim.Apply(Command(p, "research", arg: (int)TechEra.MediumVoltage));
             Require(sim.State.era == TechEra.MediumVoltage, "earned progression cannot enter MV: " + p.notice);

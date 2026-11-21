@@ -78,7 +78,7 @@ namespace DeadCircuit
             {
                 SaveCheck(b != null, "null building"); CheckEntityId(b.id, entityIds, ref highestId);
                 CheckCell(b.x, b.y,source);
-                SaveCheck((int)b.kind >= 0 && ((int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : source.version<11 ? 36 : source.version==11 ? 38 : DemoCatalog.BuildNames.Length)) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
+                SaveCheck((int)b.kind >= 0 && ((int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : source.version<11 ? 36 : source.version==11 ? 38 : source.version<21 ? (int)BuildKind.ResearchBench : DemoCatalog.BuildNames.Length)) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
                 SaveCheck(b.footprintVersion == 0 || b.footprintVersion == 1, "footprint version");
                 var modularModules=ValidateModularState(source,b);
                 for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)

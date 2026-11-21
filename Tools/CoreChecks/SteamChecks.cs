@@ -20,6 +20,7 @@ static partial class Checks
         if((research & (1<<(int)SteamTech.Piping))!=0) s.steamPlates=2;
         if((research & (1<<(int)SteamTech.Boiler))!=0) s.steamFittings=2;
         Add(s,BuildKind.Workbench,10,10);
+        Add(s,BuildKind.ResearchBench,9,12);
         arrange?.Invoke(s);
         var sim=new WorldSimulator(s); p=Builder(sim);p.x=8;p.y=10;
         return sim;
@@ -95,7 +96,7 @@ static partial class Checks
                 if(reason=="distance") p.x=30;
                 if(reason=="dead") p.hp=0;
                 if(reason=="disconnected") p.connected=false;
-                if(reason=="wall") Add(sim.State,BuildKind.Wall,9,10);
+                if(reason=="wall") Add(sim.State,BuildKind.Wall,9,11);
                 var before=Copy(p.items);int research=sim.State.steamResearch;
                 sim.Apply(Command(p,"steam",arg:id));
                 Require(sim.State.steamResearch==research,"blocked research unlocked: "+reason);Inventory(p.items,before,"blocked research charged "+reason);
@@ -246,6 +247,7 @@ static partial class Checks
             Require(sim.State.steamDriven>=4 && engine.powerGeneration>0 && boiler.powerGeneration>0,"module steam did not drive actual output");
             WaterBuild(sim,p,BuildKind.SteamFurnace,22,42,SteamPriorMaterials);
             SteamBatch(sim,p,coke);SteamBatch(sim,p,blast);SteamBatch(sim,p,forge);
+            p.x=8;p.y=10;Ready(p);
             Require(TechCatalog.ResearchRequirement(sim.State,TechEra.LowVoltage).Length==0,"LV gate still blocked: "+TechCatalog.ResearchRequirement(sim.State,TechEra.LowVoltage));
             RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.LowVoltage), SteamPriorMaterials);
             Ready(p);sim.Apply(Command(p,"research",arg:(int)TechEra.LowVoltage));

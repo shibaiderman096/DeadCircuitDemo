@@ -57,7 +57,7 @@ namespace DeadCircuit
                 foreach (var parent in All) if ((d.prerequisites & Bit(parent.id)) != 0) names += (names.Length == 0 ? "" : "、") + parent.name;
                 return "需要前置研究：" + names;
             }
-            if (!EquipmentCatalog.HasWorkbench(s,p)) return "请靠近工作台，并确保中间没有障碍。";
+            if (!EquipmentCatalog.HasResearchBench(s,p)) return "请靠近完好的研究台 2.4 格内，并确保中间没有障碍。";
             string milestone = ResearchMilestone(s,d.id);
             if (milestone.Length != 0) return milestone;
             for (int i=0;i<d.cost.Length;i++) if (p.items[i]<d.cost[i]) return "研究材料不足："+DemoCatalog.ItemNames[i];

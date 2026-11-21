@@ -80,9 +80,9 @@ namespace DeadCircuit
             return best;
         }
 
-        static string EraResearchRequirement(WorldState world, TechEra target)
+        static string EraResearchRequirement(WorldState world, PlayerState player, TechEra target)
         {
-            string requirement = TechCatalog.ResearchRequirement(world, target);
+            string requirement = TechCatalog.ResearchRequirement(world, player, target);
             string process = target == TechEra.Water ? PrimitiveCatalog.WaterRequirement(world) :
                 target == TechEra.Steam ? WaterCatalog.SteamRequirement(world) :
                 target == TechEra.LowVoltage ? SteamCatalog.LowVoltageRequirement(world) :

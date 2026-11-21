@@ -66,6 +66,7 @@ static partial class Checks
         {
             var state = Flat(era: TechEra.Nuclear);
             Add(state, BuildKind.Workbench, 10, 10);
+            Add(state, BuildKind.ResearchBench, 9, 12);
             var ore = new NodeState { id=state.nextId++, kind=NodeKind.UraniumOre, x=10, y=14, stock=6, hp=35 };
             state.nodes.Add(ore);
             var plant = Add(state, BuildKind.ChemicalPlant, 10, 20);
@@ -183,6 +184,7 @@ static partial class Checks
             var player = Builder(sim);
             player.x = 8; player.y = 10;
             Add(sim.State, BuildKind.Workbench, 10, 10);
+            Add(sim.State, BuildKind.ResearchBench, 9, 12);
             foreach (var definition in NuclearCatalog.All.OrderBy(d => d.id == NuclearTech.UraniumBeneficiation ? -1 : (int)d.id))
             {
                 Ready(player);
@@ -240,6 +242,7 @@ static partial class Checks
             var sim = new WorldSimulator(state);
             var player = Builder(sim);
             Add(sim.State, BuildKind.Workbench, 10, 10);
+            Add(sim.State, BuildKind.ResearchBench, 9, 12);
             var processor = Add(sim.State, BuildKind.NuclearProcessor, 10, 14);
             processor.recipe = 90;
             var recipe = TechCatalog.Recipe(92);
@@ -247,7 +250,7 @@ static partial class Checks
             Require(recipe != null && node != null && node.command == "nuclear" && node.researchId == (int)NuclearTech.UraniumEnrichment,
                 "nuclear recipe or tree node is missing");
 
-            player.x = 8; player.y = 14;
+            player.x = 8; player.y = 10;
             sim.Apply(Command(player, "recipe", 10, 14, recipe.id));
             Require(processor.recipe == 90 && !PrimitiveCatalog.IsRecipeUnlocked(sim.State, recipe),
                 "high-yield fuel recipe bypassed uranium enrichment");

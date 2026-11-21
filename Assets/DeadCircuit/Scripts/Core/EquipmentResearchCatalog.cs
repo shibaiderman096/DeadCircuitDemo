@@ -88,7 +88,8 @@ namespace DeadCircuit
             if(player==null || world.players==null || !world.players.Contains(player) || !player.connected || !(player.hp>0f) ||
                 player.items==null || player.items.Length!=DemoCatalog.ItemCount) return "当前角色无法研究，请确认角色已连接且仍存活。";
             if(!(player.interactCooldown<=0f)) return "操作尚未结束，请稍候。";
-            if(!EquipmentCatalog.HasWorkbench(world,player)) return "请靠近工作台，并确保中间没有障碍。";
+            if(definition.era > (int)TechEra.Primitive && !EquipmentCatalog.HasResearchBench(world,player)) return "请靠近完好的研究台 2.4 格内，并确保中间没有障碍。";
+            if(definition.era == (int)TechEra.Primitive && !EquipmentCatalog.HasWorkbench(world,player)) return "请靠近工作台，并确保中间没有障碍。";
             for(int i=0;i<definition.cost.Length;i++) if(player.items[i]<definition.cost[i]) return "研究材料不足："+DemoCatalog.ItemNames[i];
             return "";
         }

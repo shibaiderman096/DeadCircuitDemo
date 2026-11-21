@@ -8,6 +8,7 @@ static partial class Checks
     static WorldSimulator RadiationEquipmentFixture(out PlayerState player, bool unlocked = false,
         Action<WorldState, PlayerState> arrange = null) => EquipmentFixture(out player, arrange: (s, p) =>
         {
+            Add(s, BuildKind.ResearchBench, 31, 36);
             s.nuclearUraniumMined = s.gathered = 4;
             s.nuclearResearch = 0;
             if(unlocked) s.nuclearResearch = (1 << (int)NuclearTech.UraniumBeneficiation) |

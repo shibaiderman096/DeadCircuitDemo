@@ -574,8 +574,15 @@ namespace DeadCircuit
             }
             treeParentLinks.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = parentCount * 36f;
             SetFlowText(treeCost, "研究材料 · 持有 / 所需\n" + MaterialText(node.cost, player.items, true), 37);
-            SetFlowText(treeRequirement, "研究条件\n" + (known ? "全队已完成" : sending ? "正在提交研究…" : ready ? "条件已满足" :
-                string.IsNullOrEmpty(requirement) ? "请等待角色恢复操作。" : requirement), 37);
+            string requirementText = known ? "全队已完成" : sending ? "正在提交研究…" : ready ? "条件已满足" :
+                string.IsNullOrEmpty(requirement) ? "请等待角色恢复操作。" : requirement;
+            if (!known)
+            {
+                string station = node.era == (int)TechEra.Primitive ? "工作台" : "研究台";
+                if (!requirement.Contains(station) || !requirement.Contains("2.4"))
+                    requirementText += "\n" + station + "：2.4 格内 · 视线畅通。";
+            }
+            SetFlowText(treeRequirement, "研究条件\n" + requirementText, 37);
             treeRequirement.color = known || ready ? Accent : Amber;
             string progress = TreeEvidence(world, node);
             treeEvidence.gameObject.SetActive(!string.IsNullOrEmpty(progress));

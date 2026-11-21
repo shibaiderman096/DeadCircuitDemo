@@ -4,9 +4,9 @@ static partial class Checks
 {
     static void PrecisionChecks()
     {
-        Run("HV precision starts with a locked high grid and unlocks silicon research at a workbench", () =>
+        Run("HV precision starts with a locked high grid and unlocks silicon research at a research bench", () =>
         {
-            var state=Flat(era:TechEra.MediumVoltage); Add(state,BuildKind.Workbench,10,10);
+            var state=Flat(era:TechEra.MediumVoltage); Add(state,BuildKind.Workbench,10,10);Add(state,BuildKind.ResearchBench,9,12);
             var sim=new WorldSimulator(state); var p=Builder(sim); p.x=8; p.y=10;
             sim.State.era=TechEra.HighVoltage;
             p.items = Copy(PrecisionCatalog.Definition(0).cost);
@@ -14,7 +14,7 @@ static partial class Checks
             for (int i = 0; i < p.items.Length; i++) p.items[i] += poleCost[i];
             var before=Copy(p.items);
             sim.Apply(Command(p,"build",10,14,(int)BuildKind.HighPole));
-            Require(sim.State.buildings.Count==1,"HV era alone unlocked the high grid");
+            Require(sim.State.buildings.All(building=>building.kind!=BuildKind.HighPole),"HV era alone unlocked the high grid");
             Inventory(p.items,before,"locked HV construction");
             Ready(p); sim.Apply(Command(p,"hv",arg:0));
             Require(p.notice.Contains("硅材制备") && p.items[(int)ItemKind.Circuit]==before[(int)ItemKind.Circuit]-2,

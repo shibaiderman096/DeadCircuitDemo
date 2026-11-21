@@ -9,6 +9,7 @@ static partial class Checks
         s.produced[(int)ItemKind.Bronze]=4; s.produced[(int)ItemKind.Iron]=6;
         s.produced[(int)ItemKind.Brick]=4; s.produced[(int)ItemKind.Charcoal]=2;
         Add(s,BuildKind.Workbench,10,10);
+        Add(s,BuildKind.ResearchBench,9,12);
         arrange?.Invoke(s);
         var sim=new WorldSimulator(s); p=Builder(sim); p.x=8;p.y=10;
         return sim;
@@ -103,11 +104,12 @@ static partial class Checks
         });
         Run("water research rejects skips materials range walls cooldown dead and offline without payment",()=>
         {
-            foreach(string reason in new[]{"skip","negative","huge","short","range","wall","cooldown","dead","offline","era"})
+            foreach(string reason in new[]{"skip","negative","huge","short","range","wall","broken","cooldown","dead","offline","era"})
             {
-                var sim=WaterFixture(out var p,arrange:s=>{if(reason=="wall") Add(s,BuildKind.Wall,9,10);});
+                var sim=WaterFixture(out var p,arrange:s=>{if(reason=="wall") Add(s,BuildKind.Wall,9,11);});
                 if(reason=="short")p.items[(int)ItemKind.Bronze]=1;
                 if(reason=="range")p.x=3;
+                if(reason=="broken")sim.State.buildings.Single(building=>building.kind==BuildKind.ResearchBench).hp=0;
                 if(reason=="cooldown")p.interactCooldown=1;
                 if(reason=="dead")p.hp=0;
                 if(reason=="offline")sim.SetConnected(p.id,false);
@@ -131,7 +133,7 @@ static partial class Checks
             {
                 var sim=WaterFixture(out var p);p.x=18;p.y=20;var before=Copy(p.items);
                 sim.Apply(Command(p,"build",20,20,(int)kind));
-                Require(sim.State.buildings.Count==1,"constructed locked "+kind);Inventory(p.items,before,"locked building paid");
+                Require(sim.State.buildings.Count==2 && sim.State.buildings.All(building=>building.kind!=kind),"constructed locked "+kind);Inventory(p.items,before,"locked building paid");
             }
             var world=WaterFixture(out _,arrange:s=>{WaterDrive(s,BuildKind.MechanicalPress);s.buildings.Last().items[(int)ItemKind.Iron]=4;});
             Advance(world,10);Require(world.State.produced[(int)ItemKind.IronPlate]==0 && world.State.waterPressed==0,"locked machinery ran");

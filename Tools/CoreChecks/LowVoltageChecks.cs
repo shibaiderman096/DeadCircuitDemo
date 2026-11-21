@@ -31,6 +31,7 @@ static partial class Checks
         {
             var state=Flat(era:TechEra.Steam); state.era=TechEra.LowVoltage;
             Add(state,BuildKind.Workbench,10,10);
+            Add(state,BuildKind.ResearchBench,9,12);
             var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;
             var before=Copy(p.items);
             foreach(int id in new[] {int.MinValue,-1,0,1,2,3,4,5,6,7,8,int.MaxValue})
@@ -59,10 +60,11 @@ static partial class Checks
             {
                 var state=Flat(era:TechEra.Steam); state.era=TechEra.LowVoltage;state.lvWire=4;state.lvInsulators=2;
                 Add(state,BuildKind.Workbench,10,10);
+                Add(state,BuildKind.ResearchBench,9,12);
                 var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;
                 if(variant==0)p.hp=0;else if(variant==1)sim.SetConnected(p.id,false);
                 else if(variant==2)p.x=30;else if(variant==3)p.interactCooldown=1;
-                else sim.State.buildings[0].hp=0;
+                else sim.State.buildings.Single(building=>building.kind==BuildKind.ResearchBench).hp=0;
                 var before=Copy(p.items);sim.Apply(Command(p,"lv",arg:0));
                 Require(sim.State.lvResearch==0,"ineligible scientist researched");Inventory(p.items,before,"ineligible scientist paid");
             }
@@ -73,7 +75,7 @@ static partial class Checks
         {
             foreach(int id in new[] {142,144,145})
             {
-                var state=Flat(era:TechEra.Steam);state.era=TechEra.LowVoltage;Add(state,BuildKind.Workbench,10,10);
+                var state=Flat(era:TechEra.Steam);state.era=TechEra.LowVoltage;Add(state,BuildKind.Workbench,10,10);Add(state,BuildKind.ResearchBench,9,12);
                 var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var before=Copy(p.items);
                 sim.Apply(Command(p,"craft",arg:id));
                 Inventory(p.items,before,"locked workbench part crafted");

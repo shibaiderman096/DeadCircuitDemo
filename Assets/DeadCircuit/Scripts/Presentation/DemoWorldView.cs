@@ -687,7 +687,8 @@ namespace DeadCircuit
                 ConfigureMachine(v.body, state);
                 if (state.kind == BuildKind.Door)
                     v.body.sortingOrder = NaturalDoorOrder(state.x, state.y, v.body.sortingOrder);
-                Color primitiveTint = state.kind == BuildKind.CharcoalKiln ? new Color(.48f,.55f,.52f) :
+                Color primitiveTint = state.kind == BuildKind.ResearchBench ? new Color(.72f,.84f,.98f) :
+                    state.kind == BuildKind.CharcoalKiln ? new Color(.48f,.55f,.52f) :
                     state.kind == BuildKind.ClayKiln ? new Color(1f,.57f,.36f) : Color.white;
                 v.body.color = DamageColor(v, primitiveTint);
                 if (state.kind == BuildKind.CharcoalKiln || state.kind == BuildKind.ClayKiln)
@@ -765,7 +766,7 @@ namespace DeadCircuit
 
         static Vector2 BuildingCenter(BuildingState b) { return new Vector2(DemoCatalog.CenterX(b), DemoCatalog.CenterY(b)); }
         static bool HasOutput(BuildKind kind)
-        { return kind != BuildKind.Wall && kind != BuildKind.Door && kind != BuildKind.Workbench &&
+        { return kind != BuildKind.Wall && kind != BuildKind.Door && kind != BuildKind.Workbench && kind != BuildKind.ResearchBench &&
             kind != BuildKind.CombustionChamber && kind != BuildKind.Chimney && kind != BuildKind.FeedwaterPump &&
             (!DemoCatalog.IsPowerNode(kind) || kind == BuildKind.Reactor) && kind != BuildKind.Turret; }
 

@@ -107,6 +107,7 @@ namespace DeadCircuit
             {
                 case BuildKind.CharcoalKiln: return (int)PrimitiveTech.Charcoal;
                 case BuildKind.ClayKiln: return (int)PrimitiveTech.Ceramics;
+                case BuildKind.ResearchBench: return (int)PrimitiveTech.Construction;
                 case BuildKind.Wall: case BuildKind.Door: case BuildKind.Chest: case BuildKind.Belt:
                     return (int)PrimitiveTech.Construction;
                 default: return -1;

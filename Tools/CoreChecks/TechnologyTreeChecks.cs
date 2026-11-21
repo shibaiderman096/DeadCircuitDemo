@@ -195,19 +195,20 @@ static partial class Checks
                 state.produced[(int)ItemKind.Brick] = 4;
                 state.produced[(int)ItemKind.Charcoal] = 2;
             });
+            Add(sim.State, BuildKind.ResearchBench, 9, 12);
             var world = sim.State;
             var gate = TechnologyTreeModel.Find(100);
             var cooking = TechnologyTreeModel.Find((int)PrimitiveTech.Cooking + 1);
             Require(TechnologyTreeModel.PrerequisitesMet(world, gate) && !TechnologyTreeModel.Known(world, cooking) &&
                 !TechnologyTreeModel.CanResearch(world, player, gate) &&
-                TechnologyTreeModel.Requirement(world, player, gate) == TechCatalog.ResearchRequirement(world, TechEra.Water),
+                TechnologyTreeModel.Requirement(world, player, gate) == TechCatalog.ResearchRequirement(world, player, TechEra.Water),
                 "graph completion bypassed the production milestone");
             world.produced[(int)ItemKind.Iron] = 6;
             var bench = world.buildings.Single(building => building.kind == BuildKind.Workbench);
             float benchHealth = bench.hp;
             bench.hp = 0;
             Require(!TechnologyTreeModel.CanResearch(world, player, gate) &&
-                TechnologyTreeModel.Requirement(world, player, gate) == TechCatalog.ResearchRequirement(world, TechEra.Water),
+                TechnologyTreeModel.Requirement(world, player, gate) == TechCatalog.ResearchRequirement(world, player, TechEra.Water),
                 "promotion bypassed the required working building");
             bench.hp = benchHealth;
             player.items[(int)ItemKind.Iron] = 5;
@@ -216,7 +217,7 @@ static partial class Checks
                 "promotion bypassed the material cost");
             player.items[(int)ItemKind.Iron] = 100;
             player.interactCooldown = .25f;
-            Require(TechCatalog.CanResearch(world, player, TechEra.Water) && !TechnologyTreeModel.CanResearch(world, player, gate),
+            Require(!TechCatalog.CanResearch(world, player, TechEra.Water) && !TechnologyTreeModel.CanResearch(world, player, gate),
                 "promotion bypassed the simulator cooldown");
             Ready(player);
             Require(TechnologyTreeModel.CanResearch(world, player, gate), "optional Cooking blocked Water promotion");

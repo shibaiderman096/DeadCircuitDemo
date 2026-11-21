@@ -983,6 +983,8 @@ namespace DeadCircuit
             if (world.buildings != null) foreach (var building in world.buildings)
             {
                 if (building == null || building.hp <= 0 || !DemoCatalog.Contains(building, x, y)) continue;
+                if (building.kind == BuildKind.ResearchBench)
+                    return "研究台 · T 打开科技树 · 研究时需在 2.4 格内并保持视线畅通";
                 string action = building.kind == BuildKind.Door ? (building.setting == 1 ? " · 右键关门" : " · 右键开门") :
                     building.hp < WorldSimulator.BuildingMaxHealth(building.kind) ? " · 右键修理" : "";
                 return InspectedMachineName(building) + " · 左键/E 交互" + action;
@@ -1290,6 +1292,7 @@ namespace DeadCircuit
                 case BuildKind.FeedwaterPump: return "为相邻的锅炉机组供水 · 须靠近水面";
                 case BuildKind.SteamEngine: return "蒸汽输入 → 机械动力 · 沿朝向连接传动轴";
                 case BuildKind.Workbench: return "B 打开手工配方 · 靠近后制作";
+                case BuildKind.ResearchBench: return "T 打开科技树 · 研究时需在 2.4 格内并保持视线畅通";
                 case BuildKind.CharcoalKiln: return "木材×4 → 木炭×2 · 左键/E 投料 / 取出";
                 case BuildKind.ClayKiln: return "黏土×4 + 木炭×1 → 陶砖×4 · 左键/E 投料 / 取出";
                 case BuildKind.Waterwheel: return "近水驱动 · 接触传动轴输出动力";
@@ -1344,6 +1347,10 @@ namespace DeadCircuit
 
         static string NextEraGoal(WorldState world, PlayerState player)
         {
+            if (world.era != TechEra.Primitive && !EquipmentCatalog.HasResearchBench(world, player))
+                return HasBuilding(world, BuildKind.ResearchBench)
+                    ? "靠近完好的研究台 2.4 格内并保持视线畅通，再按 T 研究"
+                    : "建造研究台（木材×8、石材×4），再靠近研究台按 T 研究";
             if (world.era == TechEra.Primitive)
             {
                 if (PrimitiveCatalog.Enabled(world))
@@ -1353,6 +1360,7 @@ namespace DeadCircuit
                 }
                 if (!HasBuilding(world, BuildKind.Workbench)) return "采集木材，建造工作台";
                 if (!HasBuilding(world, BuildKind.StoneFurnace)) return "建造石炉，补充燃料并冶炼铁矿";
+                if (!HasBuilding(world, BuildKind.ResearchBench)) return "建造研究台（木材×8、石材×4），再靠近研究台按 T 研究";
             }
             else if (world.era == TechEra.Water)
             {
@@ -1376,7 +1384,7 @@ namespace DeadCircuit
             else if (world.era == TechEra.Nuclear)
             {
                 if (world.nuclearUraniumMined < 4) return "实际开采铀矿 " + world.nuclearUraniumMined + " / 4，准备铀矿选冶研究";
-                if (!NuclearCatalog.HasResearch(world, NuclearTech.UraniumBeneficiation)) return "靠近工作台，按 T 研究铀矿选冶";
+                if (!NuclearCatalog.HasResearch(world, NuclearTech.UraniumBeneficiation)) return "靠近研究台，按 T 研究铀矿选冶";
                 if (Count(world.produced, (int)ItemKind.UraniumConcentrate) == 0) return "在中压化工厂选择铀矿选冶：铀矿 + 化工原料 + 工艺水 → 铀精矿";
                 if (Count(world.produced, (int)ItemKind.NuclearFuel) < 2) return "将铀精矿送入高压核燃料处理机，制造核燃料";
                 return "监控冷却、温度与核废料";
@@ -1390,7 +1398,7 @@ namespace DeadCircuit
                 if (i == (int)ItemKind.Steel) return "用蒸汽高炉将生铁与石灰石炼成钢";
                 return "准备研究材料：" + DemoCatalog.ItemNames[i] + " " + Count(player.items, i) + "/" + cost[i];
             }
-            string missing = EraResearchRequirement(world, next);
+            string missing = EraResearchRequirement(world, player, next);
             return string.IsNullOrEmpty(missing) ? "条件已满足，按 T 研究下一时代" : missing;
         }
 

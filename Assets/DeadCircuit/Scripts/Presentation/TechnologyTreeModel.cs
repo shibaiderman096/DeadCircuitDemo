@@ -63,7 +63,7 @@ namespace DeadCircuit
             if (!(player.interactCooldown <= 0f)) return "操作尚未结束，请稍候。";
             if (!node.IsEra) return CatalogRequirement(world, player, node);
 
-            string requirement = TechCatalog.ResearchRequirement(world, (TechEra)node.era);
+            string requirement = TechCatalog.ResearchRequirement(world, player, (TechEra)node.era);
             if (requirement.Length != 0) return requirement;
             int[] cost = TechCatalog.ResearchCost((TechEra)node.era);
             for (int i = 0; i < cost.Length; i++)
