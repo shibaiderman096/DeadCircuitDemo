@@ -5,7 +5,7 @@ namespace DeadCircuit
 {
     public sealed partial class WorldSimulator
     {
-        private void Attack(PlayerState p)
+        private void Attack(PlayerState p, int targetId = 0)
         {
             if (p.attackCooldown > 0f) return;
             GearState gear=EquipmentCatalog.Equipped(p);
@@ -30,7 +30,7 @@ namespace DeadCircuit
                     float jitter=(hash%65536)/32767.5f-1f;
                     float offset=stats.pellets>1 ? ((2f*pellet/(stats.pellets-1)-1f)*.8f+jitter*.2f)*spread : jitter*spread;
                     float cos=(float)Math.Cos(offset), sin=(float)Math.Sin(offset);
-                    Shoot(p.x,p.y,p.aimX*cos-p.aimY*sin,p.aimX*sin+p.aimY*cos,stats.range+p.attributes[3]*.35f,damage*(ap ? 1.15f : 1f),p,penetration);
+                    Shoot(p.x,p.y,p.aimX*cos-p.aimY*sin,p.aimX*sin+p.aimY*cos,stats.range+p.attributes[3]*.35f,damage*(ap ? 1.15f : 1f),p,penetration,targetId);
                 }
                 p.recoil=Math.Min(1f,p.recoil+stats.recoil);
             }
@@ -47,7 +47,7 @@ namespace DeadCircuit
                     ZombieState best = null; CreatureState animal = null; float nearest = range * range;
                     foreach (ZombieState z in State.zombies)
                     {
-                        if (z.id == firstId || z.id == secondId) continue;
+                        if (z.id == firstId || z.id == secondId || (targetId != 0 && z.id != targetId)) continue;
                         float dx = z.x - p.x, dy = z.y - p.y, dist = dx * dx + dy * dy;
                         if (dist > nearest || (dist > 0.01f && dx * p.aimX + dy * p.aimY < Math.Sqrt(dist) * 0.2f) ||
                             !LineClear(p.x, p.y, z.x, z.y, RoundCell(z.x), RoundCell(z.y))) continue;
@@ -55,7 +55,7 @@ namespace DeadCircuit
                     }
                     if (State.survival != null && State.survival.enabled) foreach (CreatureState c in State.survival.creatures)
                     {
-                        if (c.hp <= 0 || c.id == firstId || c.id == secondId) continue;
+                        if (c.hp <= 0 || c.id == firstId || c.id == secondId || (targetId != 0 && c.id != targetId)) continue;
                         float dx = c.x - p.x, dy = c.y - p.y, dist = dx * dx + dy * dy;
                         if (dist > nearest || (dist == nearest && (best != null || animal != null)) ||
                             (dist > .01f && dx * p.aimX + dy * p.aimY < Math.Sqrt(dist) * .2f) ||
@@ -76,13 +76,14 @@ namespace DeadCircuit
             public int Id => zombie != null ? zombie.id : creature.id;
         }
 
-        private void Shoot(float x, float y, float dx, float dy, float range, float damage, PlayerState owner, int penetration=1)
+        private void Shoot(float x, float y, float dx, float dy, float range, float damage, PlayerState owner, int penetration=1, int targetId=0)
         {
             Normalize(ref dx, ref dy, true);
             float stop=BulletStop(x,y,dx,dy,range);
             var hits=new List<BulletHit>();
             foreach (ZombieState z in State.zombies)
             {
+                if (targetId != 0 && z.id != targetId) continue;
                 float zx = z.x - x, zy = z.y - y, projection = zx * dx + zy * dy;
                 if (z.hp<=0f || projection < 0f || projection > stop) continue;
                 float perpendicular = zx * zx + zy * zy - projection * projection;
@@ -91,6 +92,7 @@ namespace DeadCircuit
             }
             if (owner != null && State.survival != null && State.survival.enabled) foreach (CreatureState c in State.survival.creatures)
             {
+                if (targetId != 0 && c.id != targetId) continue;
                 float cx=c.x-x, cy=c.y-y, projection=cx*dx+cy*dy;
                 if (c.hp<=0 || projection<0 || projection>stop || cx*cx+cy*cy-projection*projection>.34f*.34f) continue;
                 hits.Add(new BulletHit { creature=c, distance=projection });
@@ -188,6 +190,7 @@ namespace DeadCircuit
             if (p.hp > 0f) return;
             p.deaths = SaturatingAdd(p.deaths, 1);
             HeldInput input = inputs[p.id]; input.x = input.y = 0f; input.sprint = false;
+            ClearPlayerControl(p, input);
             CancelReload(p); p.aiming=false; p.moving=false;
             Notice(p, "你已倒下；5秒后可复活，背包和成长保留。"); flowRevision = -1;
         }

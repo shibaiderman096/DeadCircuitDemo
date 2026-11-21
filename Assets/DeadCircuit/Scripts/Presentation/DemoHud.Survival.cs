@@ -179,7 +179,7 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[0];
             var guide = FlowLabel("Survival Guide", content,
-                "按 E 采尽树木或搜空补给箱，寻找浆果、苹果、蘑菇、蛋、生鱼与种子；狩猎后在「野生动物」页分解取肉。种植顺序：翻土→播种→浇水→成熟→收获。原料可在工作台或石炉加工；背包中的「食物」请在背包页食用。",
+                "左键/E 点资源可走近采尽；按住 Space 在附近资源、成熟农田与尸体间持续工作，松开即停。树木与补给箱可提供食材和种子。右键水域取水、成熟农田收获、尸体分解。种植：翻土→播种→浇水→成熟→收获。原料可在工作台或石炉加工；背包「食物」可按 V 食用。",
                 680, 106, 14, Muted);
             guide.overflowMode = TextOverflowModes.Overflow;
             survivalWaterText = FlowLabel("Survival Water Inventory", content, "", 680, 52, 15, Accent);
@@ -274,7 +274,7 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[3];
             FlowLabel("Survival Wildlife Guide", content,
-                "靠近尸体 2.4 格内，且视线畅通时可分解，一次取走全部剩余肉；库存空间不足时无法分解。狩猎时照常攻击。下方图鉴列出所有物种的性情与产物，当前地区不一定有这些动物。", 1048, 54, 14, Muted);
+                "右键尸体或按住 Space 就近分解，也可用下方按钮；需在 2.4 格内且视线畅通，一次取走剩余肉，库存不足时无法分解。左键/E 点动物追击；按住 F 自动战斗，Ctrl+F 允许中立动物，松开即停。图鉴列出所有物种，当前地区不一定都有。", 1048, 54, 14, Muted);
             survivalCorpseHeading = FlowLabel("Survival Corpse Heading", content, "", 1048, 32, 16, Accent);
             for (int i = 0; i < SurvivalCatalog.MaxCreatures; i++)
             {

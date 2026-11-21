@@ -130,17 +130,20 @@ namespace DeadCircuit
         bool initialized, wasRunning, localFeedbackError;
         int guardThroughFrame = -1, inspectedX = -1, inspectedY = -1, inspectedId = -1;
 
-        /// <summary>Text entry, modals, or actual interactive UI hits consume world input.</summary>
-        public bool CapturesInput
+        /// <summary>Text entry and modal guards consume keyboard input independently of pointer hits.</summary>
+        public bool CapturesKeyboard
         {
             get
             {
                 if (!initialized || !isActiveAndEnabled || canvas == null || !canvas.enabled) return false;
                 if (bridge == null || !bridge.IsRunning || Time.frameCount <= guardThroughFrame) return true;
                 if (bridge.LocalPlayer == null || bridge.LocalPlayer.hp <= 0f || AnyPanelOpen()) return true;
-                return TextInputFocused() || PointerHitsUi();
+                return TextInputFocused();
             }
         }
+
+        /// <summary>Pointer actions are also blocked by actual interactive UI hits.</summary>
+        public bool CapturesInput => CapturesKeyboard || PointerHitsUi();
 
         public void Init(GameBridge owner)
         {
@@ -339,8 +342,18 @@ namespace DeadCircuit
             SetButtonArt(closeHelp, "ui_back", 20);
             RectTransform content = ScrollContent("Help Scroll View", card, 28, 88, 844, 420, out _);
             FlowLabel("Controls Title", content, "操作速查", 816, 30, 20, Accent);
-            FlowLabel("Controls Text", content,
-                "WASD 移动 · Shift 冲刺 · 滚轮缩放 · E 交互 / 采集\n左键攻击 / 放置 · 右键瞄准（建造时取消）\nR 装填（建造时旋转）· Q 切换武器 / 工具\n1–0 建造快捷栏 · T 科技研究 · X 拆除 · G 修理\nF 进食 · C 制作燃料 · Ctrl+C 制作弹药 · B 背包 / 装备 / 制作\nTab 成长 · J 生存 · H 帮助 · Esc 关闭界面 / 游戏菜单 · F5 保存", 816, 172, 18, Ink);
+            SetFlowText(FlowLabel("Controls Text", content, "", 816, 172, 18, Ink),
+                "WASD 移动并打断自动动作 · Shift 冲刺 · 滚轮缩放\n" +
+                "左键 / E：点地移动，点资源走近并采尽，点设备走近交互一次，点丧尸或动物追击\n" +
+                "按住 Space：在附近资源、成熟农田与尸体之间持续工作，不受鼠标位置影响\n" +
+                "按住 F：自动寻找丧尸与敌意动物；Ctrl+F 允许攻击中立动物\n" +
+                "松开 Space / F 即停止对应动作；WASD 可随时打断\n" +
+                "右键：开关门、修理受损设备、取水、收获成熟农田或分解尸体；空地取消动作\n" +
+                "Alt 精确瞄准 + 按住左键持续手动攻击\n" +
+                "建造：左键放置 · 右键只取消 · R 旋转 · 1–0 建造快捷栏\n" +
+                "R 装填 · Q 切换武器 / 工具 · V 进食 · X 拆除 · G 修理（右键不会拆除）\n" +
+                "C 制作燃料 · Ctrl+C 制作弹药 · B 背包 / 装备 / 制作 · T 科技研究\n" +
+                "Tab 成长 · J 生存 · H 帮助 · Esc 关闭界面 / 游戏菜单 · F5 保存");
             FlowLabel("Tutorial Title", content, "从原始到核工业", 816, 30, 20, Accent);
             FlowLabel("Production Tutorial", content,
                 "按 T 打开科技研究。采集木材、石材与黏土，研究工具、烧炭和制陶。\n用炭窑烧制木炭，再用陶窑烧制陶砖，逐步研究冶金工艺。\n原始 → 水力 → 蒸汽 → 低压 → 中压 → 高压 → 核工业，按顺序研究。\n传动轴传机械动力，管道传蒸汽；电网匹配电压，核反应堆需冷却。", 816, 124, 18, Ink);
@@ -855,7 +868,7 @@ namespace DeadCircuit
                 !string.IsNullOrWhiteSpace(world.announcement) && !IsIntroNotice(world.announcement);
             string message = "";
             Color color = Amber;
-            // One message only: errors, player action results, local results, then world events.
+            // One result message, with at most one contextual pointer-action hint below it.
             if (local && localFeedbackError) { message = localFeedback; color = Danger; }
             else if (status && IsErrorFeedback(bridge.Status)) { message = bridge.Status; color = Danger; }
             else if (notice && IsErrorFeedback(player.notice)) { message = player.notice; color = Danger; }
@@ -868,8 +881,8 @@ namespace DeadCircuit
             string worldFeedback = showWorldFeedback ? message : "";
             if (showWorldFeedback && Mouse.current != null && !CapturesInput)
             {
-                string stair = StairTargetHint(world, player);
-                if (stair.Length > 0) worldFeedback = message.Length == 0 ? stair : message + "\n" + stair;
+                string targetHint = MouseTargetHint(world);
+                if (targetHint.Length > 0) worldFeedback = message.Length == 0 ? targetHint : message + "\n" + targetHint;
             }
             Set(feedback, worldFeedback);
             feedback.color = color;
@@ -887,14 +900,52 @@ namespace DeadCircuit
             technologyNotice.color = color;
         }
 
-        string StairTargetHint(WorldState world, PlayerState player)
+        string MouseTargetHint(WorldState world)
         {
+            if (bridge.BuildSelection.HasValue) return "";
+            var keyboard = Keyboard.current;
+            if (keyboard != null && (keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed))
+                return "Alt 精确瞄准 · 按住左键手动攻击";
             Vector2 point = bridge.MouseWorld;
-            int x = Mathf.RoundToInt(point.x), y = Mathf.RoundToInt(point.y);
-            if (!FloorWorld.TryStair(world, x, y, out var stair)) return "";
-            if ((new Vector2(player.x - x, player.y - y)).sqrMagnitude > 2.4f * 2.4f)
-                return "靠近楼梯 · 通往" + FloorWorld.LevelName(stair.targetLevel);
-            return (stair.Glyph == '<' ? "E 上楼 · " : "E 下楼 · ") + FloorWorld.LevelName(stair.targetLevel);
+            int x = Mathf.FloorToInt(point.x + .5f), y = Mathf.FloorToInt(point.y + .5f);
+            bool survivalEnabled = world.survival != null && world.survival.enabled;
+            if (world.zombies != null) foreach (var zombie in world.zombies)
+                if (zombie != null && zombie.hp > 0 && Mathf.FloorToInt(zombie.x + .5f) == x && Mathf.FloorToInt(zombie.y + .5f) == y)
+                    return "丧尸 · 左键/E 追击 · 按住 F 战斗";
+            if (survivalEnabled && world.survival.creatures != null) foreach (var creature in world.survival.creatures)
+            {
+                if (creature == null || creature.hp <= 0 || Mathf.FloorToInt(creature.x + .5f) != x || Mathf.FloorToInt(creature.y + .5f) != y) continue;
+                string name = SurvivalCatalog.Creature((int)creature.kind)?.name ?? "动物";
+                return name + " · 左键/E 追击";
+            }
+            if (FloorWorld.TryStair(world, x, y, out var stair))
+                return (stair.Glyph == '<' ? "左键/E 上楼 · " : "左键/E 下楼 · ") + FloorWorld.LevelName(stair.targetLevel);
+            if (world.buildings != null) foreach (var building in world.buildings)
+            {
+                if (building == null || building.hp <= 0 || !DemoCatalog.Contains(building, x, y)) continue;
+                string action = building.kind == BuildKind.Door ? (building.setting == 1 ? " · 右键关门" : " · 右键开门") :
+                    building.hp < WorldSimulator.BuildingMaxHealth(building.kind) ? " · 右键修理" : "";
+                return InspectedMachineName(building) + " · 左键/E 交互" + action;
+            }
+            if (world.nodes != null) foreach (var node in world.nodes)
+                if (node != null && node.hp > 0 && node.stock > 0 && node.x == x && node.y == y)
+                {
+                    if (node.kind == NodeKind.Oil) return "油源 · 邻接通电抽油机开采";
+                    if (node.kind == NodeKind.Wall) return "障碍墙 · 无法采集";
+                    return Nodes[(int)node.kind] + " · 左键/E 采尽 · 按住 Space 就近工作";
+                }
+            if (survivalEnabled)
+            {
+                if (world.survival.creatures != null) foreach (var creature in world.survival.creatures)
+                    if (creature != null && creature.hp <= 0 && creature.meatLeft > 0 &&
+                        Mathf.FloorToInt(creature.x + .5f) == x && Mathf.FloorToInt(creature.y + .5f) == y)
+                        return (SurvivalCatalog.Creature((int)creature.kind)?.name ?? "动物") + "尸体 · 左键/E 或右键分解";
+                FarmPlotState plot = FindSurvivalPlot(world, x, y);
+                if (plot != null && plot.crop >= 0 && plot.health > 0 && plot.growth >= 1f)
+                    return "成熟农田 · 左键/E 或右键收获";
+                if (WorldTiles.Ground(world, x, y) == '2') return "水域 · 右键取水";
+            }
+            return "左键/E 移动 · 按住 Space 工作 / F 战斗 · 右键取消";
         }
 
         static bool IsIntroNotice(string value) => !string.IsNullOrEmpty(value) &&
@@ -929,6 +980,7 @@ namespace DeadCircuit
         {
             if (!bridge.IsRunning || AnyPanelOpen() || bridge.LocalPlayer == null || bridge.LocalPlayer.hp <= 0f) return;
             if (index < 0 || index >= costs.Length || !PrimitiveCatalog.IsBuildUnlocked(bridge.World, (BuildKind)index)) return;
+            bridge.CancelPlayerControl();
             bridge.BuildSelection = (BuildKind)index;
             guardThroughFrame = Time.frameCount + 1;
             RefreshAll();
@@ -1043,6 +1095,7 @@ namespace DeadCircuit
         void CancelBuild()
         {
             bridge.BuildSelection = null;
+            // Keep this right-click consumed after clearing the selection, including the bridge's next input read.
             guardThroughFrame = Time.frameCount + 1;
             RefreshAll();
         }
@@ -1137,33 +1190,33 @@ namespace DeadCircuit
             {
                 case BuildKind.Generator: case BuildKind.DieselGenerator: case BuildKind.HighGenerator:
                 case BuildKind.CombustionChamber: case BuildKind.StoneFurnace:
-                    return "剩余燃烧时间 " + building.fuel.ToString("0.0") + " 秒 · E 补燃料";
+                    return "剩余燃烧时间 " + building.fuel.ToString("0.0") + " 秒 · 左键/E 补燃料";
                 case BuildKind.Boiler: return building.modularBoiler ? "由相邻的燃烧室、取水泵与烟囱提供运行条件" :
-                    "一体式锅炉 · 剩余燃烧时间 " + building.fuel.ToString("0.0") + " 秒 · E 补燃料";
+                    "一体式锅炉 · 剩余燃烧时间 " + building.fuel.ToString("0.0") + " 秒 · 左键/E 补燃料";
                 case BuildKind.Miner: return "相邻矿脉 → 对应原矿";
                 case BuildKind.SteamMiner: return "蒸汽驱动 · 采集相邻矿床中的资源";
                 case BuildKind.Belt: return "物料 → 箭头方向的相邻设备";
                 case BuildKind.Turret: return "装入弹药后自动攻击敌人";
-                case BuildKind.Chest: return "接收物料 → E 取出库存";
+                case BuildKind.Chest: return "接收物料 → 左键/E 取出库存";
                 case BuildKind.PowerPole: case BuildKind.MediumPole: case BuildKind.HighPole: return "同电压连线 7 格 · 覆盖 4 格";
                 case BuildKind.SolarPanel: return building.powerGeneration > 0 ? "日照发电 · 夜间停机" : "夜间待机 · 无需燃料";
                 case BuildKind.Wall: return "阻挡敌人 · 修理消耗木材";
-                case BuildKind.Door: return building.setting == 1 ? "门已打开 · E 关门 · 可通行" : "门已关闭 · E 开门";
+                case BuildKind.Door: return building.setting == 1 ? "门已打开 · 左键/E 或右键关门 · 可通行" : "门已关闭 · 左键/E 或右键开门";
                 case BuildKind.Chimney: return "为相邻的锅炉机组排烟";
                 case BuildKind.FeedwaterPump: return "为相邻的锅炉机组供水 · 须靠近水面";
                 case BuildKind.SteamEngine: return "蒸汽输入 → 机械动力 · 沿朝向连接传动轴";
                 case BuildKind.Workbench: return "B 打开手工配方 · 靠近后制作";
-                case BuildKind.CharcoalKiln: return "木材×4 → 木炭×2 · E 投料 / 取出";
-                case BuildKind.ClayKiln: return "黏土×4 + 木炭×1 → 陶砖×4 · E 投料 / 取出";
+                case BuildKind.CharcoalKiln: return "木材×4 → 木炭×2 · 左键/E 投料 / 取出";
+                case BuildKind.ClayKiln: return "黏土×4 + 木炭×1 → 陶砖×4 · 左键/E 投料 / 取出";
                 case BuildKind.Waterwheel: return "近水驱动 · 接触传动轴输出动力";
                 case BuildKind.Shaft: return "接触传递机械动力";
                 case BuildKind.SteamPipe: return "接触传递蒸汽动力";
                 case BuildKind.ChemicalPlant: return "中压化工生产 · 研究铀矿选冶后可切换铀精矿配方";
                 case BuildKind.NuclearProcessor: return "高压加工 · 铀精矿 → 核燃料 · 先由中压化工厂选冶铀矿";
-                case BuildKind.Reactor: return "满足启动条件后自动运行 · E 补核燃料 / 冷却液";
+                case BuildKind.Reactor: return "满足启动条件后自动运行 · 左键/E 补核燃料 / 冷却液";
                 case BuildKind.ReactorControlConsole: return "在设备详情中启用或停用控制台";
                 case BuildKind.NuclearWasteVault: return "自动接收核废料 · 无法手动收发";
-                default: return "E 投入材料 / 取出产物";
+                default: return "左键/E 投入材料 / 取出产物";
             }
         }
 
