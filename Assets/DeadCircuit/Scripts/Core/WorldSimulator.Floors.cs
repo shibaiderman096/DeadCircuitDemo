@@ -8,7 +8,7 @@ namespace DeadCircuit
             if (FloorWorld.TryTravel(State, player, x, y, out string notice))
             {
                 if (inputs.TryGetValue(player.id, out var input))
-                { input.x = input.y = 0f; input.sprint = false; }
+                { ClearPlayerControl(player, input); input.x = input.y = 0f; input.sprint = false; }
                 player.aiming = player.moving = false;
                 CancelReload(player);
                 RefreshSpatial(); flowRevision = -1;

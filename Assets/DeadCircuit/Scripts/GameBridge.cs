@@ -52,6 +52,9 @@ namespace DeadCircuit
         DemoHud hud;
         float accumulator, snapshotClock, inputClock, autoSaveClock, connectStarted;
         bool connecting, leaving;
+        string heldControl = "";
+        bool controlBlocked;
+        bool wasPrecisionAiming;
         readonly Dictionary<ulong, string> peers = new Dictionary<ulong, string>();
         readonly Dictionary<ulong, int> commandCounts = new Dictionary<ulong, int>();
         float rateClock;
@@ -195,6 +198,7 @@ namespace DeadCircuit
         void ResetClocks()
         {
             accumulator = snapshotClock = inputClock = autoSaveClock = 0;
+            heldControl = ""; controlBlocked = wasPrecisionAiming = false;
             smokeMoved = smokeSawPeer = smokeSawGrid = smokeSawCargo = smokeSawResearch = smokeResearchSent = false;
             smokeSawEquipment = false; smokeEquipmentStage = 0;
             smokeFirstX = LocalPlayer?.x ?? 0;
@@ -246,60 +250,102 @@ namespace DeadCircuit
 
         void ReadInput()
         {
+            ReadInputDevices(Application.isFocused);
+        }
+
+        void ReadInputDevices(bool focused)
+        {
             var keyboard = Keyboard.current;
             var mouse = Mouse.current;
-            if (keyboard == null || mouse == null) return;
             var player = LocalPlayer;
             if (player == null) return;
-            if (keyboard.f5Key.wasPressedThisFrame) Save();
-            bool blocked = (hud != null && hud.CapturesInput) || !Application.isFocused;
-            Vector2 move = Vector2.zero;
-            var aim = (MouseWorld - new Vector2(player.x, player.y)).normalized;
-            if (!blocked)
+            bool blocked = keyboard == null || !focused || (hud != null && hud.CapturesKeyboard);
+            // The bridge runs before the HUD; consume panel-opening keys in this frame too.
+            if (!blocked && (keyboard.bKey.wasPressedThisFrame || keyboard.tKey.wasPressedThisFrame ||
+                keyboard.tabKey.wasPressedThisFrame || keyboard.hKey.wasPressedThisFrame ||
+                keyboard.jKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame)) blocked = true;
+            if (blocked)
             {
-                move = new Vector2((keyboard.dKey.isPressed ? 1 : 0) - (keyboard.aKey.isPressed ? 1 : 0),
-                    (keyboard.wKey.isPressed ? 1 : 0) - (keyboard.sKey.isPressed ? 1 : 0)).normalized;
-                var keys = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key, keyboard.digit7Key, keyboard.digit8Key, keyboard.digit9Key, keyboard.digit0Key };
-                var hotbar = TechCatalog.Hotbar(World.era);
-                for (int i = 0; i < keys.Length && i < hotbar.Length; i++)
-                    if (keys[i].wasPressedThisFrame && TechCatalog.IsUnlocked(World, hotbar[i])) BuildSelection = hotbar[i];
-                if (keyboard.rKey.wasPressedThisFrame)
-                {
-                    if (BuildSelection.HasValue) BuildRotation = (BuildRotation + 1) % 4;
-                    else Action("reload");
-                }
-                if (keyboard.qKey.wasPressedThisFrame && !BuildSelection.HasValue)
-                    Action("switch", player.activeSlot == 0 ? 1 : 0);
-                if (mouse.rightButton.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame) BuildSelection = null;
-                if (keyboard.eKey.wasPressedThisFrame) Action("interact");
-                if (keyboard.fKey.wasPressedThisFrame) Action("eat");
-                if (keyboard.cKey.wasPressedThisFrame) Action("craft", keyboard.leftCtrlKey.isPressed ? 1 : 0);
+                if (!controlBlocked) Send(new PlayerCommand { action = "cancel" });
+                controlBlocked = true;
+                heldControl = "";
+                return;
+            }
+            controlBlocked = false;
+            if (keyboard.f5Key.wasPressedThisFrame) Save();
+            bool pointerBlocked = mouse == null || (hud != null && hud.CapturesInput);
+            Vector2 move;
+            var aim = new Vector2(player.aimX, player.aimY);
+            bool precisionAim = !BuildSelection.HasValue && (keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed);
+            bool force = keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed;
+            move = new Vector2((keyboard.dKey.isPressed ? 1 : 0) - (keyboard.aKey.isPressed ? 1 : 0),
+                (keyboard.wKey.isPressed ? 1 : 0) - (keyboard.sKey.isPressed ? 1 : 0)).normalized;
+            if (precisionAim && !pointerBlocked) aim = (MouseWorld - new Vector2(player.x, player.y)).normalized;
+            else if (move != Vector2.zero) aim = move;
+            string control = !BuildSelection.HasValue && move == Vector2.zero && !precisionAim ?
+                (keyboard.fKey.isPressed ? "fight" : keyboard.spaceKey.isPressed ? "work" : "") : "";
+            if ((heldControl.Length > 0 && control != heldControl) || (precisionAim && !wasPrecisionAiming))
+                CancelPlayerControl();
+            heldControl = control;
+            wasPrecisionAiming = precisionAim;
+            var keys = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key, keyboard.digit7Key, keyboard.digit8Key, keyboard.digit9Key, keyboard.digit0Key };
+            var hotbar = TechCatalog.Hotbar(World.era);
+            for (int i = 0; i < keys.Length && i < hotbar.Length; i++)
+                if (keys[i].wasPressedThisFrame && TechCatalog.IsUnlocked(World, hotbar[i]))
+                { CancelPlayerControl(); BuildSelection = hotbar[i]; }
+            if (keyboard.rKey.wasPressedThisFrame)
+            {
+                if (BuildSelection.HasValue) BuildRotation = (BuildRotation + 1) % 4;
+                else Action("reload");
+            }
+            if (keyboard.qKey.wasPressedThisFrame && !BuildSelection.HasValue)
+                Action("switch", player.activeSlot == 0 ? 1 : 0);
+            if (keyboard.vKey.wasPressedThisFrame) Action("eat");
+            if (keyboard.cKey.wasPressedThisFrame) Action("craft", force ? 1 : 0);
+            if (!pointerBlocked)
+            {
+                if (keyboard.eKey.wasPressedThisFrame && !BuildSelection.HasValue) Action("primary");
                 if (keyboard.xKey.wasPressedThisFrame) Action("dismantle");
                 if (keyboard.gKey.wasPressedThisFrame) Action("repair");
-                if (mouse.leftButton.isPressed)
+                if (mouse.rightButton.wasPressedThisFrame)
                 {
                     if (BuildSelection.HasValue)
-                    { if (mouse.leftButton.wasPressedThisFrame) Action("build", (int)BuildSelection.Value); }
-                    else if (inputClock >= StepSeconds) Action("attack");
+                    { CancelPlayerControl(); BuildSelection = null; }
+                    else Action("secondary");
+                }
+                else if (mouse.leftButton.wasPressedThisFrame)
+                {
+                    if (BuildSelection.HasValue) Action("build", (int)BuildSelection.Value);
+                    else if (!precisionAim) Action("primary");
                 }
                 float scroll = mouse.scroll.ReadValue().y;
                 if (Mathf.Abs(scroll) > 0 && view?.WorldCamera != null)
                     view.WorldCamera.orthographicSize = Mathf.Clamp(view.WorldCamera.orthographicSize - scroll * .012f, 6, 16);
             }
+            if (BuildSelection.HasValue) { control = ""; heldControl = ""; }
             if (inputClock >= StepSeconds)
             {
-                Send(new PlayerCommand { moveX = move.x, moveY = move.y, aimX = aim.x, aimY = aim.y, sprint = !blocked && keyboard.leftShiftKey.isPressed,
-                    aiming = !blocked && !BuildSelection.HasValue && mouse.rightButton.isPressed });
+                Send(new PlayerCommand { moveX = move.x, moveY = move.y, aimX = aim.x, aimY = aim.y,
+                    sprint = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed, aiming = precisionAim });
+                if (control.Length > 0) Send(new PlayerCommand { action = control, arg = force ? 1 : 0 });
+                else if (precisionAim && !pointerBlocked && mouse.leftButton.isPressed) Action("attack");
                 inputClock = 0;
             }
+        }
+
+        public void CancelPlayerControl()
+        {
+            heldControl = "";
+            Send(new PlayerCommand { action = "cancel" });
         }
 
         void Action(string action, int arg = 0)
         {
             Vector2 point = MouseWorld;
-            Send(new PlayerCommand { action = action, x = Mathf.RoundToInt(point.x), y = Mathf.RoundToInt(point.y), arg = arg,
+            Send(new PlayerCommand { action = action, x = Mathf.FloorToInt(point.x + .5f), y = Mathf.FloorToInt(point.y + .5f), arg = arg,
                 rotation = BuildRotation, aimX = point.x - (LocalPlayer?.x ?? 0), aimY = point.y - (LocalPlayer?.y ?? 0),
-                aiming = !BuildSelection.HasValue && Mouse.current != null && Mouse.current.rightButton.isPressed });
+                aiming = !BuildSelection.HasValue && Keyboard.current != null &&
+                    (Keyboard.current.leftAltKey.isPressed || Keyboard.current.rightAltKey.isPressed) });
         }
 
         public void Save() => SaveInternal(true);
@@ -332,6 +378,7 @@ namespace DeadCircuit
         void AbortSession()
         {
             IsRunning = connecting = false;
+            heldControl = ""; controlBlocked = wasPrecisionAiming = false;
             IsHost = false;
             simulator = null;
             World = null;
@@ -364,7 +411,7 @@ namespace DeadCircuit
         }
         void OnApplicationFocus(bool focused)
         {
-            if (!focused && IsRunning) Send(new PlayerCommand());
+            if (!focused && IsRunning) { CancelPlayerControl(); controlBlocked = true; }
         }
         void OnApplicationQuit() { if (IsHost) SaveInternal(false); }
 

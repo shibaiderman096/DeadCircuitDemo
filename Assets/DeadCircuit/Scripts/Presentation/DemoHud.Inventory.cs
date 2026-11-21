@@ -153,7 +153,7 @@ namespace DeadCircuit
             }
             MakeInventoryRecipes();
             MakeItemDetails(card);
-            eatButton = Button("Eat", card, "进食 F", 22, 580, 130, 34, () => Send("eat"));
+            eatButton = Button("Eat", card, "进食 V", 22, 580, 130, 34, () => Send("eat"));
             SetButtonArt(eatButton, "ui_eat", 22);
             workbenchHint = Label("Workbench Requirement", card, "", 166, 574, 972, 44, 13, Muted);
             inventoryNotice = Label("Inventory Feedback", card, "", 22, 622, 1116, 50, 13, Amber);
@@ -862,7 +862,7 @@ namespace DeadCircuit
                 case GearKind.StonePickaxe: case GearKind.SteelPickaxe: return "工具 · 采矿与近战；使用消耗耐久。";
                 case GearKind.Wrench: return "工具 · 设备维护与近战，采集废料和废墙更高效；使用消耗耐久。";
                 case GearKind.Knife: usage = "近战武器 · 不消耗弹药；使用消耗耐久。"; break;
-                default: usage = "远程武器 · 先装备、选择兼容弹种并装填；右键瞄准，R 装填。"; break;
+                default: usage = "远程武器 · 先装备、选择兼容弹种并装填；Alt 精确瞄准，按住左键持续手动攻击；R 装填。"; break;
             }
             string description = EquipmentCatalog.Gear(kind).description;
             return description.Length == 0 ? usage : description + "\n" + usage;
@@ -884,7 +884,7 @@ namespace DeadCircuit
                 return "弹药用途：" + string.Join("、", compatible) + "。\n" + caliber +
                     "\n在装备详情中选择弹种并装填；切换已装弹种前先卸弹。";
             }
-            if (kind == ItemKind.Food) return "补充饱食度。点击下方「进食 F」，或关闭面板后按 F。";
+            if (kind == ItemKind.Food) return "补充饱食度。点击下方「进食 V」，或关闭面板后按 V。";
             if (kind == ItemKind.Fuel) return "供燃料发电、锅炉与石炉使用；也用于炼钢和化工。";
             if (kind == ItemKind.Stone) return "采集石材堆获得。用于工具、窑炉与建造工艺；按 T 查看研究材料。";
             if (kind == ItemKind.Clay) return "采集黏土矿床获得。陶窑消耗黏土×4、木炭×1，产出陶砖×4。";

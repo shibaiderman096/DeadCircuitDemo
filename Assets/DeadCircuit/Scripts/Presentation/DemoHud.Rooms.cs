@@ -38,18 +38,22 @@ namespace DeadCircuit
 
         static string ResourceToolText(NodeKind kind)
         {
+            if (kind == NodeKind.Oil) return "抽油机 · 紧邻油源并供电";
+            if (kind == NodeKind.Wall) return "障碍墙 · 无法采集";
             if (EquipmentCatalog.UsesPickaxe(kind)) return "镐 · 提高采集效率";
             switch (kind)
             {
                 case NodeKind.Tree: return "斧 · 提高采集效率";
-                case NodeKind.Scrap: case NodeKind.Wall: return "扳手 · 提高采集效率";
+                case NodeKind.Scrap: return "扳手 · 提高采集效率";
                 default: return "手工即可";
             }
         }
 
         static string ResourceCollectionHint(WorldState world, PlayerState player, NodeState node)
         {
-            string hint = "靠近并指向资源，按 E 采集；空手也可采集。";
+            if (node.kind == NodeKind.Oil) return "紧邻油源建造抽油机并供电，自动抽取原油。油藏有限，耗尽后需另寻油源。";
+            if (node.kind == NodeKind.Wall) return "障碍墙无法采集，请绕行。";
+            string hint = "左键/E 走近采尽；按住 Space 就近工作，不跟随鼠标。松开 Space 即停；WASD 打断。空手可采集。";
             switch (node.kind)
             {
                 case NodeKind.Coal: hint += "\n煤层多见于针叶林与冻原，可前往野外勘探。"; break;
@@ -69,7 +73,7 @@ namespace DeadCircuit
                     case 2: case 4: case 5: forage = "蘑菇、浆果"; break;
                     case 3: forage = "少量浆果"; break;
                 }
-                if (forage.Length > 0) hint += "\n按 E 采尽树木时，还可获得" + forage + "。";
+                if (forage.Length > 0) hint += "\n采尽树木时，还可获得" + forage + "。";
             }
             string resources = BiomeResourceHint(world, node.x, node.y);
             if (resources.Length > 0) hint += "\n当地资源：" + resources;
@@ -115,9 +119,9 @@ namespace DeadCircuit
         static string InspectedMachineDescription(BuildingState building)
         {
             if (building.kind == BuildKind.Boiler && !building.modularBoiler)
-                return "自带燃烧室，靠近水域即可取水并产生蒸汽动力。按 E 补充燃料。";
+                return "自带燃烧室，靠近水域即可取水并产生蒸汽动力。左键/E 点设备，走近后补充一次燃料。";
             if (building.kind == BuildKind.Door)
-                return "按 E 开关门，开启后可通行。开门不会移除屋顶，室内默认以剖面显示。";
+                return "左键/E 走近后开关门一次，或右键开关门；开启后可通行。开门不会移除屋顶，室内默认以剖面显示。";
             if (building.kind == BuildKind.FilterSplitter)
                 return "需低压(LV)供电。在设备详情中选择过滤物品：匹配物品送往前方，其余送往左侧。出口堵塞时不会改道；在途物品全部到达后，才能更换过滤物品。";
             if (building.kind == BuildKind.CircuitBreaker)

@@ -142,6 +142,7 @@ static partial class Checks
         includeHistorical = args.Contains("--historical");
         filters = args.Where(arg=>arg!="--historical").ToArray();
         AppearanceChecks();
+        PlayerControlChecks();
         SiteBlueprintDefinitionChecks();
         LandmarkChecks();
         SettlementChecks();

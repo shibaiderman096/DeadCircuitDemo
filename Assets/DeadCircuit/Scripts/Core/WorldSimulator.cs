@@ -5,7 +5,7 @@ namespace DeadCircuit
 {
     /// <summary>Single-threaded host authority. State is host-owned, never accept it from a client.
     /// Step uses fixed 50ms ticks (at most one second per call); movement persists until replaced.
-    /// Empty/move changes movement only; every other action leaves the held input intact.
+    /// Empty/move updates manual movement; nonzero movement cancels automatic player intents.
     /// craft: 0 = 3 wood -> 2 fuel; 1 = 1 iron -> 4 ammo. Targets use integer cell centres.
     /// Save State between calls. Restore validates and deep-copies it, releasing held input.
     /// </summary>
@@ -34,6 +34,17 @@ namespace DeadCircuit
             public bool sprint;
             public long commandTick = -1;
             public int commands;
+            public PlayerControlIntent intent;
+            public PlayerControlTarget targetKind;
+            public int targetId;
+            public long refreshedAt;
+            public bool holdStopped;
+            public bool allowNeutral;
+            public float focusX, focusY;
+            public int targetX, targetY;
+            public List<long> route;
+            public int routeIndex;
+            public float travelDistance;
         }
 
         public WorldSimulator(int seed) : this(CreateWorld(seed)) { }
@@ -85,6 +96,7 @@ namespace DeadCircuit
             if (p == null) return;
             p.connected = connected;
             HeldInput input = inputs[p.id];
+            ClearPlayerControl(p, input);
             input.x = input.y = 0f; input.sprint = false;
             CancelReload(p); p.aiming=false; p.moving=false;
             flowRevision = -1;
@@ -104,7 +116,9 @@ namespace DeadCircuit
                 if (!Finite(cmd.moveX) || !Finite(cmd.moveY) || !Finite(cmd.aimX) || !Finite(cmd.aimY)) return;
                 float mx = cmd.moveX, my = cmd.moveY;
                 Normalize(ref mx, ref my, false);
-                input.x = p.hp > 0f ? mx : 0f; input.y = p.hp > 0f ? my : 0f;
+                if (mx != 0f || my != 0f || p.hp <= 0f) ClearPlayerControl(p, input);
+                if (input.intent == PlayerControlIntent.None)
+                { input.x = p.hp > 0f ? mx : 0f; input.y = p.hp > 0f ? my : 0f; }
                 input.sprint = cmd.sprint && p.hp > 0f;
                 p.aiming=cmd.aiming && p.hp>0f;
                 p.moving=input.x!=0f || input.y!=0f;
@@ -115,6 +129,8 @@ namespace DeadCircuit
             if (input.commandTick != State.tick) { input.commandTick = State.tick; input.commands = 0; }
             if (input.commands >= 6) return;
             input.commands++;
+            if (ApplyPlayerControl(p, input, cmd)) return;
+            ClearPlayerControl(p, input);
             if (action == "respawn") { Respawn(p); return; }
             if (p.hp <= 0f) return;
             RefreshSpatial();
@@ -218,8 +234,9 @@ namespace DeadCircuit
             p.attackCooldown = Math.Max(0f, p.attackCooldown - FixedStep);
             p.interactCooldown = Math.Max(0f, p.interactCooldown - FixedStep);
             UpdateEquipment(p);
-            if (!p.connected || p.hp <= 0f) return;
             HeldInput input = inputs[p.id];
+            if (!p.connected || p.hp <= 0f) { ClearPlayerControl(p, input); return; }
+            UpdatePlayerControl(p, input);
             bool moving = input.x != 0f || input.y != 0f;
             p.moving=moving;
             bool sprinting = moving && input.sprint && !p.aiming && p.stamina >= 1.5f && p.hunger > 0f;
@@ -229,7 +246,9 @@ namespace DeadCircuit
             speed*=1f-EquipmentCatalog.MovementPenalty(p);
             speed *= SurvivalMovementMultiplier(p);
             if (p.hunger <= 0f) speed *= 0.7f;
-            MoveCircle(ref p.x, ref p.y, input.x * speed * FixedStep, input.y * speed * FixedStep, 0.28f);
+            float distance = speed * FixedStep;
+            if (input.intent != PlayerControlIntent.None) distance = Math.Min(distance, input.travelDistance);
+            MoveCircle(ref p.x, ref p.y, input.x * distance, input.y * distance, 0.28f);
             p.stamina = Clamp(p.stamina + (sprinting ? -19f : 13f + p.skills[2] * 2f) * FixedStep, 0f, PlayerMaxStamina(p));
             float hungerRate = 0.085f * (1f - p.skills[2] * 0.15f) * (sprinting ? 2.8f : 1f);
             hungerRate *= SurvivalHungerMultiplier(p);
