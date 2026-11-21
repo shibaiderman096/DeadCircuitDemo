@@ -29,7 +29,7 @@ namespace DeadCircuit
                     chunk.ground[i]>='0' && chunk.ground[i]<='4' && chunk.biomes[i]>='0' && chunk.biomes[i] < '0' + WorldGeneration.BiomeCount,"chunk tile kind");
                 result.records.Add(new WorldChunkState {x=chunk.x,y=chunk.y,ground=chunk.ground,biomes=chunk.biomes,interiorSiteId=chunk.interiorSiteId});
             }
-            // A normal save always contains its intact original tutorial footprint.
+            // A save always includes the sixteen initially generated chunks.
             for(int cy=0;cy<4;cy++) for(int cx=0;cx<4;cx++) SaveCheck(keys.Contains(WorldTiles.Key(cx,cy)),"missing initial chunk");
             target.chunks=result;
         }

@@ -19,7 +19,7 @@ namespace DeadCircuit
 
         void MakePrimitiveTechnology(RectTransform content)
         {
-            primitiveHeading = FlowLabel("Primitive Research Heading", content, "原始工艺 · 先研究，再建造并验证生产", 768, 30, 18, Accent);
+            primitiveHeading = FlowLabel("Primitive Research Heading", content, "原始工艺 · 从手工制作到金属冶炼", 768, 30, 18, Accent);
             foreach (var definition in PrimitiveCatalog.All)
             {
                 int id = (int)definition.id;
@@ -28,6 +28,7 @@ namespace DeadCircuit
                 details.enableAutoSizing = false;
                 details.alignment = TextAlignmentOptions.TopLeft;
                 UiButton button = Button("Primitive Research " + id, root, "", 588, 12, 170, 64, () => ResearchPrimitive(id));
+                SetButtonArt(button, "ui_research", 22);
                 primitiveResearchRows.Add(new PrimitiveResearchRow { id = id, root = root, details = details, research = button });
             }
             MakeWaterTechnology(content);
@@ -53,9 +54,9 @@ namespace DeadCircuit
                 string state = known ? "已研究" : !player.connected || player.hp <= 0f ? "角色尚未就绪" :
                     player.interactCooldown > 0f ? "交互冷却中" : can ? "可研究" : "条件未满足";
                 Set(row.details, definition.name + " · " + state + "\n" + definition.description +
-                    "\n前置：" + PrimitivePrerequisites(world, definition.prerequisites) +
-                    "\n材料：" + MaterialText(definition.cost, player.items, true) +
-                    "\n工艺 / 生产验证：" + (known ? "已完成" : string.IsNullOrEmpty(requirement) ? "已满足" : requirement));
+                    "\n前置研究：" + PrimitivePrerequisites(world, definition.prerequisites) +
+                    "\n研究消耗（持有 / 需要）：" + MaterialText(definition.cost, player.items, true) +
+                    "\n研究条件：" + (known ? "已完成" : string.IsNullOrEmpty(requirement) ? "已满足" : requirement));
                 row.details.color = known ? Accent : Ink;
                 float height = Mathf.Max(144, row.details.GetPreferredValues(row.details.text, 562, float.PositiveInfinity).y + 16);
                 row.details.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height - 12);
@@ -119,10 +120,10 @@ namespace DeadCircuit
                 if (definition.id == PrimitiveTech.Cooking) continue; // Optional survival branch, not a Water gate.
                 if (PrimitiveCatalog.HasResearch(world, id)) continue;
                 string requirement = PrimitiveCatalog.ResearchRequirement(world, player, id);
-                return "按 T → 原始工艺：" + definition.name + (string.IsNullOrEmpty(requirement) ? " · 材料已齐，点击研究" : " · " + requirement);
+                return "按 T → 原始工艺：" + definition.name + (string.IsNullOrEmpty(requirement) ? " · 条件已满足，点击研究" : " · " + requirement);
             }
             string water = PrimitiveCatalog.WaterRequirement(world);
-            return string.IsNullOrEmpty(water) ? null : "按 T 查看水力前置：" + water;
+            return string.IsNullOrEmpty(water) ? null : "按 T 查看水力时代条件：" + water;
         }
     }
 }

@@ -61,21 +61,21 @@ namespace DeadCircuit
                 case GearKind.SteelAxe: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Wood,2,ItemKind.Scrap,1); d.damage=36f; d.interval=.55f; break;
                 case GearKind.SteelPickaxe: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Wood,2,ItemKind.Scrap,2); d.damage=32f; d.interval=.55f; break;
                 case GearKind.Wrench: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Iron,3,ItemKind.Bronze,2); d.damage=26f; break;
-                case GearKind.Knife: d.description="KA-BAR 1217固定刃战斗/通用刀。"; d.cost=DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Scrap,1); d.damage=24f; d.interval=.42f; d.range=1.5f; break;
+                case GearKind.Knife: d.description="KA-BAR 1217固定刃军刀，适合近身格斗。"; d.cost=DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Scrap,1); d.damage=24f; d.interval=.42f; d.range=1.5f; break;
                 case GearKind.Pistol:
-                    d.description="9×19mm半自动手枪原型；基础弹匣17发。";
+                    d.description="9×19mm半自动手枪；基础弹匣容量17发。";
                     d.era=TechEra.LowVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,4,ItemKind.Copper,2,ItemKind.Scrap,5);
                     SetGun(d,ItemKind.Ammo,17,24f,9f,.32f,1.3f,.035f,.028f,1); break;
                 case GearKind.Shotgun:
-                    d.description="12号口径泵动霰弹枪；游戏采用6发管式弹仓。";
+                    d.description="12号口径泵动霰弹枪；管式弹仓容量6发。";
                     d.era=TechEra.LowVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,6,ItemKind.Wood,3,ItemKind.Scrap,5);
                     SetGun(d,ItemKind.Shell,6,12f,7f,.95f,2.4f,.17f,.09f,7); break;
                 case GearKind.AssaultRifle:
-                    d.description="5.56×45mm选择射击卡宾枪原型；基础弹匣30发。";
+                    d.description="5.56×45mm卡宾枪；基础弹匣容量30发。";
                     d.era=TechEra.MediumVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,8,ItemKind.Polymer,4,ItemKind.Circuit,2);
                     SetGun(d,ItemKind.RifleAmmo,30,22f,15f,.13f,2.2f,.045f,.04f,1); break;
                 case GearKind.PrecisionRifle:
-                    d.description="7.62×51mm栓动狙击步枪原型；基础弹仓5发。";
+                    d.description="7.62×51mm栓动狙击步枪；基础弹仓容量5发。";
                     d.era=TechEra.HighVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,10,ItemKind.Polymer,4,ItemKind.AdvancedCircuit,2);
                     SetGun(d,ItemKind.PrecisionAmmo,5,86f,24f,1.35f,2.8f,.012f,.12f,1); break;
                 case GearKind.ClothHood:
@@ -111,12 +111,12 @@ namespace DeadCircuit
             var d = new PartDefinition { kind=kind, name=PartNames[(int)kind], era=TechEra.LowVoltage };
             switch (kind)
             {
-                case PartKind.RedDot: d.slot=AttachmentSlot.Optic; d.cost=DemoCatalog.Materials(ItemKind.Copper,2,ItemKind.Circuit,1); d.description="散布×0.75；兼容所有枪械"; break;
+                case PartKind.RedDot: d.slot=AttachmentSlot.Optic; d.cost=DemoCatalog.Materials(ItemKind.Copper,2,ItemKind.Circuit,1); d.description="散布×0.75；适用于所有枪械"; break;
                 case PartKind.Scope4x: d.slot=AttachmentSlot.Optic; d.era=TechEra.MediumVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Polymer,2,ItemKind.Circuit,2); d.description="散布×0.5，射程×1.2；步枪专用"; break;
-                case PartKind.Suppressor: d.slot=AttachmentSlot.Muzzle; d.era=TechEra.MediumVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Polymer,1); d.description="后坐×0.75，伤害×0.95；非霰弹枪"; break;
-                case PartKind.MuzzleBrake: d.slot=AttachmentSlot.Muzzle; d.cost=DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Scrap,2); d.description="后坐×0.6；兼容所有枪械"; break;
-                case PartKind.ExtendedMag: d.slot=AttachmentSlot.Magazine; d.cost=DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Copper,2); d.description="容量增加50%，装填时间×1.15；超额弹须先卸弹"; break;
-                case PartKind.ErgonomicGrip: d.slot=AttachmentSlot.Grip; d.era=TechEra.MediumVoltage; d.cost=DemoCatalog.Materials(ItemKind.Polymer,2,ItemKind.Steel,1); d.description="散布×0.8，后坐×0.8，装填×0.9；长枪专用"; break;
+                case PartKind.Suppressor: d.slot=AttachmentSlot.Muzzle; d.era=TechEra.MediumVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Polymer,1); d.description="后坐力×0.75，伤害×0.95；适用于手枪和步枪"; break;
+                case PartKind.MuzzleBrake: d.slot=AttachmentSlot.Muzzle; d.cost=DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Scrap,2); d.description="后坐力×0.6；适用于所有枪械"; break;
+                case PartKind.ExtendedMag: d.slot=AttachmentSlot.Magazine; d.cost=DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Copper,2); d.description="弹匣容量增加50%，装填时间×1.15；拆卸前须先卸出超额弹药"; break;
+                case PartKind.ErgonomicGrip: d.slot=AttachmentSlot.Grip; d.era=TechEra.MediumVoltage; d.cost=DemoCatalog.Materials(ItemKind.Polymer,2,ItemKind.Steel,1); d.description="散布×0.8，后坐力×0.8，装填时间×0.9；长枪专用"; break;
                 default: d.slot=AttachmentSlot.Barrel; d.era=TechEra.HighVoltage; d.cost=DemoCatalog.Materials(ItemKind.Steel,4,ItemKind.AdvancedCircuit,1); d.description="伤害×1.12，射程×1.2，散布×0.7；步枪专用"; break;
             }
             return d;

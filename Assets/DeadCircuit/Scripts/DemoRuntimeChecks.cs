@@ -16,6 +16,7 @@ namespace DeadCircuit
     public sealed partial class DemoRuntimeChecks : MonoBehaviour
     {
         string output;
+        static Mouse qaMouse;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void StartChecks()
         {
@@ -23,23 +24,37 @@ namespace DeadCircuit
         }
         IEnumerator Start()
         {
-            var args = Environment.GetCommandLineArgs();
-            int i = Array.IndexOf(args, "--demo-qa-dir");
-            output = i >= 0 && i + 1 < args.Length ? args[i + 1] : Application.persistentDataPath;
-            Directory.CreateDirectory(output);
             yield return new WaitForSecondsRealtime(1);
             var bridge = GameBridge.Instance;
             Require(bridge != null, "bootstrap");
-            Require(args.Contains("--demo-qa") && !bridge.IsRunning, "QA starts at the menu with isolated saving enabled");
-            if (bridge.PlayerName == "联机测试主机" || bridge.PlayerName == "联机测试客户端")
-            {
-                // Clean only the display value left by the first smoke-test revision.
-                bridge.PlayerName = "幸存者";
-                InputField("Player Name").text = "幸存者";
-                PlayerPrefs.SetString("DeadCircuit.Name", "幸存者");
-                PlayerPrefs.Save();
-            }
+            Require(bridge.QaArgumentsValid && !string.IsNullOrEmpty(bridge.QaOutputDirectory) && !string.IsNullOrEmpty(bridge.QaSavePath),
+                "QA 启动参数有效：" + bridge.QaArgumentError);
+            string parserRoot = Path.Combine(Path.GetTempPath(), "dead-circuit-qa-parser");
+            string[] validArguments = { "--demo-qa", "--demo-qa-dir", parserRoot, "--demo-qa-save-path", Path.Combine(parserRoot, "world.json") };
+            Require(GameBridge.TryResolveQaPaths(validArguments, out _, out _, out _), "QA path parser accepts a save inside its output directory");
+            Require(!GameBridge.TryResolveQaPaths(new[] { "--demo-qa", "--demo-qa-dir", parserRoot }, out _, out _, out _),
+                "QA path parser requires an explicit save path");
+            Require(!GameBridge.TryResolveQaPaths(new[] { "--demo-qa", "--demo-qa-dir", parserRoot, "--demo-qa-save-path", Path.Combine(parserRoot, "..", "outside.json") }, out _, out _, out _),
+                "QA path parser rejects saves outside its output directory");
+            Require(!GameBridge.TryResolveQaPaths(validArguments.Concat(new[] { "--demo-smoke-host" }).ToArray(), out _, out _, out _),
+                "QA path parser rejects smoke mode combinations");
+            output = bridge.QaOutputDirectory;
+            Directory.CreateDirectory(output);
+            string qaSavePath = Path.GetFullPath(bridge.QaSavePath);
+            Require(!File.Exists(qaSavePath) && !bridge.IsRunning,
+                "QA starts at the menu with a fresh isolated save path");
             Require(Active("Start Page") && !Active("Create World Page") && !Active("Load World Page") && !Active("LAN Page"), "home page is the initial menu");
+            RequireButtonIcon("New Game", "ui_new_world");
+            RequireButtonIcon("Load Game", "ui_load_world");
+            RequireButtonIcon("Open LAN", "ui_network");
+            Button appearanceEntry = FindButton("Open Appearance");
+            Require(appearanceEntry.interactable && PointerTargetsButton(appearanceEntry), "appearance entry receives UI raycasts on the start page");
+            Click("Open Appearance");
+            yield return null;
+            Require(Active("Appearance Panel") && !bridge.IsRunning, "appearance editor opens before entering a world");
+            Click("Close Appearance");
+            yield return null;
+            Require(!Active("Appearance Panel") && Active("Start Page"), "appearance editor returns to the start page");
             yield return Capture("menu");
             Click("New Game");
             yield return null;
@@ -69,13 +84,17 @@ namespace DeadCircuit
             Require(bridge.IsRunning && bridge.IsHost && bridge.LocalPlayer != null, "Create World starts the configured host session");
             Require(bridge.World.generation != null && bridge.World.generation.worldName == qaWorldName && bridge.World.seed == 73149 &&
                 bridge.World.generation.preset == WorldPreset.Balanced && bridge.World.generation.cityDensity == 1, "creation fields reach the generated world");
-            string qaSavePath = Path.GetFullPath(Path.Combine(Application.persistentDataPath, "qa-world-v1.json"));
             Require(Path.GetFullPath(bridge.SavePath) == qaSavePath, "QA never saves over a regular world");
             var p = bridge.LocalPlayer;
             Require(bridge.World.era == TechEra.Primitive && p.items.Length == DemoCatalog.ItemNames.Length, "primitive world and expanded material inventory");
             Require(!bridge.World.buildings.Any(b => DemoCatalog.Demand(b.kind) > 0 && TechCatalog.RequiredEra(b.kind) >= TechEra.LowVoltage), "no prebuilt modern factory in a new world");
-            yield return PointAtWorld(32, 35);
+            yield return PointAtWorld(p.x, p.y);
             RequireDefaultHud();
+            int currentAppearance = bridge.AppearanceCode;
+            appearanceEntry.onClick.Invoke();
+            Require(!Active("Appearance Panel") && !bridge.CanEditAppearance &&
+                !bridge.TrySetAppearance(currentAppearance) && bridge.AppearanceCode == currentAppearance,
+                "appearance editor and preset changes stay disabled in a running world");
             var hotbar = Rect("Build Hotbar");
             Require(hotbar.rect.width <= 660f && hotbar.rect.height <= 76f, "compact hotbar");
             Click("HUD Build Toggle");
@@ -87,6 +106,7 @@ namespace DeadCircuit
             yield return Capture("gameplay");
             yield return ClickHudTool("Open Inventory");
             Require(Active("Inventory Panel") && bridge.GetComponent<DemoHud>().CapturesInput, "inventory opens and consumes world input");
+            RequireInventoryLayout();
             yield return Capture("inventory");
             yield return Press(Key.B);
             Require(!Active("Inventory Panel"), "B closes inventory");
@@ -115,6 +135,7 @@ namespace DeadCircuit
             // QA grants construction/research samples only inside its separate qa-world save.
             // Every unlock and building still passes through the real UI/authority command path.
             PrepareQaPlot(bridge.World, false);
+            PrepareQaPrimitiveProgression(bridge.World);
             int beforeLocked = bridge.World.buildings.Count;
             p.x = 24; p.y = 28;
             bridge.Send(new PlayerCommand { action = "build", arg = (int)BuildKind.Generator, x = 24, y = 29 });
@@ -133,9 +154,12 @@ namespace DeadCircuit
                 var target = (TechEra)era;
                 foreach (BuildKind required in QaPrerequisites(target))
                     if (!bridge.World.buildings.Any(b => b.kind == required)) yield return BuildQaAtFreePlot(bridge, required);
+                if (target == TechEra.Nuclear) PrepareQaNuclearProgression(bridge.World);
                 GrantSamples(p, TechCatalog.ResearchCost(target));
                 yield return ClickHudTool("Technology Button");
                 yield return new WaitForSecondsRealtime(.2f);
+                Click("Technology Era " + era);
+                yield return null;
                 Require(TechCatalog.CanResearch(bridge.World, p, target), "reachable research prerequisites: " + target + " " + TechCatalog.ResearchRequirement(bridge.World,target));
                 Require(FindButton("Research Button").interactable, "next era research button: " + target);
                 if (target == TechEra.Nuclear) yield return Capture("technology-nuclear");
@@ -143,6 +167,53 @@ namespace DeadCircuit
                 yield return new WaitForSecondsRealtime(.2f);
                 Require(bridge.World.era == target, "research button unlocks era " + target);
                 Require(p.attributes[1] == 1 && p.skills[0] == 1 && p.attributePoints == 1 && p.skillPoints == 0, "research keeps personal growth independent");
+                if (target == TechEra.Water)
+                {
+                    PrepareQaWaterProgression(bridge.World);
+                    foreach (WaterTech waterTech in new[] { WaterTech.Wheel, WaterTech.Shafts, WaterTech.Crushing, WaterTech.Blast,
+                        WaterTech.Pressing, WaterTech.Components, WaterTech.Transport })
+                        yield return ResearchQaWater(bridge, waterTech);
+                }
+                if (target == TechEra.Steam)
+                {
+                    PrepareQaSteamProgression(bridge.World);
+                    var workbench = bridge.World.buildings.FirstOrDefault(b => b != null && b.kind == BuildKind.Workbench);
+                    Require(workbench != null, "steam research workbench");
+                    p.x = DemoCatalog.CenterX(workbench);
+                    p.y = DemoCatalog.CenterY(workbench) + 1.1f;
+                    foreach (SteamTech steamTech in SteamCatalog.All.Select(d => d.id))
+                        yield return ResearchQaSteam(bridge, steamTech);
+                }
+                if (target == TechEra.LowVoltage)
+                {
+                    PrepareQaLowVoltageProgression(bridge.World);
+                    var workbench = bridge.World.buildings.FirstOrDefault(b => b != null && b.kind == BuildKind.Workbench);
+                    Require(workbench != null, "low voltage research workbench");
+                    p.x = DemoCatalog.CenterX(workbench);
+                    p.y = DemoCatalog.CenterY(workbench) + 1.1f;
+                    foreach (LowVoltageTech lowVoltageTech in LowVoltageCatalog.All.Select(d => d.id))
+                        yield return ResearchQaLowVoltage(bridge, lowVoltageTech);
+                }
+                if (target == TechEra.MediumVoltage)
+                {
+                    PrepareQaPetrochemicalProgression(bridge.World);
+                    var workbench = bridge.World.buildings.FirstOrDefault(b => b != null && b.kind == BuildKind.Workbench);
+                    Require(workbench != null, "medium voltage research workbench");
+                    p.x = DemoCatalog.CenterX(workbench);
+                    p.y = DemoCatalog.CenterY(workbench) + 1.1f;
+                    foreach (PetrochemicalTech petrochemicalTech in PetrochemicalCatalog.All.Select(d => d.id))
+                        yield return ResearchQaPetrochemical(bridge, petrochemicalTech);
+                }
+                if (target == TechEra.HighVoltage)
+                {
+                    PrepareQaPrecisionProgression(bridge.World);
+                    var workbench = bridge.World.buildings.FirstOrDefault(b => b != null && b.kind == BuildKind.Workbench);
+                    Require(workbench != null, "high voltage research workbench");
+                    p.x = DemoCatalog.CenterX(workbench);
+                    p.y = DemoCatalog.CenterY(workbench) + 1.1f;
+                    foreach (PrecisionTech precisionTech in PrecisionCatalog.All.Select(d => d.id))
+                        yield return ResearchQaPrecision(bridge, precisionTech);
+                }
                 if (Active("Technology Panel")) yield return Press(Key.T);
             }
             foreach(var kind in new[]{BuildKind.SteamPipe,BuildKind.SteamTurbine,BuildKind.DieselGenerator,BuildKind.MediumPole,
@@ -250,7 +321,14 @@ namespace DeadCircuit
             Require(Path.GetFullPath(bridge.SavePath) == qaSavePath && File.Exists(qaSavePath), "save button writes the isolated QA world");
             int buildings = bridge.World.buildings.Count;
             Click("Return to Menu");
-            yield return new WaitForSecondsRealtime(.5f);
+            yield return WaitForAppearanceEditing(bridge);
+            Click("Open Appearance");
+            yield return null;
+            Require(Active("Appearance Panel") && !bridge.IsRunning, "appearance editor opens immediately after returning to the menu");
+            Click("Appearance Next 0");
+            Require(FindButton("Save Appearance").interactable, "appearance saving re-enables after network teardown");
+            Click("Close Appearance");
+            yield return null;
             Click("Load Game");
             yield return null;
             Require(Active("Load World Page") && !bridge.IsRunning, "Load Game opens the world selector without loading");
@@ -295,12 +373,195 @@ namespace DeadCircuit
         static void PrepareQaPlot(WorldState world,bool clearBuildings)
         {
             world.zombies.Clear(); world.nextWaveAt=world.elapsed+9999;
+            if (world.survival != null) world.survival.creatures.Clear();
             world.nodes.RemoveAll(n=>n.x>=17 && n.x<=52 && n.y>=12 && n.y<=32);
             char[] ground=world.ground.ToCharArray();
+            var chunkGround=new Dictionary<long,char[]>();
             for(int y=12;y<=32;y++) for(int x=17;x<=52;x++)
-                ground[x+y*world.width]=(char)('0'+(int)(y==12?GroundKind.Water:GroundKind.Floor));
+            {
+                char tile=(char)('0'+(int)(y==12?GroundKind.Water:GroundKind.Floor));
+                ground[x+y*world.width]=tile;
+                if(!ChunkStreaming.Enabled(world)) continue;
+                int cx=WorldTiles.FloorDiv(x,ChunkStreaming.ChunkSize),cy=WorldTiles.FloorDiv(y,ChunkStreaming.ChunkSize);
+                if(!WorldTiles.TryChunk(world,cx,cy,out var chunk)) throw new InvalidOperationException($"QA plot chunk missing: {cx},{cy}");
+                long key=WorldTiles.Key(cx,cy);
+                if(!chunkGround.TryGetValue(key,out var tiles))
+                {
+                    if(string.IsNullOrEmpty(chunk.ground) || chunk.ground.Length!=ChunkStreaming.ChunkSize*ChunkStreaming.ChunkSize)
+                        throw new InvalidOperationException($"QA plot chunk terrain invalid: {cx},{cy}");
+                    tiles=chunk.ground.ToCharArray();
+                    chunkGround.Add(key,tiles);
+                }
+                int lx=x-cx*ChunkStreaming.ChunkSize,ly=y-cy*ChunkStreaming.ChunkSize;
+                tiles[lx+ly*ChunkStreaming.ChunkSize]=tile;
+            }
             world.ground=new string(ground);
+            if(ChunkStreaming.Enabled(world))
+            {
+                foreach(var chunk in world.chunks.records)
+                    if(chunk!=null && chunkGround.TryGetValue(WorldTiles.Key(chunk.x,chunk.y),out var tiles)) chunk.ground=new string(tiles);
+                world.chunks.index=null; world.chunks.indexSource=null; world.chunks.indexedCount=0;
+                world.chunks.revision++; world.chunks.budgetBlocked=false;
+            }
             if(clearBuildings) { world.buildings.Clear(); world.cargo.Clear(); world.powerNetworks.Clear(); }
+        }
+        static void PrepareQaPrimitiveProgression(WorldState world)
+        {
+            // The QA world starts with the real primitive progression enabled; seed only
+            // the prerequisites needed to exercise the later era ladder in isolation.
+            world.primitiveResearch |=
+                1 << (int)PrimitiveTech.Tools |
+                1 << (int)PrimitiveTech.Charcoal |
+                1 << (int)PrimitiveTech.Ceramics |
+                1 << (int)PrimitiveTech.CopperTin |
+                1 << (int)PrimitiveTech.Bronze |
+                1 << (int)PrimitiveTech.Bloomery |
+                1 << (int)PrimitiveTech.Construction;
+            world.produced[(int)ItemKind.Bronze] = Mathf.Max(world.produced[(int)ItemKind.Bronze], 4);
+            world.produced[(int)ItemKind.Iron] = Mathf.Max(world.produced[(int)ItemKind.Iron], 6);
+            world.produced[(int)ItemKind.Brick] = Mathf.Max(world.produced[(int)ItemKind.Brick], 4);
+            world.produced[(int)ItemKind.Charcoal] = Mathf.Max(world.produced[(int)ItemKind.Charcoal], 2);
+        }
+        static void PrepareQaWaterProgression(WorldState world)
+        {
+            // Seed only the measured water-era milestones so the QA can exercise
+            // the real research buttons and host commands without simulating a
+            // full production chain before the later-era checks.
+            world.primitiveResearch |= 1 << (int)PrimitiveTech.CopperTin;
+            world.waterCrushed = Math.Max(world.waterCrushed, 4);
+            world.waterSmelted = Math.Max(world.waterSmelted, 6);
+            world.waterPressed = Math.Max(world.waterPressed, 4);
+            world.waterGears = Math.Max(world.waterGears, 2);
+            world.waterBearings = Math.Max(world.waterBearings, 2);
+            world.waterTransported = Math.Max(world.waterTransported, 4);
+        }
+        static void PrepareQaSteamProgression(WorldState world)
+        {
+            // Seed measured production evidence so each steam research button still
+            // runs through the real requirement and host command path.
+            world.steamCoked = Math.Max(world.steamCoked, 6);
+            world.steamRefractory = Math.Max(world.steamRefractory, 8);
+            world.steamPigIron = Math.Max(world.steamPigIron, 6);
+            world.steamSteel = Math.Max(world.steamSteel, 4);
+            world.steamPlates = Math.Max(world.steamPlates, 4);
+            world.steamFittings = Math.Max(world.steamFittings, 4);
+            world.steamDriven = Math.Max(world.steamDriven, 4);
+        }
+        static void PrepareQaLowVoltageProgression(WorldState world)
+        {
+            // Seed measured electrical production evidence so each low-voltage
+            // research button still runs through the real requirement path.
+            world.lvWire = Math.Max(world.lvWire, 12);
+            world.lvInsulators = Math.Max(world.lvInsulators, 8);
+            world.lvCable = Math.Max(world.lvCable, 8);
+            world.lvCoils = Math.Max(world.lvCoils, 4);
+            world.lvMotors = Math.Max(world.lvMotors, 2);
+            world.lvRelays = Math.Max(world.lvRelays, 4);
+            world.lvCircuits = Math.Max(world.lvCircuits, 6);
+            world.lvElectric = Math.Max(world.lvElectric, 8);
+            world.lvAutomated = Math.Max(world.lvAutomated, 4);
+            world.lvSorted = Math.Max(world.lvSorted, 4);
+            world.lvProtected = Math.Max(world.lvProtected, 4);
+        }
+        static void PrepareQaPetrochemicalProgression(WorldState world)
+        {
+            // Seed measured petrochemical milestones so each MV research button
+            // still runs through the real prerequisites, evidence, and host command.
+            world.mvSurvey = Math.Max(world.mvSurvey, 1);
+            world.mvExtracted = Math.Max(world.mvExtracted, 12);
+            world.mvPiped = Math.Max(world.mvPiped, 8);
+            world.mvDistilled = Math.Max(world.mvDistilled, 12);
+            world.mvDiesel = Math.Max(world.mvDiesel, 4);
+            world.mvPolymer = Math.Max(world.mvPolymer, 4);
+            world.mvLubricant = Math.Max(world.mvLubricant, 2);
+            world.mvCooled = Math.Max(world.mvCooled, 4);
+            world.mvPowered = Math.Max(world.mvPowered, 4);
+        }
+        static void PrepareQaPrecisionProgression(WorldState world)
+        {
+            // Seed measured HV production evidence so each precision research
+            // button still runs through the real prerequisites and host command.
+            world.produced[(int)ItemKind.IndustrialSilicon] = Math.Max(world.produced[(int)ItemKind.IndustrialSilicon], 4);
+            world.produced[(int)ItemKind.PureSilicon] = Math.Max(world.produced[(int)ItemKind.PureSilicon], 2);
+            world.produced[(int)ItemKind.Wafer] = Math.Max(world.produced[(int)ItemKind.Wafer], 4);
+            world.produced[(int)ItemKind.Semiconductor] = Math.Max(world.produced[(int)ItemKind.Semiconductor], 4);
+            world.produced[(int)ItemKind.AdvancedCircuit] = Math.Max(world.produced[(int)ItemKind.AdvancedCircuit], 2);
+            world.produced[(int)ItemKind.PrecisionPart] = Math.Max(world.produced[(int)ItemKind.PrecisionPart], 4);
+            world.produced[(int)ItemKind.ControlModule] = Math.Max(world.produced[(int)ItemKind.ControlModule], 2);
+            world.produced[(int)ItemKind.HeatAlloy] = Math.Max(world.produced[(int)ItemKind.HeatAlloy], 4);
+        }
+        static void PrepareQaNuclearProgression(WorldState world)
+        {
+            // Seed the measured HV acceptance that gates the nuclear era.
+            world.produced[(int)ItemKind.ControlModule] = Math.Max(world.produced[(int)ItemKind.ControlModule], 4);
+            world.produced[(int)ItemKind.HeatAlloy] = Math.Max(world.produced[(int)ItemKind.HeatAlloy], 6);
+            world.hvPowered = Math.Max(world.hvPowered, 4);
+        }
+        IEnumerator ResearchQaWater(GameBridge bridge, WaterTech id)
+        {
+            var player = bridge.LocalPlayer;
+            int index = (int)id;
+            GrantSamples(player, WaterCatalog.Definition(index).cost);
+            yield return SelectQaTechnologyEra((int)TechEra.Water);
+            yield return new WaitForSecondsRealtime(.6f);
+            Click("Water Research " + index);
+            yield return new WaitForSecondsRealtime(.7f);
+            Require(WaterCatalog.HasResearch(bridge.World, id), "water research command: " + id + " " + player.notice);
+        }
+        IEnumerator ResearchQaSteam(GameBridge bridge, SteamTech id)
+        {
+            var player = bridge.LocalPlayer;
+            int index = (int)id;
+            GrantSamples(player, SteamCatalog.Definition(index).cost);
+            yield return SelectQaTechnologyEra((int)TechEra.Steam);
+            yield return new WaitForSecondsRealtime(.6f);
+            Click("Steam Research " + index);
+            yield return new WaitForSecondsRealtime(.7f);
+            Require(SteamCatalog.HasResearch(bridge.World, id), "steam research command: " + id + " " + player.notice);
+        }
+        IEnumerator ResearchQaLowVoltage(GameBridge bridge, LowVoltageTech id)
+        {
+            var player = bridge.LocalPlayer;
+            int index = (int)id;
+            GrantSamples(player, LowVoltageCatalog.Definition(index).cost);
+            yield return SelectQaTechnologyEra((int)TechEra.LowVoltage);
+            yield return new WaitForSecondsRealtime(.6f);
+            Click("Low Voltage Research " + index);
+            yield return new WaitForSecondsRealtime(.7f);
+            Require(LowVoltageCatalog.HasResearch(bridge.World, id), "low voltage research command: " + id + " " + player.notice);
+        }
+        IEnumerator ResearchQaPetrochemical(GameBridge bridge, PetrochemicalTech id)
+        {
+            var player = bridge.LocalPlayer;
+            int index = (int)id;
+            GrantSamples(player, PetrochemicalCatalog.Definition(index).cost);
+            yield return SelectQaTechnologyEra((int)TechEra.MediumVoltage);
+            yield return new WaitForSecondsRealtime(.6f);
+            Click("Petrochemical Research " + index);
+            yield return new WaitForSecondsRealtime(.7f);
+            Require(PetrochemicalCatalog.HasResearch(bridge.World, id), "petrochemical research command: " + id + " " + player.notice);
+        }
+        IEnumerator ResearchQaPrecision(GameBridge bridge, PrecisionTech id)
+        {
+            var player = bridge.LocalPlayer;
+            int index = (int)id;
+            GrantSamples(player, PrecisionCatalog.Definition(index).cost);
+            yield return SelectQaTechnologyEra((int)TechEra.HighVoltage);
+            yield return new WaitForSecondsRealtime(.6f);
+            Click("Precision Node " + index);
+            yield return null;
+            yield return new WaitForSecondsRealtime(.2f);
+            Click("Research Button");
+            yield return new WaitForSecondsRealtime(.7f);
+            Require(PrecisionCatalog.HasResearch(bridge.World, id), "precision research command: " + id + " " + player.notice);
+        }
+        IEnumerator SelectQaTechnologyEra(int era)
+        {
+            Require(Active("Technology Panel"), "technology panel remains open for era " + era);
+            Click("Technology Era " + era);
+            yield return null;
+            yield return new WaitForSecondsRealtime(.1f);
+            Require(Active("Technology Panel"), "technology panel refreshes for era " + era);
         }
         IEnumerator BuildQaAtFreePlot(GameBridge bridge,BuildKind kind)
         {
@@ -342,6 +603,17 @@ namespace DeadCircuit
             yield return new WaitForSecondsRealtime(.3f);
         }
         static Button FindButton(string name) => FindObjectsByType<Button>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Single(b=>b.name==name);
+        static bool PointerTargetsButton(Button button)
+        {
+            if (button == null || EventSystem.current == null || !(button.transform is RectTransform rect)) return false;
+            var corners = new Vector3[4];
+            rect.GetWorldCorners(corners);
+            var pointer = new PointerEventData(EventSystem.current)
+            { position = RectTransformUtility.WorldToScreenPoint(null, (corners[0] + corners[2]) * .5f) };
+            var hits = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointer, hits);
+            return hits.Count > 0 && hits[0].gameObject.GetComponentInParent<Button>() == button;
+        }
         static TMPro.TMP_InputField InputField(string name) => FindObjectsByType<TMPro.TMP_InputField>(FindObjectsInactive.Include, FindObjectsSortMode.None).Single(f => f.name == name);
         static RectTransform Rect(string name) => FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Single(r => r.name == name);
         static bool Active(string name) => Rect(name).gameObject.activeInHierarchy;
@@ -351,7 +623,9 @@ namespace DeadCircuit
                 Require(!Active(name), "default HUD hides " + name);
             Require(Active("HUD Tools Toggle") && Active("HUD Build Toggle"), "collapsed HUD keeps its explicit expansion controls");
             var inspect = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None).Single(b => b.name == "Inspect Toggle");
-            Require(inspect.GetComponentInChildren<TMPro.TextMeshProUGUI>(true).text == "设备检查：关", "default HUD keeps inspection disabled");
+            Require(inspect.GetComponentInChildren<TMPro.TextMeshProUGUI>(true).text == "检查：关", "default HUD keeps inspection disabled");
+            RequireButtonIcon("HUD Build Toggle", "ui_create");
+            RequireButtonIcon("HUD Tools Toggle", "ui_settings");
             var hits = new List<RaycastResult>();
             EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = new Vector2(Screen.width * .5f, Screen.height * .5f) }, hits);
             Require(hits.Count == 0, "default HUD leaves world centre interactive");
@@ -372,9 +646,9 @@ namespace DeadCircuit
         {
             var toggle = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None).Single(b => b.name == "Inspect Toggle");
             var label = toggle.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
-            if (label.text != (enabled ? "设备检查：开" : "设备检查：关"))
+            if (label.text != (enabled ? "检查：开" : "检查：关"))
                 yield return ClickHudTool("Inspect Toggle");
-            Require(label.text == (enabled ? "设备检查：开" : "设备检查：关"), "inspection toggle reflects the requested state");
+            Require(label.text == (enabled ? "检查：开" : "检查：关"), "inspection toggle reflects the requested state");
             if (!enabled) Require(!Active("Mouse Inspector"), "disabling inspection hides its panel");
         }
         static IEnumerator ClickScrolled(string name)
@@ -414,16 +688,77 @@ namespace DeadCircuit
         }
         static IEnumerator PointAtWorld(float x, float y)
         {
-            Require(Mouse.current != null && Camera.main != null, "QA pointer and camera");
-            var point = Camera.main.WorldToScreenPoint(new Vector3(x, y, 0));
-            InputSystem.QueueStateEvent(Mouse.current, new MouseState { position = new Vector2(point.x, point.y) });
+            Camera camera = Camera.main ?? FindAnyObjectByType<Camera>();
+            Require(camera != null, "QA camera");
+            Mouse mouse = Mouse.current;
+            if (mouse == null) mouse = qaMouse = InputSystem.AddDevice<Mouse>("Demo QA Mouse");
+            var point = camera.WorldToScreenPoint(new Vector3(x, y, 0));
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = new Vector2(point.x, point.y) });
             yield return new WaitForSecondsRealtime(.2f);
+        }
+        static IEnumerator WaitForAppearanceEditing(GameBridge bridge)
+        {
+            float deadline = Time.realtimeSinceStartup + 2f;
+            while (!bridge.CanEditAppearance && Time.realtimeSinceStartup < deadline) yield return null;
+            Require(bridge.CanEditAppearance, "network teardown releases appearance editing");
         }
         static void Click(string name)
         {
             var button = FindObjectsByType<Button>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Single(b => b.name == name);
             Require(button.interactable, "disabled button: " + name);
             button.onClick.Invoke();
+        }
+        static void RequireButtonIcon(string buttonName, string expectedSprite)
+        {
+            var button = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None).Single(b => b.name == buttonName);
+            var icon = button.transform.Find("Item Icon")?.GetComponent<Image>();
+            Require(icon != null && icon.sprite != null && icon.sprite.name == expectedSprite && !icon.raycastTarget,
+                "button icon loads and leaves clicks to its button: " + buttonName + " / " + expectedSprite);
+        }
+        static void RequireInventoryLayout()
+        {
+            RectTransform card = Rect("Inventory Card");
+            RectTransform browser = Rect("Inventory Browser Surface");
+            RectTransform preview = Rect("Character Preview Surface");
+            RectTransform equipment = Rect("Equipment Slots Surface");
+            RectTransform detail = Rect("Inventory Detail Surface");
+            Require(browser.rect.width > 300f && preview.rect.width > 300f && equipment.rect.width > 400f && detail.rect.width > 400f,
+                "PUBG-style inventory keeps three usable columns");
+            Require(browser.anchoredPosition.x < preview.anchoredPosition.x && preview.anchoredPosition.x < equipment.anchoredPosition.x,
+                "inventory columns are ordered browser, character, equipment");
+            Require(preview.anchoredPosition.y == equipment.anchoredPosition.y && detail.anchoredPosition.y < equipment.anchoredPosition.y,
+                "equipment and detail stack in the right column");
+            Rect browserBounds = RelativeBounds(card, browser);
+            Rect previewBounds = RelativeBounds(card, preview);
+            Rect equipmentBounds = RelativeBounds(card, equipment);
+            Rect detailBounds = RelativeBounds(card, detail);
+            foreach (var pair in new[] {
+                new KeyValuePair<string, Rect>("browser", browserBounds),
+                new KeyValuePair<string, Rect>("preview", previewBounds),
+                new KeyValuePair<string, Rect>("equipment", equipmentBounds),
+                new KeyValuePair<string, Rect>("detail", detailBounds) })
+                Require(card.rect.Contains(pair.Value.min) && card.rect.Contains(pair.Value.max), "inventory surface stays inside card: " + pair.Key);
+            Require(!browserBounds.Overlaps(previewBounds) && !browserBounds.Overlaps(equipmentBounds) &&
+                !browserBounds.Overlaps(detailBounds) && !previewBounds.Overlaps(equipmentBounds) &&
+                !previewBounds.Overlaps(detailBounds) && !equipmentBounds.Overlaps(detailBounds),
+                "inventory columns do not overlap");
+            RectTransform stage = Rect("Inventory Preview Stage");
+            RectTransform origin = Rect("Inventory Preview Origin");
+            Require(stage.rect.width > 0f && stage.rect.height > 0f && origin.parent == stage,
+                "inventory preview stage has a positioned origin");
+            var layers = FindObjectsByType<Image>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .Where(image => image.name.StartsWith("Inventory Survivor Layer", StringComparison.Ordinal))
+                .ToArray();
+            Require(layers.Length == SurvivorVisuals.Capacity && layers.Count(image => image.enabled && image.sprite != null) > 0,
+                "inventory preview paints at least one survivor layer");
+            Require(FindButton("Weapon Equipment Slot") != null && FindButton("Tool Equipment Slot") != null &&
+                FindButton("Armor Slot 0") != null && FindButton("Armor Slot 3") != null,
+                "inventory preview exposes weapon, tool and armor slots");
+        }
+        static Rect RelativeBounds(RectTransform parent, RectTransform child)
+        {
+            Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(parent, child);
+            return new Rect(bounds.min, bounds.size);
         }
         IEnumerator Capture(string label)
         {

@@ -77,7 +77,7 @@ namespace DeadCircuit
             {
                 foreach (var plot in world.survival.plots)
                 {
-                    if (!Visible(plot.x,plot.y)) continue;
+                    if (!Visible(plot.x,plot.y) || NaturalInteriorHidden(plot.x, plot.y)) continue;
                     var v=Get(farmPlots,plot.id,new Vector2(plot.x,plot.y),plot.health,100);
                     v.shadow.enabled=false; v.body.sprite=DemoArt.Get("fx_soil") ?? Art("pixel");
                     v.body.sortingOrder=-16000; v.body.transform.localScale=Vector3.one*.95f;
@@ -96,7 +96,7 @@ namespace DeadCircuit
                 }
                 foreach (var creature in world.survival.creatures)
                 {
-                    if (!Visible(creature.x,creature.y)) continue;
+                    if (!Visible(creature.x,creature.y) || NaturalInteriorHidden(creature.x, creature.y)) continue;
                     var definition=SurvivalCatalog.Creatures[(int)creature.kind];
                     var v=Get(wildlife,creature.id,new Vector2(creature.x,creature.y),creature.hp,definition.health);
                     bool walking=(new Vector2(creature.x,creature.y)-v.previous).sqrMagnitude>.00001f;
@@ -199,6 +199,7 @@ namespace DeadCircuit
                 if (observedEffects.ContainsKey(key)) continue;
                 observedEffects.Add(key,trace.until+.3f);
                 if (discontinuity || !Visible(trace.x,trace.y)) continue;
+                if (NaturalInteriorHidden(trace.x, trace.y) || NaturalInteriorHidden(trace.endX, trace.endY)) continue;
                 Vector2 at=new Vector2(trace.x,trace.y), end=new Vector2(trace.endX,trace.endY);
                 string sprite=trace.effect==3 || trace.effect==5 ? "fx_poison" : trace.effect==6 ? "fx_ice" : trace.effect==7 ? "fx_explosion" : trace.effect==8 ? "fx_wave" : "fx_flame";
                 Color tint=trace.effect==3 || trace.effect==5 ? new Color(.64f,.91f,.31f) : trace.effect==6 ? new Color(.53f,.84f,1) : trace.effect==8 ? new Color(.79f,.56f,.93f) : Amber;

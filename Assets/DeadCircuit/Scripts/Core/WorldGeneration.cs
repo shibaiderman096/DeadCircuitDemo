@@ -144,7 +144,8 @@ namespace DeadCircuit
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 9;
+        public const int CurrentGeneratorVersion = 10;
+        internal const int NaturalOpeningVersion = 10;
         public const int BiomeCount = 10;
         public const int AllBiomeMask = (1 << BiomeCount) - 1;
         public const int LegacySiteCount = 12;
@@ -164,26 +165,131 @@ namespace DeadCircuit
             var reserved = new bool[ground.Length];
             var occupied = new HashSet<int>();
             GenerateTerrain(state, ground);
-            AddTutorial(state, ground, reserved, occupied);
-            // The original two-cell arterial cross also keeps all six initial enemies safe.
-            for (int i = 0; i < Size; i++)
-            {
-                Road(ground, reserved, i, 32); Road(ground, reserved, i, 33);
-                Road(ground, reserved, 32, i); Road(ground, reserved, 33, i);
-            }
             GenerateSites(state, ground, reserved, occupied);
-            EnsureReachableOil(state, ground, reserved, occupied);
-            EnsureReachableQuartz(state, ground, reserved, occupied);
             GenerateResources(state, ground, reserved, occupied);
             state.ground = new string(ground);
-            int[] initialX = { 14, 50, 32, 32, 12, 54 }, initialY = { 32, 32, 14, 54, 33, 33 };
-            for (int i = 0; i < initialX.Length; i++)
-                state.zombies.Add(new ZombieState { id = state.nextId++, x = initialX[i], y = initialY[i],
-                    variant = i == 5 ? 1 : 0, hp = i == 5 ? 32f : 45f });
-            state.announcement = "原始时代：工作台(29,35)、石炉(28,37)。资源需在周围自然地貌中寻找和采集。按T研究：工具→烧炭→制陶→铜锡→青铜→块炼铁；满足实际产量后进入水力。科技全队共享。";
+            FinishNewWorld(state);
+            return state;
+        }
+
+        internal static void FinishNewWorld(WorldState state)
+        {
+            var occupied = new HashSet<int>();
+            foreach (var node in state.nodes) occupied.Add(node.x + node.y * Size);
+            foreach (var b in state.buildings)
+                for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
+                    for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) occupied.Add(x + y * Size);
+            var random = new StableRandom(state.seed, 0x89e129b1u);
+            for (int attempt = 0; attempt < 512 && state.zombies.Count < 6; attempt++)
+            {
+                int x = random.Next(0, Size), y = random.Next(0, Size);
+                if (state.ground[x + y * Size] == '2' || state.ground[x + y * Size] == '4' ||
+                    !occupied.Add(x + y * Size)) continue;
+                int variant = state.zombies.Count == 5 ? 1 : 0;
+                state.zombies.Add(new ZombieState { id = state.nextId++, x = x, y = y,
+                    variant = variant, hp = variant == 1 ? 32f : 45f });
+            }
+            state.announcement = "原始时代：探索、采集木材和石材，建造工作台与石炉，开启生产。科技全队共享。";
             state.announcementUntil = 28f;
             WorldSimulator.PrepareGeneratedWorld(state);
-            return state;
+            if (state.generatorVersion >= NaturalOpeningVersion) EnsureOpeningQuartz(state, occupied);
+        }
+
+        private static void EnsureOpeningQuartz(WorldState state, HashSet<int> occupied)
+        {
+            if (!WorldSimulator.TryFindOpeningSpawn(state, out int spawnX, out int spawnY)) return;
+            var ground = state.ground.ToCharArray();
+            var blocked = new bool[ground.Length];
+            var oilSpace = new bool[ground.Length];
+            bool chunked = ChunkStreaming.Enabled(state);
+            const int chunksAcross = Size / ChunkStreaming.ChunkSize;
+            var nodes = new int[chunksAcross * chunksAcross];
+            var resources = new int[nodes.Length];
+            int ChunkIndex(int x, int y) => x / ChunkStreaming.ChunkSize + y / ChunkStreaming.ChunkSize * chunksAcross;
+            foreach (var node in state.nodes)
+            {
+                blocked[node.x + node.y * Size] = true;
+                if (chunked)
+                {
+                    int chunk = ChunkIndex(node.x, node.y);
+                    nodes[chunk]++;
+                    if (node.kind != NodeKind.Wall && node.kind != NodeKind.Crate) resources[chunk]++;
+                }
+                if (node.kind != NodeKind.Oil) continue;
+                // Protect every possible adjacent pump footprint of a naturally generated oil node.
+                int w = DemoCatalog.Width(BuildKind.OilPump), h = DemoCatalog.Height(BuildKind.OilPump);
+                for (int y = Math.Max(0, node.y - h); y <= Math.Min(Size - 1, node.y + h); y++)
+                    for (int x = Math.Max(0, node.x - w); x <= Math.Min(Size - 1, node.x + w); x++) oilSpace[x + y * Size] = true;
+            }
+            foreach (var b in state.buildings)
+                if (b.kind != BuildKind.Door)
+                    for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
+                        for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) blocked[x + y * Size] = true;
+            foreach (var creature in state.survival.creatures) occupied.Add((int)creature.x + (int)creature.y * Size);
+
+            int[] parents = ResourcePaths(ground, blocked, spawnX + spawnY * Size);
+            bool HasApproach(int cell) => parents[cell - 1] != -2 || parents[cell + 1] != -2 ||
+                parents[cell - Size] != -2 || parents[cell + Size] != -2;
+            foreach (var node in state.nodes)
+                if (node.kind == NodeKind.Quartz && HasApproach(node.x + node.y * Size)) return;
+
+            int chosen = -1, bestTier = int.MaxValue;
+            double best = double.MaxValue;
+            int[] ring = { 1, Size + 1, Size, Size - 1, -1, -Size - 1, -Size, -Size + 1 };
+            for (int y = 1; y < Size - 1; y++) for (int x = 1; x < Size - 1; x++)
+            {
+                int cell = x + y * Size;
+                bool water = ground[cell] == '2';
+                bool margin = x < 3 || x > 60 || y < 3 || y > 60;
+                if (occupied.Contains(cell) || oilSpace[cell] || FloorWorld.IsProtectedCell(state, x, y)) continue;
+                if (water ? !HasApproach(cell) : parents[cell] < 0 || (ground[cell] != '0' && ground[cell] != '1') ||
+                    Math.Abs(x - spawnX) + Math.Abs(y - spawnY) <= 1) continue;
+                if (chunked)
+                {
+                    int lx = x % ChunkStreaming.ChunkSize, ly = y % ChunkStreaming.ChunkSize;
+                    int chunk = ChunkIndex(x, y);
+                    margin |= lx < 2 || lx >= 14 || ly < 2 || ly >= 14;
+                    if (nodes[chunk] >= ChunkTerrain.MaxNodesPerChunk ||
+                        resources[chunk] >= ChunkTerrain.MaxResourcesPerChunk) continue;
+                }
+                if (margin && !water) continue;
+                if (!water && !QuartzKeepsApproaches(ground, blocked, cell, ring)) continue;
+                int tier = margin ? 2 : water ? 1 : 0;
+                double rank = ChunkTerrain.QuartzAccessPriority(state.seed, x, y, (BiomeKind)(state.biomes[cell] - '0'));
+                if (tier > bestTier || tier == bestTier && rank >= best) continue;
+                chosen = cell; bestTier = tier; best = rank;
+            }
+            if (chosen >= 0 && state.nodes.Count < WorldSimulator.MaxNodes)
+            {
+                int x = chosen % Size, y = chosen / Size;
+                if (ground[chosen] == '2')
+                {
+                    // This shore tile is still blocked by the outcrop. No crossing is opened.
+                    ground[chosen] = '1';
+                    state.ground = new string(ground);
+                    if (chunked && WorldTiles.TryChunk(state, x / ChunkStreaming.ChunkSize, y / ChunkStreaming.ChunkSize, out var chunk))
+                    {
+                        var tiles = chunk.ground.ToCharArray();
+                        tiles[x % ChunkStreaming.ChunkSize + y % ChunkStreaming.ChunkSize * ChunkStreaming.ChunkSize] = '1';
+                        chunk.ground = new string(tiles);
+                    }
+                }
+                AddNode(state, occupied, x, y, NodeKind.Quartz, ChunkTerrain.SampleQuartzStock(state.seed, x, y));
+            }
+        }
+
+        // A local detour around the outcrop keeps the surrounding approaches open,
+        // even for routes confined to the same chunk. Check cardinal neighbors through the ring.
+        private static bool QuartzKeepsApproaches(char[] ground, bool[] blocked, int cell, int[] ring)
+        {
+            int open = 0;
+            for (int i = 0; i < ring.Length; i++)
+                if (!blocked[cell + ring[i]] && ground[cell + ring[i]] != '2') open |= 1 << i;
+            int exits = open & 0x55;
+            int reached = exits & -exits;
+            for (int i = 0; i < ring.Length; i++)
+                reached |= open & ((reached << 1) | (reached >> 1) | ((reached & 1) << 7) | (reached >> 7));
+            return (reached & exits) == exits;
         }
 
         // Metadata only: no terrain/entity reconstruction, list replacement or version change.
@@ -226,8 +332,6 @@ namespace DeadCircuit
             return new string(result);
         }
 
-        private static bool Tutorial(int x, int y) => x >= 22 && x <= 42 && y >= 22 && y <= 42;
-
         private static void GenerateTerrain(WorldState state, char[] ground)
         {
             if (state.generatorVersion >= 8)
@@ -235,8 +339,7 @@ namespace DeadCircuit
                 for (int y = 0; y < Size; y++) for (int x = 0; x < Size; x++)
                 {
                     ChunkTerrain.SampleContinuous(state.seed, x, y, out ground[x + y * Size], out _);
-                    // Keep the finite tutorial map's outer edge traversable;
-                    // sparse chunks continue to follow the unmodified world field.
+                    // Keep the bounded map's outer edge traversable.
                     if (x == 0 || y == 0 || x == Size - 1 || y == Size - 1) ground[x + y * Size] = '0';
                 }
                 return;
@@ -252,7 +355,7 @@ namespace DeadCircuit
                 for (int y = cy - r; y <= cy + r; y++) for (int x = cx - r; x <= cx + r; x++)
                 {
                     int dx = x - cx, dy = y - cy;
-                    if (x >= 3 && y >= 3 && x <= 60 && y <= 60 && !Tutorial(x, y) && dx * dx + dy * dy <= r * r)
+                    if (x >= 3 && y >= 3 && x <= 60 && y <= 60 && dx * dx + dy * dy <= r * r)
                         ground[x + y * Size] = '2';
                 }
             }
@@ -267,148 +370,14 @@ namespace DeadCircuit
             state.nodes.Add(new NodeState { id = state.nextId++, x = x, y = y, kind = kind, stock = stock, hp = kind == NodeKind.Wall ? 160f : 35f });
         }
 
-        private static void AddTutorial(WorldState state, char[] ground, bool[] reserved, HashSet<int> occupied)
+        private static void AddSiteDoor(WorldState state, HashSet<int> occupied, int x, int y)
         {
-            for (int y = 22; y <= 42; y++) for (int x = 22; x <= 42; x++) reserved[x + y * Size] = true;
-            for (int y = 26; y <= 39; y++) for (int x = 23; x <= 40; x++) ground[x + y * Size] = '4';
-            for (int y = 24; y <= 29; y++) for (int x = 23; x <= 24; x++) ground[x + y * Size] = '2';
-            for (int y = 25; y <= 26; y++) for (int x = 25; x <= 26; x++) ground[x + y * Size] = '0';
-            AddStarter(state, occupied, BuildKind.Workbench, 29, 35);
-            AddStarter(state, occupied, BuildKind.StoneFurnace, 28, 37);
-            AddStarter(state, occupied, BuildKind.Chest, 30, 37);
-        }
-
-        private static void EnsureReachableOil(WorldState state, char[] ground, bool[] reserved, HashSet<int> occupied)
-        {
-            if (state.generatorVersion < 9) return;
-            var blocked = new bool[ground.Length];
-            foreach (int cell in occupied) blocked[cell] = true;
-            foreach (var building in state.buildings)
-                if (building.kind == BuildKind.Door) blocked[building.x + building.y * Size] = false;
-            int[] parents = ResourcePaths(ground, blocked);
-            int selected = -1, selectedPump = -1, bestTier = int.MaxValue; double priority = double.MaxValue;
-            // Pass zero keeps existing dry terrain. Only if none is usable may
-            // pass one establish a single dry shore cell beside connected land.
-            // Both passes stay inside the same 3..60 resource/border contract.
-            for (int pass = 0; pass < 2 && selected < 0; pass++)
-            for (int y = 3; y <= 60; y++) for (int x = 3; x <= 60; x++)
-            {
-                int cell = x + y * Size;
-                if (Tutorial(x, y) || occupied.Contains(cell) || ground[cell] == '3' || ground[cell] == '4') continue;
-                if (pass == 0 && (reserved[cell] || parents[cell] < 0 || ground[cell] == '2')) continue;
-                if (pass == 1 && parents[cell] < 0 && parents[cell - 1] < 0 && parents[cell + 1] < 0 &&
-                    parents[cell - Size] < 0 && parents[cell + Size] < 0) continue;
-                int dx = x - 32, dy = y - 35;
-                if (dx * dx + dy * dy > 48 * 48) continue;
-                int pump = OilPumpSpace(state, ground, occupied, parents, x, y);
-                if (pump < 0) continue;
-                var biome = (BiomeKind)(state.biomes[cell] - '0');
-                bool sampled = ground[cell] != '2' && ChunkTerrain.SampleResource(state.seed, x, y, biome, state.generation, false,
-                    out NodeKind kind, out _, state.generatorVersion) && kind == NodeKind.Oil;
-                int tier = sampled ? 0 : 1;
-                double rank = ChunkTerrain.OilAccessPriority(state.seed, x, y, biome);
-                if (tier > bestTier || tier == bestTier && rank >= priority) continue;
-                selected = cell; selectedPump = pump; bestTier = tier; priority = rank;
-            }
-            if (selected < 0) throw new InvalidOperationException("New world has no reachable natural dry oil location.");
-            int sx = selected % Size, sy = selected / Size;
-            if (ground[selected] == '2')
-            {
-                // One onshore anchor, no fixed tutorial stash or bridge across
-                // water. The 2x2 pump space already exists on connected dry land.
-                ground[selected] = '1';
-                parents = ResourcePaths(ground, blocked);
-            }
-            AddNode(state, occupied, sx, sy, NodeKind.Oil,
-                ChunkTerrain.SampleOilStock(state.seed, sx, sy, (BiomeKind)(state.biomes[selected] - '0')));
-            // Natural scattering must not close this actual approach later.
-            for (int path = parents[selected]; path >= 0; path = parents[path]) reserved[path] = true;
-            int pumpX = selectedPump % Size, pumpY = selectedPump / Size;
-            for (int y = pumpY; y < pumpY + DemoCatalog.Height(BuildKind.OilPump); y++)
-                for (int x = pumpX; x < pumpX + DemoCatalog.Width(BuildKind.OilPump); x++) reserved[x + y * Size] = true;
-        }
-
-        private static void EnsureReachableQuartz(WorldState state, char[] ground, bool[] reserved, HashSet<int> occupied)
-        {
-            if (state.generatorVersion < 9 || state.nodes.Count >= WorldSimulator.MaxNodes) return;
-            var blocked = new bool[ground.Length];
-            foreach (int cell in occupied) blocked[cell] = true;
-            foreach (var building in state.buildings)
-                if (building.kind == BuildKind.Door) blocked[building.x + building.y * Size] = false;
-            int[] parents = ResourcePaths(ground, blocked);
-            int selected = -1, approach = -1, bestTier = int.MaxValue;
-            double bestRank = double.MaxValue;
-            for (int y = 3; y <= 60; y++) for (int x = 3; x <= 60; x++)
-            {
-                int cell = x + y * Size;
-                // Includes the tutorial, streets, site halos and the oil well's approach and pump footprint.
-                if (reserved[cell] || occupied.Contains(cell) || ground[cell] == '3' || ground[cell] == '4') continue;
-                var biome = (BiomeKind)(state.biomes[cell] - '0');
-                int stand = parents[cell], tier;
-                if (ground[cell] == '2')
-                {
-                    // Last resort: put an isolated outcrop on the immediate dry approach, never a bridge.
-                    if (parents[cell - 1] != -2) stand = cell - 1;
-                    else if (parents[cell + 1] != -2) stand = cell + 1;
-                    else if (parents[cell - Size] != -2) stand = cell - Size;
-                    else if (parents[cell + Size] != -2) stand = cell + Size;
-                    else continue;
-                    tier = 3;
-                }
-                else
-                {
-                    if (stand < 0) continue;
-                    bool shoreline = ground[cell - 1] == '2' || ground[cell + 1] == '2' ||
-                        ground[cell - Size] == '2' || ground[cell + Size] == '2';
-                    bool sampled = ChunkTerrain.SampleResource(state.seed, x, y, biome, state.generation, shoreline,
-                        out NodeKind kind, out _, state.generatorVersion);
-                    if (sampled && kind == NodeKind.Oil) continue;
-                    tier = !sampled ? 1 : kind == NodeKind.Quartz ? 0 : 2;
-                }
-                double rank = ChunkTerrain.QuartzAccessPriority(state.seed, x, y, biome);
-                if (tier > bestTier || tier == bestTier && rank >= bestRank) continue;
-                selected = cell; approach = stand; bestTier = tier; bestRank = rank;
-            }
-            if (selected < 0) throw new InvalidOperationException("New world has no reachable quartz location.");
-            if (ground[selected] == '2') ground[selected] = '1';
-            int sx = selected % Size, sy = selected / Size;
-            AddNode(state, occupied, sx, sy, NodeKind.Quartz, ChunkTerrain.SampleQuartzStock(state.seed, sx, sy));
-            for (int path = approach; path >= 0; path = parents[path]) reserved[path] = true;
-        }
-
-        private static int OilPumpSpace(WorldState state, char[] ground, HashSet<int> occupied, int[] parents, int oilX, int oilY)
-        {
-            int width = DemoCatalog.Width(BuildKind.OilPump), height = DemoCatalog.Height(BuildKind.OilPump);
-            for (int py = oilY - height; py <= oilY + 1; py++)
-            for (int px = oilX - width; px <= oilX + 1; px++)
-            {
-                if (px < 0 || py < 0 || px + width > Size || py + height > Size ||
-                    oilX >= px && oilX < px + width && oilY >= py && oilY < py + height) continue;
-                bool clear = true;
-                for (int y = py; y < py + height; y++) for (int x = px; x < px + width; x++)
-                {
-                    int cell = x + y * Size;
-                    if (ground[cell] == '2' || occupied.Contains(cell) || parents[cell] < 0 ||
-                        Math.Abs(x - 32) <= 1 && Math.Abs(y - 35) <= 1 || FloorWorld.IsProtectedCell(state, x, y)) clear = false;
-                    if (state.survival != null && state.survival.enabled)
-                    {
-                        foreach (var plot in state.survival.plots) if (plot.x == x && plot.y == y) clear = false;
-                        foreach (var creature in state.survival.creatures)
-                            if (Math.Abs(creature.x - x) < .8f && Math.Abs(creature.y - y) < .8f) clear = false;
-                    }
-                }
-                if (clear) return px + py * Size;
-            }
-            return -1;
-        }
-
-        private static BuildingState AddStarter(WorldState state, HashSet<int> occupied, BuildKind kind, int x, int y)
-        {
+            const BuildKind kind = BuildKind.Door;
             var b = new BuildingState { id = state.nextId++, kind = kind, x = x, y = y, rotation = 0,
                 footprintVersion = 1, hp = WorldSimulator.BuildingMaxHealth(kind) };
             for (int iy = y; iy < y + DemoCatalog.Height(b); iy++) for (int ix = x; ix < x + DemoCatalog.Width(b); ix++)
-                if (!occupied.Add(ix + iy * Size)) throw new InvalidOperationException("Overlapping tutorial machine.");
-            state.buildings.Add(b); return b;
+                if (!occupied.Add(ix + iy * Size)) throw new InvalidOperationException("Overlapping site doorway.");
+            state.buildings.Add(b);
         }
 
         private static void GenerateSites(WorldState state, char[] ground, bool[] reserved, HashSet<int> occupied)
@@ -418,7 +387,7 @@ namespace DeadCircuit
             int[] streets = { 10, 20, 32, 33, 44, 54 };
             var lots = new List<int>();
             for (int row = 0; row < 6; row++) for (int col = 0; col < 6; col++)
-                if (!Tutorial(starts[col], starts[row])) lots.Add(col + row * 6);
+                lots.Add(col + row * 6);
             for (int i = lots.Count - 1; i > 0; i--) { int j = random.Next(0, i + 1), v = lots[i]; lots[i] = lots[j]; lots[j] = v; }
             int target = state.generation.preset == WorldPreset.Wilderness ? 6 + state.generation.cityDensity * 4 :
                 state.generation.preset == WorldPreset.Urban ? 18 + state.generation.cityDensity * 5 : 12 + state.generation.cityDensity * 6;
@@ -435,7 +404,7 @@ namespace DeadCircuit
                 bool clear = true;
                 // Only empty lots are developed; existing nodes/machines are never removed.
                 for (int y = sy; y < sy + height; y++) for (int x = sx; x < sx + width; x++)
-                    if (Tutorial(x, y) || reserved[x + y * Size] || occupied.Contains(x + y * Size)) clear = false;
+                    if (reserved[x + y * Size] || occupied.Contains(x + y * Size)) clear = false;
                 if (!clear) continue;
                 var site = new SiteState { id = state.nextId++, kind = definition.kind, x = sx, y = sy, width = width, height = height,
                     doorX = sx + width / 2, doorY = streets[row] < sy ? sy : sy + height - 1 };
@@ -448,7 +417,7 @@ namespace DeadCircuit
                     if ((x == sx || y == sy || x == sx + width - 1 || y == sy + height - 1) && !(x == site.doorX && y == site.doorY))
                         AddNode(state, occupied, x, y, NodeKind.Wall, 14);
                 }
-                AddStarter(state, occupied, BuildKind.Door, site.doorX, site.doorY);
+                AddSiteDoor(state, occupied, site.doorX, site.doorY);
                 for (int k = 0; k < definition.containers; k++)
                 {
                     int cx = k == 1 ? sx + width - 2 : sx + 1;
@@ -457,8 +426,7 @@ namespace DeadCircuit
                 }
                 int direction = streets[row] < site.doorY ? -1 : 1;
                 for (int y = site.doorY + direction; y != streets[row] + direction; y += direction) Road(ground, reserved, site.doorX, y);
-                // Shared streets never cross plots or tutorial water, and join the arterial.
-                for (int x = 3; x <= 60; x++) Road(ground, reserved, x, streets[row]);
+                for (int x = 0; x <= 60; x++) Road(ground, reserved, x, streets[row]);
             }
         }
 
@@ -528,12 +496,18 @@ namespace DeadCircuit
             }
         }
 
-        private static int[] ResourcePaths(char[] ground, bool[] blocked)
+        private static int[] ResourcePaths(char[] ground, bool[] blocked, int origin = -1)
         {
             var parents = new int[ground.Length]; var queue = new int[ground.Length];
             for (int i = 0; i < parents.Length; i++) parents[i] = -2;
-            int head = 0, tail = 0, spawn = 32 + 35 * Size;
-            parents[spawn] = -1; queue[tail++] = spawn;
+            int head = 0, tail = 0;
+            if (origin >= 0) { parents[origin] = -1; queue[tail++] = origin; }
+            else for (int cell = 0; cell < ground.Length; cell++)
+            {
+                int x = cell % Size, y = cell / Size;
+                if (x != 0 && y != 0 && x != Size - 1 && y != Size - 1 || blocked[cell] || ground[cell] == '2') continue;
+                parents[cell] = -1; queue[tail++] = cell;
+            }
             while (head < tail)
             {
                 int cell = queue[head++], x = cell % Size, y = cell / Size;
@@ -598,8 +572,15 @@ namespace DeadCircuit
                 bool vertical = (site.doorX == site.x || site.doorX == site.x + site.width - 1) && site.doorY > site.y && site.doorY < site.y + site.height - 1;
                 if (!horizontal && !vertical) throw new ArgumentException("Site door must be a noncorner perimeter cell.", nameof(state));
                 for (int y = site.y; y < site.y + site.height; y++) for (int x = site.x; x < site.x + site.width; x++)
-                    if (Tutorial(x, y) || !cells.Add(x + y * Size)) throw new ArgumentException("Overlapping or tutorial-area site.", nameof(state));
+                    if (!cells.Add(x + y * Size)) throw new ArgumentException("Overlapping site.", nameof(state));
             }
         }
+    }
+
+    public sealed partial class WorldSimulator
+    {
+        // Probe the real landing policy on a copy before adding the startup outcrop.
+        internal static bool TryFindOpeningSpawn(WorldState state, out int x, out int y) =>
+            new WorldSimulator(state).FindSpawn(out x, out y);
     }
 }

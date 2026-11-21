@@ -33,7 +33,7 @@ namespace DeadCircuit
             p.interactCooldown = .5f;
             if (nearest == null)
             {
-                Notice(p, "已生成区域内半径48格未发现有库存的油源；请继续探索荒漠（沙漠）、湿地、沼泽或河谷。群系倾向不保证每格有油。");
+                Notice(p, "周围 48 格内的已知区域未发现可开采油藏。可前往荒漠、湿地、沼泽或河谷继续探索。");
                 return;
             }
 
@@ -41,11 +41,11 @@ namespace DeadCircuit
             var biome = (BiomeKind)(WorldTiles.Biome(State, nearest.x, nearest.y) - '0');
             var rule = BiomeResourceCatalog.Get(biome);
             string biomeName = rule == null ? "未知群系" : WorldGenerationCatalog.Biomes[(int)biome].name;
-            string tendency = rule != null && rule.oilPermille >= 18 ? "沉积油藏倾向较高" : "低概率小油藏区";
-            Notice(p, "实测油源(" + nearest.x + "," + nearest.y + ")，" +
+            string tendency = rule != null && rule.oilPermille >= 18 ? "较易发现油藏" : "偶有小油藏";
+            Notice(p, "发现油藏(" + nearest.x + "," + nearest.y + ")," +
                 PetrochemicalOilBearing(nearest.x - (double)p.x, nearest.y - (double)p.y) + "，距离" +
                 Math.Sqrt(nearestSquared).ToString("0.0", CultureInfo.InvariantCulture) + "格；" +
-                biomeName + "：" + tendency + "。剩余" + nearest.stock + "单位，需机器采抽。");
+                biomeName + "：" + tendency + "。剩余" + nearest.stock + "单位，需使用抽油机开采。");
         }
 
         private static string PetrochemicalOilBearing(double dx, double dy)

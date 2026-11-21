@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Assets/DeadCircuit/Scripts/Core/*.cs" Link="Core/%(Filename)%(Extension)" />
+    <Compile Include="../../Assets/DeadCircuit/Scripts/Presentation/NaturalBuildingLayout.cs" Link="Presentation/NaturalBuildingLayout.cs" />
   </ItemGroup>
 </Project>

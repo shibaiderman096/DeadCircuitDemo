@@ -21,6 +21,63 @@ static partial class Checks
             Require(archive.Read(a).players.Single().items[(int)ItemKind.Wood]==73,"other world changed inventory");
             Require(archive.Read(b).seed==-19 && archive.Read(a).generation.worldName=="林间营地","world identities mixed");
         });
+        Run("world archive deletes only the requested world and its sidecars",()=>
+        {
+            var archive=ArchiveFixture(out _);
+            string removed=Guid.NewGuid().ToString("N"),retained=Guid.NewGuid().ToString("N");
+            var sim=New(out var p);p.items[0]=20;archive.Write(removed,sim.State);archive.Write(retained,sim.State);
+            p.items[0]=40;archive.Write(removed,sim.State);archive.Write(retained,sim.State);
+            string removedPath=archive.PathFor(removed),retainedPath=archive.PathFor(retained);
+            File.WriteAllText(removedPath+".tmp","pending removal");
+            File.WriteAllText(retainedPath+".tmp","pending write");
+
+            archive.Delete(removed);
+
+            Require(!File.Exists(removedPath) && !File.Exists(removedPath+".tmp") && !File.Exists(removedPath+".bak"),"deleted world left a save or sidecar");
+            Require(archive.List().Single().saveId==retained,"archive did not retain only the other world");
+            Require(archive.Read(retained).players.Single().items[0]==40 && archive.ReadPath(retainedPath+".bak").players.Single().items[0]==20,"other world or its backup changed");
+            Require(File.ReadAllText(retainedPath+".tmp")=="pending write","other world's pending write changed");
+        });
+        Run("world archive deletion preserves a readable save if sidecar removal fails",()=>
+        {
+            var archive=ArchiveFixture(out _);string id=Guid.NewGuid().ToString("N");
+            var sim=New(out var p);p.items[0]=40;archive.Write(id,sim.State);
+            string blocked=archive.PathFor(id)+".bak";
+            Directory.CreateDirectory(blocked);
+
+            bool failed=false;
+            try{archive.Delete(id);}catch(Exception e) when(e is IOException || e is UnauthorizedAccessException){failed=true;}
+
+            Require(failed && Directory.Exists(blocked),"sidecar failure was ignored or removed a directory");
+            Require(archive.Read(id).players.Single().items[0]==40,"sidecar failure removed or changed the main save");
+        });
+        Run("world archive deletion is idempotent and clears orphaned sidecars",()=>
+        {
+            var archive=ArchiveFixture(out string root);string id=Guid.NewGuid().ToString("N");
+            archive.Delete(id);
+            Require(!Directory.Exists(root),"deleting a missing world created its parent directory");
+
+            Directory.CreateDirectory(root);
+            string path=archive.PathFor(id);
+            File.WriteAllText(path+".tmp","orphaned write");
+            File.WriteAllText(path+".bak","orphaned backup");
+            archive.Delete(id);
+            archive.Delete(id);
+
+            Require(!File.Exists(path+".tmp") && !File.Exists(path+".bak"),"missing main save left orphaned sidecars");
+        });
+        Run("world archive deletes a controlled path without matching other files",()=>
+        {
+            ArchiveFixture(out string root);Directory.CreateDirectory(root);
+            string path=Path.Combine(root,"legacy-input.json"),retained=Path.Combine(root,"legacy-input-other.json");
+            foreach(string suffix in new[]{"",".tmp",".bak"})File.WriteAllText(path+suffix,"fixture");
+            File.WriteAllText(retained,"other fixture");
+
+            WorldArchive.DeletePath(path);
+
+            Require(!File.Exists(path) && !File.Exists(path+".tmp") && !File.Exists(path+".bak"),"controlled path left a save or sidecar");
+            Require(File.ReadAllText(retained)=="other fixture","controlled path deletion touched a neighboring file");
+        });
         Run("world archive rejected corrupt write preserves last good save and backup",()=>
         {
             var archive=ArchiveFixture(out _);string id=Guid.NewGuid().ToString("N");var sim=New(out var p);
@@ -40,8 +97,11 @@ static partial class Checks
         Run("world archive rejects path traversal and oversized input",()=>
         {
             var archive=ArchiveFixture(out string root);
-            foreach(string id in new[]{"../outside","legacy","","C:/outside",new string('g',32)})
-            {bool rejected=false;try{archive.PathFor(id);}catch(ArgumentException){rejected=true;}Require(rejected,"unsafe save identity accepted");}
+            foreach(string id in new[]{"../outside","legacy","",null,"C:/outside",new string('g',32)})
+            {
+                bool rejected=false;try{archive.PathFor(id);}catch(ArgumentException){rejected=true;}Require(rejected,"unsafe save identity accepted");
+                rejected=false;try{archive.Delete(id);}catch(ArgumentException){rejected=true;}Require(rejected,"delete accepted an unsafe save identity");
+            }
             Directory.CreateDirectory(root);string huge=Guid.NewGuid().ToString("N");
             using(var stream=File.Create(archive.PathFor(huge)))stream.SetLength(WorldArchive.MaxBytes+1L);
             bool oversized=false;try{archive.Read(huge);}catch(InvalidDataException){oversized=true;}Require(oversized,"oversized JSON read into memory");

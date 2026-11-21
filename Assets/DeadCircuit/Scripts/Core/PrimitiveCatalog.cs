@@ -30,17 +30,17 @@ namespace DeadCircuit
                 DemoCatalog.Materials(ItemKind.Wood, 2, ItemKind.Stone, 2)),
             T(PrimitiveTech.Charcoal, "木炭烧制", "解锁炭窑，将木材烧成木炭。", 1 << (int)PrimitiveTech.Tools,
                 DemoCatalog.Materials(ItemKind.Wood, 4, ItemKind.Stone, 2)),
-            T(PrimitiveTech.Ceramics, "陶土烧结", "解锁陶窑，以黏土和木炭烧制砖。", 1 << (int)PrimitiveTech.Charcoal,
+            T(PrimitiveTech.Ceramics, "陶土烧结", "解锁陶窑，消耗黏土和木炭烧制陶砖。", 1 << (int)PrimitiveTech.Charcoal,
                 DemoCatalog.Materials(ItemKind.Clay, 4, ItemKind.Charcoal, 1)),
-            T(PrimitiveTech.CopperTin, "铜锡冶炼", "累计烧制4砖后解锁石炉炼铜、炼锡。", 1 << (int)PrimitiveTech.Ceramics,
+            T(PrimitiveTech.CopperTin, "铜锡冶炼", "累计烧制陶砖×4后，可研究石炉炼铜、炼锡。", 1 << (int)PrimitiveTech.Ceramics,
                 DemoCatalog.Materials(ItemKind.Brick, 2, ItemKind.Charcoal, 1)),
-            T(PrimitiveTech.Bronze, "青铜合金", "累计冶炼2铜、1锡后解锁工作台青铜合金。", 1 << (int)PrimitiveTech.CopperTin,
+            T(PrimitiveTech.Bronze, "青铜合金", "累计冶炼铜锭×2、锡锭×1后，可研究在工作台熔制青铜。", 1 << (int)PrimitiveTech.CopperTin,
                 DemoCatalog.Materials(ItemKind.Copper, 2, ItemKind.Tin, 1)),
-            T(PrimitiveTech.Bloomery, "块炼铁", "累计制作4青铜后解锁石炉炼铁和刀具。", 1 << (int)PrimitiveTech.Bronze,
+            T(PrimitiveTech.Bloomery, "块炼铁", "累计制作青铜×4后，可研究石炉炼铁和军刀制作。", 1 << (int)PrimitiveTech.Bronze,
                 DemoCatalog.Materials(ItemKind.Bronze, 2, ItemKind.Brick, 4)),
-            T(PrimitiveTech.Construction, "基础建造", "解锁防护墙、门、储物箱与传送带。", 1 << (int)PrimitiveTech.Tools,
+            T(PrimitiveTech.Construction, "基础建造", "解锁防护墙、出入门、储物箱和传送带。", 1 << (int)PrimitiveTech.Tools,
                 DemoCatalog.Materials(ItemKind.Wood, 4, ItemKind.Stone, 4)),
-            T(PrimitiveTech.Cooking, "烹饪净水", "解锁食物烹饪与原水煮沸。", 1 << (int)PrimitiveTech.Ceramics,
+            T(PrimitiveTech.Cooking, "烹饪净水", "解锁食物烹饪和原水煮沸，改善饮食与饮水安全。", 1 << (int)PrimitiveTech.Ceramics,
                 DemoCatalog.Materials(ItemKind.Brick, 2, ItemKind.Clay, 2))
         };
 
@@ -55,15 +55,15 @@ namespace DeadCircuit
         public static string ResearchRequirement(WorldState s, PlayerState p, int id)
         {
             var definition = Definition(id);
-            if (s == null || definition == null) return "无效原始科技。";
-            if (!Enabled(s)) return "此世界沿用旧科技规则，无需原始研究。";
+            if (s == null || definition == null) return "无法识别这项原始研究。";
+            if (!Enabled(s)) return "此世界无需进行原始工艺研究。";
             if (p == null || s.players == null || !s.players.Contains(p) || !p.connected || !(p.hp > 0f) ||
-                p.items == null || p.items.Length != DemoCatalog.ItemCount) return "研究者无效。";
+                p.items == null || p.items.Length != DemoCatalog.ItemCount) return "当前角色无法研究，请确认角色已连接且仍存活。";
             if (HasResearch(s, id)) return "全队已完成此项研究。";
-            if (p.interactCooldown > 0f) return "请等待交互冷却。";
+            if (p.interactCooldown > 0f) return "操作尚未结束，请稍候。";
             if ((s.primitiveResearch & definition.prerequisites) != definition.prerequisites)
                 return "需要前置研究：" + PrerequisiteNames(definition.prerequisites);
-            if (!EquipmentCatalog.HasWorkbench(s, p)) return "需要近距可见工作台。";
+            if (!EquipmentCatalog.HasWorkbench(s, p)) return "请靠近工作台，并确保中间没有障碍。";
             string milestone = ResearchMilestone(s, definition.id);
             if (milestone.Length != 0) return milestone;
             for (int i = 0; i < definition.cost.Length; i++)
@@ -88,13 +88,13 @@ namespace DeadCircuit
             switch (id)
             {
                 case PrimitiveTech.CopperTin:
-                    if (Produced(s, ItemKind.Brick) < 4) return "需要累计烧制4砖。";
+                    if (Produced(s, ItemKind.Brick) < 4) return "需累计烧制陶砖×4。";
                     break;
                 case PrimitiveTech.Bronze:
-                    if (Produced(s, ItemKind.Copper) < 2 || Produced(s, ItemKind.Tin) < 1) return "需要累计冶炼2铜、1锡。";
+                    if (Produced(s, ItemKind.Copper) < 2 || Produced(s, ItemKind.Tin) < 1) return "需累计冶炼铜锭×2、锡锭×1。";
                     break;
                 case PrimitiveTech.Bloomery:
-                    if (Produced(s, ItemKind.Bronze) < 4) return "需要累计制作4青铜。";
+                    if (Produced(s, ItemKind.Bronze) < 4) return "需累计制作青铜×4。";
                     break;
             }
             return "";
@@ -126,16 +126,16 @@ namespace DeadCircuit
         public static bool IsBuildUnlocked(WorldState s, BuildKind kind) => BuildRequirement(s, kind).Length == 0;
         public static string BuildRequirement(WorldState s, BuildKind kind)
         {
-            if (s == null || (int)kind < 0 || (int)kind >= DemoCatalog.BuildNames.Length) return "无效建筑。";
-            if (s.era < TechCatalog.RequiredEra(kind)) return "需要科技时代：" + TechCatalog.EraName(TechCatalog.RequiredEra(kind));
+            if (s == null || (int)kind < 0 || (int)kind >= DemoCatalog.BuildNames.Length) return "无法识别这项建筑。";
+            if (s.era < TechCatalog.RequiredEra(kind)) return "需要先进入：" + TechCatalog.EraName(TechCatalog.RequiredEra(kind));
             int id = BuildResearch(kind);
             return id < 0 || HasResearch(s, id) ? WaterCatalog.BuildRequirement(s, kind) : "需要原始研究：" + Definition(id).name;
         }
         public static bool IsRecipeUnlocked(WorldState s, RecipeDefinition recipe) => RecipeRequirement(s, recipe).Length == 0;
         public static string RecipeRequirement(WorldState s, RecipeDefinition recipe)
         {
-            if (s == null || recipe == null) return "无效配方。";
-            if (s.era < recipe.era) return "需要科技时代：" + TechCatalog.EraName(recipe.era);
+            if (s == null || recipe == null) return "无法识别这项配方。";
+            if (s.era < recipe.era) return "需要先进入：" + TechCatalog.EraName(recipe.era);
             int id = RecipeResearch(recipe.id);
             return id < 0 || HasResearch(s, id) ? WaterCatalog.RecipeRequirement(s, recipe) : "需要原始研究：" + Definition(id).name;
         }
@@ -151,10 +151,10 @@ namespace DeadCircuit
         {
             if (!Enabled(s)) return "";
             if (!HasResearch(s, PrimitiveTech.Bronze) || !HasResearch(s, PrimitiveTech.Bloomery) || !HasResearch(s, PrimitiveTech.Construction))
-                return "水力时代需要青铜合金、块炼铁、基础建造研究。";
+                return "进入水力时代前，需完成青铜合金、块炼铁和基础建造研究。";
             if (Produced(s, ItemKind.Bronze) < 4 || Produced(s, ItemKind.Iron) < 6 ||
                 Produced(s, ItemKind.Brick) < 4 || Produced(s, ItemKind.Charcoal) < 2)
-                return "水力时代需要累计生产：青铜4、铁6、砖4、木炭2。";
+                return "进入水力时代前，需累计生产：青铜×4、铁锭×6、陶砖×4、木炭×2。";
             return "";
         }
     }

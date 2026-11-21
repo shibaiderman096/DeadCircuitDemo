@@ -418,6 +418,7 @@ namespace DeadCircuit
             viewMin = center - new Vector2(halfWidth, halfHeight);
             viewMax = center + new Vector2(halfWidth, halfHeight);
             UpdateAmbient(world, local);
+            DrawNaturalExteriors(world, local);
             DrawRooms(world);
             DrawSites(world);
             DrawNodes(world, local);
@@ -566,7 +567,7 @@ namespace DeadCircuit
             {
                 if (state.hp <= 0 || state.stock <= 0) continue;
                 blockedNodes.Add(WorldTiles.Key(state.x, state.y));
-                if (!Visible(state.x,state.y)) continue;
+                if (!Visible(state.x,state.y) || NaturalInteriorHidden(state.x, state.y)) continue;
                 var v = Get(nodes,state.id,new Vector2(state.x,state.y),state.hp,state.kind==NodeKind.Wall ? 160f : 35f);
                 string art;
                 switch (state.kind)
@@ -584,7 +585,6 @@ namespace DeadCircuit
                 bool dedicatedBiomeTree = state.kind == NodeKind.Tree && world.generatorVersion >= 8 && biome >= (int)BiomeKind.Swamp;
                 Sprite nodeArt = state.kind == NodeKind.Wall ? ConnectedWall(state.x, state.y) :
                     dedicatedBiomeTree ? DemoArt.Get("biome_tree_" + biome) : DemoArt.Get("node_" + (int)state.kind);
-
                 v.body.sprite = nodeArt ?? Art(art);
                 if (nodeArt!=null)
                 {
@@ -599,8 +599,8 @@ namespace DeadCircuit
                     state.kind == NodeKind.Clay ? new Color(1f,.55f,.32f) :
                     state.kind == NodeKind.Coal ? new Color(.3f,.34f,.4f) :
                     state.kind == NodeKind.Limestone ? new Color(.92f,.9f,.72f) :
-                    state.kind == NodeKind.Quartz ? new Color(.96f,.86f,1f) :
                     state.kind == NodeKind.FireClay ? new Color(.83f,.48f,.37f) :
+                    state.kind == NodeKind.Quartz ? new Color(.96f,.86f,1f) :
                     state.kind == NodeKind.Oil ? new Color(.36f,.28f,.48f) : Color.white;
                 if (state.kind == NodeKind.Oil)
                 {
@@ -611,8 +611,8 @@ namespace DeadCircuit
                 if (state.kind == NodeKind.Stone || state.kind == NodeKind.Clay)
                     v.root.name = state.kind == NodeKind.Stone ? "石料堆 / Stone" : "黏土矿床 / Clay";
                 if (state.kind == NodeKind.Coal || state.kind == NodeKind.Limestone || state.kind == NodeKind.FireClay)
-                if (state.kind == NodeKind.Quartz) v.root.name = "石英矿床";
                     v.root.name = (state.kind == NodeKind.Coal ? "煤" : state.kind == NodeKind.Limestone ? "石灰石" : "耐火黏土") + "矿床";
+                if (state.kind == NodeKind.Quartz) v.root.name = "石英矿床";
                 Color ecology = state.kind == NodeKind.Tree && world.generatorVersion >= 8 && !dedicatedBiomeTree ? BiomeTint(world,state.x,state.y) : Color.white;
                 v.body.color = DamageColor(v,mineral * ecology); v.body.color = new Color(v.body.color.r,v.body.color.g,v.body.color.b,canopy);
                 v.shadow.transform.localScale = state.kind == NodeKind.Tree ? new Vector3(1.4f,.9f,1) : Vector3.one;
@@ -643,6 +643,7 @@ namespace DeadCircuit
                 Vector2 center = BuildingCenter(state);
                 if (center.x + w * .5f < viewMin.x || center.x - w * .5f > viewMax.x ||
                     center.y + h * .5f < viewMin.y || center.y - h * .5f > viewMax.y) continue;
+                if (NaturalInteriorHidden(center.x, center.y) && !(state.kind == BuildKind.Door && NaturalEntrance(state.x, state.y))) continue;
                 var v = Get(buildings, state.id, center, state.hp, WorldSimulator.BuildingMaxHealth(state.kind));
                 // A machine is fixed geometry, including when its dimensions change on rotation.
                 v.position = v.previous = center; v.root.transform.position = center;
@@ -764,7 +765,7 @@ namespace DeadCircuit
         {
             if (world.players != null) foreach (var state in world.players)
             {
-                if (!state.connected || !Visible(state.x,state.y)) continue;
+                if (!state.connected || !Visible(state.x,state.y) || NaturalInteriorHidden(state.x, state.y)) continue;
                 Vector2 target=new Vector2(state.x,state.y);
                 bool isLocal=local != null && state.id==local.id;
                 Visual v;
@@ -796,7 +797,7 @@ namespace DeadCircuit
             }
             if (world.zombies != null) foreach (var state in world.zombies)
             {
-                if (state.hp<=0 || !Visible(state.x,state.y)) continue;
+                if (state.hp<=0 || !Visible(state.x,state.y) || NaturalInteriorHidden(state.x, state.y)) continue;
                 var target=new Vector2(state.x,state.y);
                 float baseHealth=EnemyCatalog.Stats(state.variant).hp;
                 var v=Get(zombies,state.id,target,state.hp,Mathf.Max(baseHealth,state.hp));
@@ -818,6 +819,9 @@ namespace DeadCircuit
                 v.previous=Vector2.Lerp(v.previous,target,1-Mathf.Exp(-8f*Time.unscaledDeltaTime));
             }
             selectionRing.enabled=local!=null && local.hp>0;
+            // Keep the local survivor locatable behind a tall exterior without
+            // removing its roof or revealing any rooms from outside.
+            selectionRing.sortingOrder = local != null && NaturalExteriorOccludes(local.x, local.y) ? 9600 : -11000;
             if (local!=null)
             {
                 Visual v;
@@ -1020,6 +1024,7 @@ namespace DeadCircuit
                 BuildingState from, to;
                 if (!buildingStates.TryGetValue(link.fromId,out from) || !buildingStates.TryGetValue(link.toId,out to)) continue;
                 Vector2 a = WireAnchor(from), b = WireAnchor(to);
+                if (NaturalInteriorHidden(from.x, from.y) || NaturalInteriorHidden(to.x, to.y)) continue;
                 if (!SegmentVisible(a,b)) continue;
                 if (count == wires.Count) wires.Add(NewLine("Power network wire",9100,.018f,false));
                 bool focused = focusedNetwork > 0 && from.networkId == focusedNetwork;
@@ -1092,7 +1097,7 @@ namespace DeadCircuit
                 // Small snapshot timing corrections may hold the icon briefly, never pull it backwards.
                 if (sameTrip) progress = Mathf.Max(v.progress,progress);
                 Vector2 position = Vector2.Lerp(from,to,progress);
-                if (!Visible(position.x,position.y)) continue;
+                if (!Visible(position.x,position.y) || NaturalInteriorHidden(position.x, position.y)) continue;
                 if (!exists)
                 {
                     v = cargoPool.Count > 0 ? cargoPool.Pop() : new CargoVisual { sprite = NewSprite("In-flight item",effectsRoot,9400) };
@@ -1123,6 +1128,7 @@ namespace DeadCircuit
             if (world.traces!=null) foreach (var t in world.traces)
             {
                 if (t.until<visualTime || count>=64 || t.effect==2) continue;
+                if (NaturalInteriorHidden(t.x, t.y) || NaturalInteriorHidden(t.endX, t.endY)) continue;
                 if (!Visible(t.x,t.y) && !Visible(t.endX,t.endY)) continue;
                 TraceVisual v;
                 if (count==traces.Count)
@@ -1195,7 +1201,8 @@ namespace DeadCircuit
             focusedNetwork = 0;
             BuildingState hovered = null;
             if (!ui) foreach (var b in buildingStates.Values)
-                if (DemoCatalog.Contains(b,x,y)) { hovered = b; break; }
+                if (DemoCatalog.Contains(b,x,y) && !NaturalInteriorHidden(DemoCatalog.CenterX(b), DemoCatalog.CenterY(b)))
+                { hovered = b; break; }
             int rangeCount = 0, wireCount = 0;
             if (selected)
             {

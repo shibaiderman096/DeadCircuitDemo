@@ -146,6 +146,7 @@ static partial class Checks
         LandmarkChecks();
         SettlementChecks();
         FloorChecks();
+        NaturalBuildingChecks();
         FloorIntegrationChecks();
         ChunkChecks();
         ChunkTerrainChecks();
@@ -221,19 +222,17 @@ static partial class Checks
                 foreach (var n in sim.State.nodes) Require(n.x >= 0 && n.x < 64 && n.y >= 0 && n.y < 64 && n.stock > 0 && cells.Add((n.x, n.y)), "invalid/overlapping node");
                 foreach (var b in sim.State.buildings)
                 {
-                    Require(b.footprintVersion == 1, "starter kept legacy footprint");
+                    Require(b.footprintVersion == 1, "generated structure kept legacy footprint");
                     for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
-                        Require(x >= 0 && x < 64 && y >= 0 && y < 64 && sim.State.ground[x + y * 64] != '2' && cells.Add((x, y)), "overlapping/outside/water starter footprint");
+                        Require(x >= 0 && x < 64 && y >= 0 && y < 64 && sim.State.ground[x + y * 64] != '2' && cells.Add((x, y)), "overlapping/outside/water generated footprint");
                 }
-                Require(!sim.State.nodes.Any(n => n.x >= 22 && n.x <= 42 && n.y >= 22 && n.y <= 42), "fixed starting resource remains");
             }
         });
-        Run("primitive starter leaves a safe usable construction area", () =>
+        Run("new primitive world does not grant production or storage buildings", () =>
         {
-            var sim = New(out var p);
+            var sim = New(out _);
             Require(sim.State.era == TechEra.Primitive, "seeded world skipped primitive progression");
-            Require(sim.State.buildings.All(b => TechCatalog.RequiredEra(b.kind) == TechEra.Primitive), "modern starter production line bypassed progression");
-            Require(!sim.State.buildings.Any(b => DemoCatalog.Contains(b, 34, 30) || DemoCatalog.Contains(b, 36, 30)), "tutorial gap already occupied"); Near(p.x, 32, "spawn x"); Near(p.y, 35, "spawn y");
+            Require(sim.State.buildings.All(b => b.kind == BuildKind.Door), "generation granted production or storage buildings");
         });
     }
 

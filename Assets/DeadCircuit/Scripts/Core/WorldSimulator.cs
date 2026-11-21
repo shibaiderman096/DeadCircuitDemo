@@ -74,7 +74,7 @@ namespace DeadCircuit
             inputs.Add(id, new HeldInput { protectionUntil = State.elapsed + 4f });
             InitializeSurvivalPlayer(p, true);
             MapExploration.Reveal(State,p);
-            Notice(p, PrimitiveCatalog.Enabled(State) ? "原始开局：采集石材与木材，靠近工作台按T研究工具，再烧炭、制陶、炼铜锡与青铜。科技全队共享。" : "原始开局：采矿、3木材制2燃料，石炉炼铁铜锡。水车保底岸位(25,25)，科技全队共享。");
+            Notice(p, PrimitiveCatalog.Enabled(State) ? "原始开局：探索并采集木材与石材，建造工作台和石炉。按T查看研究，科技全队共享。" : "原始开局：采矿、3木材制2燃料，石炉炼铁铜锡。科技全队共享。");
             flowRevision = -1;
             return p;
         }
@@ -244,18 +244,18 @@ namespace DeadCircuit
             if (State.buildings.Count >= MaxBuildings) { Notice(p, "设备数量已达上限。"); return; }
             for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
             {
-                if (FloorWorld.IsProtectedCell(State, x, y)) { Notice(p, "楼梯和落点须保持畅通。"); return; }
-                if (SurvivalOccupiesCell(x, y)) { Notice(p, "设备占地内有农田或生物。"); return; }
-                if (BlockedAt(x, y) || BuildingAt(x, y) != null) { Notice(p, "完整占地内有障碍、水域或其他设备。"); return; }
-                if (NearSpawn(x, y)) { Notice(p, "出生救援区不可建造。"); return; }
-                if (kind != BuildKind.Belt && OccupiedByActor(x, y)) { Notice(p, "人物占据设备范围。"); return; }
+                if (FloorWorld.IsProtectedCell(State, x, y)) { Notice(p, "无法建造：请保持楼梯及其出入口畅通。"); return; }
+                if (SurvivalOccupiesCell(x, y)) { Notice(p, "无法建造：占地范围内有农田或生物。"); return; }
+                if (BlockedAt(x, y) || BuildingAt(x, y) != null) { Notice(p, "无法建造：占地范围内有障碍、水面或其他设备。"); return; }
+                if (NearSpawn(x, y)) { Notice(p, "无法建造：救援区须保持畅通。"); return; }
+                if (kind != BuildKind.Belt && OccupiedByActor(x, y)) { Notice(p, "无法建造：占地范围内有人物。"); return; }
             }
             if ((kind == BuildKind.Miner || kind == BuildKind.SteamMiner) && NearbyOre(b) == null)
             { Notice(p, "采矿机需紧邻未耗尽矿脉（含斜邻格）。"); return; }
             if(kind==BuildKind.OilPump && NearbyPetroleum(b)==null)
             { Notice(p,"抽油机需紧邻未耗尽油藏（含斜邻格）。"); return; }
             if (TechCatalog.RequiresWater(kind) && !NearWater(b))
-            { Notice(p, "必须建在紧邻水面的岸上干地。"); return; }
+            { Notice(p, "无法建造：设备须紧邻水面，且占地全部位于陆地。"); return; }
             int[] cost = DemoCatalog.BuildCost(kind);
             if (!CanPay(p.items, cost)) { Notice(p, "建材不足：" + DemoCatalog.CostText(kind)); return; }
             int id = AllocateId();
@@ -295,12 +295,12 @@ namespace DeadCircuit
             }
             foreach (CargoState cargo in State.cargo) if (cargo.fromId == b.id || cargo.toId == b.id) returned[cargo.item]++;
             for (int i = 0; i < DemoCatalog.ItemCount; i++)
-                if (p.items[i] + returned[i] > InventoryLimit) { Notice(p, "背包不足：须能完整收回库存、在途物料与返还建材。"); return; }
+                if (p.items[i] + returned[i] > InventoryLimit) { Notice(p, "背包空间不足：请留出空间，收回设备库存、运输中的物品和返还建材。"); return; }
             for (int i = 0; i < DemoCatalog.ItemCount; i++) p.items[i] += returned[i];
             State.cargo.RemoveAll(c => c.fromId == b.id || c.toId == b.id);
             State.buildings.Remove(b); RefreshSpatial(); RefreshPower(false); flowRevision = -1;
             if(wrench!=null) wrench.durability--;
-            Notice(p, "已拆除；库存全额收回，建材按耐久和工程专精返还，已点燃燃料不返还。");
+            Notice(p, "已拆除。库存已全部收回，建材按设备耐久与工程专精返还；燃烧中的燃料不返还。");
         }
 
         private void Craft(PlayerState p, int arg)
@@ -323,7 +323,7 @@ namespace DeadCircuit
             int target = arg == 0 ? (int)ItemKind.Fuel : (int)ItemKind.Ammo;
             int take = arg == 0 ? 3 : 1, give = arg == 0 ? 2 : 4;
             if (p.items[source] < take || p.items[target] > InventoryLimit - give)
-            { Notice(p, "材料不足或背包已满：3 木材→2 燃料；1 铁锭→4 弹药。"); return; }
+            { Notice(p, "制作失败：材料不足或背包已满。木材×3 → 燃料×2；铁锭×1 → 9mm弹×4。"); return; }
             p.items[source] -= take; p.items[target] += give; p.interactCooldown = 0.5f;
             RecordProduced(target,give);
             // Manual crafting deliberately awards no XP: dismantle/rebuild and crafting cannot farm levels.
@@ -358,14 +358,14 @@ namespace DeadCircuit
             {
                 if(arg<0 || arg>1) return;
                 if(arg==1 && !PrecisionCatalog.HasResearch(State,PrecisionTech.Grid)) { Notice(p,"需要高压研究：高压电网。"); return; }
-                b.setting=arg; b.progress=0f; RefreshPower(false); Notice(p,arg==0 ? "变压器 MV→LV" : "变压器 HV→MV"); return;
+                b.setting=arg; b.progress=0f; RefreshPower(false); Notice(p,arg==0 ? "变压器已设为中压 → 低压" : "变压器已设为高压 → 中压"); return;
             }
             RecipeDefinition r=TechCatalog.Recipe(arg);
             if(r==null || r.building!=b.kind || b.kind==BuildKind.Workbench || r.era>State.era) return;
             if(!PrimitiveCatalog.IsRecipeUnlocked(State,r)) { Notice(p,PrimitiveCatalog.RecipeRequirement(State,r)); return; }
             if(b.recipe!=arg) foreach(var cargo in State.cargo)
                 if(PetrochemicalCatalog.IsFluid(cargo.item) && (cargo.fromId==b.id || cargo.toId==b.id))
-                { Notice(p,"仍有进出液体在途，请到货后再切换配方。"); return; }
+                { Notice(p,"仍有液体正在运输，请等待送达后再切换配方。"); return; }
             if(b.recipe!=arg) { b.recipe=arg; b.progress=0f; }
             Notice(p,"配方："+r.name);
         }
@@ -392,13 +392,13 @@ namespace DeadCircuit
         {
             if (p.hp > 0f || State.elapsed - p.lastDamageAt < 5f) return;
             RefreshSpatial(); int x, y;
-            if (!FindSpawn(out x, out y)) { Notice(p, "救援区被敌人封锁，暂时无法复活。"); return; }
+            if (!FindSpawn(out x, out y, p)) { Notice(p, "暂时找不到安全落脚处，无法复活。"); return; }
             p.x = x; p.y = y; p.hp = PlayerMaxHealth(p); p.stamina = PlayerMaxStamina(p);
             p.hunger = Math.Max(45f, p.hunger); p.attackCooldown = 0.5f;
             ResetSurvivalAfterRespawn(p);
             p.lastDamageAt = State.elapsed;
             HeldInput input = inputs[p.id]; input.x = input.y = 0f; input.sprint = false; input.protectionUntil = State.elapsed + 5f;
-            Notice(p, "已在救援区复活，保留背包与成长；短暂无敌。"); flowRevision = -1;
+            Notice(p, "已复活，保留背包与成长；短暂无敌。"); flowRevision = -1;
         }
 
         private void GainXp(PlayerState p, int amount)
@@ -409,7 +409,7 @@ namespace DeadCircuit
             {
                 p.xp -= XpToNextLevel(p.level); p.level++; p.attributePoints += 2; p.skillPoints++;
                 p.hp = Math.Min(PlayerMaxHealth(p), p.hp + 15f);
-                Notice(p, "升级！属性点 +2，独立技能点 +1；专精第2/3层需3/5级。");
+                Notice(p, "等级提升！属性点 +2，技能点 +1。第 2、3 阶技能分别需要角色等级 3、5。");
             }
             if (p.level >= MaxLevel) p.xp = 0;
         }

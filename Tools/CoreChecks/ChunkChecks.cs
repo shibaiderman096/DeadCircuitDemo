@@ -49,11 +49,44 @@ static partial class Checks
             Require(restored.State.players[0].x==-1048576,"negative outermost cell lost");
             p.x=p.y=1048575;_=new WorldSimulator(Saved(sim.State));
         });
+        Run("world generation survivors join and respawn on safe cells across seeds", () =>
+        {
+            foreach (bool chunked in new[] { false, true })
+            {
+                var firstLandings = new HashSet<(float x, float y)>();
+                foreach (int seed in new[] { -991, -7, 0, 11, 42, 73149 })
+                {
+                    var sim = new WorldSimulator(new WorldGenerationSettings { seed = seed, chunked = chunked });
+                    var first = sim.AddPlayer("first", "First");
+                    RequireSafeLanding(sim, first);
+                    firstLandings.Add((first.x, first.y));
+                    var second = sim.AddPlayer("second", "Second");
+                    RequireSafeLanding(sim, second);
+                    second.hp = 0;
+                    second.x = first.x; second.y = first.y;
+                    second.lastDamageAt = sim.State.elapsed - 6f;
+                    sim.Apply(Command(second, "respawn"));
+                    Require(second.hp > 0, $"seed {seed} could not respawn a survivor");
+                    RequireSafeLanding(sim, second);
+                }
+                Require(firstLandings.Count > 1, $"chunked={chunked}: all seeds use the same landing cell");
+            }
+        });
+        Run("world generation the former rescue cell permits construction", () =>
+        {
+            var world = Flat(era: TechEra.Primitive);
+            world.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
+            world.ground = new string('0', 4096);
+            var sim = new WorldSimulator(world);
+            var p = Builder(sim); p.x = 30; p.y = 35;
+            sim.Apply(Command(p, "build", 32, 35, (int)BuildKind.Workbench));
+            Require(sim.State.buildings.Any(b => b.kind == BuildKind.Workbench && b.x == 32 && b.y == 35),
+                "clear land still has fixed rescue-zone protection");
+        });
         Run("infinite chunk world starts partial and extends beyond 256 in all directions", () =>
         {
             var sim=new WorldSimulator(new WorldGenerationSettings {seed=11,chunked=true});var p=sim.AddPlayer("p","P");
             Require(sim.State.chunks.records.Count==16,"new world pre-generated distant land");
-            Near(p.x,32,"original tutorial spawn x");Near(p.y,35,"original tutorial spawn y");
             Require(!sim.IsBlocked((int)p.x,(int)p.y) && sim.IsBlocked(-1000,-1000),"spawn or unknown collision");
             foreach(var coord in new[] {(-300,400),(1000,-2000),(-3000,-4000),(-3000,-5000),(4000,5000)})
             {
@@ -82,7 +115,8 @@ static partial class Checks
             var sim=new WorldSimulator(new WorldGenerationSettings {seed=631,chunked=true});sim.AddPlayer("p","P");
             for(int cx=-1;cx>=-6;cx--) ChunkStreaming.GenerateChunk(sim.State,cx,-2);
             var node=sim.State.nodes.First(n=>n.x<0);int removed=node.id;sim.State.nodes.Remove(node);
-            var chest=sim.State.buildings.First(b=>b.kind==BuildKind.Chest);chest.items[0]=17;
+            InfiniteClearChunk(sim.State,-7,-2);
+            var chest=Add(sim.State,BuildKind.Chest,-7*16+8,-2*16+8);chest.items[0]=17;
             var restored=new WorldSimulator(Saved(sim.State));
             Require(!ChunkStreaming.GenerateChunk(restored.State,WorldTiles.FloorDiv(node.x,16),WorldTiles.FloorDiv(node.y,16)),"visited chunk regenerated");
             Require(restored.State.nodes.All(n=>n.id!=removed) && Building(restored,chest.id).items[0]==17,"mined stock or inventory reset");
@@ -152,7 +186,8 @@ static partial class Checks
             for(int i=0;i<15;i++) ChunkStreaming.Step(sim.State);
             string before=Dump(sim.State);var first=WorldSnapshot.ForPlayer(sim.State,p.id);var second=WorldSnapshot.ForPlayer(sim.State,other.id);
             Require(Dump(sim.State)==before,"snapshot mutated authority");
-            Require(first.chunks.records.All(c=>Math.Abs(c.x-2)<=4 && Math.Abs(c.y-2)<=4),"first client received far chunks");
+            int cx=WorldTiles.FloorDiv((int)p.x,16),cy=WorldTiles.FloorDiv((int)p.y,16);
+            Require(first.chunks.records.Count>0 && first.chunks.records.All(c=>Math.Abs(c.x-cx)<=4 && Math.Abs(c.y-cy)<=4),"first client received far chunks");
             Require(second.chunks.records.All(c=>c.x>990 && c.y<-990) && second.chunks.records.Count>0,"remote client got origin map");
             Require(first.nodes.All(n=>n.x<200) && second.nodes.All(n=>n.x>15000),"unbounded entity snapshot");
             Require(System.Text.Encoding.UTF8.GetByteCount(Dump(second))<1024*1024,"local snapshot exceeds budget");
@@ -165,5 +200,18 @@ static partial class Checks
             Require(sim.State.width==64 && sim.State.ground==ground && sim.State.nextId==next && !ChunkStreaming.Enabled(sim.State),"legacy world regenerated");
             sim.Step(.05f);Require(sim.IsBlocked(64,30),"legacy map silently expanded");
         });
+    }
+
+    static void RequireSafeLanding(WorldSimulator sim, PlayerState player)
+    {
+        int x = (int)player.x, y = (int)player.y;
+        string cell = $"seed {sim.State.seed} at ({x},{y})";
+        Require(ChunkStreaming.IsGenerated(sim.State, x, y) && !sim.IsBlocked(x, y), "blocked or unknown landing: " + cell);
+        Require(!sim.IsBlocked(x - 1, y) || !sim.IsBlocked(x + 1, y) || !sim.IsBlocked(x, y - 1) || !sim.IsBlocked(x, y + 1),
+            "landing has no walkable exit: " + cell);
+        Require(!sim.State.players.Any(p => p != player && p.connected && p.hp > 0 && (int)p.x == x && (int)p.y == y),
+            "landing overlaps a living survivor: " + cell);
+        Require(!sim.State.zombies.Any(z => (z.x - x) * (z.x - x) + (z.y - y) * (z.y - y) < 2.25f),
+            "landing too close to an enemy: " + cell);
     }
 }

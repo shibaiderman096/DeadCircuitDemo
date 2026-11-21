@@ -5,6 +5,34 @@ static partial class Checks
     // Main must invoke this alongside the existing suites in Program.cs.
     static void WorldGenerationChecks()
     {
+        Run("world generation finite maps contain ruins but no tutorial facilities or floors", () =>
+        {
+            foreach (int seed in new[] { 73149, -7, 42 })
+            {
+                var world = WorldGeneration.Generate(new WorldGenerationSettings { seed = seed, chunked = false });
+                Require(world.sites.Count > 0 && world.buildings.Count == world.sites.Count &&
+                    world.buildings.All(b => b.kind == BuildKind.Door), $"seed {seed} has preset facilities outside ruins");
+                Require(world.era == TechEra.Primitive && world.players.Count == 0, "generation advanced the era or created a survivor");
+                for (int y = 0; y < world.height; y++) for (int x = 0; x < world.width; x++)
+                    if (WorldTiles.Ground(world, x, y) == '4')
+                        Require(world.sites.Any(s => x >= s.x && x < s.x + s.width && y >= s.y && y < s.y + s.height),
+                            $"seed {seed} has floor outside a ruin at ({x},{y})");
+            }
+        });
+        Run("world generation finite center keeps natural water and ground outside construction", () =>
+        {
+            foreach (int seed in new[] { 73149, -7, 42 })
+            {
+                var world = WorldGeneration.Generate(new WorldGenerationSettings { seed = seed });
+                for (int y = 22; y <= 42; y++) for (int x = 22; x <= 42; x++)
+                {
+                    char actual = WorldTiles.Ground(world, x, y);
+                    if (actual == '3' || actual == '4') continue;
+                    ChunkTerrain.SampleContinuous(seed, x, y, out char natural, out _);
+                    Require(actual == natural, $"seed {seed} replaced natural ground at ({x},{y})");
+                }
+            }
+        });
         Run("world generation public seed constructor produces current save and generator versions", () =>
         {
             var sim = new WorldSimulator(73149);
@@ -47,7 +75,6 @@ static partial class Checks
                 GenerationMapContract(a);
                 for (int y = 0; y < 64; y++) for (int x = 0; x < 64; x++)
                     biomesSeen |= 1 << (int)ChunkTerrain.SampleBiome(a.seed, x * 6, y * 6);
-                GenerationTutorialContract(a);
                 foreach (var site in a.sites) kinds.Add(site.kind);
             }
             Require(kinds.Count == 12, "100 seeds did not exercise every declared site type");
@@ -82,7 +109,7 @@ static partial class Checks
                 var a = WorldGeneration.Generate(new WorldGenerationSettings { seed = seed });
                 var b = WorldGeneration.Generate(new WorldGenerationSettings { seed = 99, seedText = seed.ToString(System.Globalization.CultureInfo.InvariantCulture) });
                 Require(a.seed == seed && b.seed == seed && a.ground == b.ground && a.biomes == b.biomes, "resolved integer seed altered map");
-                GenerationMapContract(a); GenerationTutorialContract(a);
+                GenerationMapContract(a);
             }
             var settings = new WorldGenerationSettings { seed = 13, seedText = " hello ", worldName = " 世界 ", preset = WorldPreset.Urban, cityDensity = 2 };
             var generated = WorldGeneration.Generate(settings);
@@ -213,9 +240,10 @@ static partial class Checks
         foreach (var door in state.buildings.Where(b => b.kind == BuildKind.Door))
             passageBlocked.Remove(door.x + door.y * 64);
         var reachable = GenerationFlood(state, passageBlocked);
-        Require(reachable.Count > 1000, "spawn is confined to a pocket");
         for (int i = 0; i < 64; i++) foreach (int cell in new[] { i, i + 63 * 64, i * 64, 63 + i * 64 })
             Require(state.ground[cell] != '2' && reachable.Contains(cell), "dry world boundary is unreachable");
+        foreach (var node in state.nodes.Where(n => n.kind != NodeKind.Wall && n.kind != NodeKind.Crate))
+            Require(GenerationHasReachableNeighbor(reachable, node.x, node.y), $"seed {state.seed}: resource at ({node.x},{node.y}) has no approach from dry land");
         var lots = new HashSet<int>();
         var interiors = RoomLayout.Build(state);
         Require(interiors.rooms.Count == state.sites.Count, "fresh sites are not individual enclosed rooms");
@@ -227,7 +255,7 @@ static partial class Checks
             bool doorHorizontal = (site.doorY == site.y || site.doorY == site.y + site.height - 1) && site.doorX > site.x && site.doorX < site.x + site.width - 1;
             bool doorVertical = (site.doorX == site.x || site.doorX == site.x + site.width - 1) && site.doorY > site.y && site.doorY < site.y + site.height - 1;
             Require(doorHorizontal || doorVertical, "door is not a noncorner wall opening");
-            Require(reachable.Contains(site.doorX + site.doorY * 64), "POI entrance unreachable from spawn");
+            Require(reachable.Contains(site.doorX + site.doorY * 64), "POI entrance unreachable from the dry boundary");
             var interior = interiors.At(site.x + 1, site.y + 1);
             var entrance = state.buildings.Single(b => b.kind == BuildKind.Door && b.x == site.doorX && b.y == site.doorY);
             Require(interior != null && interior.cells.Length == (site.width - 2) * (site.height - 2) && interior.doorIds.SequenceEqual(new[] { entrance.id }), "site walls and real door do not enclose all interior floor");
@@ -235,7 +263,7 @@ static partial class Checks
             for (int y = site.y; y < site.y + site.height; y++) for (int x = site.x; x < site.x + site.width; x++)
             {
                 int cell = x + y * 64;
-                Require(lots.Add(cell) && !(x >= 22 && x <= 42 && y >= 22 && y <= 42), "site overlaps another POI/tutorial safe zone");
+                Require(lots.Add(cell), "site overlaps another POI");
                 Require(state.ground[cell] == '4', "POI lacks floor");
                 var node = state.nodes.SingleOrDefault(n => n.x == x && n.y == y);
                 bool wall = x == site.x || y == site.y || x == site.x + site.width - 1 || y == site.y + site.height - 1;
@@ -263,8 +291,7 @@ static partial class Checks
         {
             Require(ids.Add(z.id) && z.x >= 0 && z.x < 64 && z.y >= 0 && z.y < 64, "enemy ID/bounds");
             int cell = (int)z.x + (int)z.y * 64;
-            Require(state.ground[cell] != '2' && !occupied.Contains(cell) && reachable.Contains(cell), "enemy starts in water/wall or isolated");
-            Require(Math.Abs(z.x - 32) > 8 || Math.Abs(z.y - 35) > 8, "enemy starts in spawn protection zone");
+            Require(state.ground[cell] != '2' && !occupied.Contains(cell), "enemy starts in water or a solid cell");
         }
         Require(ids.All(id => id > 0 && id < state.nextId), "nextId does not cover site/entity IDs");
         WorldGeneration.Validate(state);
@@ -273,8 +300,8 @@ static partial class Checks
     static HashSet<int> GenerationFlood(WorldState state, HashSet<int> blocked)
     {
         var seen = new HashSet<int>(); var queue = new Queue<int>();
-        Require(!blocked.Contains(32 + 35 * 64) && state.ground[32 + 35 * 64] != '2', "blocked tutorial spawn");
-        seen.Add(32 + 35 * 64); queue.Enqueue(32 + 35 * 64);
+        Require(!blocked.Contains(0) && state.ground[0] != '2', "blocked dry boundary");
+        seen.Add(0); queue.Enqueue(0);
         while (queue.Count > 0)
         {
             int c = queue.Dequeue(), x = c % 64, y = c / 64;
@@ -299,21 +326,4 @@ static partial class Checks
         Require(rejected, message + " was accepted");
     }
 
-    static void GenerationTutorialContract(WorldState state)
-    {
-        Require(state.era == TechEra.Primitive && state.buildings.Count(b => b.kind != BuildKind.Door) == 3, "primitive starter devices changed");
-        Require(state.buildings.Count(b => b.kind == BuildKind.Door) == state.sites.Count, "generated door count differs from site count");
-        foreach (var expected in new[] { (BuildKind.Workbench, 29, 35), (BuildKind.StoneFurnace, 28, 37), (BuildKind.Chest, 30, 37) })
-            Require(state.buildings.Any(b => b.kind == expected.Item1 && b.x == expected.Item2 && b.y == expected.Item3), "tutorial device moved");
-        Require(state.buildings.Single(b => b.kind == BuildKind.Chest).items.All(n => n == 0), "starting chest grants free materials");
-        Require(!state.nodes.Any(n => n.x >= 22 && n.x <= 42 && n.y >= 22 && n.y <= 42), "fixed starting resource remains");
-        var occupied = state.nodes.Select(n => n.x + n.y * 64).ToHashSet();
-        foreach (var b in state.buildings) for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) occupied.Add(x + y * 64);
-        var reachable = GenerationFlood(state, occupied);
-        foreach (var b in state.buildings.Where(b => b.kind != BuildKind.Door)) Require(GenerationHasReachableNeighbor(reachable, b.x, b.y), "starter machine cannot be used");
-        for (int y = 24; y <= 29; y++) for (int x = 23; x <= 24; x++) Require(state.ground[x + y * 64] == '2', "tutorial river removed");
-        for (int y = 25; y <= 26; y++) for (int x = 25; x <= 26; x++)
-            Require(state.ground[x + y * 64] != '2' && !occupied.Contains(x + y * 64) && reachable.Contains(x + y * 64), "waterwheel footprint blocked");
-        Require(!occupied.Contains(34 + 30 * 64) && !occupied.Contains(36 + 30 * 64), "tutorial build gaps occupied");
-    }
 }

@@ -262,11 +262,12 @@ static partial class Checks
             var legacy = EnemySpawnSample(8, 0); Require(legacy.All(v => v <= 2) && legacy.Distinct().Count() == 3, "gen0 gained special enemies");
             Require(EnemySpawnSample(1).All(v => v == 0), "new first wave gained special enemies");
             var opening = new WorldSimulator(73149);
-            int[] x = { 14, 50, 32, 32, 12, 54 }, y = { 32, 32, 14, 54, 33, 33 };
             Require(opening.State.zombies.Count == 6, "initial six count changed");
+            Require(opening.State.zombies.Select(z => (z.x, z.y)).Distinct().Count() == 6, "initial enemies overlap");
             for (int i = 0; i < 6; i++)
             {
-                var z = opening.State.zombies[i]; Near(z.x, x[i], "opening x"); Near(z.y, y[i], "opening y");
+                var z = opening.State.zombies[i];
+                Require(!opening.IsBlocked((int)z.x, (int)z.y), "initial enemy landed on blocked terrain");
                 Require(z.variant == (i == 5 ? 1 : 0), "opening type changed"); Near(z.hp, i == 5 ? 32 : 45, "opening HP");
             }
         });

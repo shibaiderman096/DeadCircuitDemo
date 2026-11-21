@@ -14,7 +14,7 @@ static partial class Checks
                 var world = SteamGatherWorld(resource.Item1, chunked);
                 var sim = new WorldSimulator(world);
                 var p = sim.AddPlayer("steam-gatherer", "Miner");
-                var node = sim.State.nodes.Single(n => n.kind == resource.Item1 && n.x >= 22 && n.x <= 42 && n.y >= 22 && n.y <= 42);
+                var node = sim.State.nodes.Single(n => n.kind == resource.Item1);
                 var crates = sim.State.nodes.Where(n => n.kind == NodeKind.Crate).ToDictionary(n => n.id, n => n.stock);
                 node.stock = 7; p.x = node.x; p.y = node.y - 1;
                 GearState tool = null;
@@ -163,9 +163,24 @@ static partial class Checks
     // Harvesting fixtures provide a deposit explicitly; new worlds no longer grant one.
     static WorldState SteamGatherWorld(NodeKind kind, bool chunked)
     {
-        var world = WorldGeneration.Generate(new WorldGenerationSettings { chunked = chunked });
+        var world = Flat(era: TechEra.Primitive);
+        if (chunked)
+        {
+            world.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
+            world.generation.chunked = true;
+            world.chunks = new ChunkWorldState { enabled = true };
+            AddFlatInitialChunks(world);
+        }
+        world.ground = new string('0', 4096);
         world.nodes.Add(new NodeState { id = world.nextId++, kind = kind, x = 37, y = 35, stock = 7 });
         return world;
+    }
+
+    static void AddFlatInitialChunks(WorldState world)
+    {
+        string tiles = new string('0', 256);
+        for (int cy = 0; cy < 4; cy++) for (int cx = 0; cx < 4; cx++)
+            world.chunks.records.Add(new WorldChunkState { x = cx, y = cy, ground = tiles, biomes = tiles });
     }
 
     static void SteamResourceChunkAccess(WorldState world, int cx, int cy)

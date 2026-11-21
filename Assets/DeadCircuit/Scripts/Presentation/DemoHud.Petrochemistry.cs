@@ -16,13 +16,13 @@ namespace DeadCircuit
 
         void MakePetrochemistryTechnology(RectTransform content)
         {
-            petrochemicalHeading = FlowLabel("Petrochemical Research Heading", content, "MV石化工艺 · 勘探、采油、分馏与冷却循环", 768, 30, 18, Accent);
+            petrochemicalHeading = FlowLabel("Petrochemical Research Heading", content, "中压(MV)石化工艺 · 勘探、采油、分馏与冷却循环", 768, 30, 18, Accent);
             petrochemicalGuide = FlowLabel("Petrochemical Startup Guide", content, "", 768, 112, 15, Ink);
             petrochemicalSurveyRow = FlowRow("Oil Prospecting Actions", content, 768, 132);
             petrochemicalSurveyState = Label("Oil Prospecting Result", petrochemicalSurveyRow, "", 8, 6, 562, 120, 15, Ink);
             petrochemicalSurveyState.enableAutoSizing = false;
             petrochemicalSurveyState.alignment = TextAlignmentOptions.TopLeft;
-            petrochemicalSurvey = Button("Prospect Oil", petrochemicalSurveyRow, "勘探附近油源", 588, 12, 170, 64, ProspectOil);
+            petrochemicalSurvey = Button("Prospect Oil", petrochemicalSurveyRow, "勘探油源", 588, 12, 170, 64, ProspectOil);
             SetButtonArt(petrochemicalSurvey, "ui_research", 22);
             foreach (var definition in PetrochemicalCatalog.All)
             {
@@ -58,61 +58,61 @@ namespace DeadCircuit
                 string requirement = PetrochemicalCatalog.ResearchRequirement(world, player, row.id);
                 string evidence = PetrochemicalCatalog.ResearchEvidence(world, definition.id);
                 string state = known ? "已研究" : !bridge.IsRunning || !player.connected || player.hp <= 0f ? "角色尚未就绪" :
-                    player.interactCooldown > 0f ? "交互冷却中" : world.era < TechEra.MediumVoltage ? "先进入MV中压时代" : can ? "可研究" : "条件未满足";
+                    player.interactCooldown > 0f ? "交互冷却中" : world.era < TechEra.MediumVoltage ? "先进入中压(MV)时代" : can ? "可研究" : "条件未满足";
                 string reason = known ? "全队已完成" : !ready ? state :
-                    !string.IsNullOrEmpty(requirement) ? requirement : can ? "已满足，可研究" : "等待主机同步研究条件";
+                    !string.IsNullOrEmpty(requirement) ? requirement : can ? "已满足，可研究" : "正在同步研究条件，请稍候";
                 Set(row.details, definition.name + " · " + state + "\n" + definition.description +
-                    "\n前置：" + PetrochemicalPrerequisites(world, definition.prerequisites) +
-                    "\n样品 / 扣料（随身持有 / 需求）：" + MaterialText(definition.cost, player.items, true) +
-                    "\n真实生产：" + (string.IsNullOrEmpty(evidence) ? "已满足" : evidence) +
+                    "\n前置研究：" + PetrochemicalPrerequisites(world, definition.prerequisites) +
+                    "\n研究消耗（持有 / 需要）：" + MaterialText(definition.cost, player.items, true) +
+                    "\n生产进度：" + (string.IsNullOrEmpty(evidence) ? "已满足" : evidence) +
                     "\n" + (known || can ? "研究状态：" : "不可研究：") + reason);
                 row.details.color = known ? Accent : Ink;
                 ResizePetrochemicalRow(row.root, row.details, 164);
                 row.research.button.interactable = can;
-                Set(row.research.label, known ? "已研究" : can ? "研究" + definition.name : state + "\n查看左侧原因");
+                Set(row.research.label, known ? "已研究" : can ? "研究" + definition.name : state + "\n查看条件");
                 Tint(row.research, known ? Selected : Raised);
             }
             if (!visible) return;
 
             bool entered = world.era >= TechEra.MediumVoltage;
-            SetFlowText(technologyDescription, "MV中压石化：完成8项工艺研究；首批采油、分馏与基础反应使用LV电网，再用真实柴油启动MV扩产和冷却循环。", 56);
-            string rules = "研究扣除研究者随身背包的真实样品，全队共享；需要2.4格内、视线畅通的工作台，不消耗角色技能点。";
-            SetFlowText(researchMaterials, entered ? rules : "先完成LV验收并进入MV时代；晋级材料：" +
+            SetFlowText(technologyDescription, "中压(MV)石化：完成8项工艺研究。先用低压(LV)电网采油、分馏与加工原料，再以柴油发电，发展中压(MV)生产线和冷却循环。", 56);
+            string rules = "研究消耗背包材料，全队共享成果。需靠近2.4格内、视线畅通的工作台；不消耗角色技能点。";
+            SetFlowText(researchMaterials, entered ? rules : "先完成低压(LV)研究与生产条件，再研究中压(MV)时代。时代研究消耗：" +
                 MaterialText(TechCatalog.ResearchCost(TechEra.MediumVoltage), player.items, true) + "\n" + rules, 52);
             if (entered)
             {
-                SetFlowText(researchRequirement, "逐项研究下列8种石化工艺。完成采油、管输、分馏、柴油、聚合、润滑、冷却回收与MV加工验收后，切换高压页晋级。", 48);
+                SetFlowText(researchRequirement, "完成下列8项石化研究，并达到采油、管输、分馏、柴油、聚合、润滑、冷却回收与中压(MV)加工进度后，可在高压(HV)页研究下一时代。", 48);
                 researchRequirement.color = Accent;
                 researchButton.button.interactable = false;
-                Set(researchButton.label, "在节点中研究8项石化工艺");
+                Set(researchButton.label, "在下方选择研究");
             }
-            SetFlowText(petrochemicalGuide, "启动顺序：勘探油源 → 采油与管输 → 分馏 → 柴油精炼 → 聚合、润滑 → 中压变电 → 冷却循环。" +
-                "\n油源倾向沙漠、湿地、沼泽与河谷；勘探仅查询附近48格已生成的油源，未找到时继续探索、生成地形后再试。" +
-                "\n首批设备接LV：采油泵20 kW、分馏装置40 kW、基础化学反应器40 kW、工艺水泵10 kW；分馏和基础化工需近水被动冷却。" +
-                "\n管道与储罐只传所选液种；检查面板选液，存量与进出在途货物必须全空。箭头指向下游，E有货先取、空时从背包补20。" +
-                "\n柴油发电机真实消耗柴油，研究中压变电后启用；化工厂接MV 80 kW扩产并产热冷却液，冷却塔回收热液。", 112);
+            SetFlowText(petrochemicalGuide, "起步：勘探油源 → 抽油输液 → 原油分馏 → 燃料精制 → 聚合、润滑 → 中压变电 → 冷却循环。" +
+                "\n沙漠、湿地、沼泽与河谷更容易发现油源。勘探搜索48格内已生成区域的剩余油源；未发现时，继续探索后再试。" +
+                "\n起步设备使用低压(LV)供电：抽油机20 kW、分馏装置40 kW、基础化学反应器40 kW、工艺取水泵10 kW。分馏装置与基础化学反应器需靠近水源冷却。" +
+                "\n液体管道与储液罐仅输送选定液体。清空库存、等待进出液体全部送达后，可在设备详情中更改液体类型。箭头指向下游；按 E 取出液体，空置时从背包补入最多20单位。" +
+                "\n研究中压变电后，柴油发电机消耗柴油发电。化工厂需中压(MV) 80 kW供电，生产聚合物并排出热冷却液；冷却塔将其回收为冷却液。", 112);
 
             bool surveyed = PetrochemicalCatalog.HasResearch(world, PetrochemicalTech.Prospecting);
             petrochemicalSurvey.button.interactable = entered && surveyed && ready && Time.unscaledTime >= petrochemicalSurveySendAt;
-            Set(petrochemicalSurvey.label, !entered ? "先进入MV时代" : !surveyed ? "先研究油源勘探" : !ready ? "角色或交互未就绪" : "勘探附近48格");
+            Set(petrochemicalSurvey.label, !entered ? "先进入中压(MV)时代" : !surveyed ? "先研究石油勘探" : !ready ? "暂不能勘探" : "勘探48格内油源");
             Set(petrochemicalSurveyState, "油源勘探 · " + SteamProgress("成功勘探", world.mvSurvey, 1) +
-                "\n范围：附近48格已生成油源；返回油源坐标及余量，以主机反馈为准。" +
-                "\n群系倾向：沙漠 / 湿地 / 沼泽 / 河谷。" +
-                "\n" + (player.noticeUntil > world.elapsed && !string.IsNullOrWhiteSpace(player.notice) ? player.notice : "研究勘探后点击右侧按钮；继续探索可发现新的油源。"));
+                "\n勘探周围48格内已知区域的油藏，显示最近油藏的坐标、方位和储量。" +
+                "\n常见区域：荒漠、湿地、沼泽、河谷。" +
+                "\n" + (player.noticeUntil > world.elapsed && !string.IsNullOrWhiteSpace(player.notice) ? player.notice : "研究原油勘探后点击右侧按钮。若未发现油源，可继续探索后再试。"));
             ResizePetrochemicalRow(petrochemicalSurveyRow, petrochemicalSurveyState, 132);
 
             int researched = 0;
             foreach (var definition in PetrochemicalCatalog.All)
                 if (PetrochemicalCatalog.HasResearch(world, definition.id)) researched++;
             string highVoltage = PetrochemicalCatalog.HighVoltageRequirement(world);
-            SetFlowText(petrochemicalProduction, "HV高压入口 · 全队真实生产验收" +
+            SetFlowText(petrochemicalProduction, "高压(HV)时代条件 · 全队累计生产与运输进度" +
                 "\n石化研究 " + researched + "/8 · 缺 " + (PetrochemicalCatalog.All.Length - researched) + " 项 · " + SteamProgress("勘探", world.mvSurvey, 1) +
-                "\n" + SteamProgress("采油", world.mvExtracted, 12) + " · " + SteamProgress("管输到货", world.mvPiped, 8) +
-                "\n" + SteamProgress("分馏", world.mvDistilled, 12) + " · " + SteamProgress("柴油", world.mvDiesel, 4) +
+                "\n" + SteamProgress("抽取原油", world.mvExtracted, 12) + " · " + SteamProgress("管输送达", world.mvPiped, 8) +
+                "\n" + SteamProgress("分馏原油", world.mvDistilled, 12) + " · " + SteamProgress("柴油", world.mvDiesel, 4) +
                 "\n" + SteamProgress("聚合物", world.mvPolymer, 4) + " · " + SteamProgress("润滑油", world.mvLubricant, 2) +
-                "\n" + SteamProgress("冷却回收", world.mvCooled, 4) + " · " + SteamProgress("MV加工", world.mvPowered, 4) +
-                "\n只计真实生产与液体管输到货；背包持有、手工搬运、摆放设备和空转不算验收。" +
-                "\n高压工艺前置：" + (string.IsNullOrEmpty(highVoltage) ? "已满足；切换高压页查看晋级扣料及其余条件。" : highVoltage), 180);
+                "\n" + SteamProgress("冷却液回收", world.mvCooled, 4) + " · " + SteamProgress("中压(MV)聚合物产量", world.mvPowered, 4) +
+                "\n生产进度累计已完成的产出；管输进度仅计液体经管道或储液罐送达。持有、手工搬运物品或设备空转均不计入。" +
+                "\n高压(HV)研究条件：" + (string.IsNullOrEmpty(highVoltage) ? "生产条件已满足；前往高压(HV)页查看研究消耗与其余条件。" : highVoltage), 180);
             petrochemicalProduction.color = string.IsNullOrEmpty(highVoltage) ? Accent : Ink;
             RefreshPetrochemicalRecipes(world);
         }
@@ -126,7 +126,7 @@ namespace DeadCircuit
                 if ((mask & (1 << id)) != 0)
                     names.Add(parent.name + (PetrochemicalCatalog.HasResearch(world, id) ? "（已研究）" : "（未研究）"));
             }
-            return names.Count == 0 ? "LV阶段验收及进入MV中压时代" : string.Join("、", names);
+            return names.Count == 0 ? "完成低压(LV)研究与生产条件，进入中压(MV)时代" : string.Join("、", names);
         }
 
         static void ResizePetrochemicalRow(RectTransform root, TextMeshProUGUI details, float minimum)
@@ -141,15 +141,15 @@ namespace DeadCircuit
         void RefreshPetrochemicalRecipes(WorldState world)
         {
             var text = new StringBuilder(2048);
-            text.Append("石化配方速查 · 在对应设备检查中切换；输入、产出均为真实物品");
+            text.Append("石化配方 · 在对应设备详情中切换配方");
             foreach (var recipe in TechCatalog.Recipes)
             {
                 if (!IsPetrochemicalRecipe(recipe.id)) continue;
                 string requirement = PetrochemicalCatalog.RecipeRequirement(world, recipe);
-                text.Append("\n\n").Append(recipe.name).Append("（").Append(recipe.id).Append("） · ")
+                text.Append("\n\n").Append(recipe.name).Append(" · ")
                     .Append(DemoCatalog.BuildName(recipe.building)).Append(" · ").Append(recipe.duration.ToString("0.#")).Append("秒")
-                    .Append("\n设备内输入：").Append(MaterialText(recipe.inputs)).Append(" → 产出：").Append(MaterialText(recipe.outputs))
-                    .Append("\n").Append(string.IsNullOrEmpty(requirement) ? "工艺已解锁；接通对应电压、供料并保证输出空间。" : requirement);
+                    .Append("\n消耗：").Append(MaterialText(recipe.inputs)).Append(" → 产出：").Append(MaterialText(recipe.outputs))
+                    .Append("\n").Append(string.IsNullOrEmpty(requirement) ? "工艺已解锁；接通对应电压的电网、装入原料，并为所有产物留出空间。" : requirement);
             }
             SetFlowText(petrochemicalRecipes, text.ToString(), 128);
         }
@@ -186,8 +186,8 @@ namespace DeadCircuit
             layout.childForceExpandHeight = false;
             petrochemicalMachineState = FlowLabel("Petrochemical Machine Configuration", petrochemicalMachineControls, "", 260, 76, 13, Ink);
             petrochemicalFluidButtons = FlowRow("Fluid Selection Buttons", petrochemicalMachineControls, 260, 38);
-            petrochemicalFluidPrevious = Button("Previous Fluid", petrochemicalFluidButtons, "上一液种", 0, 0, 124, 34, () => CyclePetrochemicalFluid(-1));
-            petrochemicalFluidNext = Button("Next Fluid", petrochemicalFluidButtons, "下一液种", 130, 0, 124, 34, () => CyclePetrochemicalFluid(1));
+            petrochemicalFluidPrevious = Button("Previous Fluid", petrochemicalFluidButtons, "上一种液体", 0, 0, 124, 34, () => CyclePetrochemicalFluid(-1));
+            petrochemicalFluidNext = Button("Next Fluid", petrochemicalFluidButtons, "下一种液体", 130, 0, 124, 34, () => CyclePetrochemicalFluid(1));
             petrochemicalMachineControls.gameObject.SetActive(false);
         }
 
@@ -210,8 +210,8 @@ namespace DeadCircuit
                 machineSafety.gameObject.SetActive(false);
                 machineCluster.gameObject.SetActive(false);
                 SetFlowText(machineInfo, "油源余量：" + node.stock + "\n所在区域：" + OutdoorRegionText(world, node.x, node.y));
-                SetFlowText(machineContents, "油源不能用空手或镐开采。\n研究采油与管输，紧邻油源放置采油泵，接通LV 20 kW。");
-                SetFlowText(machineHint, "原油由采油泵输出；液体管道 / 储罐选原油，箭头指向下游。\n沙漠、湿地、沼泽与河谷更容易找到油源；T → MV可勘探附近48格。");
+                SetFlowText(machineContents, "油源无法徒手或用镐开采。\n研究抽油输液，在油源旁建造抽油机，接通低压(LV) 20 kW供电。");
+                SetFlowText(machineHint, "抽油机输出原油。将液体管道、储液罐设为原油，箭头指向下游。\n沙漠、湿地、沼泽与河谷更容易发现油源。在 T → 中压(MV)中可勘探48格内的油源。");
                 return true;
             }
             if (!machine) return false;
@@ -225,13 +225,13 @@ namespace DeadCircuit
                 bool reachable = inRange && SurvivalInReach(world, player, inspectedX, inspectedY) && MapExploration.IsVisible(world, player, inspectedX, inspectedY);
                 bool unlocked = world.era >= TechEra.MediumVoltage && PetrochemicalCatalog.HasResearch(world, PetrochemicalTech.Extraction);
                 bool ready = bridge.IsRunning && unlocked && reachable && player.connected && player.hp > 0f && player.interactCooldown <= 0f;
-                string reason = !unlocked ? "先进入MV时代并研究抽油输液。" : !reachable ? "靠近2.4格内并保持视线畅通后可选液。" : !empty ? "设备有存量，须先取空才能改液种。" :
-                    cargo ? "有进出在途货物；全部到货后才能改液种。" : !ready ? "角色或交互尚未就绪。" : "空存量且无进出货物，可以改液种。";
+                string reason = !unlocked ? "先进入中压(MV)时代并研究抽油输液。" : !reachable ? "请靠近2.4格内并保持视线畅通，再更改液体类型。" : !empty ? "设备中仍有液体，请先清空再更改类型。" :
+                    cargo ? "液体正在运输，请等待全部送达后再更改类型。" : !ready ? "角色尚未就绪或交互冷却未结束，请稍候。" : "设备已清空且无在途液体，可以更改液体类型。";
                 petrochemicalFluidPrevious.button.interactable = petrochemicalFluidNext.button.interactable = ready && empty && !cargo;
-                SetFlowText(petrochemicalMachineState, "所选液种：" + DemoCatalog.ItemName(fluid) + "（" + selection + " / 0–8）" +
-                    "\n设备 " + Count(building.items, (int)fluid) + " · 背包 " + Count(player.items, (int)fluid) +
-                    "\n沿箭头向下游输送所选液种；不同液体分管，不混线。" +
-                    "\nE：有货先取所选液体；空时从背包补入最多20。" +
+                SetFlowText(petrochemicalMachineState, "输送液体：" + DemoCatalog.ItemName(fluid) + "（" + selection + " / 0–8）" +
+                    "\n设备×" + Count(building.items, (int)fluid) + " · 背包×" + Count(player.items, (int)fluid) +
+                    "\n沿箭头输送选定液体；不同液体需使用独立管线。" +
+                    "\n按 E 取出液体；空置时从背包补入最多20单位。" +
                     "\n" + reason, 76);
                 petrochemicalMachineState.color = !empty || cargo ? Amber : Ink;
             }
@@ -239,11 +239,11 @@ namespace DeadCircuit
             {
                 string requirement = PetrochemicalCatalog.BuildRequirement(world, building.kind);
                 if (string.IsNullOrEmpty(requirement) && TechCatalog.RequiresWater(building.kind) && !TechCatalog.NearWater(world, building))
-                    requirement = "需要靠近水源，当前取水 / 被动冷却条件未满足。";
+                    requirement = "距水源过远，无法取水或冷却；请将设备建在水源附近。";
                 if (string.IsNullOrEmpty(requirement) && DemoCatalog.Demand(building.kind) > 0f && (!building.powered || building.powerRatio <= 0f))
-                    requirement = "当前缺少对应电压的供电；请检查线路与电网余量。";
+                    requirement = "供电不足，请检查所需电压、线路连接与发电余量。";
                 SetFlowText(petrochemicalMachineState, PetrochemicalMachineGuide(building) +
-                    (string.IsNullOrEmpty(requirement) ? "" : "\n停机条件：" + requirement), 76);
+                    (string.IsNullOrEmpty(requirement) ? "" : "\n无法运行：" + requirement), 76);
                 petrochemicalMachineState.color = building.powerDemand > 0f && building.powerRatio < .99f ? Amber : Ink;
             }
             petrochemicalMachineControls.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight =
@@ -258,13 +258,13 @@ namespace DeadCircuit
         {
             switch (building.kind)
             {
-                case BuildKind.OilPump: return "采油泵 · LV 20 kW\n紧邻油源开采原油；无油源或油源耗尽会停产。原油管道接输出箭头方向。";
-                case BuildKind.ProcessWaterPump: return "工艺水泵 · LV 10 kW\n靠近水源取工艺水；用所选液种为工艺水的管道送入基础反应器或冷却塔。";
-                case BuildKind.DistillationUnit: return "分馏装置 · LV 40 kW，近水被动冷却\n161：原油4+燃料1→轻馏分2+化工原料1+重油1。为各液体分别配置输出管，任一产物堵塞都会影响生产。";
-                case BuildKind.ChemicalReactor: return "基础化学反应器 · LV 40 kW，近水被动冷却\n70/71：聚合物与冷却液；160：化工原料；162/163：润滑油与燃料；165：柴油。检查配方并为不同液体分管供料、收货。";
-                case BuildKind.ChemicalPlant: return "中压化工厂 · MV 80 kW\n164：化工原料4+冷却液1→聚合物4+热冷却液1。冷却液需持续供给，热液需输出回收；完成加工才计MV验收。";
-                case BuildKind.CoolingTower: return "冷却塔 · 近水回收热液\n91：热冷却液2+工艺水1→冷却液2；连接热液、工艺水输入与冷却液输出，真实回收才计验收。";
-                case BuildKind.DieselGenerator: return "柴油发电机 · 研究中压变电后启用\n真实消耗柴油，普通燃料不能替代。轻馏分2经配方165精炼为柴油2，再供给发电机。";
+                case BuildKind.OilPump: return "抽油机 · 低压(LV) 20 kW\n在油源旁开采原油；未邻接油源或油源耗尽时停产。原油管道接在输出箭头处。";
+                case BuildKind.ProcessWaterPump: return "工艺取水泵 · 低压(LV) 10 kW\n靠近水源抽取工艺水。将管道设为工艺水，输送至基础化学反应器或冷却塔。";
+                case BuildKind.DistillationUnit: return "分馏装置 · 低压(LV) 40 kW，需靠近水源冷却\n配方161：原油×4＋燃料×1 → 轻质馏分×2＋化工原料×1＋重质馏分×1。各液体需独立输出管线；任一产物无处存放都会停产。";
+                case BuildKind.ChemicalReactor: return "基础化学反应器 · 低压(LV) 40 kW，需靠近水源冷却\n配方70/71：聚合物、冷却液；160：化工原料；162/163：润滑油、燃料；165：柴油。在设备详情中选择配方，并为不同液体设置独立的输入与输出管线。";
+                case BuildKind.ChemicalPlant: return "化工厂 · 中压(MV) 80 kW\n配方164：化工原料×4＋冷却液×1 → 聚合物×4＋热冷却液×1。需持续供给冷却液、排出热冷却液；完成的聚合物产出计入中压(MV)加工进度。";
+                case BuildKind.CoolingTower: return "冷却塔 · 中压(MV) 60 kW，需靠近水源\n配方91：热冷却液×2＋工艺水×1 → 冷却液×2。连接热冷却液、工艺水输入管与冷却液输出管；回收的冷却液计入生产进度。";
+                case BuildKind.DieselGenerator: return "柴油发电机 · 研究中压变电后启用\n消耗柴油发电，普通燃料不能替代。配方165将轻质馏分×2精炼为柴油×2，再供给发电机。";
                 default: return DemoCatalog.BuildName(building.kind);
             }
         }

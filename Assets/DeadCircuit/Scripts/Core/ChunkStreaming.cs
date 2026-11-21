@@ -55,29 +55,25 @@ namespace DeadCircuit
 
         internal static WorldState Create(WorldGenerationSettings options)
         {
-            var initialOptions = WorldGeneration.CloneSettings(options);
-            initialOptions.chunked = false;
-            WorldState world = WorldGeneration.Generate(initialOptions);
-            // Preserve the tutorial, all entities and the 4096-cell legacy maps.
-            world.chunks = new ChunkWorldState { enabled = true };
+            var world = new WorldState { seed = options.seed, generation = options,
+                generatorVersion = WorldGeneration.CurrentGeneratorVersion, primitiveVersion = 1,
+                chunks = new ChunkWorldState { enabled = true } };
             for (int cy = 0; cy < 4; cy++) for (int cx = 0; cx < 4; cx++)
-            {
-                var ground = new char[ChunkSize * ChunkSize];
-                var biomes = new char[ground.Length];
-                for (int y = 0; y < ChunkSize; y++) for (int x = 0; x < ChunkSize; x++)
+                if (!GenerateChunk(world, cx, cy)) throw new InvalidOperationException("Initial terrain generation failed.");
+            // Save metadata still includes the bounded 64 by 64 tile strings.
+            var ground = new char[world.width * world.height];
+            var biomes = new char[ground.Length];
+            foreach (var chunk in world.chunks.records)
+                for (int y = 0; y < ChunkSize; y++)
                 {
-                    int source = cx * ChunkSize + x + (cy * ChunkSize + y) * 64;
-                    ground[x + y * ChunkSize] = world.ground[source];
-                    biomes[x + y * ChunkSize] = world.biomes[source];
+                    int target = chunk.x * ChunkSize + (chunk.y * ChunkSize + y) * world.width;
+                    chunk.ground.CopyTo(y * ChunkSize, ground, target, ChunkSize);
+                    chunk.biomes.CopyTo(y * ChunkSize, biomes, target, ChunkSize);
                 }
-                world.chunks.records.Add(new WorldChunkState { x = cx, y = cy, ground = new string(ground), biomes = new string(biomes) });
-            }
-            world.generation = WorldGeneration.CloneSettings(options);
-            world.generation.chunked = true;
-            world.version = WorldSimulator.SaveVersion;
-            world.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
+            world.ground = new string(ground);
+            world.biomes = new string(biomes);
+            WorldGeneration.FinishNewWorld(world);
             world.nextId = Math.Max(world.nextId, DynamicIdStart);
-            world.announcement = "区块世界：出生点(32,35)，工作台(29,35)、石炉(28,37)、水车岸位(25,25)。四向探索会逐块生成地形。";
             return world;
         }
 

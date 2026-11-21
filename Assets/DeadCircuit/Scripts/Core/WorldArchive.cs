@@ -58,6 +58,20 @@ namespace DeadCircuit
             if (File.Exists(path)) File.Replace(pending, path, path + ".bak");
             else File.Move(pending, path);
         }
+        public void Delete(string id) => DeletePath(PathFor(id));
+        // The bridge may also pass an explicitly selected legacy or QA path.
+        internal static void DeletePath(string path)
+        {
+            path = Path.GetFullPath(path);
+            try
+            {
+                // Keep the main save if either sidecar cannot be removed.
+                File.Delete(path + ".tmp");
+                File.Delete(path + ".bak");
+                File.Delete(path);
+            }
+            catch (DirectoryNotFoundException) { }
+        }
         public List<WorldSaveInfo> List(string legacyPath = null)
         {
             var entries = new List<Tuple<DateTime, WorldSaveInfo>>();

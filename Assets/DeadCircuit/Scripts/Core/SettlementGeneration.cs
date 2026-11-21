@@ -105,9 +105,8 @@ namespace DeadCircuit
         public static bool Street(WorldState world, int x, int y)
         {
             if (world == null) throw new ArgumentNullException(nameof(world));
-            // Preserve the tutorial cross. All nested road lattices share the
-            // same global origin, including the all-world rural trunk network.
-            if (x == 32 || x == 33 || y == 32 || y == 33) return true;
+            if (world.generatorVersion < WorldGeneration.NaturalOpeningVersion &&
+                (x == 32 || x == 33 || y == 32 || y == 33)) return true;
             var densest = SettlementCatalog.Get(SettlementKind.HighDensityCity);
             if (Mod(x, densest.streetSpacing) >= densest.streetWidth && Mod(y, densest.streetSpacing) >= densest.streetWidth)
                 return false;

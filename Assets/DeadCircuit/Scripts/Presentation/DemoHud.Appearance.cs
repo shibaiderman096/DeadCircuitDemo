@@ -32,12 +32,12 @@ namespace DeadCircuit
             RectTransform card = Box("Appearance Card", appearancePanel, 0, 0, 1120, 680, Panel, true);
             Center(card, 1120, 680);
             PanelRule(card, 1120, 66);
-            Label("Appearance Heading", card, "主角外观", 22, 16, 760, 36, 25, Ink, FontStyles.Bold);
-            appearanceBackButton = Button("Close Appearance", card, "返回开始菜单", 948, 18, 150, 32, CloseAppearance);
+            Label("Appearance Heading", card, "角色外观", 22, 16, 760, 36, 25, Ink, FontStyles.Bold);
+            appearanceBackButton = Button("Close Appearance", card, "返回菜单", 948, 18, 150, 32, CloseAppearance);
             SetButtonArt(appearanceBackButton, "ui_back", 20);
 
             RectTransform preview = Box("Appearance Preview Surface", card, 22, 80, 350, 468, Recessed);
-            Label("Appearance Preview Heading", preview, "主角预览 · 草稿", 16, 12, 318, 28, 18, Accent, FontStyles.Bold);
+            Label("Appearance Preview Heading", preview, "角色预览", 16, 12, 318, 28, 18, Accent, FontStyles.Bold);
             appearancePreviewCaption = Label("Appearance Preview Caption", preview, "", 16, 42, 318, 24, 13, Muted);
             RectTransform stage = Box("Appearance Preview Stage", preview, 16, 74, 318, 284, Panel);
             stage.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
@@ -107,10 +107,10 @@ namespace DeadCircuit
             }
 
             Label("Appearance Notice", card,
-                "外观预设保存在本机；新建、读取或加入世界时使用，进入游戏后无法修改。\n实际穿戴的护甲会覆盖对应部位；此处开关只影响预览，不会卸下装备。",
+                "外观保存在本机，新建、读取或加入世界时使用，进入游戏后无法修改。返回前请保存更改。\n护甲会遮盖对应部位；「显示穿戴」仅控制预览，不会卸下装备。",
                 22, 558, 1076, 44, 14, Muted);
             Box("Appearance Footer Rule", card, 22, 606, 1076, 1, Edge);
-            UiButton reset = Button("Reset Appearance Draft", card, "重置默认草稿", 22, 622, 180, 38, () =>
+            UiButton reset = Button("Reset Appearance Draft", card, "恢复默认外观", 22, 622, 180, 38, () =>
             {
                 appearanceDraftCode = AppearanceCatalog.DefaultCode;
                 RefreshAppearanceOptions();
@@ -131,8 +131,9 @@ namespace DeadCircuit
 
         void OpenAppearance()
         {
-            if (appearancePanel == null || bridge == null || !bridge.CanEditAppearance || menu == null ||
-                !menu.gameObject.activeInHierarchy || menuPage != MenuPage.Home) return;
+            if (appearancePanel == null || bridge == null || bridge.IsRunning || menu == null ||
+                !menu.gameObject.activeInHierarchy || menuPages == null || menuPages.Length == 0 ||
+                !menuPages[0].gameObject.activeInHierarchy) return;
 
             appearanceSavedCode = AppearanceCatalog.IsValid(bridge.AppearanceCode) ? bridge.AppearanceCode : AppearanceCatalog.DefaultCode;
             appearanceDraftCode = appearanceSavedCode;
@@ -225,8 +226,8 @@ namespace DeadCircuit
             bool available = bridge != null && bridge.CanEditAppearance && AppearanceCatalog.IsValid(appearanceDraftCode);
             appearanceApplyButton.button.interactable = available && appearanceSavedCode != appearanceDraftCode;
             Set(appearanceApplyButton.label, "保存外观");
-            string status = !AppearanceCatalog.IsValid(appearanceDraftCode) ? "草稿无效，请重置默认外观" :
-                appearanceSavedCode == appearanceDraftCode ? "已保存到本机；进入世界时使用" : "草稿尚未保存";
+            string status = !AppearanceCatalog.IsValid(appearanceDraftCode) ? "外观无效，请恢复默认外观" :
+                appearanceSavedCode == appearanceDraftCode ? "已保存到本机，进入世界时使用" : "外观尚未保存，返回后将丢弃更改";
             Set(appearanceStatus, status);
             appearanceStatus.color = appearanceSavedCode == appearanceDraftCode ? Accent : Amber;
         }
@@ -234,6 +235,7 @@ namespace DeadCircuit
         void TickAppearancePreview()
         {
             if (appearancePanel == null || !appearancePanel.gameObject.activeInHierarchy) return;
+            RefreshAppearance();
             if (appearanceWalking)
                 appearancePhase = Mathf.Repeat(appearancePhase + Time.unscaledDeltaTime * 7f, Mathf.PI * 2f);
             PaintAppearancePreview(bridge == null ? null : bridge.LocalPlayer);

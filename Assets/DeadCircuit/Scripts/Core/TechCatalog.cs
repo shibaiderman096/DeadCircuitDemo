@@ -14,7 +14,7 @@ namespace DeadCircuit
 
     public static class TechCatalog
     {
-        public static readonly string[] EraNames = { "原始", "水力", "蒸汽", "LV低压", "MV中压", "HV高压", "核工业" };
+        public static readonly string[] EraNames = { "原始", "水力", "蒸汽", "低压(LV)", "中压(MV)", "高压(HV)", "核工业" };
         public static string EraName(TechEra era) => (int)era >= 0 && (int)era < EraNames.Length ? EraNames[(int)era] : "未知科技";
         public static TechEra RequiredEra(BuildKind kind)
         {
@@ -112,7 +112,7 @@ namespace DeadCircuit
         }
         public static string ResearchRequirement(WorldState s, TechEra target)
         {
-            if (s == null || (int)target < 1 || (int)target > 6 || (int)target != (int)s.era + 1) return "只能研究下一阶段";
+            if (s == null || (int)target < 1 || (int)target > 6 || (int)target != (int)s.era + 1) return "请先完成当前时代，再研究下一阶段。";
             if (target == TechEra.Water)
             {
                 string primitive = PrimitiveCatalog.WaterRequirement(s);
@@ -144,7 +144,7 @@ namespace DeadCircuit
                 if(precision.Length>0) return precision;
             }
             BuildKind required = target == TechEra.Water ? BuildKind.Workbench : target == TechEra.Steam ? BuildKind.MechanicalCrusher : target == TechEra.LowVoltage ? BuildKind.SteamFurnace : target == TechEra.MediumVoltage ? BuildKind.CircuitAssembler : target == TechEra.HighVoltage ? BuildKind.ChemicalPlant : BuildKind.PrecisionAssembler;
-            return s.buildings.Exists(b => b != null && b.kind == required && b.hp > 0f) ? "" : "需要已建设备：" + DemoCatalog.BuildName(required);
+            return s.buildings.Exists(b => b != null && b.kind == required && b.hp > 0f) ? "" : "需先建造并确保设备完好：" + DemoCatalog.BuildName(required);
         }
         public static bool CanResearch(WorldState s, PlayerState p, TechEra target)
         {
@@ -193,9 +193,9 @@ namespace DeadCircuit
             R(55,"穿甲弹精密装配",TechEra.HighVoltage,BuildKind.PrecisionAssembler,4f,DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Copper,2,ItemKind.Polymer,1),DemoCatalog.Materials(ItemKind.ArmorPiercingAmmo,4)),
             R(56,"手制步枪弹",TechEra.LowVoltage,BuildKind.Workbench,.5f,DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Copper,1),DemoCatalog.Materials(ItemKind.RifleAmmo,3)),
             R(57,"手制霰弹",TechEra.LowVoltage,BuildKind.Workbench,.5f,DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Scrap,1),DemoCatalog.Materials(ItemKind.Shell,2)),
-            R(60,"继电基础电路",TechEra.LowVoltage,BuildKind.CircuitAssembler,3f,DemoCatalog.Materials(ItemKind.Relay,1,ItemKind.Cable,1,ItemKind.IronPlate,1),DemoCatalog.Materials(ItemKind.Circuit,2)),
+            R(60,"继电电路装配",TechEra.LowVoltage,BuildKind.CircuitAssembler,3f,DemoCatalog.Materials(ItemKind.Relay,1,ItemKind.Cable,1,ItemKind.IronPlate,1),DemoCatalog.Materials(ItemKind.Circuit,2)),
             R(70,"基础聚合",TechEra.MediumVoltage,BuildKind.ChemicalReactor,4f,DemoCatalog.Materials(ItemKind.ChemicalFeedstock,2),DemoCatalog.Materials(ItemKind.Polymer,2)),
-            R(71,"基础冷却液",TechEra.MediumVoltage,BuildKind.ChemicalReactor,3f,DemoCatalog.Materials(ItemKind.ProcessWater,2,ItemKind.Polymer,1),DemoCatalog.Materials(ItemKind.Coolant,2)),
+            R(71,"冷却液配制",TechEra.MediumVoltage,BuildKind.ChemicalReactor,3f,DemoCatalog.Materials(ItemKind.ProcessWater,2,ItemKind.Polymer,1),DemoCatalog.Materials(ItemKind.Coolant,2)),
             R(80,"高压控制模块",TechEra.HighVoltage,BuildKind.PrecisionAssembler,4f,DemoCatalog.Materials(ItemKind.AdvancedCircuit,2,ItemKind.PrecisionPart,2,ItemKind.Coolant,1),DemoCatalog.Materials(ItemKind.ControlModule,2,ItemKind.HotCoolant,1)),
             R(90,"核燃料加工",TechEra.Nuclear,BuildKind.NuclearProcessor,4f,DemoCatalog.Materials(ItemKind.UraniumOre,2,ItemKind.Steel,1),DemoCatalog.Materials(ItemKind.NuclearFuel,1)),
             R(91,"冷却液回收（近水）",TechEra.MediumVoltage,BuildKind.CoolingTower,3f,DemoCatalog.Materials(ItemKind.HotCoolant,2,ItemKind.ProcessWater,1),DemoCatalog.Materials(ItemKind.Coolant,2)),
@@ -222,10 +222,10 @@ namespace DeadCircuit
             R(148,"电缆自动装配",TechEra.LowVoltage,BuildKind.Assembler,3f,DemoCatalog.Materials(ItemKind.CopperWire,4,ItemKind.Insulator,2),DemoCatalog.Materials(ItemKind.Cable,4)),
             R(149,"电机自动装配",TechEra.LowVoltage,BuildKind.Assembler,3f,DemoCatalog.Materials(ItemKind.Coil,1,ItemKind.Steel,1,ItemKind.Gear,1,ItemKind.Bearing,1),DemoCatalog.Materials(ItemKind.Motor,1)),
             R(150,"继电器自动装配",TechEra.LowVoltage,BuildKind.Assembler,3f,DemoCatalog.Materials(ItemKind.Coil,1,ItemKind.IronPlate,1,ItemKind.Insulator,1),DemoCatalog.Materials(ItemKind.Relay,1)),
-            R(160,"轻馏分转化",TechEra.MediumVoltage,BuildKind.ChemicalReactor,4f,DemoCatalog.Materials(ItemKind.LightFraction,2,ItemKind.ProcessWater,1),DemoCatalog.Materials(ItemKind.ChemicalFeedstock,2)),
+            R(160,"轻质馏分转化",TechEra.MediumVoltage,BuildKind.ChemicalReactor,4f,DemoCatalog.Materials(ItemKind.LightFraction,2,ItemKind.ProcessWater,1),DemoCatalog.Materials(ItemKind.ChemicalFeedstock,2)),
             R(161,"原油分馏",TechEra.MediumVoltage,BuildKind.DistillationUnit,4f,DemoCatalog.Materials(ItemKind.CrudeOil,4,ItemKind.Fuel,1),DemoCatalog.Materials(ItemKind.LightFraction,2,ItemKind.ChemicalFeedstock,1,ItemKind.HeavyFraction,1)),
-            R(162,"重馏分润滑加工",TechEra.MediumVoltage,BuildKind.ChemicalReactor,4f,DemoCatalog.Materials(ItemKind.HeavyFraction,2),DemoCatalog.Materials(ItemKind.Lubricant,2)),
-            R(163,"重馏分燃料调制",TechEra.MediumVoltage,BuildKind.ChemicalReactor,3f,DemoCatalog.Materials(ItemKind.HeavyFraction,1,ItemKind.Coal,1),DemoCatalog.Materials(ItemKind.Fuel,2)),
+            R(162,"重质馏分制润滑油",TechEra.MediumVoltage,BuildKind.ChemicalReactor,4f,DemoCatalog.Materials(ItemKind.HeavyFraction,2),DemoCatalog.Materials(ItemKind.Lubricant,2)),
+            R(163,"重质馏分调制燃料",TechEra.MediumVoltage,BuildKind.ChemicalReactor,3f,DemoCatalog.Materials(ItemKind.HeavyFraction,1,ItemKind.Coal,1),DemoCatalog.Materials(ItemKind.Fuel,2)),
             R(164,"中压冷却聚合",TechEra.MediumVoltage,BuildKind.ChemicalPlant,3f,DemoCatalog.Materials(ItemKind.ChemicalFeedstock,4,ItemKind.Coolant,1),DemoCatalog.Materials(ItemKind.Polymer,4,ItemKind.HotCoolant,1)),
             R(165,"柴油精制",TechEra.MediumVoltage,BuildKind.ChemicalReactor,4f,DemoCatalog.Materials(ItemKind.LightFraction,2),DemoCatalog.Materials(ItemKind.Diesel,2)),
             R(170,"工业硅冶炼",TechEra.HighVoltage,BuildKind.SteamFurnace,4f,DemoCatalog.Materials(ItemKind.Quartz,3,ItemKind.Coke,1),DemoCatalog.Materials(ItemKind.IndustrialSilicon,2)),

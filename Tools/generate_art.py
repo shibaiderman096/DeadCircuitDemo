@@ -554,7 +554,14 @@ if __name__ == '__main__':
     scope.add_argument('--weapons-only', action='store_true', help='Generate only the dedicated weapon atlas')
     scope.add_argument('--equipment-only', action='store_true', help='Generate only the equipment icon atlas')
     scope.add_argument('--avatar-only', action='store_true', help='Generate only the modular survivor atlas')
+    scope.add_argument('--exteriors-only', action='store_true',
+                       help='Generate only the independent SVG exterior atlas')
     args = parser.parse_args()
+    if args.exteriors_only:
+        import runpy
+        runpy.run_path(str(Path(__file__).parent / 'ExpansionArt/ExteriorArt/export.py'),
+                       run_name='__main__')
+        raise SystemExit(0)
     main(weapons_only=args.weapons_only, equipment_only=args.equipment_only, avatar_only=args.avatar_only)
 
 

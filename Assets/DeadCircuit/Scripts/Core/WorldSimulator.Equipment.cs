@@ -46,7 +46,7 @@ namespace DeadCircuit
         {
             if(p.interactCooldown>0f || arg<0 || arg>=EquipmentCatalog.GearNames.Length) return;
             GearKind kind=(GearKind)arg;
-            if(!EquipmentCatalog.CanCraft(State,p,kind)) { Notice(p,"制作失败：需要近距可见工作台、对应科技、材料与装备空位（最多24件）。"); return; }
+            if(!EquipmentCatalog.CanCraft(State,p,kind)) { Notice(p,"制作失败：请靠近工作台，并确认已解锁科技、材料充足且装备栏未满（最多 24 件）。"); return; }
             GearDefinition d=EquipmentCatalog.Gear(kind);
             int id=AllocateId(); Pay(p.items,d.cost);
             p.gear.Add(new GearState { id=id,kind=kind,loadedAmmo=d.ammo,durability=d.maxDurability });
@@ -141,7 +141,7 @@ namespace DeadCircuit
             if(p.interactCooldown>0f || arg<0 || arg>=EquipmentCatalog.PartNames.Length) return;
             GearState g=EquipmentCatalog.Find(p,id); PartKind kind=(PartKind)arg; PartDefinition d=EquipmentCatalog.Part(kind);
             if(g==null || !EquipmentCatalog.PartCompatible(g.kind,kind) || p.parts[arg]<=0 || State.era<d.era || !EquipmentCatalog.HasWorkbench(State,p))
-            { Notice(p,"安装失败：需可见工作台、兼容配件、库存与科技。"); return; }
+            { Notice(p,"安装失败：请靠近工作台，并确认已解锁科技、拥有对应配件且配件适用。"); return; }
             int slot=(int)d.slot;
             if(g.attachments[slot]!=-1) { Notice(p,"此槽已有配件，请先卸下。"); return; }
             if(p.reloadingGearId==id) CancelReload(p);
@@ -170,7 +170,7 @@ namespace DeadCircuit
             int[] cost=stone ? DemoCatalog.Materials(ItemKind.Wood,1,ItemKind.Ore,1) : DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Scrap,1);
             if(!CanPay(p.items,cost)) { Notice(p,stone ? "修理需1木材、1铁矿。" : "修理需2铁锭、1废料。"); return; }
             if(p.reloadingGearId==id) CancelReload(p);
-            Pay(p.items,cost); g.durability=Math.Min(100,g.durability+25); p.interactCooldown=.4f; Notice(p,"装备耐久已修复 +25。");
+            Pay(p.items,cost); g.durability=Math.Min(100,g.durability+25); p.interactCooldown=.4f; Notice(p,"已修理装备。");
         }
 
         private void SalvageGear(PlayerState p,int id)
@@ -184,9 +184,9 @@ namespace DeadCircuit
             var returnedParts=new int[EquipmentCatalog.PartNames.Length];
             foreach(int part in g.attachments) if(part>=0) returnedParts[part]++;
             for(int i=0;i<returned.Length;i++) if(p.items[i]>InventoryLimit-returned[i])
-            { Notice(p,"回收失败：材料或弹药储备不足以完整接收。"); return; }
+            { Notice(p,"背包空间不足：无法收回全部材料与弹药。"); return; }
             for(int i=0;i<returnedParts.Length;i++) if(p.parts[i]>InventoryLimit-returnedParts[i])
-            { Notice(p,"回收失败：配件库存不足以完整接收。"); return; }
+            { Notice(p,"配件库存已满，无法收回全部配件。"); return; }
             for(int i=0;i<returned.Length;i++) p.items[i]+=returned[i];
             for(int i=0;i<returnedParts.Length;i++) p.parts[i]+=returnedParts[i];
             if(p.reloadingGearId==id) CancelReload(p);
@@ -194,7 +194,7 @@ namespace DeadCircuit
             if(p.weaponId==id) p.weaponId=0;
             if(p.toolId==id) p.toolId=0;
             for(int i=0;i<p.armorIds.Length;i++) if(p.armorIds[i]==id) p.armorIds[i]=0;
-            p.gear.Remove(g); p.interactCooldown=.4f; Notice(p,"装备已回收：半价材料、配件原件及弹匣弹药已返还。");
+            p.gear.Remove(g); p.interactCooldown=.4f; Notice(p,"装备已回收。已返还一半制作材料、全部配件与弹匣中的弹药。");
         }
 
         private static GearState EquippedWrench(PlayerState p)

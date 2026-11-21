@@ -158,9 +158,10 @@ static partial class Checks
     static WorldSimulator LandmarkLootFixture(char profile,out PlayerState player,out NodeState node)
     {
         var found=LandmarkFind(profile);
-        var world=WorldGeneration.Generate(new WorldGenerationSettings {seed=found.seed,chunked=true,preset=WorldPreset.Urban,cityDensity=2});
-        world.generatorVersion=4; // LandmarkFind searches the frozen gen4 layouts.
-        Require(!ChunkStreaming.IsGenerated(world,found.cx*16,found.cy*16),"fixture falls in tutorial");
+        var world=LandmarkWorld(found.seed); // LandmarkFind searches the frozen gen4 layouts.
+        AddFlatInitialChunks(world);
+        world.survival = new SurvivalWorldState { enabled = true, initialized = true };
+        Require(!ChunkStreaming.IsGenerated(world,found.cx*16,found.cy*16),"fixture falls in the initial chunks");
         ChunkTerrain.Generate(world,found.cx,found.cy);
         var sim=new WorldSimulator(world); player=sim.AddPlayer("landmark-looter","探索者");
         node=sim.State.nodes.First(n=>n.kind==NodeKind.Crate && SiteBlueprintCatalog.CrateAt(sim.State,n.x,n.y)==profile);node.stock=4;

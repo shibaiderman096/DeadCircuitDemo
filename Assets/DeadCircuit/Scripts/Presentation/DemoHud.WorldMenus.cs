@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace DeadCircuit
 {
-    // Navigation and preferences only. Creation/loading are delegated to GameBridge.
+    // Menu presentation and preferences. Creation/loading are delegated to GameBridge.
     public sealed partial class DemoHud
     {
         enum MenuPage { Home, Create, Load, Lan }
@@ -20,24 +20,33 @@ namespace DeadCircuit
         const string VolumePreference = "DeadCircuit.MasterVolume";
         const string EffectsPreference = "DeadCircuit.EffectsVolume";
         const string ScalePreference = "DeadCircuit.UI.Scale";
+        const float WorldPreviewDebounce = .25f;
+        static readonly WorldPreset[] CreationPresets = { WorldPreset.Balanced, WorldPreset.Wilderness, WorldPreset.Urban };
         readonly List<WorldMenuRow> worldRows = new List<WorldMenuRow>();
         readonly UiButton[] presetButtons = new UiButton[3];
         readonly UiButton[] densityButtons = new UiButton[3];
         readonly RectTransform[] menuPages = new RectTransform[4];
         RectTransform menuFrame, worldListContent, settingsPanel, toolsTray, buildTray;
+        RectTransform deleteWorldDialog;
         CanvasGroup menuInteraction;
         UnityEngine.UI.ScrollRect worldListScroll;
         UnityEngine.UI.Slider volumeSlider, effectsSlider, scaleSlider;
         TMP_InputField worldNameField;
-        TextMeshProUGUI creationSummary, worldListEmpty, selectedWorldDetails, selectedWorldSummary;
+        TextMeshProUGUI worldPreviewStatus, worldListEmpty, selectedWorldDetails, selectedWorldSummary;
+        WorldTerrainPreviewImage worldPreview;
         TextMeshProUGUI volumeValue, effectsValue, scaleValue, lanStatus;
         UiButton createWorldButton, loadSelectedWorld, inspectToggle, toolsToggle, buildToggle;
+        TextMeshProUGUI deleteWorldDetails;
+        UiButton deleteSelectedWorld, cancelDeleteWorld;
         MenuPage menuPage;
         WorldPreset worldPreset = WorldPreset.Balanced;
         int cityDensity = 1;
+        int? emptyWorldSeed;
         string selectedSaveId = "";
+        string pendingDeleteSaveId;
         bool buildTrayOpen, inspectorEnabled, menuRequestPending;
         float nextMenuRequestAt;
+        float worldPreviewAt = float.PositiveInfinity;
 
         // Implement these in another DemoHud partial when real systems are connected.
         // Additional modals must participate in close/input capture; hidden hooks add no fake UI.
@@ -68,30 +77,27 @@ namespace DeadCircuit
             menuStatus = Label("Connection Status", menuFrame, "", 24, 576, 1072, 48, 15, Ink);
             menuStatus.alignment = TextAlignmentOptions.TopLeft;
             MakeSettings(root);
+            MakeDeleteWorldDialog(root);
             ShowMenuPage(MenuPage.Home, false);
         }
 
         void MakeCreatePage(RectTransform page)
         {
-            MenuHeading(page, "Create World Heading", "创建世界");
+            MenuHeading(page, "Create World Heading", "新建世界");
             Label("World Name Label", page, "世界名称", 28, 88, 620, 24, 16, Muted);
             worldNameField = Input("World Name", page, "新的世界", "为这个世界命名", 28, 118, 620, 44, 40);
             Label("Seed Label", page, "种子 · 留空随机，也可输入数字或文字", 28, 178, 620, 24, 16, Muted);
-            seedField = Input("World Seed", page, "", "随机 / 数字 / 文字", 28, 208, 490, 44, 128);
+            seedField = Input("World Seed", page, "", "输入数字或文字，留空随机", 28, 208, 490, 44, 128);
             seedField.characterValidation = TMP_InputField.CharacterValidation.None;
-            Button("Random World Seed", page, "随机", 532, 208, 116, 44, () =>
-            {
-                seedField.text = WorldSeed.Random().ToString(CultureInfo.InvariantCulture);
-                RefreshCreationSummary();
-            });
+            UiButton randomSeed = Button("Random World Seed", page, "随机", 532, 208, 116, 44, RandomizeCreationSeed);
+            SetButtonArt(randomSeed, "ui_random", 24);
             Label("World Preset Label", page, "地貌预设", 28, 272, 620, 24, 16, Muted);
             string[] presets = { "均衡", "荒野", "城市" };
-            WorldPreset[] values = { WorldPreset.Balanced, WorldPreset.Wilderness, WorldPreset.Urban };
             for (int i = 0; i < presets.Length; i++)
             {
                 int index = i;
-                presetButtons[i] = Button("World Preset " + values[i], page, presets[i], 28 + i * 212, 306, 196, 46,
-                    () => { worldPreset = values[index]; RefreshCreationSummary(); });
+                presetButtons[i] = Button("World Preset " + CreationPresets[i], page, presets[i], 28 + i * 212, 306, 196, 46,
+                    () => { worldPreset = CreationPresets[index]; RefreshCreationOptions(); });
             }
             Label("City Density Label", page, "城市密度", 28, 374, 620, 24, 16, Muted);
             string[] densities = { "稀疏", "适中", "密集" };
@@ -99,46 +105,138 @@ namespace DeadCircuit
             {
                 int index = i;
                 densityButtons[i] = Button("City Density " + i, page, densities[i], 28 + i * 212, 408, 196, 44,
-                    () => { cityDensity = index; RefreshCreationSummary(); });
+                    () => { cityDensity = index; RefreshCreationOptions(); });
             }
-            RectTransform summaryCard = Box("World Configuration Card", page, 680, 92, 412, 360, Recessed);
-            Label("World Configuration Heading", summaryCard, "配置摘要", 20, 16, 372, 32, 22, Accent);
-            RectTransform content = ScrollContent("World Configuration Scroll View", summaryCard, 14, 62, 384, 280, out _);
-            creationSummary = FlowLabel("World Configuration Summary", content, "", 356, 240, 17, Ink);
-            createWorldButton = Button("Create World", page, "创建世界并主持", 680, 480, 412, 48, CreateConfiguredWorld, true);
-            Label("Create World Notice", page, "创建独立世界；已有存档从「读取世界」进入。", 28, 480, 620, 48, 15, Muted);
-            worldNameField.onValueChanged.AddListener(_ => RefreshCreationSummary());
-            seedField.onValueChanged.AddListener(_ => RefreshCreationSummary());
-            RefreshCreationSummary();
+            MakeWorldTerrainPreview(page);
+            createWorldButton = Button("Create World", page, "创建世界", 680, 480, 412, 48, CreateConfiguredWorld, true);
+            SetButtonArt(createWorldButton, "ui_new_world", 28);
+            Label("Create World Notice", page, "创建后由你担任房主；已有进度请从「读取世界」继续。", 28, 480, 620, 48, 15, Muted);
+            seedField.onValueChanged.AddListener(_ =>
+            {
+                worldPreviewAt = Time.unscaledTime + WorldPreviewDebounce;
+                Set(worldPreviewStatus, "正在更新…");
+            });
+            RefreshCreationOptions();
+        }
+
+        void MakeWorldTerrainPreview(RectTransform page)
+        {
+            RectTransform card = Box("World Terrain Preview Card", page, 680, 92, 412, 360, Recessed);
+            Label("World Terrain Preview Heading", card, "地貌预览", 18, 7, 142, 34, 22, Accent);
+            worldPreviewStatus = Label("World Terrain Preview Status", card, "", 164, 9, 230, 28, 15, Muted);
+            worldPreviewStatus.alignment = TextAlignmentOptions.MidlineRight;
+            RectTransform frame = Box("Terrain Map Edge", card, 28, 39, 356, 268, Edge);
+            RectTransform map = NewRect("Terrain Map", frame);
+            Stretch(map, 2, 2, 2, 2);
+            worldPreview = map.gameObject.AddComponent<WorldTerrainPreviewImage>();
+            worldPreview.raycastTarget = false;
+
+            var biomes = WorldGenerationCatalog.Biomes;
+            for (int i = 0; i <= biomes.Count; i++)
+            {
+                bool water = i == biomes.Count;
+                string name = water ? "水域" : biomes[i].name;
+                int x = 18 + (i % 6) * 63;
+                int top = 312 + (i / 6) * 21;
+                Color32 color = water ? WorldTerrainPreviewImage.WaterColor : WorldTerrainPreviewImage.BiomeColor(biomes[i].kind);
+                Box("Terrain Legend Swatch " + name, card, x, top + 4, 11, 11, color);
+                Label("Terrain Legend " + name, card, name, x + 15, top, 48, 19, 14, Ink);
+            }
         }
 
         void MakeLoadPage(RectTransform page)
         {
             MenuHeading(page, "Load World Heading", "读取世界");
             Label("World List Heading", page, "本地存档", 28, 82, 460, 32, 20, Ink, FontStyles.Bold);
-            Button("Refresh Worlds", page, "刷新列表", 486, 82, 156, 34, RequestWorldList);
+            UiButton refreshWorlds = Button("Refresh Worlds", page, "刷新", 486, 82, 156, 34, RequestWorldList);
+            SetButtonArt(refreshWorlds, "ui_refresh", 22);
             worldListContent = ScrollContent("World List Scroll View", page, 28, 128, 614, 388, out worldListScroll);
-            worldListEmpty = FlowLabel("World List Empty", worldListContent, "暂无存档，请返回创建世界。", 580, 80, 17, Muted);
+            worldListEmpty = FlowLabel("World List Empty", worldListContent, "暂无本地存档。返回开始菜单，选择「新建世界」。", 580, 80, 17, Muted);
             RectTransform details = Box("Selected World Card", page, 668, 82, 424, 352, Recessed);
             Label("Selected World Heading", details, "存档详情", 20, 16, 384, 32, 22, Accent);
             RectTransform content = ScrollContent("Selected World Scroll View", details, 14, 64, 396, 274, out _);
-            selectedWorldDetails = FlowLabel("Selected World Details", content, "选择左侧存档以查看详情。", 368, 100, 17, Ink);
+            selectedWorldDetails = FlowLabel("Selected World Details", content, "选择左侧存档，查看世界详情。", 368, 100, 17, Ink);
             selectedWorldSummary = FlowLabel("Selected World Summary", content, "", 368, 80, 15, Muted);
-            loadSelectedWorld = Button("Load Selected World", page, "读取选中世界", 668, 454, 424, 48, LoadSelectedWorld, true);
-            Label("Load World Notice", page, "只读取选中的存档，不创建或覆盖其他世界。", 668, 512, 424, 30, 14, Muted);
+            loadSelectedWorld = Button("Load Selected World", page, "读取世界", 668, 454, 258, 48, LoadSelectedWorld, true);
+            SetButtonArt(loadSelectedWorld, "ui_load_world", 28);
+            deleteSelectedWorld = Button("Delete Selected World", page, "删除存档", 938, 454, 154, 48, OpenDeleteWorldDialog);
+            deleteSelectedWorld.label.color = Danger;
+            deleteSelectedWorld.button.interactable = false;
+        }
+
+        void MakeDeleteWorldDialog(RectTransform root)
+        {
+            deleteWorldDialog = Backdrop("Delete World Dialog", root, new Color32(4, 12, 8, 230));
+            RectTransform card = Box("Delete World Card", deleteWorldDialog, 0, 0, 560, 278, Panel, true);
+            Center(card, 560, 278);
+            PanelRule(card, 560, 66);
+            Label("Delete World Heading", card, "删除存档", 28, 16, 504, 38, 27, Danger, FontStyles.Bold);
+            deleteWorldDetails = Label("Delete World Details", card, "", 28, 80, 504, 96, 18, Ink);
+            deleteWorldDetails.alignment = TextAlignmentOptions.TopLeft;
+            Label("Delete World Warning", card, "已保存的世界进度将永久删除，无法恢复。", 28, 178, 504, 28, 16, Muted);
+            cancelDeleteWorld = Button("Cancel World Delete", card, "取消", 28, 216, 246, 42, CloseDeleteWorldDialog);
+            UiButton confirm = Button("Confirm World Delete", card, "确认删除", 286, 216, 246, 42, ConfirmDeleteWorld);
+            confirm.label.color = Danger;
+            deleteWorldDialog.gameObject.SetActive(false);
+        }
+
+        void OpenDeleteWorldDialog()
+        {
+            if (menuPage != MenuPage.Load || menuRequestPending || deleteWorldDialog.gameObject.activeSelf || !bridge.CanDeleteWorld) return;
+            WorldSaveInfo world = bridge.Worlds.Find(w => w.saveId == selectedSaveId);
+            if (world == null) return;
+
+            pendingDeleteSaveId = world.saveId;
+            Set(deleteWorldDetails, Clean(string.IsNullOrWhiteSpace(world.name) ? world.saveId : world.name) +
+                "\n种子：" + world.seed.ToString(CultureInfo.InvariantCulture) + "\n修改时间：" + Clean(world.modified));
+            deleteWorldDialog.SetAsLastSibling();
+            deleteWorldDialog.gameObject.SetActive(true);
+            menuInteraction.interactable = false;
+            menuInteraction.blocksRaycasts = false;
+            if (eventSystem != null) eventSystem.SetSelectedGameObject(cancelDeleteWorld.button.gameObject);
+            DemoAudio.UiOpen();
+        }
+
+        void CloseDeleteWorldDialog()
+        {
+            if (!deleteWorldDialog.gameObject.activeSelf) return;
+            pendingDeleteSaveId = null;
+            deleteWorldDialog.gameObject.SetActive(false);
+            menuInteraction.interactable = !settingsPanel.gameObject.activeSelf;
+            menuInteraction.blocksRaycasts = true;
+            if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
+            DemoAudio.UiClose();
+        }
+
+        void ConfirmDeleteWorld()
+        {
+            string requested = pendingDeleteSaveId;
+            if (string.IsNullOrEmpty(requested) || !deleteWorldDialog.gameObject.activeSelf) return;
+            CloseDeleteWorldDialog();
+
+            try
+            {
+                bridge.DeleteWorld(requested);
+                Notify("已删除存档。");
+            }
+            catch (Exception error) { Notify("删除存档失败：" + error.Message, true); }
+            RequestWorldList();
         }
 
         void MakeLanPage(RectTransform page)
         {
-            MenuHeading(page, "LAN Heading", "局域网协作");
+            MenuHeading(page, "LAN Heading", "局域网联机");
             Label("Name Label", page, "角色名", 28, 92, 596, 26, 16, Muted);
             nameField = Input("Player Name", page, bridge.PlayerName, "幸存者", 28, 126, 596, 46, 12);
-            Label("IP Label", page, "主机 IPv4 · UDP 7777", 28, 194, 596, 26, 16, Muted);
+            Label("IP Label", page, "房主 IPv4 地址 · UDP 7777", 28, 194, 596, 26, 16, Muted);
             ipField = Input("Host IPv4", page, "", "例如 192.168.1.8", 28, 228, 596, 46, 15);
-            Button("Join Game", page, "连接主机", 28, 304, 286, 48, Join, true);
-            Button("Cancel Connection", page, "取消连接", 330, 304, 294, 48, () => CallBridge(bridge.Leave));
-            Button("Start Host", page, "创建世界作为主机", 28, 388, 596, 48, StartNew);
-            Label("Host Existing World Hint", page, "继续已有世界：返回后选择「读取世界」。", 28, 456, 596, 40, 15, Muted);
+            UiButton join = Button("Join Game", page, "加入世界", 28, 304, 286, 48, Join, true);
+            SetButtonArt(join, "ui_join", 28);
+            UiButton cancel = Button("Cancel Connection", page, "取消连接", 330, 304, 294, 48, () => CallBridge(bridge.Leave));
+            SetButtonArt(cancel, "ui_cancel", 28);
+            UiButton host = Button("Start Host", page, "新建世界", 28, 388, 596, 48, StartNew);
+            SetButtonArt(host, "ui_network", 28);
+            Label("Host Existing World Hint", page, "由你担任房主：新建世界，或返回开始菜单读取已有世界。", 28, 456, 596, 40, 15, Muted);
             RectTransform details = Box("LAN Connection Card", page, 660, 92, 432, 420, Recessed);
             Label("LAN Status Heading", details, "连接状态", 20, 18, 392, 32, 22, Accent);
             lanStatus = Label("LAN Connection Status", details, "", 20, 76, 392, 126, 17, Ink);
@@ -150,43 +248,63 @@ namespace DeadCircuit
         void MenuHeading(RectTransform page, string name, string title)
         {
             Label(name, page, title, 28, 14, 824, 38, 27, Ink, FontStyles.Bold);
-            Button(page.name + " Back", page, "返回", 944, 16, 148, 36, () => ShowMenuPage(MenuPage.Home));
+            UiButton back = Button(page.name + " Back", page, "返回", 944, 16, 148, 36, () => ShowMenuPage(MenuPage.Home));
+            SetButtonArt(back, "ui_back", 22);
         }
 
         void ShowMenuPage(MenuPage page, bool refresh = true)
         {
+            CloseDeleteWorldDialog();
             menuPage = page;
             for (int i = 0; i < menuPages.Length; i++) menuPages[i].gameObject.SetActive(i == (int)page);
             menuStatus.alignment = page == MenuPage.Home ? TextAlignmentOptions.Center : TextAlignmentOptions.TopLeft;
             menuInteraction.interactable = !settingsPanel.gameObject.activeSelf;
             if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
             guardThroughFrame = Time.frameCount + 1;
-            if (page == MenuPage.Create) RefreshCreationSummary();
+            if (page == MenuPage.Create) RefreshWorldTerrainPreview(seedField.text.Trim());
+            else worldPreviewAt = float.PositiveInfinity;
             if (refresh && (page == MenuPage.Home || page == MenuPage.Load)) RequestWorldList();
         }
 
         void StartNew() => ShowMenuPage(MenuPage.Create);
         void Load() => ShowMenuPage(MenuPage.Load);
 
-        void RefreshCreationSummary()
+        void RefreshCreationOptions()
         {
-            if (creationSummary == null) return;
-            string name = worldNameField.text.Trim();
-            string seedText = seedField.text.Trim();
-            string seed = seedText.Length == 0 ? "随机（创建时确定）" : WorldSeed.Resolve(seedText).ToString(CultureInfo.InvariantCulture);
-            string preset = worldPreset == WorldPreset.Wilderness ? "荒野" : worldPreset == WorldPreset.Urban ? "城市" : "均衡";
-            string density = cityDensity == 0 ? "稀疏" : cityDensity == 2 ? "密集" : "适中";
-            SetFlowText(creationSummary, "世界：" + Clean(name.Length == 0 ? "新的世界" : name) +
-                "\n\n种子：" + seed + "\n\n地貌：" + preset + "\n城市密度：" + density +
-                "\n\n地图：近似无限（16×16格/区块）\n探索：随移动逐块生成\n季节：7天一季\n小地图：探索迷雾", 230);
-            WorldPreset[] values = { WorldPreset.Balanced, WorldPreset.Wilderness, WorldPreset.Urban };
             for (int i = 0; i < 3; i++)
             {
-                Tint(presetButtons[i], worldPreset == values[i] ? Selected : Raised);
-                presetButtons[i].label.color = worldPreset == values[i] ? Accent : Ink;
+                Tint(presetButtons[i], worldPreset == CreationPresets[i] ? Selected : Raised);
+                presetButtons[i].label.color = worldPreset == CreationPresets[i] ? Accent : Ink;
                 Tint(densityButtons[i], cityDensity == i ? Selected : Raised);
                 densityButtons[i].label.color = cityDensity == i ? Accent : Ink;
             }
+        }
+
+        int ResolveCreationSeed(string seedText)
+        {
+            if (seedText.Length != 0) return WorldSeed.Resolve(seedText);
+            if (!emptyWorldSeed.HasValue) emptyWorldSeed = WorldSeed.Random();
+            return emptyWorldSeed.Value;
+        }
+
+        int RefreshWorldTerrainPreview(string seedText)
+        {
+            int seed = ResolveCreationSeed(seedText);
+            worldPreview.Draw(seed);
+            worldPreviewAt = float.PositiveInfinity;
+            Set(worldPreviewStatus, (seedText.Length == 0 ? "随机种子 " : "种子 ") + seed.ToString(CultureInfo.InvariantCulture));
+            return seed;
+        }
+
+        void RandomizeCreationSeed()
+        {
+            int previous = ResolveCreationSeed(seedField.text.Trim());
+            int seed;
+            do { seed = WorldSeed.Random(); } while (seed == previous);
+            emptyWorldSeed = seed;
+            string seedText = seed.ToString(CultureInfo.InvariantCulture);
+            seedField.SetTextWithoutNotify(seedText);
+            RefreshWorldTerrainPreview(seedText);
         }
 
         bool BeginMenuRequest()
@@ -203,11 +321,13 @@ namespace DeadCircuit
             try
             {
                 string seedText = seedField.text.Trim();
+                // Finish a pending preview with the same input snapshot sent to the generator.
+                int seed = RefreshWorldTerrainPreview(seedText);
                 var settings = new WorldGenerationSettings
                 {
                     worldName = string.IsNullOrWhiteSpace(worldNameField.text) ? "新的世界" : worldNameField.text.Trim(),
                     seedText = seedText,
-                    seed = seedText.Length == 0 ? WorldSeed.Random() : WorldSeed.Resolve(seedText),
+                    seed = seed,
                     preset = worldPreset,
                     cityDensity = cityDensity,
                     chunked = true
@@ -215,7 +335,7 @@ namespace DeadCircuit
                 bridge.PlayerName = ReadName();
                 CallBridge(() => bridge.CreateWorld(settings));
             }
-            catch (Exception error) { Notify("创建失败：" + error.Message, true); }
+            catch (Exception error) { Notify("创建世界失败：" + error.Message, true); }
             finally { menuRequestPending = false; }
         }
 
@@ -234,8 +354,9 @@ namespace DeadCircuit
                 worldListEmpty.gameObject.SetActive(true);
                 SetFlowText(worldListEmpty, "无法读取存档列表，请点击刷新重试。", 80);
                 loadSelectedWorld.button.interactable = false;
-                Set(menuSave, "存档列表读取失败；可进入读取页重试。");
-                Notify("读取列表失败：" + error.Message, true);
+                deleteSelectedWorld.button.interactable = false;
+                Set(menuSave, "存档列表读取失败。打开「读取世界」后刷新重试。");
+                Notify("读取存档列表失败：" + error.Message, true);
             }
         }
 
@@ -275,12 +396,13 @@ namespace DeadCircuit
             }
             for (int i = count; i < worldRows.Count; i++) worldRows[i].widget.button.transform.parent.gameObject.SetActive(false);
             worldListEmpty.gameObject.SetActive(count == 0);
-            SetFlowText(worldListEmpty, "暂无可读取的本地存档，请返回创建世界。", 80);
-            Set(menuSave, count == 0 ? "暂无本地存档" : "本地世界 " + count + " 个 · 进入读取页选择");
+            SetFlowText(worldListEmpty, "暂无可读取的本地存档。返回开始菜单，选择「新建世界」。", 80);
+            Set(menuSave, count == 0 ? "暂无本地存档" : "本地世界 " + count + " 个 · 选择「读取世界」继续");
             // Never silently switch the requested save when refresh removes a selection.
             if (selected == null) selectedSaveId = "";
             loadSelectedWorld.button.interactable = selected != null;
-            SetFlowText(selectedWorldDetails, selected == null ? "选择左侧存档以查看详情。" :
+            deleteSelectedWorld.button.interactable = selected != null && bridge.CanDeleteWorld;
+            SetFlowText(selectedWorldDetails, selected == null ? "选择左侧存档，查看世界详情。" :
                 Clean(selected.name) + "\n\n种子：" + selected.seed.ToString(CultureInfo.InvariantCulture) + "\n修改时间：" + Clean(selected.modified), 100);
             SetFlowText(selectedWorldSummary, selected == null ? "" : Clean(selected.summary), 32);
         }
@@ -304,20 +426,22 @@ namespace DeadCircuit
                 bridge.PlayerName = ReadName();
                 CallBridge(() => bridge.LoadWorld(requested));
             }
-            catch (Exception error) { Notify("读取失败：" + error.Message, true); }
+            catch (Exception error) { Notify("读取世界失败：" + error.Message, true); }
             finally { menuRequestPending = false; }
         }
 
         void RefreshMenu()
         {
             if (Time.unscaledTime >= saveCheckAt && (menuPage == MenuPage.Home || menuPage == MenuPage.Load)) RequestWorldList();
+            if (menuPage == MenuPage.Create && Time.unscaledTime >= worldPreviewAt)
+                RefreshWorldTerrainPreview(seedField.text.Trim());
             string status = CurrentLocalFeedback() ? Clean(localFeedback) : Clean(bridge.Status);
             Color color = CurrentLocalFeedback() ? localFeedbackColor : StatusColor(bridge.Status);
             Set(menuStatus, status);
             menuStatus.color = color;
             Set(lanStatus, status);
             lanStatus.color = color;
-            Set(menuAddress, "本机 IPv4\n" + Clean(bridge.HostIP) + "\n\n同一局域网 · UDP 7777\n加入时填写房主的 IPv4 地址。");
+            Set(menuAddress, "本机 IPv4 地址\n" + Clean(bridge.HostIP) + "\n\n请连接同一局域网 · UDP 7777\n加入时填写房主的 IPv4 地址。");
             createWorldButton.button.interactable = !menuRequestPending && Time.unscaledTime >= nextMenuRequestAt;
         }
 
@@ -328,7 +452,9 @@ namespace DeadCircuit
             Center(card, 720, 540);
             PanelRule(card, 720, 68);
             Label("Settings Heading", card, "设置", 28, 16, 500, 38, 28, Ink, FontStyles.Bold);
-            settingsCloseButton = Button("Close Settings", card, "返回", 574, 20, 118, 34, CloseSettings).button;
+            UiButton closeSettings = Button("Close Settings", card, "返回", 574, 20, 118, 34, CloseSettings);
+            SetButtonArt(closeSettings, "ui_back", 20);
+            settingsCloseButton = closeSettings.button;
             Label("Master Volume Label", card, "主音量", 28, 96, 450, 30, 19, Ink);
             volumeValue = Label("Master Volume Value", card, "", 580, 96, 112, 30, 18, Accent);
             volumeSlider = PreferenceSlider("Master Volume", card, 28, 140, 664, 0f, 1f,
@@ -337,13 +463,14 @@ namespace DeadCircuit
             effectsValue = Label("Effects Volume Value", card, "", 580, 202, 112, 30, 18, Accent);
             effectsSlider = PreferenceSlider("Effects Volume", card, 28, 246, 664, 0f, 1f,
                 Mathf.Clamp01(PlayerPrefs.GetFloat(EffectsPreference, .8f)), ApplyEffectsVolume);
-            Label("UI Scale Label", card, "界面比例", 28, 308, 450, 30, 19, Ink);
+            Label("UI Scale Label", card, "界面缩放", 28, 308, 450, 30, 19, Ink);
             scaleValue = Label("UI Scale Value", card, "", 580, 308, 112, 30, 18, Accent);
             scaleSlider = PreferenceSlider("UI Scale", card, 28, 352, 664, .8f, 1f,
                 Mathf.Clamp(PlayerPrefs.GetFloat(ScalePreference, 1f), .8f, 1f), ApplyUiScale);
-            Label("UI Scale Hint", card, "80–100% · 保留 1280 × 720 的完整布局区域", 28, 404, 664, 30, 15, Muted);
-            Button("Reset UI Settings", card, "恢复默认设置", 28, 466, 220, 44, () =>
+            Label("UI Scale Hint", card, "80–100% · 调整文字与按钮的大小", 28, 404, 664, 30, 15, Muted);
+            UiButton resetSettings = Button("Reset UI Settings", card, "恢复默认", 28, 466, 220, 44, () =>
             { volumeSlider.value = .7f; effectsSlider.value = .8f; scaleSlider.value = 1f; });
+            SetButtonArt(resetSettings, "ui_refresh", 24);
             Label("Settings Persistence", card, "设置自动保存在本机", 356, 470, 336, 32, 15, Muted);
             ApplyVolume(volumeSlider.value);
             ApplyEffectsVolume(effectsSlider.value);
@@ -433,28 +560,96 @@ namespace DeadCircuit
             dock.anchorMin = dock.anchorMax = dock.pivot = new Vector2(1, 0);
             dock.anchoredPosition = new Vector2(-18, 18);
             dock.sizeDelta = new Vector2(220, 40);
-            toolsToggle = Button("HUD Tools Toggle", dock, "工具 / 菜单", 0, 0, 220, 40, () =>
+            toolsToggle = Button("HUD Tools Toggle", dock, "菜单", 0, 0, 220, 40, () =>
             {
                 bool open = !toolsTray.gameObject.activeSelf;
                 toolsTray.gameObject.SetActive(open);
-                Set(toolsToggle.label, open ? "收起工具" : "工具 / 菜单");
+                Set(toolsToggle.label, open ? "收起" : "菜单");
             });
+            SetButtonArt(toolsToggle, "ui_settings", 26);
             toolsTray = Box("HUD Tools Tray", dock, 0, -278, 220, 268, Panel, true);
-            Button("Technology Button", toolsTray, "科技 / 建造 T", 8, 8, 204, 36, () => SetPanel(technology, true));
-            Button("Open Inventory", toolsTray, "背包 B", 8, 50, 204, 36, () => SetPanel(inventory, true));
+            UiButton technologyShortcut = Button("Technology Button", toolsTray, "科技 T", 8, 8, 204, 36, () => SetPanel(technology, true));
+            SetButtonArt(technologyShortcut, "ui_technology", 24);
+            UiButton inventoryShortcut = Button("Open Inventory", toolsTray, "背包 B", 8, 50, 204, 36, () => SetPanel(inventory, true));
+            SetButtonArt(inventoryShortcut, "ui_inventory", 24);
             growthButton = Button("Open Growth", toolsTray, "成长 Tab", 8, 92, 204, 36, () => SetGrowth(true));
-            inspectToggle = Button("Inspect Toggle", toolsTray, "设备检查：关", 8, 134, 204, 36, () =>
+            SetButtonArt(growthButton, "ui_growth", 24);
+            inspectToggle = Button("Inspect Toggle", toolsTray, "检查：关", 8, 134, 204, 36, () =>
             {
                 inspectorEnabled = !inspectorEnabled;
-                Set(inspectToggle.label, inspectorEnabled ? "设备检查：开" : "设备检查：关");
+                Set(inspectToggle.label, inspectorEnabled ? "检查：开" : "检查：关");
                 if (!inspectorEnabled) HideInspector();
                 toolsTray.gameObject.SetActive(false);
-                Set(toolsToggle.label, "工具 / 菜单");
+                Set(toolsToggle.label, "工具");
             });
-            Button("Open Help", toolsTray, "帮助 H", 8, 176, 98, 36, () => SetPanel(help, true));
-            Button("Open Session", toolsTray, "菜单 Esc", 114, 176, 98, 36, () => SetPanel(session, true));
-            Label("HUD Tools Hint", toolsTray, "检查开启后，指向设备查看详情", 8, 222, 204, 32, 12, Muted);
+            SetButtonArt(inspectToggle, "ui_inspect", 24);
+            UiButton helpShortcut = Button("Open Help", toolsTray, "帮助 H", 8, 176, 98, 36, () => SetPanel(help, true));
+            SetButtonArt(helpShortcut, "ui_help", 20);
+            UiButton sessionShortcut = Button("Open Session", toolsTray, "菜单 Esc", 114, 176, 98, 36, () => SetPanel(session, true));
+            SetButtonArt(sessionShortcut, "ui_session", 20);
+            Label("HUD Tools Hint", toolsTray, "开启设备详情后，指向设备查看", 8, 222, 204, 32, 12, Muted);
             toolsTray.gameObject.SetActive(false);
+        }
+    }
+
+    sealed class WorldTerrainPreviewImage : UnityEngine.UI.RawImage
+    {
+        const int MapWidth = 128, MapHeight = 96, SampleStep = 9;
+        internal static readonly Color32 WaterColor = new Color32(45, 100, 124, 255);
+        static readonly Color32[] BiomeColors =
+        {
+            new Color32(147, 162, 93, 255),  // Meadow
+            new Color32(91, 132, 76, 255),   // Deciduous forest
+            new Color32(51, 97, 74, 255),    // Coniferous forest
+            new Color32(194, 158, 101, 255), // Desert
+            new Color32(89, 134, 126, 255),  // Wetland
+            new Color32(151, 164, 167, 255), // Tundra
+            new Color32(91, 99, 60, 255),    // Swamp
+            new Color32(216, 226, 229, 255), // Snow mountain
+            new Color32(187, 119, 135, 255), // Sakura grove
+            new Color32(113, 166, 145, 255)  // River valley
+        };
+
+        Color32[] pixels;
+        Texture2D previewTexture;
+        int renderedSeed;
+
+        internal static Color32 BiomeColor(BiomeKind biome) => BiomeColors[(int)biome];
+
+        internal void Draw(int seed)
+        {
+            if (previewTexture != null && renderedSeed == seed) return;
+            if (pixels == null) pixels = new Color32[MapWidth * MapHeight];
+            for (int py = 0; py < MapHeight; py++)
+            {
+                int y = (py - MapHeight / 2) * SampleStep;
+                for (int px = 0; px < MapWidth; px++)
+                {
+                    int x = (px - MapWidth / 2) * SampleStep;
+                    ChunkTerrain.SampleContinuous(seed, x, y, out char ground, out char biome);
+                    pixels[px + py * MapWidth] = ground == '2' ? WaterColor : BiomeColor((BiomeKind)(biome - '0'));
+                }
+            }
+
+            if (previewTexture == null)
+            {
+                previewTexture = new Texture2D(MapWidth, MapHeight, TextureFormat.RGBA32, false)
+                {
+                    name = "World Terrain Preview",
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp
+                };
+                texture = previewTexture;
+            }
+            previewTexture.SetPixels32(pixels);
+            previewTexture.Apply(false, false);
+            renderedSeed = seed;
+        }
+
+        protected override void OnDestroy()
+        {
+            if (previewTexture != null) Destroy(previewTexture);
+            base.OnDestroy();
         }
     }
 }
