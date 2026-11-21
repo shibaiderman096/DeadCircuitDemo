@@ -4,7 +4,7 @@
 
 | 文档 | 内容 |
 | --- | --- |
-| [HTML图文游戏百科](WIKI.html) | 游戏图片、图鉴、配方、分类导航和搜索；可离线打开 |
+| [HTML图文游戏百科](WIKI.html) | 游戏图片、图鉴、配方、分类导航、搜索与可互链词条；[全部词条索引](WIKI.html#/entries)，可离线打开 |
 | [Wiki内容源稿](WIKI.md) | 当前玩法与维护记录；修改后用 `python Tools/generate_wiki.py` 同步HTML |
 | [开发总纲](DEVELOPMENT_OUTLINE.md) | 项目方向、七时代工业科技、已实现范围和实施顺序 |
 | [武器与工具分支](WEAPONS_TOOLS.md) | 研究节点、前置样品、配方、接入批次与验收清单 |

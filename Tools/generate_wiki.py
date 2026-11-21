@@ -18,6 +18,7 @@ from pathlib import Path
 from html.parser import HTMLParser
 
 from PIL import Image
+from Wiki.entries import EntryCatalog
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "Docs/WIKI.md"
@@ -164,18 +165,25 @@ class WikiRenderer:
                 raise ValueError(f"Missing equipment definition: {enum_name}")
             era = re.search(r"d.era\s*=\s*TechEra\.(\w+)", block.group(1))
             self.gear_metadata.append({"era": era_keys[era.group(1)] if era else "primitive", "armor": "SetArmor(" in block.group(1)})
-        self.entities = {name: f"item_{i}" for i, name in enumerate(self.items)}
-        self.entities.update({name: f"build_{i}" for i, name in enumerate(self.buildings)})
-        self.entities.update({name: f"gear_{i}" for i, name in enumerate(self.gear)})
-        self.entities.update({name: f"part_{i}" for i, name in enumerate(self.parts)})
         self.foods = re.findall(r'new SurvivalFoodDefinition\(FoodKind\.\w+, "([^"\n]+)"', (CORE / "SurvivalCatalog.cs").read_text(encoding="utf-8-sig"))
-        self.entities.update({name: f"food_{i}" for i, name in enumerate(self.foods)})
-        self.entity_pattern = re.compile("|".join(re.escape(name) for name in sorted(self.entities, key=len, reverse=True)))
         self.sections = dict(re.findall(r"^## ([^\n]+)\n(.*?)(?=^## |\Z)", source, re.M | re.S))
         self.date = re.search(r"最后核对：(\d{4}-\d{2}-\d{2})", source).group(1)
         self.baseline = re.search(r"规则基线：" + re.escape(TICK) + r"([^" + TICK + "]+)", source).group(1)
+        self.catalog = EntryCatalog(ROOT, {"item": self.items, "building": self.buildings, "gear": self.gear, "part": self.parts, "food": self.foods})
+        self.term_names = self.catalog.names
+        self.term_pattern = re.compile("|".join(re.escape(name) for name in sorted(self.term_names, key=len, reverse=True)))
+        self.research_names = {entry["name"]: entry["id"] for entry in self.catalog.entries.values() if entry["id"].startswith("research-")}
 
-    def inline(self, text: str, page: str) -> str:
+    def entry_link(self, slug: str, label: str | None = None, illustrated: bool = False, current: str = "") -> str:
+        entry = self.catalog.entries[slug]
+        text = label or entry["title"]
+        icon = self.art.img(entry["icon"]) if illustrated and entry["icon"] else ""
+        if slug == current:
+            return icon + esc(text)
+        cls = "wiki-term entity-pill" if icon else "wiki-term"
+        return f'<a class="{cls}" href="#/{slug}" data-entry="{slug}" title="{esc(entry["summary"][:130])}">{icon}<span>{esc(text)}</span></a>'
+
+    def inline(self, text: str, page: str, autolink: bool = True, illustrated: bool = False) -> str:
         tokens: list[str] = []
         def save(fragment: str) -> str:
             tokens.append(fragment)
@@ -190,6 +198,12 @@ class WikiRenderer:
                 raise ValueError("Unsafe document link")
             return save(f'<a href="{esc(target)}">{esc(label)}</a>')
         text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", link, text)
+        if autolink:
+            def term(match: re.Match) -> str:
+                name = match.group(0)
+                slug = self.research_names.get(name, self.term_names[name]) if page == "technology" else self.term_names[name]
+                return save(self.entry_link(slug, name, illustrated, current=page))
+            text = self.term_pattern.sub(term, text)
         text = esc(text)
         text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
         for index, token in enumerate(tokens):
@@ -197,14 +211,7 @@ class WikiRenderer:
         return text
 
     def illustrated(self, text: str, page: str) -> str:
-        result, previous = [], 0
-        for match in self.entity_pattern.finditer(text):
-            result.append(self.inline(text[previous:match.start()], page))
-            name = match.group(0)
-            result.append(f'<span class="entity-pill">{self.art.img(self.entities[name])}<span>{esc(name)}</span></span>')
-            previous = match.end()
-        result.append(self.inline(text[previous:], page))
-        return "".join(result)
+        return self.inline(text, page, illustrated=True)
 
     def markdown(self, text: str, page: str) -> str:
         lines, output, index = text.strip().splitlines(), [], 0
@@ -218,7 +225,7 @@ class WikiRenderer:
                 level = min(4, len(heading.group(1)) - 1)
                 title = heading.group(2)
                 anchor = re.sub(r"\s+", "-", title.lower())
-                output.append(f'<h{level} id="{page}--{esc(anchor)}" data-anchor="{esc(anchor)}">{self.inline(title,page)}</h{level}>')
+                output.append(f'<h{level} id="{page}--{esc(anchor)}" data-anchor="{esc(anchor)}">{self.inline(title,page,autolink=False)}</h{level}>')
                 index += 1
                 continue
             if line.startswith("|"):
@@ -283,7 +290,8 @@ class WikiRenderer:
                 selected_eras.append(era)
             kind = "工具" if mode == "gear" and number < 5 else "武器" if mode == "gear" and number < 10 else "防具" if mode == "gear" else "枪械配件"
             note = '<span class="art-note">沿用游戏中的防具示意图</span>' if mode == "gear" and number == 19 else ''
-            cards.append(f'<article class="item-card" data-era="{era}" data-name="{esc(labels[number])}"><div class="item-art">{self.art.img(f"{mode}_{number}",labels[number],"catalog-art")}</div><span class="item-type">{kind} · {ERA_LABELS[era]}</span><h3>{esc(labels[number])}</h3>{note}</article>')
+            slug = f"{mode}-{number}"
+            cards.append(f'<article class="item-card" data-era="{era}" data-name="{esc(labels[number])}"><a class="item-entry" href="#/{slug}" data-entry="{slug}"><div class="item-art">{self.art.img(f"{mode}_{number}",labels[number],"catalog-art")}</div><span class="item-type">{kind} · {ERA_LABELS[era]}</span><h3>{esc(labels[number])}</h3>{note}</a></article>')
         filters = '<button type="button" data-filter="all" aria-pressed="true">全部</button>' + ''.join(f'<button type="button" data-filter="{era}" aria-pressed="false">{ERA_LABELS[era]}</button>' for era in selected_eras)
         return f'<section class="gallery" data-gallery="{mode}-{indices[0]}"><div class="section-heading"><h2>{title}</h2><span>{len(indices):02d} 条目</span></div><div class="gallery-tools"><div class="filter-list" role="group" aria-label="按时代筛选">{filters}</div><label class="gallery-search"><span class="sr-only">搜索{title}</span><input type="search" data-gallery-search placeholder="搜索名称…"></label></div><div class="gallery-grid">{"".join(cards)}</div><p class="gallery-empty" hidden>没有符合条件的条目，试试其他名称或时代。</p></section>'
 
@@ -303,9 +311,115 @@ class WikiRenderer:
                 "recipes": [(f"item_{i}", self.items[i]) for i in (0, 27, 28, 4, 10, 60)],
             }
             caption = {"world": "群系图鉴", "combat": "敌人图鉴", "survival": "补给与野生动物", "building": "基地设备", "power": "动力设备", "technology": "工业进程", "recipes": "材料样本"}[page]
-            cards = ''.join(f'<figure class="catalog-preview">{self.art.img(key,label,"preview-art")}<figcaption>{label}</figcaption></figure>' for key, label in collections[page])
+            cards = ''.join(f'<figure class="catalog-preview"><a class="item-entry" href="#/{self.catalog.icons[key]}" data-entry="{self.catalog.icons[key]}">{self.art.img(key,label,"preview-art")}<figcaption>{label}</figcaption></a></figure>' for key, label in collections[page])
             return f'<div class="chapter-illustration"><span class="eyebrow">{caption}</span><div class="catalog-strip">{cards}</div><p class="figure-caption">图示取自游戏资源，部分沿用游戏当前的复用图；具体机制见下文。</p></div>'
         return ''
+
+    def quantity_links(self, values: list[tuple[str, int]], current: str) -> str:
+        return ' <span class="quantity-separator">+</span> '.join((self.entry_link(slug, illustrated=True, current=current) if slug in self.catalog.entries else esc(slug)) + f' <b>×{quantity}</b>' for slug, quantity in values) or "无"
+
+    def recipe_table(self, recipes: list[dict], current: str) -> str:
+        if not recipes:
+            return ''
+        rows = []
+        for recipe in recipes:
+            ref = "recipe-" + str(recipe["id"])
+            seconds = f'{recipe["seconds"]}秒基础周期' if recipe["seconds"] else '生存烹饪操作'
+            rows.append('<tr><td>' + self.entry_link(ref, current=current) + '</td><td>' + self.quantity_links(recipe["inputs"],current) + '</td><td>' + self.quantity_links(recipe["outputs"],current) + '</td><td>' + self.entry_link(recipe["station"],current=current) + '</td><td>' + esc(recipe["era"] + ' · ' + seconds) + '</td></tr>')
+        return '<div class="table-wrap" role="region" tabindex="0" aria-label="相关配方"><table><thead><tr><th>配方</th><th>输入</th><th>产出</th><th>工位</th><th>时代 / 周期</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table></div>'
+
+    def entity_article(self, entry: dict) -> str:
+        slug = entry["id"]
+        def heading(title: str) -> str:
+            return f'<h2 id="{slug}--{title}" data-anchor="{title}">{title}</h2>'
+        facts = [('分类', entry['category'])]
+        if entry.get("era"):
+            facts.append(('所属时代', entry['era']))
+        facts += entry['facts']
+        visual = self.art.img(entry['icon'], entry['name'], 'infobox-art') if entry['icon'] else '<span class="infobox-symbol" aria-hidden="true">◇</span>'
+        art_note = '<p class="art-note">沿用游戏中的防具复用图</p>' if slug == 'gear-19' else ''
+        info = f'<aside class="entity-infobox" aria-label="{esc(entry["title"])}基本资料"><p class="infobox-caption">{esc(entry["title"])}</p>{visual}{art_note}<dl class="infobox-facts">' + ''.join(f'<dt>{esc(label)}</dt><dd>{esc(value)}</dd>' for label,value in facts) + '</dl></aside>'
+        body = [info, '<p class="entity-overview">' + self.inline(entry['summary'],slug) + '</p>']
+        if entry.get('parents'):
+            body += [heading('前置研究'), '<p>' + '、'.join(self.entry_link(ref,current=slug) for ref in entry['parents']) + '</p>']
+        if entry.get('research'):
+            if entry.get('module_costs') or entry.get('recipe', {}).get('station') in {value['id'] for value in self.catalog.entries.values() if value.get('module_costs')}:
+                body += [heading('建造与运行研究' if entry.get('module_costs') else '配方研究'), '<p>大型机械及其工艺需要完成 ' + self.entry_link(entry['research'],current=slug) + '，并满足时代、结构成形、供能、维护、输入与输出空间条件。</p>']
+            else:
+                body += [heading('制作研究'), '<p>自主制作需要完成 ' + self.entry_link(entry['research'],current=slug) + '，并满足时代、工位、材料及容量条件。成品使用与制造研究分别判断。</p>']
+        if entry.get('cost'):
+            body += [heading('最小职责集合报价' if entry.get('module_costs') else '研究样品' if '研究' in entry['category'] else '制造材料'), '<p class="entry-materials">' + self.quantity_links(entry['cost'],slug) + '</p>']
+        if entry.get('module_costs'):
+            rows = ''.join('<tr><td>' + esc(module['name']) + '</td><td>' + str(module['minimum']) + '</td><td>' + self.quantity_links(module['cost'],slug) + '</td></tr>' for module in entry['module_costs'])
+            body += [heading('逐格施工材料'), '<p>先手持有效扳手，在T中选机器、从八类模块菜单选控制器起画，再逐格自由放置；R独立旋转当前模块，擦图删除单格。上方合计仅是最小职责集合报价，不是固定3×3模板，也不在画图时预扣。退出绘制后对具体格按E分批投料，增加机壳另付该格材料；包围盒内空洞不占地。</p>', '<div class="table-wrap" role="region" tabindex="0" aria-label="逐格施工材料"><table><thead><tr><th>模块</th><th>最少格数</th><th>每格材料</th></tr></thead><tbody>' + rows + '</tbody></table></div>']
+        if entry.get('production'):
+            body += [heading('累计实产要求'), '<p>全队实际生产累计值达到以下数量；不是背包中的现有库存，也不会因研究而扣除这份累计记录。</p>', '<p>' + self.quantity_links(entry['production'],slug) + '</p>']
+        if '研究' in entry['category'] and not entry.get('production'):
+            body.append('<p class="callout">上述样品和前置不是全部研究条件。工业研究还可能要求专门的有效运行、真实加工或到货记录，具体缺项请在游戏科技树中查看。</p>')
+        if entry.get('recipe'):
+            body += [heading('配方'), self.recipe_table([entry['recipe']],slug)]
+        produced = self.catalog.production(slug)
+        if produced:
+            body += [heading('获取'), self.recipe_table(produced,slug), '<p>表中数量为单批配方。还需满足相应研究、供能、燃料和整批输出空间条件；副产物满仓也会导致停产。</p>']
+        elif slug.startswith('item-'):
+            raw = {
+                0: '用斧砍树取得。手工采尽时还可能结算野食。',
+                1: '用镐开采铁矿节点取得。',
+                6: '普通补给来源之一；与生存系统中的具体食材分别管理。',
+                7: '用镐开采铜矿节点取得，后续通过冶炼加工。',
+                14: '用镐开采铀矿节点取得，核工业燃料生产前还需铀矿选冶。',
+                17: '反应堆消耗燃料时生成，须由专用仓接收，不能按普通背包物品收发。',
+                19: '用镐开采锡矿节点取得，后续通过冶炼加工。',
+                25: '用镐开采石材节点取得，用于基础工具研究、石器维修和建造。',
+                26: '用镐开采黏土节点取得，供陶砖与绝缘件生产。',
+                32: '用镐开采煤矿节点取得，用于焦化和热工。',
+                33: '用镐开采石灰石节点取得，供生铁和钢铁工序使用。',
+                34: '用镐开采耐火黏土节点取得，供耐火砖烧制。',
+                46: '用邻近油源的通电抽油机从有限油藏按周期取出。',
+                52: '工艺取水泵从有效水源取得，不能代替生活饮水。',
+                54: '用镐开采石英节点取得，用于工业硅制造。',
+                63: '在出生附近或后续区块的地面用左键、E或按住Space拾取。',
+                64: '在地面直接拾取，用于随身制作石斧和石镐。采矿产出的石材另有用途。',
+                65: '在出生附近或后续区块直接拾取，用于随身制作石斧和石镐。',
+            }
+            description = raw.get(int(slug.split('-')[1]), '获取方式请结合下方相关说明和游戏当前工艺界面查看。')
+            body += [heading('获取'), '<p>' + self.inline(description,slug) + '</p>']
+        uses = self.catalog.uses(slug)
+        if uses:
+            body += [heading('用途'), self.recipe_table(uses,slug)]
+        manufactured = self.catalog.cost_uses(slug)
+        if manufactured:
+            body += [heading('作为制造或研究材料'), '<ul class="entry-index-list">' + ''.join('<li>' + self.entry_link(value['id'],current=slug) + '</li>' for value in manufactured) + '</ul>']
+        unlocked = [value for value in self.catalog.entries.values() if value.get('research') == slug]
+        if unlocked:
+            body += [heading('解锁内容'), '<ul class="entry-index-list">' + ''.join('<li>' + self.entry_link(value['id'],current=slug) + '</li>' for value in unlocked) + '</ul>']
+        if entry.get('ammo'):
+            body += [heading('弹药'), '<p>基础兼容弹种：' + self.entry_link(entry['ammo'],current=slug) + '。步枪还可能使用穿甲弹，具体装填规则见' + '<a href="#/weapons">武器与工具</a>。</p>']
+        mentions = []
+        for page,title,*_ in PAGES:
+            if page in ('maintenance','roadmap') or entry['name'] not in self.sections[title]:
+                continue
+            paragraphs = [value for value in self.sections[title].split('\n\n') if entry['name'] in value and not value.startswith(('|','#','来源：')) and len(value) <= 650 and value.strip()]
+            if paragraphs:
+                quote = paragraphs[0].strip()
+                mentions.append('<p><a href="#/' + page + '">' + esc(title) + '</a> · ' + self.inline(quote,slug) + '</p>')
+            if len(mentions) == 2:
+                break
+        if mentions:
+            body += [heading('相关说明'), *mentions]
+        body += [heading('参见'), '<div class="entry-related"><a href="#/' + entry['parent'] + '">返回主题指南</a><a href="#/entries">全部词条</a></div>', '<details class="sources"><summary>条目数据来源</summary><p><a href="../Assets/DeadCircuit/Scripts/Core/' + entry['source'] + '">' + entry['source'] + '</a> · 按当前游戏目录生成；不等同于现实工艺规范。</p></details>']
+        return '<section class="article-page entity-page" id="entry-' + slug + '" data-page-id="' + slug + '" hidden><header class="article-header"><div class="breadcrumbs"><a href="#/home">百科首页</a><span>/</span><a href="#/entries">词条索引</a><span>/</span>' + esc(entry['category']) + '</div><p class="eyebrow">DEAD CIRCUIT / 词条</p><h1>' + esc(entry['title']) + '</h1></header><div class="article-body">' + ''.join(body) + '</div><footer class="article-footer">规则核对：' + self.date + ' · <a href="#/entries">全部词条</a></footer></section>'
+
+    def entry_index(self) -> str:
+        groups: dict[str,list[dict]] = {}
+        for entry in self.catalog.entries.values():
+            groups.setdefault(entry['category'], []).append(entry)
+        body = []
+        for category, values in groups.items():
+            body.append('<h2 id="entries--' + category + '" data-anchor="' + category + '">' + category + f' <small>{len(values)}</small></h2><ul class="entry-index-list">')
+            body += ['<li>' + self.entry_link(value['id'],illustrated=True) + '</li>' for value in values]
+            body.append('</ul>')
+        return '<section class="article-page entry-index" id="entry-entries" data-page-id="entries" hidden><header class="article-header"><div class="breadcrumbs"><a href="#/home">百科首页</a><span>/</span>词条索引</div><p class="eyebrow">DEAD CIRCUIT / INDEX</p><h1>词条索引</h1><p class="article-summary">按物品、设备、装备、食物、研究与配方分类，点击名称可连续查阅获取方式和用途。</p></header><div class="article-body">' + ''.join(body) + '</div></section>'
 
     def build(self) -> tuple[str, dict]:
         entries, nav, articles = [], [], []
@@ -331,6 +445,12 @@ class WikiRenderer:
             entries.append({"id": slug, "title": title, "category": category, "summary": summary, "searchText": self.sections[title]})
             articles.append(f'<section class="article-page" data-page-id="{slug}" id="entry-{slug}" hidden><header class="article-header"><div class="breadcrumbs"><a href="#/home">百科首页</a><span>/</span>{category}</div><p class="eyebrow">DEAD CIRCUIT / {category}</p><h1>{title}</h1><p class="article-summary">{summary}</p></header>{self.illustration(slug)}<div class="article-body">{self.markdown(self.sections[title],slug)}</div><footer class="article-footer">规则核对：{self.date} · <a href="WIKI.md">查看文字原文</a> · <a href="#/faq">遇到问题？</a></footer></section>')
         nav.append('</div>')
+        nav.append('<div class="nav-group"><p class="nav-group-title">百科索引</p><a class="nav-link" data-page="entries" href="#/entries"><span aria-hidden="true">≡</span><span>全部词条</span></a></div>')
+        entries.append({"id":"entries","title":"词条索引","category":"百科索引","summary":"全部物品、设备、装备、研究和配方。","searchText":""})
+        articles.append(self.entry_index())
+        for entry in self.catalog.entries.values():
+            entries.append({"id":entry['id'], "title":entry['title'], "category":entry['category'], "summary":entry['summary'], "searchText":entry['name'] + ' ' + entry['summary'], "parent":entry['parent']})
+            articles.append(self.entity_article(entry))
         entry_cards = []
         for slug in ("start", "survival", "world", "technology", "weapons", "building"):
             entry = next(value for value in PAGES if value[0] == slug)
@@ -357,7 +477,7 @@ class WikiRenderer:
             template = template.replace(key, value)
         if re.search(r"\{\{[A-Z_]+\}\}", template):
             raise ValueError("Unresolved template slot")
-        metadata = {"sections": len(entries), "research": len(research_names), "sprite_images": len(self.art.encoded), "reused_art_keys": len(self.art.fallbacks), "source_sha256": replacements["{{SOURCE_HASH}}"]}
+        metadata = {"sections": len(PAGES), "entity_entries":len(self.catalog.entries), "items": len(self.items), "buildings": len(self.buildings), "recipes": len(self.catalog.recipes), "modular_recipes": sum(bool(self.catalog.entries[recipe['station']].get('module_costs')) for recipe in self.catalog.recipes), "research": len(self.research_names), "sprite_images": len(self.art.encoded), "reused_art_keys": len(self.art.fallbacks), "source_sha256": replacements["{{SOURCE_HASH}}"]}
         return template, metadata
 
 
@@ -367,6 +487,8 @@ class HtmlCheck(HTMLParser):
         self.ids: set[str] = set()
         self.images = 0
         self.links: list[str] = []
+        self.routes: set[str] = set()
+        self.anchor_open = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str,str]]) -> None:
         values = dict(attrs)
@@ -374,6 +496,8 @@ class HtmlCheck(HTMLParser):
             if values["id"] in self.ids:
                 raise ValueError(f"Duplicate HTML id: {values['id']}")
             self.ids.add(values["id"])
+        if values.get("data-page-id"):
+            self.routes.add(values['data-page-id'])
         if tag == "img":
             self.images += 1
             if not values.get("src", "").startswith("data:image/") or "alt" not in values:
@@ -381,7 +505,14 @@ class HtmlCheck(HTMLParser):
         if tag in ("script", "link") and (values.get("src") or values.get("href")):
             raise ValueError("External runtime dependency in offline HTML")
         if tag == "a":
+            if self.anchor_open:
+                raise ValueError("Nested anchor in encyclopedia")
+            self.anchor_open = True
             self.links.append(values.get("href", ""))
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == 'a':
+            self.anchor_open = False
 
 
 def main() -> int:
@@ -392,7 +523,7 @@ def main() -> int:
     page, metadata = WikiRenderer(source, ArtBank()).build()
     check = HtmlCheck()
     check.feed(page)
-    valid_routes = {"home"} | {entry[0] for entry in PAGES}
+    valid_routes = check.routes
     for link in check.links:
         if link.startswith("#/"):
             if link[2:].split("/")[0] not in valid_routes:

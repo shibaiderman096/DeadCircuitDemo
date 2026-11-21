@@ -330,13 +330,13 @@ namespace DeadCircuit
             }
         }
 
-        private static bool SurvivalWorldCellFree(WorldState world, int x, int y, bool allowBelts = false)
+        private static bool SurvivalWorldCellFree(WorldState world, int x, int y, bool allowWalkableObjects = false)
         {
             if (!WorldTiles.Inside(world, x, y)) return false;
             char ground = WorldTiles.Ground(world, x, y);
             if (ground == '2' || ground == '?') return false;
-            foreach (var node in world.nodes) if (node.x == x && node.y == y) return false;
-            foreach (var building in world.buildings) if ((!allowBelts || building.kind != BuildKind.Belt) && DemoCatalog.Contains(building, x, y)) return false;
+            foreach (var node in world.nodes) if (node.x == x && node.y == y && (!allowWalkableObjects || !DemoCatalog.IsGroundPickup(node.kind))) return false;
+            foreach (var building in world.buildings) if ((!allowWalkableObjects || building.kind != BuildKind.Belt) && DemoCatalog.Contains(building, x, y)) return false;
             return true;
         }
 

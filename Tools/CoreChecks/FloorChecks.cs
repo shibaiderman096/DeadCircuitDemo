@@ -139,14 +139,33 @@ static partial class Checks
             bool HasApproach(NodeState node) => FloorNeighbors((node.x, node.y)).Any(c => cells.Contains(c) && !sim.IsBlocked(c.x, c.y));
             var wall = sim.State.nodes.First(n => n.kind == NodeKind.Wall && cells.Contains((n.x, n.y)) && HasApproach(n));
             var crate = sim.State.nodes.First(n => n.kind == NodeKind.Crate && cells.Contains((n.x, n.y)) && HasApproach(n));
-            foreach (var node in new[] { wall, crate })
+            void Approach(NodeState node)
             {
                 var beside = FloorNeighbors((node.x, node.y)).First(c => cells.Contains(c) && !sim.IsBlocked(c.x, c.y));
-                node.stock = 1;
                 p.x = beside.x; p.y = beside.y; p.interactCooldown = 0;
-                sim.Apply(Command(p, "interact", node.x, node.y));
-                Require(!sim.State.nodes.Contains(node), "E did not deplete floor " + node.kind);
             }
+            var axe = EquipGatheringTool(sim, p, GearKind.StoneAxe);
+            Approach(wall);
+            float wallHp = wall.hp; int wallStock = wall.stock, gathered = sim.State.gathered;
+            var before = Copy(p.items);
+            sim.Apply(Command(p, "interact", wall.x, wall.y));
+            Require(sim.State.nodes.Contains(wall) && sim.IsBlocked(wall.x, wall.y) && wall.hp == wallHp && wall.stock == wallStock &&
+                axe.durability == 100 && p.items.SequenceEqual(before) && sim.State.gathered == gathered, "E harvested or damaged a floor wall");
+
+            Approach(crate);
+            // Leave the final axe hit to the player; this check exercises floor persistence.
+            crate.hp = 11;
+            int crateStock = crate.stock;
+            sim.Apply(Command(p, "interact", crate.x, crate.y));
+            Require(!sim.State.nodes.Contains(crate) && sim.State.gathered == gathered + crateStock && axe.durability == 99,
+                "the final axe hit did not empty the floor crate");
+
+            Approach(wall);
+            // A bomber can destroy natural walls without awarding harvest stock.
+            wall.hp = 10;
+            sim.State.zombies.Add(new ZombieState { id = sim.State.nextId++, variant = 10, x = p.x, y = p.y });
+            sim.Step(WorldSimulator.FixedStep);
+            Require(!sim.State.nodes.Contains(wall), "enemy blast did not destroy the floor wall");
             Require(!sim.IsBlocked(wall.x, wall.y), "destroyed wall still blocks movement");
             FloorInteract(sim, p, FloorStair(upper, '>'));
             var restored = new WorldSimulator(Saved(sim.State)); p = restored.State.players.Single();

@@ -683,6 +683,9 @@ namespace DeadCircuit
                 !world.buildings.Any(b => DemoCatalog.Contains(b, mineX, mineY)), "QA uranium plot is free");
             world.nodes.Add(new NodeState { id = world.nextId++, x = mineX, y = mineY, kind = NodeKind.UraniumOre, stock = 4, hp = 35 });
             player.x = mineX; player.y = mineY + 1;
+            var pickaxe = new GearState { id = world.nextId++, kind = GearKind.StonePickaxe };
+            player.gear.Add(pickaxe);
+            bridge.Send(new PlayerCommand { action = "equip", arg = pickaxe.id });
             int gatheredBefore = world.gathered;
             int uraniumBefore = player.items[(int)ItemKind.UraniumOre];
             for (int attempt = 0; attempt < 4 && world.nuclearUraniumMined < 4; attempt++)

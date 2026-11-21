@@ -251,7 +251,7 @@ namespace DeadCircuit
             else if (active == null && world.buildings.Count >= WorldSimulator.MaxBuildings) reason = "设备数量已达上限";
             else if (!WorldTiles.Inside(world, x, y) || Ground(x, y) < 0 || Ground(x, y) == 2) reason = "模块须放在已知陆地格";
             else if (FloorWorld.IsProtectedCell(world, x, y)) reason = "此格是楼梯 / 出入口保护格";
-            else if (occupied.Contains(WorldTiles.Key(x, y)) || blockedNodes.Contains(WorldTiles.Key(x, y))) reason = "此格已有模块、设备或资源";
+            else if (occupied.Contains(WorldTiles.Key(x, y)) || blockedNodes.Contains(WorldTiles.Key(x, y)) || groundPickupCells.Contains(WorldTiles.Key(x, y))) reason = "此格已有模块、设备或资源，请先清理拾取物";
             else if (world.generatorVersion < WorldGeneration.NaturalOpeningVersion && Mathf.Abs(x - world.width / 2) <= 1 &&
                 Mathf.Abs(y - (world.height / 2 + 3)) <= 1) reason = "救援区须保持畅通";
             if (reason.Length > 0) return false;

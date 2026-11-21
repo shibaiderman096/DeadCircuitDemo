@@ -65,7 +65,8 @@ static partial class Checks
             {
                 var settings = new WorldGenerationSettings { seed = seed, preset = preset, cityDensity = density, chunked = chunked };
                 var world = WorldGeneration.Generate(settings);
-                var natural = world.nodes.Where(n => n.kind != NodeKind.Wall && n.kind != NodeKind.Crate).ToArray();
+                var natural = world.nodes.Where(n => n.kind != NodeKind.Wall && n.kind != NodeKind.Crate &&
+                    !DemoCatalog.IsGroundPickup(n.kind)).ToArray();
                 Require(natural.All(n => WorldTiles.Ground(world, n.x, n.y) is '0' or '1'),
                     $"natural resource on non-natural terrain: seed={seed}, preset={preset}, density={density}, chunked={chunked}");
                 foreach (var n in natural.Where(n => n.x >= 22 && n.x <= 42 && n.y >= 22 && n.y <= 42))
@@ -82,14 +83,23 @@ static partial class Checks
                 const int cx = -2, cy = 2, x = -24, y = 40;
                 InfiniteClearChunk(world, cx, cy);
                 int stoneId = world.nextId++;
-                world.nodes.Add(new NodeState { id = stoneId, kind = NodeKind.Stone, x = x, y = y, stock = 1 });
+                world.nodes.Add(new NodeState { id = stoneId, kind = NodeKind.Stone, x = x, y = y, stock = 4, hp = 35 });
                 var sim = new WorldSimulator(world);
                 sim.State.generatorVersion = generator;
                 var p = sim.AddPlayer("biome-save", "Gatherer"); p.x = x; p.y = y + 1;
                 var stone = sim.State.nodes.Single(n => n.id == stoneId);
-                stone.stock = 1; int before = p.items[(int)ItemKind.Stone];
+                EquipGatheringTool(sim, p, GearKind.StonePickaxe);
+                int before = p.items[(int)ItemKind.Stone], gathered = sim.State.gathered;
+                foreach (int hp in new[] { 23, 11 })
+                {
+                    Ready(p); sim.Apply(Command(p, "interact", x, y));
+                    Require(stone.hp == hp && stone.stock == 4 && p.items[(int)ItemKind.Stone] == before &&
+                        sim.State.gathered == gathered, "partial stone hit depleted stock or paid early");
+                }
+                Ready(p);
                 sim.Apply(Command(p, "interact", x, y));
-                Require(p.items[(int)ItemKind.Stone] == before + 1 && sim.State.nodes.All(n => n.id != stone.id), "stone did not deplete once");
+                Require(p.items[(int)ItemKind.Stone] == before + 4 && sim.State.gathered == gathered + 4 &&
+                    sim.State.nodes.All(n => n.id != stone.id), "stone did not pay its full stock once");
                 var source = Saved(sim.State); string frozen = Dump(source); var restored = new WorldSimulator(source).State;
                 Require(restored.generatorVersion == generator && restored.version == WorldSimulator.SaveVersion, "save changed the distribution or schema");
                 Require(restored.nodes.All(n => n.x != x || n.y != y) && !ChunkStreaming.GenerateChunk(restored, cx, cy), "save replenished a harvested chunk");

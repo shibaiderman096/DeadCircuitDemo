@@ -59,7 +59,9 @@ namespace DeadCircuit
                 generatorVersion = WorldGeneration.CurrentGeneratorVersion, primitiveVersion = 1,
                 chunks = new ChunkWorldState { enabled = true } };
             for (int cy = 0; cy < 4; cy++) for (int cx = 0; cx < 4; cx++)
-                if (!GenerateChunk(world, cx, cy)) throw new InvalidOperationException("Initial terrain generation failed.");
+                // Opening pickups are placed after finding the actual spawn across all sixteen chunks.
+                if (!ChunkTerrain.Generate(world, cx, cy, addGroundPickups: false))
+                    throw new InvalidOperationException("Initial terrain generation failed.");
             // Save metadata still includes the bounded 64 by 64 tile strings.
             var ground = new char[world.width * world.height];
             var biomes = new char[ground.Length];

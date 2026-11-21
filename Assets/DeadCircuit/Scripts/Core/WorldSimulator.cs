@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 19;
+        public const int SaveVersion = 20;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -277,7 +277,7 @@ namespace DeadCircuit
             {
                 if (FloorWorld.IsProtectedCell(State, x, y)) { Notice(p, "无法建造：请保持楼梯及其出入口畅通。"); return; }
                 if (SurvivalOccupiesCell(x, y)) { Notice(p, "无法建造：占地范围内有农田或生物。"); return; }
-                if (BlockedAt(x, y) || BuildingAt(x, y) != null) { Notice(p, "无法建造：占地范围内有障碍、水面或其他设备。"); return; }
+                if (BlockedAt(x, y) || NodeAt(x, y) != null || BuildingAt(x, y) != null) { Notice(p, "无法建造：占地范围内有资源、障碍、水面或其他设备。"); return; }
                 if (NearSpawn(x, y)) { Notice(p, "无法建造：救援区须保持畅通。"); return; }
                 if (kind != BuildKind.Belt && OccupiedByActor(x, y)) { Notice(p, "无法建造：占地范围内有人物。"); return; }
             }

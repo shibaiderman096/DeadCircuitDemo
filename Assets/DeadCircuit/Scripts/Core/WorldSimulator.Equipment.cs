@@ -49,14 +49,13 @@ namespace DeadCircuit
             string requirement=EquipmentCatalog.CraftRequirement(State,p,kind);
             if(requirement.Length>0)
             {
-                Notice(p,kind==GearKind.RadiationSuit ? "制作失败："+requirement :
-                    "制作失败：请靠近工作台，并确认已解锁科技、材料充足且装备栏未满（最多 24 件）。");
+                Notice(p, "制作失败：" + requirement);
                 return;
             }
             GearDefinition d=EquipmentCatalog.Gear(kind);
             int id=AllocateId(); Pay(p.items,d.cost);
             p.gear.Add(new GearState { id=id,kind=kind,loadedAmmo=d.ammo,durability=d.maxDurability });
-            p.interactCooldown=.4f; Notice(p,"已制作："+d.name+"；枪械需装备并装填。");
+            p.interactCooldown=.4f; Notice(p,"已制作："+d.name+(EquipmentCatalog.IsGun(kind) ? "；枪械需装备并装填。" : "。"));
         }
 
         private void CraftPart(PlayerState p,int arg)
@@ -209,13 +208,5 @@ namespace DeadCircuit
             return g!=null && g.kind==GearKind.Wrench && g.durability>0 ? g : null;
         }
 
-        private static int HarvestBonus(GearState g,NodeKind node)
-        {
-            if(g==null || g.durability<=0) return 0;
-            if(node==NodeKind.Tree) return g.kind==GearKind.StoneAxe ? 2 : g.kind==GearKind.SteelAxe ? 5 : 0;
-            if(EquipmentCatalog.UsesPickaxe(node))
-                return g.kind==GearKind.StonePickaxe ? 2 : g.kind==GearKind.SteelPickaxe ? 5 : 0;
-            return g.kind==GearKind.Wrench && (node==NodeKind.Scrap || node==NodeKind.Wall) ? 3 : 0;
-        }
     }
 }

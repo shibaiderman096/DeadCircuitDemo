@@ -65,7 +65,7 @@ namespace DeadCircuit
         {
             char ground=WorldTiles.Ground(State,x,y);
             if (!Inside(x, y) || ground == '2' || ground == '?') return true;
-            NodeState n = nodeGrid[Cell(x, y)]; if (n != null && n.hp > 0f && n.stock > 0) return true;
+            NodeState n = nodeGrid[Cell(x, y)]; if (n != null && n.hp > 0f && n.stock > 0 && !DemoCatalog.IsGroundPickup(n.kind)) return true;
             BuildingState b = buildingGrid[Cell(x, y)]; return b != null && b.hp > 0f && !DemoCatalog.Walkable(b);
         }
         private bool CircleBlocked(float x, float y, float radius)

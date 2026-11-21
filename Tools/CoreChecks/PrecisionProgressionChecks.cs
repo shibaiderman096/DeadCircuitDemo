@@ -20,7 +20,7 @@ static partial class Checks
                 ground[y * state.width + x] = '2';
         ground[24 * state.width + 8] = '2';
         state.ground = new string(ground);
-        state.nodes.Add(new NodeState { id = state.nextId++, kind = NodeKind.Quartz, x = 14, y = 10, stock = 95 });
+        state.nodes.Add(new NodeState { id = state.nextId++, kind = NodeKind.Quartz, x = 14, y = 10, stock = 95, hp = 35 });
         Add(state, BuildKind.Workbench, 10, 10);
         Add(state, BuildKind.Boiler, 8, 22);
         Add(state, BuildKind.SteamPipe, 10, 22);
@@ -51,14 +51,16 @@ static partial class Checks
         var quartz = sim.State.nodes.Single(n => n.kind == NodeKind.Quartz);
         int item = (int)ItemKind.Quartz, stock = quartz.stock, gathered = sim.State.gathered;
         p.x = quartz.x - 1; p.y = quartz.y;
-        for (int n = 0; n < stock && quartz.stock > 0; n++)
+        var pickaxe = EquipGatheringTool(sim, p, GearKind.StonePickaxe);
+        foreach (int hp in new[] { 23, 11 })
         {
-            Advance(sim, .55f); int before = p.items[item];
+            Advance(sim, .55f);
             sim.Apply(Command(p, "interact", quartz.x, quartz.y));
-            Require(p.items[item] > before && p.items[item] + quartz.stock == stock,
-                "quartz interaction did not transfer finite stock: " + p.notice);
+            Require(quartz.hp == hp && quartz.stock == stock && p.items[item] == 0 && sim.State.gathered == gathered,
+                "partial quartz hit damaged stock or awarded material early: " + p.notice);
         }
-        Require(p.items[item] == stock && sim.State.gathered - gathered == stock &&
+        Advance(sim, .55f); sim.Apply(Command(p, "interact", quartz.x, quartz.y));
+        Require(p.items[item] == stock && sim.State.gathered - gathered == stock && pickaxe.durability == 97 &&
             !sim.State.nodes.Any(n => n.id == quartz.id), "quartz did not exhaust at its original stock");
         Advance(sim, .55f); sim.Apply(Command(p, "interact", quartz.x, quartz.y));
         Require(p.items[item] == stock && sim.State.gathered - gathered == stock, "depleted quartz yielded more material");

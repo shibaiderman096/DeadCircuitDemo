@@ -21,16 +21,18 @@ static partial class Checks
         Run("v3 appended ordinals harvest the right new minerals", () =>
         {
             var items=new[] { ItemKind.Wood,ItemKind.Ore,ItemKind.Iron,ItemKind.Scrap,ItemKind.Fuel,ItemKind.Ammo,ItemKind.Food,ItemKind.CopperOre,ItemKind.Copper,ItemKind.Bronze,ItemKind.Steel,ItemKind.Circuit,ItemKind.Polymer,ItemKind.AdvancedCircuit,ItemKind.UraniumOre,ItemKind.NuclearFuel,ItemKind.Coolant,ItemKind.NuclearWaste,ItemKind.CrushedOre,ItemKind.TinOre,ItemKind.Tin };
-            Require(items.Length==21 && DemoCatalog.ItemCount==63 && (int)ItemKind.UraniumConcentrate==62,"item ordinals and current inventory length");
+            Require(items.Length==21 && DemoCatalog.ItemCount==66 && (int)ItemKind.UraniumConcentrate==62,"item ordinals and current inventory length");
             for(int i=0;i<items.Length;i++) Require((int)items[i]==i,$"saved item {items[i]} was renumbered");
             var appended=new[] { BuildKind.Workbench,BuildKind.StoneFurnace,BuildKind.Waterwheel,BuildKind.Shaft,BuildKind.MechanicalCrusher,BuildKind.Boiler,BuildKind.SteamPipe,BuildKind.SteamMiner,BuildKind.SteamFurnace,BuildKind.SteamTurbine,BuildKind.CircuitAssembler,BuildKind.DieselGenerator,BuildKind.ChemicalPlant,BuildKind.MediumPole,BuildKind.Transformer,BuildKind.HighGenerator,BuildKind.HighPole,BuildKind.PrecisionAssembler,BuildKind.NuclearProcessor,BuildKind.Reactor,BuildKind.CoolingTower };
             for(int i=0;i<appended.Length;i++) Require((int)appended[i]==10+i,$"saved building {appended[i]} was renumbered");
             foreach(var (node,item,ordinal) in new[] { (NodeKind.CopperOre,ItemKind.CopperOre,5),(NodeKind.TinOre,ItemKind.TinOre,6),(NodeKind.UraniumOre,ItemKind.UraniumOre,7) })
             {
                 Require((int)node==ordinal,"node ordinal changed");
-                var state=Flat(era:TechEra.Primitive); state.nodes.Add(new NodeState { id=state.nextId++,kind=node,x=10,y=10,stock=9 });
-                var sim=new WorldSimulator(state); var p=sim.AddPlayer("p","P");p.x=8;p.y=10;var before=Copy(p.items);sim.Apply(Command(p,"interact",10,10));
-                Require(sim.State.nodes.Single().stock==6 && p.items[(int)item]==before[(int)item]+3 && sim.State.gathered==3,$"{node} did not yield its own mineral");
+                var state=Flat(era:TechEra.Primitive); state.nodes.Add(new NodeState { id=state.nextId++,kind=node,x=10,y=10,stock=9, hp=12 });
+                var sim=new WorldSimulator(state); var p=sim.AddPlayer("p","P");p.x=8;p.y=10;var before=Copy(p.items);
+                sim.Apply(Command(p, "equip", arg: p.gear.Single(g => g.kind == GearKind.StonePickaxe).id));
+                sim.Apply(Command(p,"interact",10,10));
+                Require(sim.State.nodes.Count==0 && p.items[(int)item]==before[(int)item]+9 && sim.State.gathered==9,$"{node} did not yield its own mineral");
                 for(int i=0;i<items.Length;i++) if(i!=(int)item)Require(p.items[i]==before[i],"mineral harvest changed another item");
             }
         });

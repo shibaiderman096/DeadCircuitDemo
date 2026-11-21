@@ -56,8 +56,8 @@ namespace DeadCircuit
                 tool = kind <= GearKind.Wrench, ammo = ItemKind.Ammo, damage = 19f, range = 1.65f, interval = .62f, pellets = 1 };
             switch (kind)
             {
-                case GearKind.StoneAxe: d.cost = DemoCatalog.Materials(ItemKind.Wood,3,ItemKind.Stone,2); d.damage=23f; break;
-                case GearKind.StonePickaxe: d.cost = DemoCatalog.Materials(ItemKind.Wood,3,ItemKind.Stone,3); d.damage=21f; break;
+                case GearKind.StoneAxe: d.cost = DemoCatalog.Materials(ItemKind.Branch,2,ItemKind.LooseStone,2,ItemKind.DryGrass,1); d.damage=23f; break;
+                case GearKind.StonePickaxe: d.cost = DemoCatalog.Materials(ItemKind.Branch,2,ItemKind.LooseStone,3,ItemKind.DryGrass,1); d.damage=21f; break;
                 case GearKind.SteelAxe: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Wood,2,ItemKind.Scrap,1); d.damage=36f; d.interval=.55f; break;
                 case GearKind.SteelPickaxe: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Wood,2,ItemKind.Scrap,2); d.damage=32f; d.interval=.55f; break;
                 case GearKind.Wrench: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Iron,3,ItemKind.Bronze,2); d.damage=26f; break;
@@ -197,6 +197,28 @@ namespace DeadCircuit
             if(part==PartKind.ErgonomicGrip) return kind!=GearKind.Pistol;
             return true;
         }
+        public static bool IsHandcraftedTool(GearKind kind) => kind == GearKind.StoneAxe || kind == GearKind.StonePickaxe;
+
+        public static string HarvestToolName(NodeKind kind)
+        {
+            if (kind == NodeKind.Tree || kind == NodeKind.Crate) return "斧";
+            if (UsesPickaxe(kind)) return "镐";
+            return kind == NodeKind.Scrap ? "扳手" : "";
+        }
+
+        public static bool CanHarvest(PlayerState player, NodeKind kind) =>
+            DemoCatalog.IsGroundPickup(kind) || HarvestPower(Equipped(player), kind) > 0;
+
+        internal static int HarvestPower(GearState tool, NodeKind kind)
+        {
+            if (tool == null || tool.durability <= 0) return 0;
+            if (kind == NodeKind.Tree || kind == NodeKind.Crate)
+                return tool.kind == GearKind.StoneAxe ? 12 : tool.kind == GearKind.SteelAxe ? 20 : 0;
+            if (UsesPickaxe(kind))
+                return tool.kind == GearKind.StonePickaxe ? 12 : tool.kind == GearKind.SteelPickaxe ? 20 : 0;
+            return kind == NodeKind.Scrap && tool.kind == GearKind.Wrench ? 16 : 0;
+        }
+
         public static bool CanCraft(WorldState world, PlayerState player, GearKind kind) => CraftRequirement(world,player,kind).Length==0;
         // Shared by the authoritative command and UI for every equipment branch.
         // Keep CanCraft's existing signature for callers that only need a boolean.
@@ -210,7 +232,8 @@ namespace DeadCircuit
                 return "需要核工业研究："+NuclearCatalog.Definition((int)NuclearTech.RadiationProtection).name;
             var research=EquipmentResearchCatalog.GearResearch(kind);
             if(research!=null && !EquipmentResearchCatalog.Known(world,research)) return EquipmentResearchCatalog.Missing(research);
-            if(!ValidCrafter(world,player)) return "请靠近工作台，并确认角色已连接、仍存活且工作台之间没有障碍。";
+            if (!ValidCrafter(world, player)) return "请确认角色已连接且仍存活。";
+            if (!IsHandcraftedTool(kind) && !HasWorkbench(world, player)) return "请靠近工作台，并确保中间没有障碍。";
             if(!(player.interactCooldown<=0f)) return "操作尚未结束，请稍候。";
             if(player.gear.Count>=MaxGear) return "装备栏已满（最多 24 件）。";
             if(!CanPay(player.items,d.cost)) return "制作材料不足。";
@@ -225,7 +248,7 @@ namespace DeadCircuit
             if(world.era<definition.era) return "需要科技时代："+TechCatalog.EraName(definition.era);
             var research=EquipmentResearchCatalog.PartResearch(kind);
             if(!EquipmentResearchCatalog.Known(world,research)) return EquipmentResearchCatalog.Missing(research);
-            if(!ValidCrafter(world,player)) return "请靠近工作台，并确认角色已连接、仍存活且工作台之间没有障碍。";
+            if(!ValidCrafter(world,player) || !HasWorkbench(world,player)) return "请靠近工作台，并确认角色已连接、仍存活且工作台之间没有障碍。";
             if(!(player.interactCooldown<=0f)) return "操作尚未结束，请稍候。";
             if(player.parts==null || player.parts.Length!=PartNames.Length) return "配件库存无效。";
             if(player.parts[(int)kind]>=WorldSimulator.InventoryLimit) return "配件库存已满。";
@@ -238,7 +261,7 @@ namespace DeadCircuit
             for(int i=0;i<cost.Length;i++) if(items[i]<cost[i]) return false;
             return true;
         }
-        private static bool ValidCrafter(WorldState world, PlayerState player) => world!=null && player!=null && world.players!=null && world.players.Contains(player) && player.connected && player.hp>0f && player.gear!=null && HasWorkbench(world,player);
+        private static bool ValidCrafter(WorldState world, PlayerState player) => world!=null && player!=null && world.players!=null && world.players.Contains(player) && player.connected && player.hp>0f && player.gear!=null;
 
         public static bool HasWorkbench(WorldState world, PlayerState player)
         {
@@ -255,7 +278,7 @@ namespace DeadCircuit
                     if(DemoCatalog.Contains(bench,x,y)) continue;
                     char ground=WorldTiles.Ground(world,x,y);
                     if(!WorldTiles.Inside(world,x,y) || ground=='2' || ground=='?') { blocked=true; break; }
-                    foreach(var node in world.nodes) if(node!=null && node.hp>0f && node.stock>0 && node.x==x && node.y==y) { blocked=true; break; }
+                    foreach(var node in world.nodes) if(node!=null && node.hp>0f && node.stock>0 && !DemoCatalog.IsGroundPickup(node.kind) && node.x==x && node.y==y) { blocked=true; break; }
                     if(!blocked) foreach(var b in world.buildings) if(b!=null && b!=bench && b.hp>0f && b.kind!=BuildKind.Belt && DemoCatalog.Contains(b,x,y)) { blocked=true; break; }
                 }
                 if(!blocked) return true;

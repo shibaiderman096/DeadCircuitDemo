@@ -48,7 +48,7 @@ namespace DeadCircuit
                 int maxX=b.x+DemoCatalog.Width(b)-1,maxY=b.y+DemoCatalog.Height(b)-1;
                 if((long)Math.Max(maxX,cmd.x)-Math.Min(b.x,cmd.x)>=ModularMachineCatalog.MaxSpan ||
                     (long)Math.Max(maxY,cmd.y)-Math.Min(b.y,cmd.y)>=ModularMachineCatalog.MaxSpan) { Notice(p,"模块跨度不能超过12×12。"); return; }
-                if(BlockedAt(cmd.x,cmd.y) || BuildingAt(cmd.x,cmd.y)!=null || FloorWorld.IsProtectedCell(State,cmd.x,cmd.y) ||
+                if(BlockedAt(cmd.x,cmd.y) || NodeAt(cmd.x,cmd.y)!=null || BuildingAt(cmd.x,cmd.y)!=null || FloorWorld.IsProtectedCell(State,cmd.x,cmd.y) ||
                     SurvivalOccupiesCell(cmd.x,cmd.y) || NearSpawn(cmd.x,cmd.y) || OccupiedByActor(cmd.x,cmd.y))
                 { Notice(p,"此格有障碍、人物或楼梯，不能规划模块。"); return; }
                 b.modularModules.Add(new MachineModuleState {role=role,x=cmd.x,y=cmd.y,rotation=cmd.rotation});

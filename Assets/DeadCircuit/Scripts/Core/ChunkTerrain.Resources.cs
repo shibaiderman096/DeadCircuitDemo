@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace DeadCircuit
 {
@@ -77,5 +78,45 @@ namespace DeadCircuit
 
         internal static double QuartzAccessPriority(int seed, int x, int y, BiomeKind biome) =>
             Unit(seed, x, y, 0x0142u) / BiomeResourceCatalog.Get(biome).quartzPermille;
+
+        internal static uint GroundPickupRank(int seed, int x, int y) => Hash(seed, x, y, 0x01a0u);
+
+        private static void AddGroundPickups(Region r, int resourceCount)
+        {
+            int slots = Math.Min(MaxResourcesPerChunk - resourceCount, MaxNodesPerChunk - r.nodes.Count);
+            if (slots <= 0) return;
+            var oilSpace = new bool[r.ground.Length];
+            foreach (var node in r.nodes)
+                if (node.kind == NodeKind.Oil) ReserveOilPumpSpace(oilSpace, Size, node.x - r.x, node.y - r.y);
+            var paths = Paths(r.ground, r.blocked);
+            var candidates = new List<int>();
+            for (int y = 2; y < Size - 2; y++) for (int x = 2; x < Size - 2; x++)
+            {
+                int cell = x + y * Size;
+                if (paths[cell] < 0 || r.occupied[cell] || r.reserved[cell] || oilSpace[cell] ||
+                    (r.ground[cell] != '0' && r.ground[cell] != '1')) continue;
+                candidates.Add(cell);
+            }
+            SortCells(candidates, r, 0x01a0u);
+            NodeKind[] kinds = { NodeKind.Branch, NodeKind.LooseStone, NodeKind.DryGrass };
+            // Rotate the order so even a chunk with only one or two open slots can provide any material.
+            int offset = (int)(Hash(r.world.seed, r.x, r.y, 0x01a1u) % (uint)kinds.Length);
+            int count = Math.Min(Math.Min(slots, candidates.Count), kinds.Length);
+            for (int i = 0; i < count; i++)
+            {
+                int cell = candidates[i];
+                int x = r.x + cell % Size, y = r.y + cell / Size;
+                int stock = 1 + (int)(Hash(r.world.seed, x, y, 0x01a2u) % 3);
+                AddNode(r, cell, kinds[(offset + i) % kinds.Length], stock);
+            }
+        }
+
+        // Every possible adjacent pump footprint, including corner adjacency.
+        internal static void ReserveOilPumpSpace(bool[] reserved, int size, int oilX, int oilY)
+        {
+            int w = DemoCatalog.Width(BuildKind.OilPump), h = DemoCatalog.Height(BuildKind.OilPump);
+            for (int y = Math.Max(0, oilY - h); y <= Math.Min(size - 1, oilY + h); y++)
+                for (int x = Math.Max(0, oilX - w); x <= Math.Min(size - 1, oilX + w); x++) reserved[x + y * size] = true;
+        }
     }
 }

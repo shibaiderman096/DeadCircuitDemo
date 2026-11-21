@@ -39,24 +39,8 @@ namespace DeadCircuit
             if (b == null)
             {
                 NodeState n = NodeAt(x, y);
-                if (n == null) { Notice(p, "靠近树、矿、废料堆或补给箱，瞄准后按 E。"); return; }
-                if (n.kind == NodeKind.Oil) { Notice(p, "原油需要紧邻油源的通电抽油机采集。"); return; }
-                int item = n.kind == NodeKind.Crate ? SiteCrateItem(n) : NodeItem(n.kind);
-                GearState tool=EquipmentCatalog.Equipped(p);
-                int bonus=HarvestBonus(tool,n.kind);
-                int amount = Math.Min(n.stock, Math.Min(InventoryLimit - p.items[item], 3 + p.attributes[0] / 3 + (p.skills[2] >= 1 ? p.skills[2] : 0) + bonus));
-                if (amount <= 0) { Notice(p, "背包已满。"); return; }
-                n.stock -= amount; p.items[item] += amount;
-                if (n.kind == NodeKind.UraniumOre)
-                    State.nuclearUraniumMined = SaturatingAdd(State.nuclearUraniumMined, amount);
-                if(tool!=null && EquipmentCatalog.Gear(tool.kind).tool && tool.durability>0) tool.durability--;
-                State.gathered = SaturatingAdd(State.gathered, amount);
-                GainXp(p, amount * 2);
-                p.interactCooldown = 0.4f * (1f - p.attributes[0] * 0.025f);
-                if(bonus>0) p.interactCooldown*=bonus>=5 ? .5f : .75f;
-                string forage = "";
-                if (n.stock == 0) { forage = AwardForageLoot(p, n); RemoveNode(n); }
-                Notice(p, "采集 " + DemoCatalog.ItemNames[item] + " +" + amount + forage);
+                if (n == null) { Notice(p, "瞄准地面拾取物或资源，靠近后按 E。"); return; }
+                HarvestNode(p, n);
                 return;
             }
             if(ModularMachineCatalog.IsModular(b.kind)) { InteractModular(p,b,x,y); return; }
@@ -561,6 +545,50 @@ namespace DeadCircuit
                 if(c.item==item && (c.toId==b.id || (c.fromId==b.id && ReservesProductionCargoReturn(b,item)))) incoming++;
             return b.items[item]+incoming<=NuclearCatalog.ItemCapacity(State,b.kind,item)-count;
         }
+        private static string HarvestRequirement(PlayerState player, NodeKind kind)
+        {
+            if (kind == NodeKind.Wall) return "墙体无法采集。";
+            if (kind == NodeKind.Oil) return "原油需要紧邻油源的通电抽油机采集。";
+            return EquipmentCatalog.CanHarvest(player, kind) ? "" :
+                "需要手持有耐久的" + EquipmentCatalog.HarvestToolName(kind) + "。";
+        }
+
+        private void HarvestNode(PlayerState player, NodeState node)
+        {
+            string requirement = HarvestRequirement(player, node.kind);
+            if (requirement.Length != 0) { Notice(player, requirement); return; }
+
+            bool pickup = DemoCatalog.IsGroundPickup(node.kind);
+            GearState tool = EquipmentCatalog.Equipped(player);
+            int power = EquipmentCatalog.HarvestPower(tool, node.kind);
+            int damage = power + player.attributes[0] / 3 + player.skills[2];
+            int item = node.kind == NodeKind.Crate ? SiteCrateItem(node) : NodeItem(node.kind);
+            bool completes = pickup || node.hp <= damage;
+            if (completes && player.items[item] > InventoryLimit - node.stock)
+            { Notice(player, "背包空间不足，需要容纳" + DemoCatalog.ItemNames[item] + " ×" + node.stock + "。"); return; }
+
+            if (!pickup) tool.durability--;
+            player.interactCooldown = pickup ? .25f : (power >= 20 ? .2f : .3f) * (1f - player.attributes[0] * .025f);
+            if (!completes)
+            {
+                node.hp -= damage;
+                Notice(player, "采集进度 " + (int)Math.Max(0f, 100f * (1f - node.hp / 35f)) + "%");
+                return;
+            }
+
+            int amount = node.stock;
+            player.items[item] += amount;
+            if (node.kind == NodeKind.UraniumOre)
+                State.nuclearUraniumMined = SaturatingAdd(State.nuclearUraniumMined, amount);
+            State.gathered = SaturatingAdd(State.gathered, amount);
+            GainXp(player, amount * 2);
+            node.hp = 0f;
+            node.stock = 0;
+            string forage = pickup ? "" : AwardForageLoot(player, node);
+            RemoveNode(node);
+            Notice(player, (pickup ? "拾取 " : "采集 ") + DemoCatalog.ItemNames[item] + " +" + amount + forage);
+        }
+
         private static int NodeItem(NodeKind kind)
         {
             switch(kind)
@@ -578,6 +606,9 @@ namespace DeadCircuit
                 case NodeKind.Oil: return (int)ItemKind.CrudeOil;
                 case NodeKind.Quartz: return (int)ItemKind.Quartz;
                 case NodeKind.Crate: return (int)ItemKind.Food;
+                case NodeKind.Branch: return (int)ItemKind.Branch;
+                case NodeKind.LooseStone: return (int)ItemKind.LooseStone;
+                case NodeKind.DryGrass: return (int)ItemKind.DryGrass;
                 default: return (int)ItemKind.Scrap;
             }
         }

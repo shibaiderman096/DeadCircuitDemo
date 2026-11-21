@@ -141,6 +141,7 @@ namespace DeadCircuit
         readonly List<Particle> particles = new List<Particle>();
         readonly HashSet<long> occupied = new HashSet<long>();
         readonly HashSet<long> blockedNodes = new HashSet<long>();
+        readonly HashSet<long> groundPickupCells = new HashSet<long>();
         readonly HashSet<long> solidBuildings = new HashSet<long>();
         readonly Vector3[] circleVertices = new Vector3[96];
         readonly Vector3[] footprintVertices = new Vector3[5];
@@ -564,13 +565,22 @@ namespace DeadCircuit
         void DrawNodes(WorldState world, PlayerState local)
         {
             blockedNodes.Clear();
+            groundPickupCells.Clear();
             if (world.nodes == null) return;
             foreach (var state in world.nodes)
             {
                 if (state.hp <= 0 || state.stock <= 0) continue;
-                blockedNodes.Add(WorldTiles.Key(state.x, state.y));
+                bool pickup = DemoCatalog.IsGroundPickup(state.kind);
+                long cell = WorldTiles.Key(state.x, state.y);
+                if (pickup) groundPickupCells.Add(cell);
+                else blockedNodes.Add(cell);
                 if (!Visible(state.x,state.y) || NaturalInteriorHidden(state.x, state.y)) continue;
-                var v = Get(nodes,state.id,new Vector2(state.x,state.y),state.hp,state.kind==NodeKind.Wall ? 160f : 35f);
+                var v = Get(nodes, state.id, new Vector2(state.x, state.y), state.hp, pickup ? 1f : state.kind == NodeKind.Wall ? 160f : 35f);
+                if (pickup)
+                {
+                    DrawGroundPickup(v, state.kind, state.id);
+                    continue;
+                }
                 string art;
                 switch (state.kind)
                 {
@@ -623,6 +633,23 @@ namespace DeadCircuit
                 if (state.kind == NodeKind.Wall) ConfigureWall(v, world, state.x, state.y);
                 Health(v,state.hp,Time.unscaledTime-v.damageAt < 2f,new Vector2(0,.95f));
             }
+        }
+
+        void DrawGroundPickup(Visual visual, NodeKind kind, int id)
+        {
+            (string sprite, Vector3 scale, Color tint, float angle) = kind switch
+            {
+                NodeKind.Branch => ("deco_6", new Vector3(.63f, .52f, 1), new Color(1f, .92f, .82f), 66f),
+                NodeKind.LooseStone => ("node_1", new Vector3(.42f, .33f, 1), new Color(.84f, .92f, 1f), 0f),
+                _ => ("crop_3_1", new Vector3(.59f, .48f, 1), new Color(1f, .96f, .76f), -28f)
+            };
+            visual.body.sprite = Art(sprite);
+            visual.body.transform.localScale = scale;
+            visual.body.transform.localPosition = new Vector3(0, .07f, 0);
+            visual.body.transform.localRotation = Quaternion.Euler(0, 0, angle + (id % 5 - 2) * 4f);
+            visual.body.color = tint;
+            visual.shadow.transform.localScale = new Vector3(.46f, .55f, 1);
+            visual.bar.enabled = visual.barBack.enabled = false;
         }
 
         void DrawBuildings(WorldState world)
@@ -955,7 +982,7 @@ namespace DeadCircuit
             foreach (var v in cargoVisuals.Values) { v.sprite.enabled=false; cargoPool.Push(v); }
             cargoVisuals.Clear(); liveCargoIds.Clear();
             buildingStates.Clear(); networks.Clear(); powerNodes.Clear();
-            occupied.Clear(); solidBuildings.Clear(); blockedNodes.Clear();
+            occupied.Clear(); solidBuildings.Clear(); blockedNodes.Clear(); groundPickupCells.Clear();
             powerLinks.Clear(); powerTopology=0; focusedNetwork=0;
             observedWorld=null; observedTick=-1; observedElapsed=-1; observedAt=0; visualTime=0;
             ghost.enabled=ghostArrow.enabled=footprint.enabled=ghostRange.enabled=ghostLinkRange.enabled=hoverFootprint.enabled=hoverRing.enabled=false;
@@ -1347,7 +1374,7 @@ namespace DeadCircuit
                 if (!WorldTiles.Inside(world, x, y) || ground < 0 || ground == 2) return false;
                 if (FloorWorld.IsProtectedCell(world, x, y)) return false;
                 long cell = WorldTiles.Key(x, y);
-                if (occupied.Contains(cell) || blockedNodes.Contains(cell)) return false;
+                if (occupied.Contains(cell) || blockedNodes.Contains(cell) || groundPickupCells.Contains(cell)) return false;
                 if (world.survival!=null && world.survival.enabled)
                 {
                     foreach (var plot in world.survival.plots) if (plot.x==x && plot.y==y) return false;

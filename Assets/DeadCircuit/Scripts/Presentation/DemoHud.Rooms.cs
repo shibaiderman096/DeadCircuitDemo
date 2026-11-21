@@ -36,24 +36,24 @@ namespace DeadCircuit
             return resources?.hint ?? "";
         }
 
-        static string ResourceToolText(NodeKind kind)
+        static string ResourceToolText(PlayerState player, NodeKind kind)
         {
             if (kind == NodeKind.Oil) return "抽油机 · 紧邻油源并供电";
             if (kind == NodeKind.Wall) return "障碍墙 · 无法采集";
-            if (EquipmentCatalog.UsesPickaxe(kind)) return "镐 · 提高采集效率";
-            switch (kind)
-            {
-                case NodeKind.Tree: return "斧 · 提高采集效率";
-                case NodeKind.Scrap: return "扳手 · 提高采集效率";
-                default: return "手工即可";
-            }
+            if (DemoCatalog.IsGroundPickup(kind)) return "可空手拾取";
+            string tool = EquipmentCatalog.HarvestToolName(kind);
+            if (tool.Length == 0) return "无法手动采集";
+            return EquipmentCatalog.CanHarvest(player, kind) ? "已装备匹配工具（" + tool + "）" : "需装备可用的" + tool;
         }
+
+        static string ResourceDurabilityText(NodeState node) => Mathf.Clamp(Mathf.CeilToInt(node.hp / 35f * 100f), 0, 100) + "%";
 
         static string ResourceCollectionHint(WorldState world, PlayerState player, NodeState node)
         {
             if (node.kind == NodeKind.Oil) return "紧邻油源建造抽油机并供电，自动抽取原油。油藏有限，耗尽后需另寻油源。";
             if (node.kind == NodeKind.Wall) return "障碍墙无法采集，请绕行。";
-            string hint = "左键/E 走近采尽；按住 Space 就近工作，不跟随鼠标。松开 Space 即停；WASD 打断。空手可采集。";
+            if (DemoCatalog.IsGroundPickup(node.kind)) return "左键/E 走近拾取，或按住 Space 就近拾取。背包需容纳全部数量。";
+            string hint = "装备匹配工具后，左键/E 走近采尽，或按住 Space 就近采集。节点耐久归零时一次结算，背包需容纳全部产出。WASD 可打断。";
             switch (node.kind)
             {
                 case NodeKind.Coal: hint += "\n煤层多见于针叶林与冻原，可前往野外勘探。"; break;

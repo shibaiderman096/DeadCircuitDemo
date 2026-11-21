@@ -96,12 +96,20 @@ static partial class Checks
                     profile=='M' || profile=='K' ? (int)ItemKind.Polymer : (int)ItemKind.Food;
                 var inventory = (int[])player.items.Clone();
                 sim.Apply(Command(player,"interact",node.x,node.y));
-                Require(node.stock==1 && player.items[item]==inventory[item]+3 && player.needs.foods.Sum()==0 && player.needs.seeds.Sum()==0,"partial typed crate reward");
+                Require(node.hp==23 && node.stock==4 && player.items.SequenceEqual(inventory) && player.needs.foods.Sum()==0 &&
+                    player.needs.seeds.Sum()==0 && player.needs.waterClean==0,"first axe hit changed typed crate stock or paid early");
                 var restored = new WorldSimulator(Saved(sim.State)); var actor=restored.State.players.Single();
+                var restoredCrate = restored.State.nodes.Single(n=>n.id==node.id);
+                Require(restoredCrate.hp==23 && restoredCrate.stock==4,"save lost the typed crate's partial damage or stock");
                 // Refresh cooldown without advancing the streaming frontier or survival clock.
                 actor.interactCooldown=0;
                 restored.Apply(Command(actor,"interact",node.x,node.y));
-                Require(!restored.State.nodes.Any(n=>n.id==node.id) && actor.items[item]==inventory[item]+4,"typed inventory/depletion changed on restore");
+                Require(restoredCrate.hp==11 && restoredCrate.stock==4 && actor.items.SequenceEqual(inventory) && actor.needs.foods.Sum()==0 &&
+                    actor.needs.seeds.Sum()==0 && actor.needs.waterClean==0,"second axe hit changed typed crate stock or paid early after restore");
+                actor.interactCooldown=0;
+                restored.Apply(Command(actor,"interact",node.x,node.y));
+                inventory[item]+=4;
+                Require(!restored.State.nodes.Any(n=>n.id==node.id) && actor.items.SequenceEqual(inventory),"typed inventory/depletion changed on restore");
                 if(profile=='F') Require(actor.needs.foods[(int)FoodKind.Bread]>=2,"food crate lacks food");
                 if(profile=='M') Require(actor.needs.foods[(int)FoodKind.Herb]>=3 && actor.needs.waterClean==2,"medical crate lacks herb/water");
                 if(profile=='S') Require(actor.needs.seeds.Sum()>=5,"seed crate lacks seeds");
@@ -164,8 +172,9 @@ static partial class Checks
         Require(!ChunkStreaming.IsGenerated(world,found.cx*16,found.cy*16),"fixture falls in the initial chunks");
         ChunkTerrain.Generate(world,found.cx,found.cy);
         var sim=new WorldSimulator(world); player=sim.AddPlayer("landmark-looter","探索者");
-        node=sim.State.nodes.First(n=>n.kind==NodeKind.Crate && SiteBlueprintCatalog.CrateAt(sim.State,n.x,n.y)==profile);node.stock=4;
-        player.activeSlot=2;Array.Fill(player.items,0);Array.Fill(player.needs.foods,0);Array.Fill(player.needs.seeds,0);player.needs.waterClean=0;
+        node=sim.State.nodes.First(n=>n.kind==NodeKind.Crate && SiteBlueprintCatalog.CrateAt(sim.State,n.x,n.y)==profile);node.stock=4;node.hp=35;
+        EquipGatheringTool(sim,player,GearKind.StoneAxe);
+        Array.Fill(player.items,0);Array.Fill(player.needs.foods,0);Array.Fill(player.needs.seeds,0);player.needs.waterClean=0;
         var blocked=sim.State.nodes.Select(n=>WorldTiles.Key(n.x,n.y)).ToHashSet();
         foreach(var b in sim.State.buildings) blocked.Add(WorldTiles.Key(b.x,b.y));
         foreach(var (dx,dy) in new[]{(-1,0),(1,0),(0,-1),(0,1)})

@@ -144,8 +144,9 @@ namespace DeadCircuit
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 10;
+        public const int CurrentGeneratorVersion = 11;
         internal const int NaturalOpeningVersion = 10;
+        internal const int GroundPickupVersion = 11;
         public const int BiomeCount = 10;
         public const int AllBiomeMask = (1 << BiomeCount) - 1;
         public const int LegacySiteCount = 12;
@@ -189,15 +190,93 @@ namespace DeadCircuit
                 state.zombies.Add(new ZombieState { id = state.nextId++, x = x, y = y,
                     variant = variant, hp = variant == 1 ? 32f : 45f });
             }
-            state.announcement = "原始时代：探索、采集木材和石材，建造工作台与石炉，开启生产。科技全队共享。";
+            state.announcement = "先捡树枝、石头和干草，按 T 打开原始工艺，制作并装备石斧和石镐。";
             state.announcementUntil = 28f;
             WorldSimulator.PrepareGeneratedWorld(state);
-            if (state.generatorVersion >= NaturalOpeningVersion) EnsureOpeningQuartz(state, occupied);
+            if (state.generatorVersion >= NaturalOpeningVersion &&
+                WorldSimulator.TryFindOpeningSpawn(state, out int spawnX, out int spawnY))
+            {
+                EnsureOpeningQuartz(state, occupied, spawnX, spawnY);
+                if (state.generatorVersion >= GroundPickupVersion)
+                    AddOpeningGroundPickups(state, occupied, spawnX, spawnY);
+            }
         }
 
-        private static void EnsureOpeningQuartz(WorldState state, HashSet<int> occupied)
+        private static void AddOpeningGroundPickups(WorldState state, HashSet<int> occupied, int spawnX, int spawnY)
         {
-            if (!WorldSimulator.TryFindOpeningSpawn(state, out int spawnX, out int spawnY)) return;
+            bool chunked = ChunkStreaming.Enabled(state);
+            int margin = chunked ? 2 : 3;
+            const int chunkSize = ChunkStreaming.ChunkSize, chunksAcross = Size / chunkSize;
+            var nodes = new int[chunksAcross * chunksAcross];
+            var resources = new int[nodes.Length];
+            var blocked = new bool[Size * Size];
+            var oilSpace = new bool[blocked.Length];
+            var lots = new bool[blocked.Length];
+            int ChunkIndex(int x, int y) => x / chunkSize + y / chunkSize * chunksAcross;
+
+            foreach (var node in state.nodes)
+            {
+                blocked[node.x + node.y * Size] = !DemoCatalog.IsGroundPickup(node.kind);
+                if (node.kind == NodeKind.Oil) ChunkTerrain.ReserveOilPumpSpace(oilSpace, Size, node.x, node.y);
+                int chunk = ChunkIndex(node.x, node.y);
+                nodes[chunk]++;
+                if (node.kind != NodeKind.Wall && node.kind != NodeKind.Crate) resources[chunk]++;
+            }
+            // Opening materials can be gathered without having to enter a ruin.
+            foreach (var b in state.buildings)
+                if (!DemoCatalog.Walkable(b))
+                    for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
+                        for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) blocked[x + y * Size] = true;
+            foreach (var site in state.sites)
+                for (int y = site.y - 1; y <= site.y + site.height; y++)
+                    for (int x = site.x - 1; x <= site.x + site.width; x++) lots[x + y * Size] = true;
+
+            int spawn = spawnX + spawnY * Size;
+            var distance = new int[blocked.Length];
+            var ground = state.ground.ToCharArray();
+            ResourcePaths(ground, blocked, spawn, distance);
+            var candidates = new List<(int cell, int tier, int distance, uint rank)>();
+            for (int y = 0; y < Size; y++) for (int x = 0; x < Size; x++)
+            {
+                int cell = x + y * Size;
+                if (distance[cell] <= 0 || (ground[cell] != '0' && ground[cell] != '1' && ground[cell] != '3') ||
+                    occupied.Contains(cell) || lots[cell] || oilSpace[cell] || FloorWorld.IsProtectedCell(state, x, y)) continue;
+                bool edge = x < margin || y < margin || x >= Size - margin || y >= Size - margin ||
+                    chunked && (x % chunkSize < 2 || x % chunkSize >= chunkSize - 2 ||
+                        y % chunkSize < 2 || y % chunkSize >= chunkSize - 2);
+                // A water-heavy opening can reach roads or the dry rim before any natural interior.
+                // These fallback cells remain walkable, and the site halo keeps entrances clear.
+                int tier = ground[cell] == '3' ? 2 : edge ? 1 : 0;
+                candidates.Add((cell, tier, distance[cell], ChunkTerrain.GroundPickupRank(state.seed, x, y)));
+            }
+            candidates.Sort((a, b) =>
+            {
+                int order = a.tier.CompareTo(b.tier);
+                if (order == 0) order = a.distance.CompareTo(b.distance);
+                if (order == 0) order = a.rank.CompareTo(b.rank);
+                return order != 0 ? order : a.cell.CompareTo(b.cell);
+            });
+
+            // The first five piles cover both recipes. The sixth provides extra grass.
+            var supplies = new[] { (NodeKind.Branch, 3), (NodeKind.LooseStone, 3), (NodeKind.DryGrass, 2),
+                (NodeKind.Branch, 3), (NodeKind.LooseStone, 3), (NodeKind.DryGrass, 2) };
+            int added = 0;
+            foreach (var candidate in candidates)
+            {
+                if (added == supplies.Length || state.nodes.Count >= WorldSimulator.MaxNodes) break;
+                int x = candidate.cell % Size, y = candidate.cell / Size;
+                int chunk = ChunkIndex(x, y);
+                if (chunked && (nodes[chunk] >= ChunkTerrain.MaxNodesPerChunk ||
+                    resources[chunk] >= ChunkTerrain.MaxResourcesPerChunk)) continue;
+                var (kind, stock) = supplies[added++];
+                AddNode(state, occupied, x, y, kind, stock);
+                nodes[chunk]++;
+                resources[chunk]++;
+            }
+        }
+
+        private static void EnsureOpeningQuartz(WorldState state, HashSet<int> occupied, int spawnX, int spawnY)
+        {
             var ground = state.ground.ToCharArray();
             var blocked = new bool[ground.Length];
             var oilSpace = new bool[ground.Length];
@@ -215,11 +294,7 @@ namespace DeadCircuit
                     nodes[chunk]++;
                     if (node.kind != NodeKind.Wall && node.kind != NodeKind.Crate) resources[chunk]++;
                 }
-                if (node.kind != NodeKind.Oil) continue;
-                // Protect every possible adjacent pump footprint of a naturally generated oil node.
-                int w = DemoCatalog.Width(BuildKind.OilPump), h = DemoCatalog.Height(BuildKind.OilPump);
-                for (int y = Math.Max(0, node.y - h); y <= Math.Min(Size - 1, node.y + h); y++)
-                    for (int x = Math.Max(0, node.x - w); x <= Math.Min(Size - 1, node.x + w); x++) oilSpace[x + y * Size] = true;
+                if (node.kind == NodeKind.Oil) ChunkTerrain.ReserveOilPumpSpace(oilSpace, Size, node.x, node.y);
             }
             foreach (var b in state.buildings)
                 if (b.kind != BuildKind.Door)
@@ -367,7 +442,8 @@ namespace DeadCircuit
         private static void AddNode(WorldState state, HashSet<int> occupied, int x, int y, NodeKind kind, int stock)
         {
             if (!occupied.Add(x + y * Size)) throw new InvalidOperationException("World generation attempted an occupied cell.");
-            state.nodes.Add(new NodeState { id = state.nextId++, x = x, y = y, kind = kind, stock = stock, hp = kind == NodeKind.Wall ? 160f : 35f });
+            state.nodes.Add(new NodeState { id = state.nextId++, x = x, y = y, kind = kind, stock = stock,
+                hp = DemoCatalog.IsGroundPickup(kind) ? 1f : kind == NodeKind.Wall ? 160f : 35f });
         }
 
         private static void AddSiteDoor(WorldState state, HashSet<int> occupied, int x, int y)
@@ -496,7 +572,7 @@ namespace DeadCircuit
             }
         }
 
-        private static int[] ResourcePaths(char[] ground, bool[] blocked, int origin = -1)
+        private static int[] ResourcePaths(char[] ground, bool[] blocked, int origin = -1, int[] distance = null)
         {
             var parents = new int[ground.Length]; var queue = new int[ground.Length];
             for (int i = 0; i < parents.Length; i++) parents[i] = -2;
@@ -519,6 +595,7 @@ namespace DeadCircuit
                     int next = nx + ny * Size;
                     if (parents[next] != -2 || blocked[next] || ground[next] == '2') continue;
                     parents[next] = cell; queue[tail++] = next;
+                    if (distance != null) distance[next] = distance[cell] + 1;
                 }
             }
             return parents;

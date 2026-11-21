@@ -280,7 +280,8 @@ namespace DeadCircuit
                     for (int oy = -1; oy <= 1 && !attacked; oy++) for (int ox = -1; ox <= 1; ox++)
                     {
                         int bx = cx + ox, by = cy + oy;
-                        if (Inside(bx, by) && (NodeAt(bx, by) != null || BuildingAt(bx, by) != null) && DistSq(z.x, z.y, bx, by) < 1.7f)
+                        NodeState node = NodeAt(bx, by);
+                        if (Inside(bx, by) && (node != null && !DemoCatalog.IsGroundPickup(node.kind) || BuildingAt(bx, by) != null) && DistSq(z.x, z.y, bx, by) < 1.7f)
                         { ZombieBreak(z, bx, by); attacked = true; break; }
                     }
                 }

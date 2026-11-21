@@ -89,11 +89,11 @@ static partial class Checks
 
     static void EquipmentChecks()
     {
-        Run("equipment creates v4 worlds with 25 persistent material slots", () =>
+        Run("equipment current worlds save new primitive material slots", () =>
         {
             var sim = New(out var p);
-            Require(sim.State.version == WorldSimulator.SaveVersion, "new world must use save version 4");
-            Require(DemoCatalog.ItemCount == 63 && p.items.Length == DemoCatalog.ItemCount && sim.State.produced.Length == DemoCatalog.ItemCount, "equipment inventory does not include uranium concentrate");
+            Require(sim.State.version == WorldSimulator.SaveVersion, "new world must use the current save version");
+            Require(DemoCatalog.ItemCount == 66 && p.items.Length == DemoCatalog.ItemCount && sim.State.produced.Length == DemoCatalog.ItemCount, "equipment inventory does not include ground pickups");
         });
         Run("equipment preserves old ammo and appends four caliber ordinals", () =>
         {
@@ -196,8 +196,8 @@ static partial class Checks
                     if (reason == "disconnected") player.connected = false;
                 });
                 string before = EquipmentEconomy(p); int nextId = sim.State.nextId;
-                Require(!EquipmentCatalog.CanCraft(sim.State, p, GearKind.StoneAxe) && !EquipmentCatalog.CanCraftPart(sim.State, p, PartKind.RedDot), "invalid workbench state is craftable");
-                sim.Apply(Command(p, "gearcraft", arg: 0)); sim.Apply(Command(p, "partcraft", arg: 0));
+                Require(!EquipmentCatalog.CanCraft(sim.State, p, GearKind.Knife) && !EquipmentCatalog.CanCraftPart(sim.State, p, PartKind.RedDot), "invalid workbench state is craftable");
+                sim.Apply(Command(p, "gearcraft", arg: (int)GearKind.Knife)); sim.Apply(Command(p, "partcraft", arg: 0));
                 Require(EquipmentEconomy(p) == before && sim.State.nextId == nextId, "denied workbench command spent or allocated gear");
             });
         Run("equipment malformed craft indices and full gear inventory cannot mint gear", () =>
@@ -345,23 +345,26 @@ static partial class Checks
         });
         foreach (var (kind, node, item, expected) in new[]
         {
-            (GearKind.StoneAxe,NodeKind.Tree,ItemKind.Wood,5), (GearKind.SteelAxe,NodeKind.Tree,ItemKind.Wood,8),
-            (GearKind.StonePickaxe,NodeKind.Ore,ItemKind.Ore,5), (GearKind.SteelPickaxe,NodeKind.Ore,ItemKind.Ore,8),
-            (GearKind.StonePickaxe,NodeKind.CopperOre,ItemKind.CopperOre,5), (GearKind.SteelPickaxe,NodeKind.TinOre,ItemKind.TinOre,8),
-            (GearKind.SteelPickaxe,NodeKind.UraniumOre,ItemKind.UraniumOre,8), (GearKind.Wrench,NodeKind.Scrap,ItemKind.Scrap,6),
-            (GearKind.StoneAxe,NodeKind.Ore,ItemKind.Ore,3), (GearKind.StonePickaxe,NodeKind.Tree,ItemKind.Wood,3)
+            (GearKind.StoneAxe,NodeKind.Tree,ItemKind.Wood,12), (GearKind.SteelAxe,NodeKind.Tree,ItemKind.Wood,20),
+            (GearKind.StonePickaxe,NodeKind.Ore,ItemKind.Ore,12), (GearKind.SteelPickaxe,NodeKind.Ore,ItemKind.Ore,20),
+            (GearKind.StonePickaxe,NodeKind.CopperOre,ItemKind.CopperOre,12), (GearKind.SteelPickaxe,NodeKind.TinOre,ItemKind.TinOre,20),
+            (GearKind.SteelPickaxe,NodeKind.UraniumOre,ItemKind.UraniumOre,20), (GearKind.Wrench,NodeKind.Scrap,ItemKind.Scrap,16),
+            (GearKind.StoneAxe,NodeKind.Ore,ItemKind.Ore,0), (GearKind.StonePickaxe,NodeKind.Tree,ItemKind.Wood,0)
         })
-            Run($"equipment {kind} harvests {node} with specialized gain and exhausted durability loses bonus", () =>
+            Run($"equipment {kind} harvests {node} only with the right tool and remaining durability", () =>
             {
                 var sim = EquipmentFixture(out var p, kind, arrange: (state, player) =>
                 {
                     player.gear[0].durability = 1; state.nodes.Add(new NodeState { id = state.nextId++, kind = node, x = 34, y = 35, stock = 40 });
                 });
                 int before = p.items[(int)item]; sim.Apply(Command(p, "interact", 34, 35));
-                Require(p.items[(int)item] == before + expected && sim.State.nodes.Single().stock == 40 - expected, "wrong specialized harvest yield");
-                Require(p.gear[0].durability == 0, "harvest did not consume last durability");
+                Require(p.items[(int)item] == before && sim.State.nodes.Single().stock == 40, "harvest paid before destruction");
+                Near(sim.State.nodes.Single().hp, 30 - expected, "wrong node damage");
+                int remaining = expected == 0 ? 1 : 0;
+                Require(p.gear[0].durability == remaining, "wrong tool durability charge");
                 Advance(sim, .6f); sim.Apply(Command(p, "interact", 34, 35));
-                Require(p.items[(int)item] == before + expected + 3 && p.gear[0].durability == 0, "broken tool retained bonus or durability wrapped");
+                Near(sim.State.nodes.Single().hp, 30 - expected, "broken or mismatched tool damaged a node");
+                Require(p.items[(int)item] == before && p.gear[0].durability == remaining, "rejected harvest charged durability or paid resources");
             });
         Run("equipment gearrepair spends material and restores only the owned damaged gear", () =>
         {

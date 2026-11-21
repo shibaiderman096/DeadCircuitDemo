@@ -54,7 +54,8 @@ static partial class Checks
             ItemKind.Bronze, ItemKind.Steel, ItemKind.IronPlate, ItemKind.SteelPlate, ItemKind.Gear,
             ItemKind.Bearing, ItemKind.RefractoryBrick, ItemKind.Ore }) p.items[(int)item] = 500;
         p.x = 8; p.y = 10;
-        Require(s.version == WorldSimulator.SaveVersion && DemoCatalog.ItemCount == 63, "LV fixture is not the current 63-slot save format");
+        Require(sim.State.version == WorldSimulator.SaveVersion && DemoCatalog.ItemCount == 66 && sim.State.produced.Length == 66 && p.items.Length == 66,
+            "LV fixture is not the current v19 66-slot save format");
         Require(LvProgressionEvidence(sim.State).All(n => n == 0), "LV startup inherited earned research/evidence");
         foreach (var item in LvProgressionItems)
             Require(p.items[(int)item] == 0 && sim.State.produced[(int)item] == 0 &&

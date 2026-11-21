@@ -179,7 +179,7 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[0];
             var guide = FlowLabel("Survival Guide", content,
-                "左键/E 点资源可走近采尽；按住 Space 在附近资源、成熟农田与尸体间持续工作，松开即停。树木与补给箱可提供食材和种子。右键水域取水、成熟农田收获、尸体分解。种植：翻土→播种→浇水→成熟→收获。原料可在工作台或石炉加工；背包「食物」可按 V 食用。",
+                "左键/E 或 Space 可空手拾取地面材料。装备斧可采集树木与补给箱，获得食材和种子。按住 Space 持续就近工作，松开即停。右键水域取水、成熟农田收获、尸体分解。种植：翻土→播种→浇水→成熟→收获。原料可在工作台或石炉加工。背包食物可按 V 食用。",
                 680, 106, 14, Muted);
             guide.overflowMode = TextOverflowModes.Overflow;
             survivalWaterText = FlowLabel("Survival Water Inventory", content, "", 680, 52, 15, Accent);

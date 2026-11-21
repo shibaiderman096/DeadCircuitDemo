@@ -8,6 +8,46 @@ static partial class Checks
     // Public seams: tile queries, sparse terrain commits and one-chunk streaming.
     static void ChunkTerrainChecks()
     {
+        Run("sparse chunk ground pickups are reachable and repeatable across negative coordinates", () =>
+        {
+            const int seed = 73149;
+            var first = TerrainBlank(seed);
+            var reversed = TerrainBlank(seed);
+            var baseline = TerrainBlank(seed);
+            first.generatorVersion = reversed.generatorVersion = 11;
+            baseline.generatorVersion = 10;
+            var cells = new[] { (-1, 0), (0, -1), (-1, -1), (-2, -1), (-1, -2), (-2, -2), (-5, -7), (-7, 4) };
+            foreach (var (cx, cy) in cells)
+                Require(ChunkStreaming.GenerateChunk(first, cx, cy) && ChunkStreaming.GenerateChunk(baseline, cx, cy),
+                    "negative chunk generation refused");
+            foreach (var (cx, cy) in cells.Reverse())
+                Require(ChunkStreaming.GenerateChunk(reversed, cx, cy), "reversed negative chunk generation refused");
+
+            var pickups = first.nodes.Where(n => DemoCatalog.IsGroundPickup(n.kind)).ToArray();
+            Require(pickups.Select(n => n.kind).Distinct().Count() == 3, "negative chunks lack the full pickup set");
+            Require(TerrainMapDump(first) == TerrainMapDump(reversed) && TerrainEntityDump(first) == TerrainEntityDump(reversed),
+                "ground pickups depend on discovery order");
+            Require(TerrainMapDump(first) == TerrainMapDump(baseline) &&
+                TerrainEntityDump(first, includeGroundPickups: false) == TerrainEntityDump(baseline),
+                "ground pickups changed natural resources, sites or terrain");
+
+            var blocked = first.nodes.Where(n => !DemoCatalog.IsGroundPickup(n.kind))
+                .Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
+            var oil = first.nodes.Where(n => n.kind == NodeKind.Oil).ToArray();
+            foreach (var (cx, cy) in cells)
+            {
+                TerrainChunkContract(first, cx, cy);
+                var reached = TerrainFlood(first, cx, cy, blocked);
+                foreach (var node in pickups.Where(n => WorldTiles.FloorDiv(n.x, 16) == cx && WorldTiles.FloorDiv(n.y, 16) == cy))
+                {
+                    Require(node.hp == 1 && node.stock is >= 1 and <= 3 && WorldTiles.Ground(first, node.x, node.y) is '0' or '1',
+                        "negative chunk pickup has invalid health, stock or terrain");
+                    Require(reached.Contains(WorldTiles.Key(node.x, node.y)), "negative chunk pickup has no walkable approach");
+                    Require(!oil.Any(n => Math.Abs(n.x - node.x) <= 2 && Math.Abs(n.y - node.y) <= 2),
+                        "negative chunk pickup occupies a possible oil pump cell");
+                }
+            }
+        });
         Run("sparse chunk site budget refuses atomically before exceeding save limit", () =>
         {
             var chosen=TerrainFindSite();var world=TerrainBlank(73149,WorldPreset.Urban,2);
@@ -70,7 +110,7 @@ static partial class Checks
                 Require(world.version == WorldSimulator.SaveVersion && world.generatorVersion == WorldGeneration.CurrentGeneratorVersion && world.generation.chunked && world.chunks.enabled, "new world version contract");
                 Require(world.players.Count == 0 && world.chunks.records.Count == 16 && world.chunks.generated == "", "expected exactly sixteen initial sparse records and no survivors");
                 var streamed = TerrainBlank(world.seed, options.preset, options.cityDensity);
-                streamed.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
+                streamed.generatorVersion = 10;
                 TerrainPopulate(streamed, reverse: true, minX: 0, maxX: 4, minY: 0, maxY: 4);
                 var normalQuartz = streamed.nodes.Where(n => n.kind == NodeKind.Quartz).Select(n => (n.x, n.y)).ToHashSet();
                 var openingQuartz = world.nodes.Where(n => n.kind == NodeKind.Quartz && !normalQuartz.Contains((n.x, n.y))).ToArray();
@@ -88,7 +128,8 @@ static partial class Checks
                     }
                     streamed.nodes.Add(n);
                 }
-                Require(TerrainMapDump(world) == TerrainMapDump(streamed) && TerrainEntityDump(world) == TerrainEntityDump(streamed),
+                Require(TerrainMapDump(world) == TerrainMapDump(streamed) &&
+                    TerrainEntityDump(world, includeGroundPickups: false) == TerrainEntityDump(streamed),
                     $"seed {world.seed} initial chunks differ from normally streamed terrain or entities");
                 Require(!ChunkStreaming.IsGenerated(world, -1, 35) && !ChunkStreaming.IsGenerated(world, 64, 35), "creation eagerly generated outside the initial region");
             }
@@ -396,12 +437,12 @@ static partial class Checks
 
     // IDs intentionally follow visit order. Compare geometry/resources by world
     // coordinates, never by their dynamically allocated entity IDs.
-    static string TerrainEntityDump(WorldState world, int? cx = null, int? cy = null)
+    static string TerrainEntityDump(WorldState world, int? cx = null, int? cy = null, bool includeGroundPickups = true)
     {
         bool Inside(int x, int y) => !cx.HasValue || (WorldTiles.FloorDiv(x, 16) == cx.Value && WorldTiles.FloorDiv(y, 16) == cy.Value);
         return TerrainSerialize(new
         {
-            nodes = world.nodes.Where(n => Inside(n.x, n.y)).OrderBy(n => n.x).ThenBy(n => n.y)
+            nodes = world.nodes.Where(n => Inside(n.x, n.y) && (includeGroundPickups || !DemoCatalog.IsGroundPickup(n.kind))).OrderBy(n => n.x).ThenBy(n => n.y)
                 .Select(n => new { n.x, n.y, n.kind, n.stock, n.hp }).ToArray(),
             buildings = world.buildings.Where(b => Inside(b.x, b.y)).OrderBy(b => b.x).ThenBy(b => b.y)
                 .Select(b => new { b.x, b.y, b.kind, b.rotation, b.footprintVersion, b.hp, b.setting, b.items }).ToArray(),
@@ -427,6 +468,7 @@ static partial class Checks
         foreach (var b in buildings) for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
             Require(Inside(x, y) && WorldTiles.Ground(world, x, y) != '2' && occupied.Add(WorldTiles.Key(x, y)), "building overlaps node/water/another chunk");
         foreach (var door in buildings.Where(b => b.kind == BuildKind.Door)) occupied.Remove(WorldTiles.Key(door.x, door.y));
+        foreach (var pickup in nodes.Where(n => DemoCatalog.IsGroundPickup(n.kind))) occupied.Remove(WorldTiles.Key(pickup.x, pickup.y));
         var reachable = TerrainFlood(world, cx, cy, occupied);
         foreach (var node in nodes.Where(n => n.kind != NodeKind.Wall))
             Require(TerrainNeighbor(reachable, node.x, node.y), "resource/container cannot be gathered from chunk boundary");

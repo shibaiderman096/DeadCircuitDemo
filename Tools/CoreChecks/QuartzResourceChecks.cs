@@ -18,7 +18,8 @@ static partial class Checks
                     var world = sim.State;
                     var spawn = sim.AddPlayer("quartz-opening", "Explorer");
                     string scenario = $"{seed}/{preset}/{density}/{chunked}";
-                    var blocked = world.nodes.Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
+                    var blocked = world.nodes.Where(n => !DemoCatalog.IsGroundPickup(n.kind))
+                        .Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
                     foreach (var b in world.buildings.Where(b => b.kind != BuildKind.Door))
                         for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
                             for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) blocked.Add(WorldTiles.Key(x, y));

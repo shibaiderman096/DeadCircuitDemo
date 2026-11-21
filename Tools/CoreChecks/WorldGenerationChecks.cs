@@ -5,6 +5,42 @@ static partial class Checks
     // Main must invoke this alongside the existing suites in Program.cs.
     static void WorldGenerationChecks()
     {
+        Run("world generation opening pickups cover both stone tools from the actual spawn", () =>
+        {
+            foreach (bool chunked in new[] { false, true })
+            foreach (WorldPreset preset in Enum.GetValues<WorldPreset>())
+            foreach (int density in new[] { 0, 1, 2 })
+            foreach (int seed in new[] { int.MinValue, -991, -1, 0, 11, 73149, int.MaxValue })
+            {
+                var sim = new WorldSimulator(new WorldGenerationSettings
+                    { seed = seed, preset = preset, cityDensity = density, chunked = chunked });
+                var spawn = sim.AddPlayer("ground-pickup-opening", "Explorer");
+                var world = sim.State;
+                string scenario = $"{seed}/{preset}/{density}/{chunked}";
+                var blocked = world.nodes.Where(n => !DemoCatalog.IsGroundPickup(n.kind))
+                    .Select(n => n.x + n.y * 64).ToHashSet();
+                foreach (var b in world.buildings.Where(b => !DemoCatalog.Walkable(b)))
+                    for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
+                        for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) blocked.Add(x + y * 64);
+                var reached = GenerationFlood(world, blocked, (int)spawn.x + (int)spawn.y * 64);
+                var pickups = world.nodes.Where(n => DemoCatalog.IsGroundPickup(n.kind)).ToArray();
+                var oil = world.nodes.Where(n => n.kind == NodeKind.Oil).ToArray();
+                foreach (var node in pickups)
+                {
+                    Require(node.hp == 1 && node.stock is >= 1 and <= 3 &&
+                        (WorldTiles.Ground(world, node.x, node.y) is '0' or '1' or '3') &&
+                        !world.sites.Any(s => node.x >= s.x && node.x < s.x + s.width &&
+                            node.y >= s.y && node.y < s.y + s.height) &&
+                        (node.x != spawn.x || node.y != spawn.y), "pickup has invalid stock, health or placement: " + scenario);
+                    Require(!oil.Any(n => Math.Abs(n.x - node.x) <= 2 && Math.Abs(n.y - node.y) <= 2),
+                        "pickup occupies a possible oil pump cell: " + scenario);
+                }
+                foreach (var (kind, minimum) in new[] { (NodeKind.Branch, 4), (NodeKind.LooseStone, 5), (NodeKind.DryGrass, 2) })
+                    Require(pickups.Where(n => n.kind == kind && reached.Contains(n.x + n.y * 64)).Sum(n => n.stock) >= minimum,
+                        $"starting player cannot reach enough {kind}: {scenario} spawn ({spawn.x},{spawn.y}), " +
+                        $"{reached.Count} reachable cells, pickups " + string.Join(", ", pickups.Select(n => $"{n.kind}@{n.x}/{n.y}:{n.stock}")));
+            }
+        });
         Run("world generation finite maps contain ruins but no tutorial facilities or floors", () =>
         {
             foreach (int seed in new[] { 73149, -7, 42 })
@@ -225,7 +261,9 @@ static partial class Checks
         var occupied = new HashSet<int>(); var ids = new HashSet<int>();
         foreach (var n in state.nodes)
         {
-            Require(n.x >= 3 && n.y >= 3 && n.x <= 60 && n.y <= 60 && n.stock > 0 && n.hp > 0, "invalid node or blocked dry border");
+            int margin = DemoCatalog.IsGroundPickup(n.kind) ? 0 : 3;
+            Require(n.x >= margin && n.y >= margin && n.x < 64 - margin && n.y < 64 - margin && n.stock > 0 && n.hp > 0,
+                "invalid node or blocked dry border");
             Require(state.ground[n.x + n.y * 64] != '2' && occupied.Add(n.x + n.y * 64) && ids.Add(n.id), "overlapping/water node or duplicate ID");
         }
         foreach (var b in state.buildings)
@@ -239,6 +277,8 @@ static partial class Checks
         var passageBlocked = new HashSet<int>(occupied);
         foreach (var door in state.buildings.Where(b => b.kind == BuildKind.Door))
             passageBlocked.Remove(door.x + door.y * 64);
+        foreach (var pickup in state.nodes.Where(n => DemoCatalog.IsGroundPickup(n.kind)))
+            passageBlocked.Remove(pickup.x + pickup.y * 64);
         var reachable = GenerationFlood(state, passageBlocked);
         for (int i = 0; i < 64; i++) foreach (int cell in new[] { i, i + 63 * 64, i * 64, 63 + i * 64 })
             Require(state.ground[cell] != '2' && reachable.Contains(cell), "dry world boundary is unreachable");
@@ -297,11 +337,11 @@ static partial class Checks
         WorldGeneration.Validate(state);
     }
 
-    static HashSet<int> GenerationFlood(WorldState state, HashSet<int> blocked)
+    static HashSet<int> GenerationFlood(WorldState state, HashSet<int> blocked, int origin = 0)
     {
         var seen = new HashSet<int>(); var queue = new Queue<int>();
-        Require(!blocked.Contains(0) && state.ground[0] != '2', "blocked dry boundary");
-        seen.Add(0); queue.Enqueue(0);
+        Require(!blocked.Contains(origin) && state.ground[origin] != '2', "blocked flood origin");
+        seen.Add(origin); queue.Enqueue(origin);
         while (queue.Count > 0)
         {
             int c = queue.Dequeue(), x = c % 64, y = c / 64;
