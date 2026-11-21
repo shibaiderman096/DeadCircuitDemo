@@ -130,49 +130,102 @@ static partial class Checks
         });
         Run("reactor consumes nuclear fuel and coolant and produces tracked nuclear waste", () =>
         {
-            var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,10,10);reactor.items[(int)ItemKind.NuclearFuel]=2;reactor.items[(int)ItemKind.Coolant]=10;
+            var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,13,10);AddNuclearFacility(state,reactor);reactor.items[(int)ItemKind.NuclearFuel]=2;reactor.items[(int)ItemKind.Coolant]=10;
             var sim=new WorldSimulator(state);Advance(sim,2.1f);reactor=Building(sim,reactor.id);Near(reactor.powerGeneration,1200,"cooled reactor output");
             Require(reactor.items[(int)ItemKind.NuclearFuel]==1 && reactor.fuel>17 && reactor.items[(int)ItemKind.Coolant]<10,"reactor produced without consuming both resources");
-            Require(reactor.items[(int)ItemKind.NuclearWaste]==1 && sim.State.produced[(int)ItemKind.NuclearWaste]==1,"nuclear waste was lost or not recorded");
+            Require(ItemTotals(sim.State)[(int)ItemKind.NuclearWaste]==1 && sim.State.produced[(int)ItemKind.NuclearWaste]==1,"nuclear waste was lost or not recorded");
             Require(float.IsFinite(reactor.temperature) && reactor.temperature>20,"operating reactor generated no heat");
         });
-        Run("reactor stops on missing fuel missing coolant or a full nuclear-waste buffer", () =>
+        Run("nuclear construction and arming use the public Apply boundaries", () =>
+        {
+            var sim=new WorldSimulator(Flat(era:TechEra.Nuclear));var p=Builder(sim);p.x=8;p.y=10;
+            Ready(p);sim.Apply(Command(p,"build",10,10,(int)BuildKind.ReactorControlConsole));
+            var console=sim.State.buildings.Single(b=>b.kind==BuildKind.ReactorControlConsole);Require(console.setting==0,"new nuclear console started armed");
+            Ready(p);sim.Apply(Command(p,"configure",10,10,1));Require(console.setting==1,"public configure did not arm the nuclear console");
+        });
+        Run("reactor refuses to start without its control interlock cooling loop and dedicated waste vault", () =>
+        {
+            var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,10,10);reactor.items[(int)ItemKind.NuclearFuel]=2;reactor.items[(int)ItemKind.Coolant]=10;
+            var before=Copy(reactor.items);var sim=new WorldSimulator(state);Advance(sim,1);reactor=Building(sim,reactor.id);
+            Near(reactor.powerGeneration,0,"unprotected reactor output");Inventory(reactor.items,before,"unprotected reactor consumed fuel or coolant");
+        });
+        Run("reactor stops on missing fuel missing coolant or a full dedicated nuclear-waste vault", () =>
         {
             foreach(string missing in new[] { "fuel","coolant","waste room" })
             {
-                var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,10,10);reactor.items[(int)ItemKind.NuclearFuel]=missing=="fuel"?0:2;reactor.items[(int)ItemKind.Coolant]=missing=="coolant"?0:10;reactor.items[(int)ItemKind.NuclearWaste]=missing=="waste room"?WorldSimulator.BufferLimit:0;
-                var before=Copy(reactor.items);var sim=new WorldSimulator(state);Advance(sim,1);reactor=Building(sim,reactor.id);Near(reactor.powerGeneration,0,$"reactor ignored missing {missing}");Inventory(reactor.items,before,"blocked reactor consumed or created material");
-                if(missing=="waste room"){reactor.items[(int)ItemKind.NuclearWaste]--;Advance(sim,.05f);Require(reactor.powerGeneration>0,"clearing waste capacity did not resume reactor");}
+                var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,13,10);AddNuclearFacility(state,reactor);
+                var vault=state.buildings.Single(b=>b.kind==BuildKind.NuclearWasteVault);
+                reactor.items[(int)ItemKind.NuclearFuel]=missing=="fuel" ? 0 : 2;
+                reactor.items[(int)ItemKind.Coolant]=missing=="coolant" ? 0 : 10;
+                if(missing=="waste room")
+                {
+                    vault.items[(int)ItemKind.NuclearWaste]=WorldSimulator.BufferLimit;
+                    Add(state,BuildKind.NuclearWasteVault,24,24); // An unrelated empty vault cannot take this reactor's waste.
+                }
+                var before=Copy(reactor.items);var sim=new WorldSimulator(state);Advance(sim,1);reactor=Building(sim,reactor.id);
+                Near(reactor.powerGeneration,0,$"reactor ignored missing {missing}");Inventory(reactor.items,before,"blocked reactor consumed or created material");
+            }
+        });
+        Run("nuclear interlock rejects loss of external power or one cooling leg", () =>
+        {
+            foreach(string missing in new[] { "external HV","hot pipe","cold pipe","dedicated vault" })
+            {
+                var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,13,10);
+                AddNuclearFacility(state,reactor,withVault:missing!="dedicated vault",withLiquidRoute:missing!="cold pipe",withHotRoute:missing!="hot pipe");
+                reactor.items[(int)ItemKind.NuclearFuel]=2;reactor.items[(int)ItemKind.Coolant]=10;
+                if(missing=="external HV") state.buildings.Single(b=>b.kind==BuildKind.HighGenerator).items[(int)ItemKind.Fuel]=0;
+                var sim=new WorldSimulator(state);sim.Step(WorldSimulator.FixedStep);reactor=Building(sim,reactor.id);
+                Near(reactor.powerGeneration,0,"reactor ran without "+missing);
+                Require(reactor.items[(int)ItemKind.NuclearFuel]==2 && reactor.items[(int)ItemKind.Coolant]==10,"interlock failure consumed materials");
             }
         });
         Run("explicit hot reactor trips and recovers only below the thermal reset boundary", () =>
         {
             // Inject a valid hot save instead of requiring a properly cooled reactor to overheat.
-            var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,10,10);reactor.temperature=920;reactor.items[(int)ItemKind.NuclearFuel]=2;reactor.items[(int)ItemKind.Coolant]=10;
+            var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,13,10);AddNuclearFacility(state,reactor);reactor.temperature=920;reactor.items[(int)ItemKind.NuclearFuel]=2;reactor.items[(int)ItemKind.Coolant]=10;
             var before=Copy(reactor.items);var sim=new WorldSimulator(state);reactor=Building(sim,reactor.id);sim.Step(WorldSimulator.FixedStep);
             Require(reactor.tripped && reactor.temperature>=900,"explicit overheat did not trip the reactor");Near(reactor.powerGeneration,0,"overheated reactor still generated");Inventory(reactor.items,before,"tripped reactor consumed resources");
             reactor.temperature=301.1f;sim.Step(WorldSimulator.FixedStep);
             Require(reactor.tripped && reactor.temperature>300,"reactor reset above the 300-degree boundary");Near(reactor.powerGeneration,0,"latched reactor generated above reset temperature");Inventory(reactor.items,before,"latched reactor consumed resources");
             reactor.temperature=300;sim.Step(WorldSimulator.FixedStep);
-            Require(!reactor.tripped && reactor.temperature<=300 && reactor.powerGeneration>0,"cooled reactor did not reset and resume");Require(reactor.items[(int)ItemKind.NuclearFuel]==1 && reactor.items[(int)ItemKind.Coolant]==9 && reactor.items[(int)ItemKind.NuclearWaste]==1,"thermal recovery did not resume real resource consumption");
+            Require(!reactor.tripped && reactor.temperature<=300 && reactor.powerGeneration>0,"cooled reactor did not reset and resume");Require(reactor.items[(int)ItemKind.NuclearFuel]==1 && reactor.items[(int)ItemKind.Coolant]==9 && ItemTotals(sim.State)[(int)ItemKind.NuclearWaste]==1,"thermal recovery did not resume real resource consumption");
         });
-        Run("reactor sustains 120 seconds with adequate cooling then stops safely when coolant is cut", () =>
+        Run("reactor sustains 120 seconds then stops and resumes through the nuclear control console", () =>
         {
-            var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,10,10);reactor.items[(int)ItemKind.NuclearFuel]=10;reactor.items[(int)ItemKind.Coolant]=200;
+            var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,13,10);AddNuclearFacility(state,reactor);reactor.items[(int)ItemKind.NuclearFuel]=10;reactor.items[(int)ItemKind.Coolant]=200;
             var sim=new WorldSimulator(state);reactor=Building(sim,reactor.id);double energy=0;
             for(int tick=0;tick<2400;tick++)
             {
                 sim.Step(WorldSimulator.FixedStep);
                 Require(!reactor.tripped && reactor.powerGeneration>0 && reactor.powerGeneration<=1200.001f,$"adequately cooled reactor interrupted at tick {tick+1}");
                 Require(float.IsFinite(reactor.temperature) && reactor.temperature>=20 && reactor.temperature<900,$"adequately cooled reactor exceeded thermal limits at tick {tick+1}");
-                Require(reactor.items[(int)ItemKind.NuclearFuel]+reactor.items[(int)ItemKind.NuclearWaste]==10,"sustained reactor lost nuclear fuel/waste conservation");
+                Require(reactor.items[(int)ItemKind.NuclearFuel]+ItemTotals(sim.State)[(int)ItemKind.NuclearWaste]==10,"sustained reactor lost nuclear fuel/waste conservation");
                 energy+=reactor.powerGeneration*WorldSimulator.FixedStep;
             }
-            Require(Math.Abs(energy-144000)<=2,$"120-second reactor energy budget differed: {energy}");Require(reactor.items[(int)ItemKind.Coolant]<100 && reactor.items[(int)ItemKind.NuclearWaste]>=6,"continuous output did not consume real fuel and coolant");
-            reactor.items[(int)ItemKind.Coolant]=0;Advance(sim,1.25f);Near(reactor.powerGeneration,0,"reactor kept generating after its last coolant reserve expired");
-            var stopped=Copy(reactor.items);float fuel=reactor.fuel,temperature=reactor.temperature;Advance(sim,2);
-            Inventory(reactor.items,stopped,"uncoolable reactor kept consuming resources");Near(reactor.fuel,fuel,"shutdown consumed the burning fuel reserve");Require(reactor.temperature<=temperature,"uncoolable stopped reactor kept heating");
-            reactor.items[(int)ItemKind.Coolant]=1;sim.Step(WorldSimulator.FixedStep);Require(!reactor.tripped && reactor.powerGeneration>0,"restoring coolant did not resume the safely stopped reactor");
+            Require(Math.Abs(energy-144000)<=2,$"120-second reactor energy budget differed: {energy}");
+            Require(sim.State.produced[(int)ItemKind.HotCoolant]==60 && sim.State.produced[(int)ItemKind.NuclearWaste]==6,"continuous output did not consume real fuel and coolant");
+            var player=Builder(sim);player.x=10;player.y=9;
+            Ready(player);sim.Apply(Command(player,"configure",10,10,0));
+            float fuel=reactor.fuel,temperature=reactor.temperature;
+            Advance(sim,2);Near(reactor.powerGeneration,0,"disabled console allowed power generation");
+            Near(reactor.fuel,fuel,"shutdown consumed the fuel reserve");Require(reactor.temperature<=temperature,"stopped reactor kept heating");
+            Ready(player);sim.Apply(Command(player,"configure",10,10,1));sim.Step(WorldSimulator.FixedStep);
+            Require(!reactor.tripped && reactor.powerGeneration>0,"enabling the console did not resume the reactor");
         });
+    }
+
+    static void AddNuclearFacility(WorldState state, BuildingState reactor, bool withVault = true, bool withLiquidRoute = true, bool withHotRoute = true)
+    {
+        Require(reactor.kind==BuildKind.Reactor && reactor.x==13 && reactor.y==10,"nuclear fixture reactor position changed");
+        var generator=Add(state,BuildKind.HighGenerator,4,10);generator.items[(int)ItemKind.Fuel]=100;
+        Add(state,BuildKind.HighPole,9,10);
+        Add(state,BuildKind.ReactorControlConsole,10,10).setting=1;
+        var tower=Add(state,BuildKind.CoolingTower,13,7);tower.recipe=91;tower.items[(int)ItemKind.ProcessWater]=100;
+        Water(state,13,6);
+        var diesel=Add(state,BuildKind.DieselGenerator,10,7);diesel.items[(int)ItemKind.Diesel]=100;
+        if(withLiquidRoute)
+            foreach(var cell in new[] {(16,7,1),(16,8,1),(16,9,2),(15,9,1)}) Add(state,BuildKind.LiquidPipe,cell.Item1,cell.Item2,cell.Item3).setting=8;
+        if(withHotRoute) Add(state,BuildKind.LiquidPipe,14,9,3).setting=7;
+        if(withVault) Add(state,BuildKind.NuclearWasteVault,16,10);
     }
 }

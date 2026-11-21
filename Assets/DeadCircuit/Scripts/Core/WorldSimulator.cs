@@ -289,6 +289,11 @@ namespace DeadCircuit
             GearState wrench=EquippedWrench(p);
             if(wrench!=null) refund=Math.Min(1f,refund+.25f);
             float health = Clamp(b.hp / BuildingMaxHealth(b.kind), 0f, 1f);
+            if (b.items[(int)ItemKind.NuclearWaste] > 0 || State.cargo.Exists(c => c.item == (int)ItemKind.NuclearWaste && (c.fromId == b.id || c.toId == b.id)))
+            {
+                Notice(p, "核废料必须先转移到专用废料仓，不能拆除并带回背包。");
+                return;
+            }
             for (int i = 0; i < DemoCatalog.ItemCount; i++)
             {
                 returned[i] = b.items[i] + (int)Math.Floor(cost[i] * refund * health + 0.00001f);
@@ -359,6 +364,11 @@ namespace DeadCircuit
                 if(arg<0 || arg>1) return;
                 if(arg==1 && !PrecisionCatalog.HasResearch(State,PrecisionTech.Grid)) { Notice(p,"需要高压研究：高压电网。"); return; }
                 b.setting=arg; b.progress=0f; RefreshPower(false); Notice(p,arg==0 ? "变压器已设为中压 → 低压" : "变压器已设为高压 → 中压"); return;
+            }
+            if(b.kind==BuildKind.ReactorControlConsole)
+            {
+                if(arg!=0 && arg!=1) { Notice(p,"请选择启用或停用反应堆控制台。"); return; }
+                b.setting=arg; RefreshPower(false); Notice(p,arg==1 ? "反应堆控制台已启用。" : "反应堆控制台已停用。"); return;
             }
             RecipeDefinition r=TechCatalog.Recipe(arg);
             if(r==null || r.building!=b.kind || b.kind==BuildKind.Workbench || r.era>State.era) return;

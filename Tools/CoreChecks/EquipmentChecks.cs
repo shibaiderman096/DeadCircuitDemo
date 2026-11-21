@@ -11,6 +11,7 @@ static partial class Checks
         var state = Flat(era: era); Add(state, BuildKind.Workbench, 30, 35);
         var p = new PlayerState { id = "equipment", name = "Equipment", x = 32, y = 35,
             items = Enumerable.Repeat(300, DemoCatalog.ItemCount).ToArray() };
+        p.items[(int)ItemKind.NuclearWaste] = 0;
         if (kind.HasValue)
         {
             var gear = new GearState { id = state.nextId++, kind = kind.Value, loadedAmmo = EquipmentCatalog.Gear(kind.Value).ammo };

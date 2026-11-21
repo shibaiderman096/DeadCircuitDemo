@@ -14,7 +14,7 @@ namespace DeadCircuit
             if (from == null || to == null || item < 0 || item >= DemoCatalog.ItemCount) return false;
             if (!PetrochemicalCargoRouteValid(from, to, item)) return false;
             if (from.kind != BuildKind.FilterSplitter)
-                return DemoCatalog.Contains(to, DemoCatalog.OutputX(from), DemoCatalog.OutputY(from));
+                return DemoCatalog.Contains(to, CargoOutputX(from,item), CargoOutputY(from,item));
             if (from.setting < 0 || from.setting >= DemoCatalog.ItemCount) return false;
             int direction = item == from.setting ? from.rotation : (from.rotation + 1) & 3;
             return DemoCatalog.Contains(to, from.x + DirectionX[direction], from.y + DirectionY[direction]);

@@ -249,6 +249,8 @@ namespace DeadCircuit
         public static bool Stores(BuildKind kind,int item)
         {
             if(item<0 || item>=DemoCatalog.ItemCount) return false;
+            if(item==(int)ItemKind.NuclearWaste) return kind==BuildKind.Reactor || kind==BuildKind.NuclearWasteVault;
+            if(kind==BuildKind.NuclearWasteVault) return false;
             if(PetrochemicalCatalog.IsLiquidStorage(kind)) return PetrochemicalCatalog.IsFluid(item);
             if(kind==BuildKind.Chest || kind==BuildKind.Belt || kind==BuildKind.MechanicalHopper || kind==BuildKind.FilterSplitter) return !PetrochemicalCatalog.IsFluid(item);
             if(kind==BuildKind.OilPump) return item==(int)ItemKind.CrudeOil;
@@ -261,8 +263,7 @@ namespace DeadCircuit
             if(kind==BuildKind.SteamMiner) return item==(int)ItemKind.Quartz || item==(int)ItemKind.Ore || item==(int)ItemKind.CopperOre || item==(int)ItemKind.TinOre || item==(int)ItemKind.UraniumOre || item==(int)ItemKind.Stone || item==(int)ItemKind.Clay || item==(int)ItemKind.Coal || item==(int)ItemKind.Limestone || item==(int)ItemKind.FireClay;
             if(kind==BuildKind.Turret) return item==(int)ItemKind.Ammo;
             if(kind==BuildKind.ReactorControlConsole) return false;
-            if(kind==BuildKind.NuclearWasteVault) return item==(int)ItemKind.NuclearWaste;
-            if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearFuel || item==(int)ItemKind.Coolant || item==(int)ItemKind.NuclearWaste;
+            if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearFuel || item==(int)ItemKind.Coolant || item==(int)ItemKind.HotCoolant;
             foreach(var r in Recipes) if(r.building==kind && kind!=BuildKind.Workbench && (r.inputs[item]>0 || r.outputs[item]>0)) return true;
             return false;
         }
