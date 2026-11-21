@@ -529,7 +529,7 @@ LV、MV、HV 是游戏中的电压与供能分级，用于设备兼容、输配�
 
 现行科技树支持全部、工业、武器、工具筛选，显示研究详情并提供可点击的直接前置跳转；背包制作和装备、配件、弹药详情可查看关联研究。核工业当前保持11项研究；`NuclearTech.RadiationMonitoring=9` 是核工业研究，`T11 RadiationMonitor=11` 仍是未来便携工具规划，不将两者混为一项，也不计入已接入P0。P1/P2/P3内容仍按专题文档规划，未改其研究ID、样品、门槛/数值或批次。
 
-验证状态：源码 CoreChecks 735/735 通过，另跳过 20 项历史检查。Unity 6000.6.8f1 Windows 开发版构建成功（214443308 bytes）；可见窗口完整 `--demo-qa` 退出码 0，同时记录 `DEMO_NUCLEAR_TREE_QA_PASS` 和 `DEMO_RUNTIME_QA_PASS`。QA 检查科技树 80 节点、武器/工具筛选、W00–W11 与 T00–T01 的 HUD 研究、背包入口、制造/装备流程及保存后重新读取；最终隔离存档为 version 18、weaponResearch=4095、toolResearch=3。24 张截图保存在 `Logs/equipment-runtime-qa-20261121-r3/`。Unity 批处理构建报告 LicensingClient 校验警告，构建仍成功；Player 正常退出时有既有 ComputeBuffer 清理警告。人工试玩、双进程联机、设备验证和数值平衡仍未完成。
+验证状态：合并当前`master`后从源码重跑 CoreChecks 745/745 通过，另跳过 20 项历史检查。Unity 6000.6.8f1 Windows 开发版构建成功（214492208 bytes）；可见窗口完整 `--demo-qa` 退出码 0，同时记录 `DEMO_NUCLEAR_TREE_QA_PASS` 和 `DEMO_RUNTIME_QA_PASS`。QA 检查科技树 80 节点、武器/工具筛选、W00–W11 与 T00–T01 的 HUD 研究、背包入口、制造/装备流程及保存后重新读取；最终隔离存档为 version 18、weaponResearch=4095、toolResearch=3。24 张截图保存在 `Logs/equipment-runtime-qa-merged-20261121/`。Unity 批处理构建报告 LicensingClient 校验警告，构建仍成功；Player 正常退出时有 ComputeBuffer 清理警告。人工试玩、双进程联机、设备验证和数值平衡仍未完成。
 
 ## 主角外观与装备展示
 
