@@ -64,7 +64,7 @@
       const body = (entry.searchText || "").toLocaleLowerCase();
       const haystack = title + " " + entry.category + " " + body;
       if (!words.every(word => haystack.includes(word))) return null;
-      return {entry, score: words.reduce((sum, word) => sum + (title.includes(word) ? 20 : 0) + (entry.summary.includes(word) ? 5 : 1), 0)};
+      return {entry, score: (title === query ? 100 : 0) + words.reduce((sum, word) => sum + (title.includes(word) ? 20 : 0) + (entry.summary.includes(word) ? 5 : 1), 0)};
     }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 8);
     results.hidden = false;
     input.setAttribute("aria-expanded", "true");
@@ -181,7 +181,7 @@
     currentPage = page;
     pages.forEach(node => { node.hidden = node.dataset.pageId !== page; });
     document.querySelectorAll(".nav-link[data-page]").forEach(link => {
-      if (link.dataset.page === page) link.setAttribute("aria-current", "page");
+      if (link.dataset.page === page || link.dataset.page === byId.get(page)?.parent) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
     });
     document.title = (page === "home" ? "废土回路 · 游戏百科" : byId.get(page).title + " · 废土回路百科");
