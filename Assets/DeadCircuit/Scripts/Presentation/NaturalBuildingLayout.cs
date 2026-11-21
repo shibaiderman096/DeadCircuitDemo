@@ -11,6 +11,17 @@ namespace DeadCircuit
         public const int MaxRiseCells = 4;
         public readonly int width, height, floors, minY, doorX, doorY;
         public readonly string roofArt, facadeArt;
+        public readonly struct EntryOpening
+        {
+            public readonly float minX, minY, maxX, maxY;
+            public EntryOpening(int x, int y, int dx, int dy, float rise)
+            {
+                minX = x - .625f - (dx < 0 ? 2 : 0); maxX = x + .625f + (dx > 0 ? 2 : 0);
+                minY = y - .625f - (dy < 0 ? 2 : 0); maxY = y + .625f + (dy > 0 ? Math.Max(2, rise) : 0);
+            }
+        }
+        readonly List<EntryOpening> entryOpenings = new List<EntryOpening>();
+        public IReadOnlyList<EntryOpening> EntryOpenings => entryOpenings;
         readonly bool[] covered, interior, entrances, outside;
         readonly char[] cells;
         public float Rise => floors * FloorRise;
@@ -72,6 +83,9 @@ namespace DeadCircuit
                 if (covered[i]) bottom = Math.Min(bottom, y);
             }
             minY = bottom;
+            for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+                if (EntranceOutward(x, y, out int dx, out int dy))
+                    entryOpenings.Add(new EntryOpening(x, y, dx, dy, Rise));
         }
 
         static bool Boundary(char cell) => cell == '#' || cell == '+';
@@ -89,6 +103,22 @@ namespace DeadCircuit
             return IsInterior(ix, iy) || Entrance(ix, iy);
         }
         public bool Entrance(int x, int y) => x >= 0 && y >= 0 && x < width && y < height && entrances[x + y * width];
+
+        public bool EntranceOutward(int x, int y, out int dx, out int dy)
+        {
+            dx = dy = 0;
+            if (!Entrance(x, y)) return false;
+            if (OutsideAt(x, y - 1) && InteriorAt(x, y + 1)) dy = -1;
+            else if (OutsideAt(x, y + 1) && InteriorAt(x, y - 1)) dy = 1;
+            else if (OutsideAt(x - 1, y) && InteriorAt(x + 1, y)) dx = -1;
+            else if (OutsideAt(x + 1, y) && InteriorAt(x - 1, y)) dx = 1;
+            return dx != 0 || dy != 0;
+        }
+
+        // Entrance cues and the real open/closed door must survive the raised
+        // shell projection, including doors on the north side of a tall site.
+        public int EntranceOrder(int x, int y, int normalOrder, int shellOrder) =>
+            Entrance(x, y) ? Math.Max(normalOrder, shellOrder + 4) : normalOrder;
 
         public bool Occludes(float x, float y)
         {

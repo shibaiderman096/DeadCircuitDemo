@@ -423,6 +423,7 @@ namespace DeadCircuit
             DrawSites(world);
             DrawNodes(world, local);
             DrawBuildings(world);
+            DrawNaturalEntranceGuides(world);
             DrawActors(world, local);
             DrawExpansion(world, local);
             Sweep(nodes); Sweep(buildings); Sweep(zombies);
@@ -650,6 +651,8 @@ namespace DeadCircuit
                 SetOrder(v, state.y);
                 int rotation = ((state.rotation % 4) + 4) % 4;
                 ConfigureMachine(v.body, state);
+                if (state.kind == BuildKind.Door)
+                    v.body.sortingOrder = NaturalDoorOrder(state.x, state.y, v.body.sortingOrder);
                 Color primitiveTint = state.kind == BuildKind.CharcoalKiln ? new Color(.48f,.55f,.52f) :
                     state.kind == BuildKind.ClayKiln ? new Color(1f,.57f,.36f) : Color.white;
                 v.body.color = DamageColor(v, primitiveTint);

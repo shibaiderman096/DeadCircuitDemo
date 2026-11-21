@@ -30,7 +30,9 @@ NAMES = (
     'exterior_roof_tile', 'exterior_roof_metal', 'exterior_roof_flat', 'exterior_roof_glass',
     'exterior_facade_brick', 'exterior_facade_concrete', 'exterior_facade_industrial',
     'exterior_cornice', 'exterior_roof_vent', 'exterior_roof_hatch',
+    'exterior_entry_frame', 'exterior_entry_paving',
 )
+TRANSPARENT_PROPS = frozenset(('exterior_roof_vent', 'exterior_roof_hatch', 'exterior_entry_frame'))
 ET.register_namespace('', NS)
 
 
@@ -74,7 +76,7 @@ def read_layout(root):
     check(root.get('viewBox') == f'0 0 {width} {height}', 'Exterior SVG viewBox mismatch')
     groups = [child for child in root if child.tag == tag('g')]
     check([group.get('id') for group in groups] == list(NAMES),
-          'SVG groups must match the ten runtime keys in manifest order')
+          'SVG groups must match the twelve runtime keys in manifest order')
     entries = []
     for i, group in enumerate(groups):
         match = re.fullmatch(r'translate\((\d+) (\d+)\)', group.get('transform', ''))
@@ -86,11 +88,32 @@ def read_layout(root):
     return dict(width=width, height=height, sprites=entries), groups
 
 
+def verify_entry_paving(frame):
+    """Check the directional lane, not the legacy tiles' all-edge seam contract."""
+    check(frame.crop((0, 0, SIZE, 16)).tobytes() == frame.crop((0, 16, SIZE, SIZE)).tobytes(),
+          'exterior_entry_paving: expected two evenly spaced guide motifs')
+    check(frame.crop((8, 0, 24, 1)).tobytes() == frame.crop((8, 31, 24, 32)).tobytes(),
+          'exterior_entry_paving: central lane must join end-to-end')
+    gray = frame.convert('L')
+    lane = gray.crop((8, 0, 24, 32)).tobytes()
+    shoulders = gray.crop((0, 0, 6, 32)).tobytes() + gray.crop((26, 0, 32, 32)).tobytes()
+    check(sum(lane) / len(lane) > sum(shoulders) / len(shoulders) + 20,
+          'exterior_entry_paving: central lane must contrast with both shoulders')
+    guide = ImageColor.getrgb(PALETTE['cream']) + (255,)
+    for start in (0, 16):
+        rows = [[x for x in range(SIZE) if frame.getpixel((x, y)) == guide]
+                for y in range(start, start + 16)]
+        rows = [row for row in rows if row]
+        check(len(rows) >= 4 and min(rows[0]) > min(rows[-1]) and max(rows[0]) < max(rows[-1]),
+              'exterior_entry_paving: pale guide must point toward SVG top')
+    return dict(guideBands=2, guideRepeatPixels=16, guideDirection='svg-top')
+
+
 def verify(root, png, layout, groups):
     """Check SVG-to-atlas identity, alpha, palette, gutters, and repeat edges."""
     atlas = decode(png)
     check(atlas.size == (layout['width'], layout['height']), 'PNG/manifest size mismatch')
-    check([entry['name'] for entry in layout['sprites']] == list(NAMES), 'Expected exactly ten named frames')
+    check([entry['name'] for entry in layout['sprites']] == list(NAMES), 'Expected exactly twelve named frames')
     allowed = {ImageColor.getrgb(value) for value in PALETTE.values()}
     colors = atlas.getcolors(atlas.width * atlas.height)
     partial = sum(count for count, (_, _, _, a) in colors if 0 < a < 255)
@@ -113,19 +136,27 @@ def verify(root, png, layout, groups):
               f'{name}: atlas crop differs from the SVG source')
         alpha = frame.getchannel('A')
         opaque = alpha.histogram()[255]
-        if name not in NAMES[-2:]:
+        detail = dict(name=name, size=[w, h], opaquePixels=opaque, bounds=frame.getbbox())
+        if name not in TRANSPARENT_PROPS:
             check(opaque == w * h, f'{name}: must be fully opaque')
-            check(frame.crop((0, 0, 1, h)).tobytes() == frame.crop((w - 1, 0, w, h)).tobytes(),
-                  f'{name}: horizontal tile seam mismatch')
-            if name != 'exterior_cornice':
-                check(frame.crop((0, 0, w, 1)).tobytes() == frame.crop((0, h - 1, w, h)).tobytes(),
-                      f'{name}: vertical tile seam mismatch')
+            if name == 'exterior_entry_paving':
+                detail.update(verify_entry_paving(frame))
+            else:
+                check(frame.crop((0, 0, 1, h)).tobytes() == frame.crop((w - 1, 0, w, h)).tobytes(),
+                      f'{name}: horizontal tile seam mismatch')
+                if name != 'exterior_cornice':
+                    check(frame.crop((0, 0, w, 1)).tobytes() == frame.crop((0, h - 1, w, h)).tobytes(),
+                          f'{name}: vertical tile seam mismatch')
         else:
             check(0 < opaque < w * h, f'{name}: prop must have a transparent background')
             left, top, right, bottom = frame.getbbox()
             check(min(left, top) >= 2 and right <= w - 2 and bottom <= h - 2,
                   f'{name}: unsafe transparent-prop margin')
-        details.append(dict(name=name, size=[w, h], opaquePixels=opaque, bounds=frame.getbbox()))
+            if name == 'exterior_entry_frame':
+                check(alpha.crop((8, 8, 24, 30)).getbbox() is None,
+                      'exterior_entry_frame: the live door opening must remain transparent')
+                detail.update(clearOpeningSize=[16, 22])
+        details.append(detail)
     spill = sum(a != 0 and m == 0 for a, m in zip(atlas.getchannel('A').tobytes(), mask.tobytes()))
     check(spill == 0, 'Pixels outside manifest frames')
     return dict(status='pass', atlasSize=list(atlas.size), frames=len(details),

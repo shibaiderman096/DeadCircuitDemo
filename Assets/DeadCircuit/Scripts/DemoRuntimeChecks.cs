@@ -43,6 +43,12 @@ namespace DeadCircuit
             string qaSavePath = Path.GetFullPath(bridge.QaSavePath);
             Require(!File.Exists(qaSavePath) && !bridge.IsRunning,
                 "QA starts at the menu with a fresh isolated save path");
+            if (Environment.GetCommandLineArgs().Contains("--demo-exterior-qa"))
+            {
+                yield return CheckNaturalEntrances(bridge);
+                Application.Quit(0);
+                yield break;
+            }
             Require(Active("Start Page") && !Active("Create World Page") && !Active("Load World Page") && !Active("LAN Page"), "home page is the initial menu");
             RequireButtonIcon("New Game", "ui_new_world");
             RequireButtonIcon("Load Game", "ui_load_world");

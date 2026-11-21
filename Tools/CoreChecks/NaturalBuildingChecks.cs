@@ -19,6 +19,66 @@ static partial class Checks
 
     static void NaturalBuildingChecks()
     {
+        Run("exteriors real entrance doors stay above the opaque shell in every rotation", () =>
+        {
+            foreach (var plan in SiteBlueprintCatalog.All) for (int rotation = 0; rotation < 4; rotation++)
+            {
+                var shape = NaturalBuildingLayout.Create(ExteriorSite(plan.kind, rotation), true);
+                for (int y = 0; y < shape.height; y++) for (int x = 0; x < shape.width; x++)
+                {
+                    int normal = 6000 - y * 80;
+                    int shell = 6000 - (shape.minY * 80 - 40) + 24;
+                    if (shape.Entrance(x, y))
+                        Require(shape.EntranceOrder(x, y, normal, shell) > shell,
+                            $"door is hidden behind its roof/facade: {plan.kind}/{rotation} at {x},{y}");
+                    else Require(shape.EntranceOrder(x, y, normal, shell) == normal,
+                        "interior door or non-door acquired an exterior overlay");
+                }
+            }
+        });
+        Run("exteriors entrance guides point from real indoor doors to outdoor space", () =>
+        {
+            var directions = new HashSet<(int, int)>();
+            foreach (var plan in SiteBlueprintCatalog.All) for (int rotation = 0; rotation < 4; rotation++)
+            {
+                var shape = NaturalBuildingLayout.Create(ExteriorSite(plan.kind, rotation, -19, -17), true);
+                for (int y = 0; y < shape.height; y++) for (int x = 0; x < shape.width; x++)
+                {
+                    bool entry = shape.EntranceOutward(x, y, out int dx, out int dy);
+                    Require(entry == shape.Entrance(x, y), "entrance has no guide or internal door has a guide");
+                    if (!entry) continue;
+                    Require(Math.Abs(dx) + Math.Abs(dy) == 1 && shape.IsInterior(x - dx, y - dy) &&
+                        !shape.Covers(x + dx, y + dy), $"guide points into the building: {plan.kind}/{rotation}");
+                    directions.Add((dx, dy));
+                }
+            }
+            Require(directions.Count == 4, "entrance guides did not cover all four directions");
+        });
+        Run("exteriors primary entrances still open and admit a survivor in four directions", () =>
+        {
+            foreach (var plan in SiteBlueprintCatalog.All) for (int rotation = 0; rotation < 4; rotation++)
+            {
+                var site = ExteriorSite(plan.kind, rotation, 24, 24);
+                var shape = NaturalBuildingLayout.Create(site, true);
+                Require(shape.EntranceOutward(site.doorX - site.x, site.doorY - site.y, out int dx, out int dy), "missing entry approach");
+                var sim = new WorldSimulator(Flat(era: TechEra.Primitive));
+                var p = Builder(sim);
+                for (int y = 0; y < site.height; y++) for (int x = 0; x < site.width; x++)
+                {
+                    char cell = shape.Cell(x, y);
+                    if (cell == '#') Add(sim.State, BuildKind.Wall, site.x + x, site.y + y);
+                    if (cell == '+') Add(sim.State, BuildKind.Door, site.x + x, site.y + y, x == 0 || x == site.width - 1 ? 1 : 0);
+                }
+                p.x = site.doorX + dx * 1.5f; p.y = site.doorY + dy * 1.5f;
+                Advance(sim, .05f);
+                Require(sim.IsBlocked(site.doorX, site.doorY), "closed door did not block entry");
+                sim.Apply(Command(p, "interact", site.doorX, site.doorY));
+                Require(!sim.IsBlocked(site.doorX, site.doorY), $"real door could not open: {plan.kind}/{rotation}");
+                sim.Apply(new PlayerCommand { playerId = p.id, action = "move", moveX = -dx, moveY = -dy });
+                Advance(sim, .5f);
+                Require(shape.Contains(p.x - site.x, p.y - site.y), $"survivor could not reach entry: {plan.kind}/{rotation}");
+            }
+        });
         Run("exteriors cover all 32 natural building shells in four rotations", () =>
         {
             foreach (var plan in SiteBlueprintCatalog.All) for (int rotation = 0; rotation < 4; rotation++)

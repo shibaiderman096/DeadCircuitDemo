@@ -71,6 +71,20 @@
       "y": 74,
       "w": 32,
       "h": 32
+    },
+    {
+      "name": "exterior_entry_frame",
+      "x": 74,
+      "y": 74,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "name": "exterior_entry_paving",
+      "x": 110,
+      "y": 74,
+      "w": 32,
+      "h": 32
     }
   ]
 }
