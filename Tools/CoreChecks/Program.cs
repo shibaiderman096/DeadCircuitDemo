@@ -168,6 +168,8 @@ static partial class Checks
         PetrochemicalProgressionChecks();
         PrecisionChecks();
         PrecisionProgressionChecks();
+        RadiationChecks();
+        RadiationEquipmentChecks();
         NuclearProgressionChecks();
         QuartzResourceChecks();
         ElectricalAutomationChecks();

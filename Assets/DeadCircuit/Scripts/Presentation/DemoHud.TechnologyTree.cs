@@ -40,7 +40,7 @@ namespace DeadCircuit
             new[] { "machine_6", "item_42", "item_44", "machine_52", "item_45", "machine_5", "machine_50", "machine_51" },
             new[] { "ui_research", "machine_53", "machine_56", "item_50", "item_12", "item_51", "machine_24", "machine_30" },
             new[] { "item_56", "item_57", "item_58", "item_13", "machine_27", "item_61", "item_60", "machine_26" },
-            new[] { "machine_27", "machine_28", "machine_61", "machine_62", "item_61", "machine_30", "machine_28", "machine_62", "item_62" }
+            new[] { "machine_27", "machine_28", "machine_61", "machine_62", "item_61", "machine_30", "machine_28", "machine_62", "item_62", "ui_survival", "gear_19" }
         };
 
         sealed class TreeCard
@@ -447,6 +447,11 @@ namespace DeadCircuit
                 case TechEra.Nuclear:
                 {
                     string evidence = NuclearCatalog.ResearchEvidence(world, (NuclearTech)node.researchId);
+                    if (node.researchId == (int)NuclearTech.UraniumBeneficiation ||
+                        node.researchId == (int)NuclearTech.RadiationMonitoring ||
+                        node.researchId == (int)NuclearTech.RadiationProtection)
+                        return SteamProgress("实际开采铀矿", world.nuclearUraniumMined, 4) +
+                            "\n首堆装料前即可研究，无需核燃料或核废料产量。";
                     return SteamProgress("实际开采铀矿", world.nuclearUraniumMined, 4) + " · " +
                         "铀精矿累计生产 " + Count(world.produced, (int)ItemKind.UraniumConcentrate) + " · " +
                         SteamProgress("核燃料", Count(world.produced, (int)ItemKind.NuclearFuel), 2) +

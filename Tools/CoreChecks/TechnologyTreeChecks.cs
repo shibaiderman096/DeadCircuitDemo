@@ -30,7 +30,7 @@ static partial class Checks
             var checkedKeys = new HashSet<int>();
             var active = new HashSet<int>();
             foreach (var node in nodes) Visit(node);
-            Require(TechnologyTreeModel.Find(-1) == null && TechnologyTreeModel.Find(610) == null, "unknown key resolved");
+            Require(TechnologyTreeModel.Find(-1) == null && TechnologyTreeModel.Find(612) == null, "unknown key resolved");
 
             void CheckCrafts(int era, string command, IEnumerable<(int id, string name, string description, int mask, int[] cost)> catalog)
             {

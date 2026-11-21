@@ -137,7 +137,7 @@ static partial class Checks
             bool hasBeneficiation = Enum.TryParse("UraniumBeneficiation", out NuclearTech beneficiation);
             Require(hasConcentrate && (int)concentrate == 62 && DemoCatalog.ItemCount == 63,
                 "uranium concentrate did not append one persistent material slot");
-            Require(hasBeneficiation && NuclearCatalog.AllResearch == (1 << 9) - 1 && NuclearCatalog.Definition((int)beneficiation) != null,
+            Require(hasBeneficiation && NuclearCatalog.AllResearch == (1 << 11) - 1 && NuclearCatalog.Definition((int)beneficiation) != null,
                 "uranium beneficiation is missing from the nuclear research catalog");
 
             var milling = TechCatalog.Recipe(93);
@@ -167,7 +167,7 @@ static partial class Checks
                 "current-format save did not preserve uranium concentrate in world counters and inventories");
         });
 
-        Run("nuclear technology validates all nine studies and saves their full progression", () =>
+        Run("nuclear technology validates all eleven studies and saves their full progression", () =>
         {
             var state = Flat(era: TechEra.Nuclear);
             EarnNuclearEvidence(state);
@@ -195,7 +195,7 @@ static partial class Checks
         Run("nuclear saves reject unknown bits missing parents missing production evidence and early research", () =>
         {
             var badMask = Flat(era: TechEra.Nuclear);
-            badMask.nuclearResearch = 1 << 9;
+            badMask.nuclearResearch = 1 << 11;
             Reject(badMask, "unknown nuclear research bit was accepted");
 
             var badParent = Flat(era: TechEra.Nuclear);

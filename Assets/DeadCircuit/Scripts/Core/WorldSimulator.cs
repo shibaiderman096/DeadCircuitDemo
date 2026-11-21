@@ -201,6 +201,7 @@ namespace DeadCircuit
             RefreshPower(true);
             UpdateWaterAgriculture();
             UpdateProduction();
+            UpdateRadiation();
             UpdateTurrets();
             if (flowRevision < 0 || State.tick % 5 == 0) RebuildFlow();
             UpdateZombies();
@@ -407,6 +408,7 @@ namespace DeadCircuit
             p.x = x; p.y = y; p.hp = PlayerMaxHealth(p); p.stamina = PlayerMaxStamina(p);
             p.hunger = Math.Max(45f, p.hunger); p.attackCooldown = 0.5f;
             ResetSurvivalAfterRespawn(p);
+            p.radiationDose = p.radiationWear = 0f;
             p.lastDamageAt = State.elapsed;
             HeldInput input = inputs[p.id]; input.x = input.y = 0f; input.sprint = false; input.protectionUntil = State.elapsed + 5f;
             Notice(p, "已复活，保留背包与成长；短暂无敌。"); flowRevision = -1;

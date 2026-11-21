@@ -175,6 +175,8 @@ namespace DeadCircuit
                 SaveCheck(p.xp >= 0 && p.xp < XpToNextLevel(p.level), "xp");
                 CheckPosition(p.x, p.y,source);
                 SaveRange(p.hp, 0f, 100f + attributes[1] * 15f, "player hp");
+                SaveRange(p.radiationDose, 0f, RadiationCatalog.MaxDose, "radiation dose");
+                SaveRange(p.radiationWear, 0f, RadiationCatalog.WearInterval, "radiation protection wear");
                 SaveCheck(p.items==null || p.items.Length<DemoCatalog.ItemCount || p.items[(int)ItemKind.NuclearWaste]==0,"player nuclear waste inventory");
                 SaveRange(p.hunger, 0f, 100f, "hunger");
                 SaveRange(p.stamina, 0f, 100f + attributes[2] * 8f + skills[2] * 10f, "stamina");
@@ -190,6 +192,7 @@ namespace DeadCircuit
                     attributePoints = p.attributePoints, skillPoints = p.skillPoints, deaths = p.deaths, connected = p.connected,
                     appearance = CopyAppearance(p.appearance, source.version),
                     x = p.x, y = p.y, aimX = 1f, aimY = 0f, hp = p.hp, hunger = p.hunger, stamina = p.stamina,
+                    radiationDose = p.radiationDose, radiationWear = p.radiationWear,
                     attackCooldown = p.attackCooldown, interactCooldown = p.interactCooldown, noticeUntil = p.noticeUntil, lastDamageAt = p.lastDamageAt,
                     items = CopyItems(p.items, InventoryLimit, "player inventory",itemCount), attributes = attributes, skills = skills
                 };
@@ -266,7 +269,7 @@ namespace DeadCircuit
             {
                 SaveCheck(g!=null,"null gear"); CheckEntityId(g.id,ids,ref highestId);
                 SaveCheck((int)g.kind>=0 && (int)g.kind<EquipmentCatalog.GearNames.Length,"gear kind");
-                SaveCheck(g.durability>=0 && g.durability<=100,"gear durability");
+                SaveCheck(g.durability>=0 && g.durability<=EquipmentCatalog.Gear(g.kind).maxDurability,"gear durability");
                 SaveCheck(g.attachments!=null && g.attachments.Length==EquipmentCatalog.SlotNames.Length,"attachment slots");
                 for(int i=0;i<g.attachments.Length;i++)
                 {

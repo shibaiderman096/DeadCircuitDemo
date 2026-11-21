@@ -13,7 +13,7 @@ static partial class Checks
     {
         Run("equipment armor appends nine persistent armor kinds without renumbering weapons", () =>
         {
-            Require(EquipmentCatalog.GearNames.Length == 19, "armor catalog requires 19 gear kinds");
+            Require(EquipmentCatalog.GearNames.Length == 20 && (int)GearKind.RadiationSuit==19, "armor catalog requires 20 gear kinds");
             string[] names = { "ClothHood", "LeatherJacket", "WorkPants", "WorkBoots", "SteelHelmet", "ArmorVest", "TacticalHelmet", "TacticalVest", "TacticalBoots" };
             for (int i = 0; i < names.Length; i++)
                 Require(Enum.TryParse<GearKind>(names[i], out var kind) && (int)kind == 10 + i, "missing or reordered armor kind: " + names[i]);

@@ -188,9 +188,14 @@ namespace DeadCircuit
 
         static void AddArmor(SurvivorLayer[] layers, ref int count, GearState gear, int part, int facing, Vector2 at, float angle, int order)
         {
-            if (gear == null || (int)gear.kind < 10 || (int)gear.kind > 18) return;
-            Color tint = gear.durability > 0 ? Color.white : new Color(.48f,.45f,.42f);
-            Add(layers, ref count, armor[(int)gear.kind,part,facing], tint, at, angle, order);
+            if (gear == null) return;
+            // Reuse the registered tactical vest rig without indexing the new ID into the atlas.
+            bool radiationSuit = gear.kind == GearKind.RadiationSuit;
+            int artKind = radiationSuit ? (int)GearKind.TacticalVest : (int)gear.kind;
+            if (artKind < 10 || artKind >= armor.GetLength(0)) return;
+            Color tint = gear.durability <= 0 ? new Color(.48f,.45f,.42f) :
+                radiationSuit ? ColorFor(4, 3) : Color.white;
+            Add(layers, ref count, armor[artKind,part,facing], tint, at, angle, order);
         }
 
         /// <summary>Returns layers in draw order. Coordinates and all pivots share the ground origin.</summary>
