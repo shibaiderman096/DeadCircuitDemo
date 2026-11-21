@@ -76,8 +76,10 @@ static partial class Checks
             Add(state, BuildKind.HighGenerator, 20, 20).items[(int)ItemKind.Fuel] = 20;
             var output = Add(state, BuildKind.Chest, 19, 20);
             var sim = new WorldSimulator(state);
-            var player = Builder(sim);
-            player.items[(int)ItemKind.UraniumConcentrate] = player.items[(int)ItemKind.NuclearFuel] = 0;
+            var player = sim.AddPlayer("uranium-miner", "Miner");
+            Array.Clear(player.items);
+            player.items[(int)ItemKind.UraniumOre] = 6;
+            player.items[(int)ItemKind.SteelPlate] = 2;
             player.x=8; player.y=10;
             int[] lockedInventory=Copy(player.items);
             sim.Apply(Command(player,"nuclear",arg:(int)NuclearTech.UraniumBeneficiation));
@@ -184,6 +186,7 @@ static partial class Checks
             foreach (var definition in NuclearCatalog.All.OrderBy(d => d.id == NuclearTech.UraniumBeneficiation ? -1 : (int)d.id))
             {
                 Ready(player);
+                for (int i = 0; i < player.items.Length; i++) player.items[i] = Math.Max(player.items[i], definition.cost[i]);
                 string requirement = NuclearCatalog.ResearchRequirement(sim.State, player, (int)definition.id);
                 Require(requirement.Length == 0, definition.name + " should be researchable: " + requirement);
                 int[] before = Copy(player.items);

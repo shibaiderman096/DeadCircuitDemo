@@ -7,10 +7,14 @@ namespace DeadCircuit
 {
     public sealed partial class DemoHud
     {
+        enum InventorySupply { Material, Food, Seed, Water }
+
         sealed class InventoryCell
         {
             public int id, category, quantity;
             public string title;
+            public InventorySupply supply;
+            public GearKind? gearKind;
             public UiButton widget;
         }
 
@@ -38,18 +42,33 @@ namespace DeadCircuit
         readonly List<TextMeshProUGUI> attachmentLabels = new List<TextMeshProUGUI>();
         readonly List<GameObject> gearDetailObjects = new List<GameObject>();
         readonly List<GameObject> gunDetailObjects = new List<GameObject>();
-        readonly List<GameObject> armorDetailObjects = new List<GameObject>();
+        GameObject unequipActions;
         const float InventoryPreviewMaxScale = 256f;
+        static readonly Color InventoryGraphite = new Color32(23, 28, 33, 255);
+        static readonly Color InventoryInset = new Color32(17, 22, 26, 255);
+        static readonly Color InventoryCyan = new Color32(137, 219, 226, 255);
+        static readonly Color InventoryBlue = new Color32(146, 196, 241, 255);
+        static readonly Color InventoryRed = new Color32(240, 148, 143, 255);
+        static readonly Color InventoryCellIdle = new Color32(30, 46, 51, 255);
+        static readonly Color InventoryCellSelected = new Color32(43, 84, 93, 255);
+        static readonly Color InventorySocketIdle = new Color32(32, 49, 69, 255);
+        static readonly Color InventorySocketSelected = new Color32(53, 83, 115, 255);
+        static readonly Color InventoryArmorIdle = new Color32(64, 37, 42, 255);
+        static readonly Color InventoryArmorSelected = new Color32(102, 48, 52, 255);
+        static readonly Color InventoryCraftIdle = new Color32(62, 48, 30, 255);
+        static readonly string[] InventoryArmorNames = { "头部", "躯干", "腿部", "脚部" };
         readonly SurvivorLayer[] inventoryPreviewLayers = new SurvivorLayer[SurvivorVisuals.Capacity];
         readonly UnityEngine.UI.Image[] inventoryPreviewImages = new UnityEngine.UI.Image[SurvivorVisuals.Capacity];
         RectTransform materialGrid, gearGrid, partGrid, inventoryRecipes;
         RectTransform inventoryPreviewOrigin, inventoryFootRule;
         UnityEngine.UI.ScrollRect materialScroll, gearScroll, partScroll, craftingScroll, itemDetailScroll;
         TextMeshProUGUI equipmentSummary, inventorySummary, inventoryEmpty, inventorySelection;
-        TextMeshProUGUI inventoryPreviewEmpty;
+        TextMeshProUGUI inventoryPreviewEmpty, inventoryWeightValue, craftSummary;
+        UnityEngine.UI.Image inventoryWeightFill;
+        UiButton craftFilterButton, storeItem;
         TextMeshProUGUI itemTitle, itemMeta, itemUsage, itemStats, equipmentHint, armorSummary;
         UiButton sortInventory, filterInventory, equipSelected, unequipSelected, repairGear, reloadGear, unloadGear, salvageGear, itemResearch;
-        int inventoryTab, inventorySort, inventoryFilter, selectedMaterial, selectedGear = -1, selectedPart;
+        int inventoryTab, inventorySort, inventoryFilter, craftFilter, selectedMaterial = -1, selectedGear = -1, selectedPart = -1;
         // Keep identities rather than indices or snapshot references, even when sorting and syncing.
         int inventoryDetailKind, inventorySelectionRevision, paintedSelectionRevision = -1;
         string inventoryPlayer = "";
@@ -67,25 +86,67 @@ namespace DeadCircuit
 
         void MakeInventory(RectTransform root)
         {
-            inventory = Backdrop("Inventory Panel", root, new Color32(4, 12, 8, 225));
-            RectTransform card = Box("Inventory Card", inventory, 0, 0, 1160, 688, Panel, true);
-            Center(card, 1160, 688);
-            PanelRule(card, 1160, 58);
-            Box("Inventory Browser Surface", card, 14, 70, 350, 496, Recessed);
-            RectTransform preview = Box("Character Preview Surface", card, 372, 70, 332, 496, Recessed);
-            Box("Equipment Slots Surface", card, 712, 70, 434, 244, Recessed);
-            Box("Inventory Detail Surface", card, 712, 322, 434, 244, Recessed);
-            Box("Inventory Footer Rule", card, 22, 616, 1116, 1, Edge);
-            Label("Inventory Heading", card, "背包与装备", 22, 16, 830, 36, 25, Ink, FontStyles.Bold);
-            UiButton closeInventory = Button("Close Inventory", card, "返回", 1012, 18, 126, 32, () => SetPanel(inventory, false));
+            inventory = Backdrop("Inventory Panel", root, new Color32(6, 9, 12, 231));
+            RectTransform card = Box("Inventory Card", inventory, 0, 0, 1216, 688, InventoryGraphite, true);
+            Center(card, 1216, 688);
+            PanelRule(card, 1216, 58);
+            Label("Inventory Heading", card, "背包与装备", 24, 12, 540, 36, 25, Ink, FontStyles.Bold);
+            inventoryWeightValue = Label("Inventory Weight Value", card, "", 650, 10, 392, 28, 17, InventoryCyan, FontStyles.Bold);
+            RectTransform track = Box("Inventory Weight Track", card, 650, 43, 392, 6, InventoryInset);
+            RectTransform fill = Box("Inventory Weight Fill", track, 0, 0, 392, 6, InventoryCyan);
+            Stretch(fill);
+            inventoryWeightFill = fill.GetComponent<UnityEngine.UI.Image>();
+
+            UiButton closeInventory = Button("Close Inventory", card, "返回", 1070, 16, 120, 32, () => SetPanel(inventory, false));
             SetButtonArt(closeInventory, "ui_back", 20);
-            Label("Inventory Browser Heading", card, "背包物品", 22, 78, 200, 26, 17, Accent, FontStyles.Bold);
-            Label("Character Preview Heading", preview, "幸存者 / SURVIVOR", 16, 10, 300, 26, 17, Accent, FontStyles.Bold);
-            Label("Character Preview Hint", preview, "当前外观与穿戴 · 实时", 16, 38, 300, 20, 12, Muted);
-            RectTransform stage = Box("Inventory Preview Stage", preview, 14, 64, 304, 418, Panel);
+
+            Box("Inventory Browser Surface", card, 14, 70, 318, 546, InventoryInset);
+            MakeInventoryCraftColumn(card);
+            RectTransform preview = Box("Character Preview Surface", card, 342, 70, 430, 334, InventoryInset);
+            MakeInventorySurvivor(preview);
+            Box("Inventory Detail Surface", card, 342, 412, 430, 204, InventoryInset);
+            Label("Inventory Detail Heading", card, "物品详情", 356, 418, 402, 24, 16, InventoryCyan, FontStyles.Bold);
+            MakeItemDetails(card);
+            Box("Equipment Slots Surface", card, 782, 70, 420, 130, InventoryInset);
+            MakeInventoryEquipmentSlots(card);
+            Box("Inventory Backpack Surface", card, 782, 208, 420, 408, InventoryInset);
+            MakeInventoryBackpack(card);
+
+            Box("Inventory Footer Rule", card, 24, 622, 1166, 1, Edge);
+            eatButton = Button("Eat", card, "进食 V", 24, 630, 130, 34, () => Send("eat"));
+            SetButtonArt(eatButton, "ui_eat", 22);
+            workbenchHint = Label("Workbench Requirement", card, "", 170, 626, 1020, 23, 13, Muted);
+            inventoryNotice = Label("Inventory Feedback", card, "", 170, 650, 1020, 26, 14, Amber);
+            inventory.gameObject.SetActive(false);
+        }
+
+        void MakeInventoryCraftColumn(RectTransform card)
+        {
+            Label("Inventory Craft Heading", card, "快捷制作", 26, 78, 190, 30, 17, Amber, FontStyles.Bold);
+            inventoryTabs[3] = Button("Inventory Tab Craft", card, "制作", 226, 78, 94, 30, () => BrowseInventoryTab(3));
+            SetButtonArt(inventoryTabs[3], "ui_craft", 20);
+            Tint(inventoryTabs[3], InventoryCraftIdle);
+            craftFilterButton = Button("Craft Category Filter", card, "配方：全部", 26, 114, 150, 30, () =>
+            {
+                craftFilter = (craftFilter + 1) % 4;
+                ResetScroll(craftingScroll);
+                RefreshAll();
+            });
+            Tint(craftFilterButton, InventoryCraftIdle);
+            craftSummary = Label("Inventory Craft Summary", card, "", 184, 114, 134, 30, 12, Muted);
+            inventoryRecipes = ScrollContent("Craft Scroll View", card, 24, 150, 298, 456, out craftingScroll);
+            StyleInventoryScroll(craftingScroll, Amber);
+            MakeInventoryRecipes();
+        }
+
+        void MakeInventorySurvivor(RectTransform preview)
+        {
+            Label("Character Preview Heading", preview, "幸存者", 14, 8, 228, 28, 17, Ink, FontStyles.Bold);
+            Label("Armor Slots Heading", preview, "穿戴", 318, 8, 98, 28, 17, InventoryRed, FontStyles.Bold);
+            RectTransform stage = Box("Inventory Preview Stage", preview, 120, 44, 190, 258, InventoryGraphite);
             stage.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
-            inventoryFootRule = Box("Inventory Preview Foot Rule", stage, 38, 392, 228, 1, Edge);
-            inventoryPreviewEmpty = Label("Inventory Preview Empty", stage, "角色信息同步中", 12, 170, 280, 56, 15, Muted);
+            inventoryFootRule = Box("Inventory Preview Foot Rule", stage, 24, 238, 142, 1, Edge);
+            inventoryPreviewEmpty = Label("Inventory Preview Empty", stage, "角色信息同步中", 12, 101, 166, 56, 15, Muted);
             inventoryPreviewEmpty.alignment = TextAlignmentOptions.Center;
             inventoryPreviewOrigin = NewRect("Inventory Preview Origin", stage);
             inventoryPreviewOrigin.anchorMin = inventoryPreviewOrigin.anchorMax = new Vector2(.5f, 0f);
@@ -103,82 +164,128 @@ namespace DeadCircuit
                 image.enabled = false;
                 inventoryPreviewImages[i] = image;
             }
-            Label("Equipment Slots Heading", card, "已装备", 726, 78, 150, 24, 17, Accent, FontStyles.Bold);
-            inventorySelection = Label("Equipment Selection", card, "", 864, 77, 268, 30, 12, Muted);
-            equipmentSlots[0] = Button("Weapon Equipment Slot", card, "武器位", 726, 108, 198, 48, () => BrowseEquipmentSlot(0));
-            equipmentSlots[1] = Button("Tool Equipment Slot", card, "工具位", 932, 108, 200, 48, () => BrowseEquipmentSlot(1));
-            equipmentSlots[2] = Button("Unarmed Equipment Slot", card, "徒手", 726, 252, 406, 34, () => InventoryCommand("switch", 2));
             for (int i = 0; i < armorSlots.Length; i++)
             {
                 int slot = i;
-                armorSlots[i] = Button("Armor Slot " + i, card, "", 726 + (i % 2) * 206, 162 + (i / 2) * 44, 200, 40, () => BrowseArmorSlot(slot));
+                armorSlots[i] = Button("Armor Slot " + i, preview, "", i < 2 ? 14 : 318, 55 + i % 2 * 119, 98, 106, () => BrowseArmorSlot(slot));
                 armorSlots[i].label.fontSizeMax = 14;
                 armorSlots[i].label.fontSizeMin = 12;
             }
-            armorSummary = Label("Armor Summary", card, "", 726, 288, 406, 20, 12, Accent);
-            string[] names = { "Materials", "Equipment", "Parts", "Craft" };
-            string[] titles = { "材料", "装备", "配件", "制作" };
-            for (int i = 0; i < inventoryTabs.Length; i++)
+            armorSummary = Label("Armor Summary", preview, "", 14, 303, 402, 24, 13, InventoryRed);
+        }
+
+        void MakeInventoryEquipmentSlots(RectTransform card)
+        {
+            Label("Equipment Slots Heading", card, "随身装备", 794, 78, 142, 24, 17, InventoryBlue, FontStyles.Bold);
+            inventorySelection = Label("Equipment Selection", card, "", 940, 76, 250, 28, 13, Muted);
+            inventorySelection.alignment = TextAlignmentOptions.MidlineRight;
+            equipmentSlots[0] = Button("Weapon Equipment Slot", card, "主武器", 794, 108, 292, 38, () => BrowseEquipmentSlot(0));
+            equipmentSlots[1] = Button("Tool Equipment Slot", card, "副手工具", 794, 152, 292, 38, () => BrowseEquipmentSlot(1));
+            equipmentSlots[2] = Button("Unarmed Equipment Slot", card, "徒手", 1094, 108, 96, 82, () => InventoryCommand("switch", 2));
+            for (int i = 0; i < 2; i++)
+            {
+                equipmentSlots[i].label.fontSizeMax = 14;
+                equipmentSlots[i].label.fontSizeMin = 12;
+            }
+        }
+
+        void MakeInventoryBackpack(RectTransform card)
+        {
+            Label("Inventory Browser Heading", card, "背包物品", 794, 215, 150, 26, 17, InventoryCyan, FontStyles.Bold);
+            inventorySummary = Label("Inventory Summary", card, "", 952, 215, 238, 26, 13, Muted);
+            inventorySummary.alignment = TextAlignmentOptions.MidlineRight;
+            string[] names = { "Materials", "Equipment", "Parts" };
+            string[] titles = { "材料 / 补给", "未装备", "配件" };
+            string[] icons = { "ui_inventory", "ui_equip", "ui_attach" };
+            for (int i = 0; i < names.Length; i++)
             {
                 int tab = i;
-                inventoryTabs[i] = Button("Inventory Tab " + names[i], card, titles[i], 22 + i * 78, 106, 72, 30, () => BrowseInventoryTab(tab));
+                inventoryTabs[i] = Button("Inventory Tab " + names[i], card, titles[i], 794 + i * 135, 244, 126, 30, () => BrowseInventoryTab(tab));
+                SetButtonArt(inventoryTabs[i], icons[i], 20);
             }
-            SetButtonArt(inventoryTabs[0], "ui_inventory", 20);
-            SetButtonArt(inventoryTabs[1], "ui_equip", 20);
-            SetButtonArt(inventoryTabs[2], "ui_attach", 20);
-            SetButtonArt(inventoryTabs[3], "ui_craft", 20);
-            sortInventory = Button("Inventory Sort", card, "排序：分类", 22, 142, 146, 32,
+            sortInventory = Button("Inventory Sort", card, "排序：分类", 794, 281, 161, 31,
                 () => { inventorySort = (inventorySort + 1) % 3; RefreshAll(); });
             SetButtonArt(sortInventory, "ui_refresh", 20);
-            filterInventory = Button("Inventory Category Filter", card, "分类：全部", 176, 142, 178, 32, CycleInventoryFilter);
+            Tint(sortInventory, InventoryCellIdle);
+            filterInventory = Button("Inventory Category Filter", card, "分类：全部", 963, 281, 227, 31, CycleInventoryFilter);
             SetButtonArt(filterInventory, "ui_inspect", 18);
-            inventorySummary = Label("Inventory Summary", card, "", 22, 174, 332, 24, 13, Muted);
-            Label("Inventory Detail Heading", card, "物品详情", 726, 328, 406, 20, 15, Accent);
+            Tint(filterInventory, InventoryCellIdle);
             materialGrid = MakeInventoryGrid("Inventory Scroll View", card, out materialScroll);
             gearGrid = MakeInventoryGrid("Equipment Scroll View", card, out gearScroll);
             partGrid = MakeInventoryGrid("Parts Scroll View", card, out partScroll);
-            inventoryRecipes = ScrollContent("Craft Scroll View", card, 22, 202, 334, 364, out craftingScroll);
-            inventoryEmpty = Label("Inventory Empty", card, "", 38, 306, 300, 96, 15, Muted);
+            inventoryEmpty = Label("Inventory Empty", card, "", 802, 412, 380, 72, 15, Muted);
+            inventoryEmpty.alignment = TextAlignmentOptions.Center;
             for (int i = 0; i < DemoCatalog.ItemNames.Length; i++)
-            {
-                int item = i;
-                materialCells.Add(MakeInventoryCell("Inventory Item " + i, materialGrid, i, DemoCatalog.ItemNames[i], MaterialCategory(i),
-                    () => { selectedMaterial = item; SelectInventoryDetail(0); }));
-            }
+                AddInventoryMaterial("Inventory Item " + i, i, DemoCatalog.ItemNames[i], MaterialCategory(i), InventorySupply.Material, "item_" + i);
+            for (int i = 0; i < SurvivalCatalog.FoodCount; i++)
+                AddInventoryMaterial("Inventory Food " + i, i, SurvivalCatalog.Food(i).name, 4, InventorySupply.Food, "food_" + i);
+            for (int i = 0; i < SurvivalCatalog.CropCount; i++)
+                AddInventoryMaterial("Inventory Seed " + i, i, SurvivalCatalog.Crop(i).name + "种子", 5, InventorySupply.Seed, "ui_seed");
+            AddInventoryMaterial("Inventory Raw Water", 0, "原水", 4, InventorySupply.Water, "ui_water");
+            AddInventoryMaterial("Inventory Clean Water", 1, "净水", 4, InventorySupply.Water, "ui_water");
             for (int i = 0; i < EquipmentCatalog.PartNames.Length; i++)
             {
                 int part = i;
-                partCells.Add(MakeInventoryCell("Part Slot " + i, partGrid, i, EquipmentCatalog.PartNames[i], (int)EquipmentCatalog.Part((PartKind)i).slot + 1,
-                    () => { selectedPart = part; SelectInventoryDetail(2); }));
+                InventoryCell cell = MakeInventoryCell("Part Slot " + i, partGrid, i, EquipmentCatalog.PartNames[i], (int)EquipmentCatalog.Part((PartKind)i).slot + 1,
+                    () => { selectedPart = part; SelectInventoryDetail(2); });
+                SetInventoryCellArt(cell, "part_" + i);
+                partCells.Add(cell);
             }
-            MakeInventoryRecipes();
-            MakeItemDetails(card);
-            eatButton = Button("Eat", card, "进食 V", 22, 580, 130, 34, () => Send("eat"));
-            SetButtonArt(eatButton, "ui_eat", 22);
-            workbenchHint = Label("Workbench Requirement", card, "", 166, 574, 972, 44, 13, Muted);
-            inventoryNotice = Label("Inventory Feedback", card, "", 22, 622, 1116, 50, 13, Amber);
-            inventory.gameObject.SetActive(false);
+        }
+
+        static void StyleInventoryScroll(UnityEngine.UI.ScrollRect scroll, Color accent)
+        {
+            scroll.GetComponent<UnityEngine.UI.Image>().color = InventoryInset;
+            scroll.verticalScrollbar.targetGraphic.color = accent;
         }
 
         RectTransform MakeInventoryGrid(string name, Transform parent, out UnityEngine.UI.ScrollRect scroll)
         {
-            RectTransform content = ScrollContent(name, parent, 22, 202, 334, 364, out scroll, true);
+            const float width = 396f;
+            RectTransform content = ScrollContent(name, parent, 794, 319, width, 289, out scroll, true);
+            var layout = content.GetComponent<UnityEngine.UI.GridLayoutGroup>();
+            layout.cellSize = new Vector2((width - 16 - 12 - 16) / 3f, 84);
+            layout.constraintCount = 3;
+            StyleInventoryScroll(scroll, InventoryCyan);
             return content;
+        }
+
+        void AddInventoryMaterial(string name, int id, string title, int category, InventorySupply supply, string icon)
+        {
+            int index = materialCells.Count;
+            InventoryCell cell = MakeInventoryCell(name, materialGrid, id, title, category,
+                () => { selectedMaterial = index; SelectInventoryDetail(0); });
+            cell.supply = supply;
+            SetInventoryCellArt(cell, icon);
+            cell.widget.icon.color = supply != InventorySupply.Material ? Color.white : id == (int)ItemKind.Stone ? new Color(.75f, .79f, .75f) :
+                id == (int)ItemKind.Clay ? new Color(1f, .55f, .32f) : id == (int)ItemKind.Charcoal ? new Color(.38f, .42f, .39f) :
+                id == (int)ItemKind.Brick ? new Color(1f, .48f, .30f) : Color.white;
+            materialCells.Add(cell);
         }
 
         InventoryCell MakeInventoryCell(string name, Transform parent, int id, string title, int category, Action select)
         {
-            UiButton widget = Button(name, parent, title, 0, 0, 149, 76, select);
+            UiButton widget = Button(name, parent, "", 0, 0, 117, 84, select);
             widget.label.alignment = TextAlignmentOptions.TopLeft;
             widget.label.fontSizeMax = 14;
             widget.label.fontSizeMin = 12;
-            Stretch(widget.label.rectTransform, 10, 8, 8, 6);
-            Box("Category Accent", widget.button.transform, 0, 0, 3, 76, category == 3 ? Amber : Accent);
             return new InventoryCell { id = id, title = title, category = category, widget = widget };
+        }
+
+        void SetInventoryCellArt(InventoryCell cell, string icon)
+        {
+            SetButtonArt(cell.widget, icon, 28);
+            RectTransform rect = cell.widget.icon.rectTransform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
+            rect.pivot = new Vector2(0, 1);
+            rect.anchoredPosition = new Vector2(6, -5);
+            Stretch(cell.widget.label.rectTransform, 8, 35, 5, 3);
         }
 
         void MakeInventoryRecipes()
         {
+            MakeEquipmentRecipe((int)GearKind.StoneAxe, false);
+            MakeEquipmentRecipe((int)GearKind.StonePickaxe, false);
             var handcraft = new List<RecipeDefinition>
             {
                 new RecipeDefinition { id = 0, name = "手工燃料", era = TechEra.Primitive, building = BuildKind.Workbench, duration = .5f,
@@ -191,22 +298,24 @@ namespace DeadCircuit
             foreach (RecipeDefinition recipe in handcraft)
             {
                 RecipeDefinition entry = recipe;
-                RectTransform row = FlowRow("Craft Recipe " + entry.id, inventoryRecipes, 302, 112);
+                RectTransform row = FlowRow("Craft Recipe " + entry.id, inventoryRecipes, 270, 112);
                 UiButton craft = Button(entry.id == 0 ? "Craft Fuel" : entry.id == 1 ? "Craft Ammo" : "Craft Recipe Button " + entry.id,
-                    row, entry.name, 2, 6, 120, 66, () => CraftRecipe(entry.id));
-                SetButtonArt(craft, "ui_craft", 26);
-                UiButton research = Button("View Research Recipe " + entry.id, row, "查看研究", 2, 76, 120, 28,
+                    row, entry.name, 2, 6, 108, 66, () => CraftRecipe(entry.id));
+                SetButtonArt(craft, "ui_craft", 18);
+                Tint(craft, InventoryCraftIdle);
+                UiButton research = Button("View Research Recipe " + entry.id, row, "查看研究", 2, 76, 108, 28,
                     () => OpenResearch(RecipeResearch(entry)));
                 SetButtonArt(research, "ui_research", 16);
-                manualRecipes.Add(new RecipeRow { recipe = entry, craft = craft, research = research, details = RecipeDetails(row, 166) });
+                manualRecipes.Add(new RecipeRow { recipe = entry, craft = craft, research = research, details = RecipeDetails(row) });
             }
-            for (int i = 0; i < EquipmentCatalog.GearNames.Length; i++) MakeEquipmentRecipe(i, false);
+            for (int i = 0; i < EquipmentCatalog.GearNames.Length; i++)
+                if (!EquipmentCatalog.IsHandcraftedTool((GearKind)i)) MakeEquipmentRecipe(i, false);
             for (int i = 0; i < EquipmentCatalog.PartNames.Length; i++) MakeEquipmentRecipe(i, true);
         }
 
-        TextMeshProUGUI RecipeDetails(RectTransform row, float width)
+        TextMeshProUGUI RecipeDetails(RectTransform row)
         {
-            TextMeshProUGUI details = Label("Craft Recipe Details", row, "", 132, 4, width, 104, 12, Ink);
+            TextMeshProUGUI details = Label("Craft Recipe Details", row, "", 118, 4, 148, 104, 12, Ink);
             details.enableAutoSizing = false;
             details.alignment = TextAlignmentOptions.TopLeft;
             return details;
@@ -215,15 +324,16 @@ namespace DeadCircuit
         void MakeEquipmentRecipe(int kind, bool part)
         {
             string prefix = part ? "Part Craft " : "Gear Craft ";
-            RectTransform row = FlowRow(prefix + kind + " Row", inventoryRecipes, 302, 112);
-            UiButton craft = Button(prefix + kind, row, "", 2, 6, 120, 66, () => CraftEquipment(kind, part));
-            SetButtonArt(craft, part ? "ui_attach" : "ui_craft", 26);
+            RectTransform row = FlowRow(prefix + kind + " Row", inventoryRecipes, 270, 112);
+            UiButton craft = Button(prefix + kind, row, "", 2, 6, 108, 66, () => CraftEquipment(kind, part));
+            SetButtonArt(craft, part ? "ui_attach" : "gear_" + kind, 18);
+            Tint(craft, InventoryCraftIdle);
             ResearchRef research = part ? EquipmentResearchCatalog.PartResearch((PartKind)kind) : GearResearchReference((GearKind)kind);
-            UiButton view = Button("View Research " + prefix + kind, row, "查看研究", 2, 76, 120, 28,
+            UiButton view = Button("View Research " + prefix + kind, row, "查看研究", 2, 76, 108, 28,
                 () => OpenResearch(research));
             SetButtonArt(view, "ui_research", 16);
             view.button.gameObject.SetActive(research != null);
-            equipmentRecipes.Add(new EquipmentRecipeRow { kind = kind, part = part, craft = craft, research = view, details = RecipeDetails(row, 166) });
+            equipmentRecipes.Add(new EquipmentRecipeRow { kind = kind, part = part, craft = craft, research = view, details = RecipeDetails(row) });
         }
 
         static ResearchRef RecipeResearch(RecipeDefinition recipe)
@@ -244,42 +354,51 @@ namespace DeadCircuit
 
         ResearchRef SelectedInventoryResearch()
         {
-            if (inventoryDetailKind == 0) return EquipmentResearchCatalog.AmmoResearch((ItemKind)selectedMaterial);
-            if (inventoryDetailKind == 2) return EquipmentResearchCatalog.PartResearch((PartKind)selectedPart);
+            if (inventoryDetailKind == 0)
+            {
+                InventoryCell cell = SelectedInventoryMaterial;
+                return cell != null && cell.supply == InventorySupply.Material ? EquipmentResearchCatalog.AmmoResearch((ItemKind)cell.id) : null;
+            }
+            if (inventoryDetailKind == 2) return selectedPart < 0 ? null : EquipmentResearchCatalog.PartResearch((PartKind)selectedPart);
             GearState gear = EquipmentCatalog.Find(bridge.LocalPlayer, selectedGear);
             return gear == null ? null : GearResearchReference(gear.kind);
         }
 
         void MakeItemDetails(RectTransform card)
         {
-            RectTransform content = ScrollContent("Inventory Details Scroll View", card, 716, 352, 430, 214, out itemDetailScroll);
-            itemTitle = FlowLabel("Selected Item Name", content, "", 390, 36, 20, Accent);
-            itemMeta = FlowLabel("Selected Item Quantity", content, "", 390, 54, 13, Muted);
-            itemUsage = FlowLabel("Selected Item Usage", content, "", 390, 64, 13, Ink);
-            itemResearch = Button("View Selected Item Research", content, "查看制造研究", 0, 0, 180, 32,
-                () => OpenResearch(SelectedInventoryResearch()));
-            itemResearch.button.gameObject.AddComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 32;
-            itemStats = FlowLabel("Selected Gear Stats", content, "", 390, 108, 14, Ink);
-            gearDetailObjects.Add(itemStats.gameObject);
-            RectTransform actions = FlowRow("Gear Actions", content, 390, 38);
-            equipSelected = Button("Equip Selected Gear", actions, "装备并切换", 0, 0, 124, 36, EquipSelectedGear, true);
-            repairGear = Button("Repair Gear", actions, "维修装备", 132, 0, 124, 36, () => InventoryCommand("gearrepair", selectedGear));
-            salvageGear = Button("Salvage Gear", actions, "回收装备", 264, 0, 126, 36, () => InventoryCommand("gearsalvage", selectedGear));
+            RectTransform content = ScrollContent("Inventory Details Scroll View", card, 352, 444, 410, 166, out itemDetailScroll);
+            StyleInventoryScroll(itemDetailScroll, InventoryCyan);
+            itemTitle = FlowLabel("Selected Item Name", content, "", 382, 36, 20, Accent);
+            itemMeta = FlowLabel("Selected Item Quantity", content, "", 382, 54, 13, Muted);
+            storeItem = Button("Store Nearby Item", content, "存入近处箱子", 0, 0, 180, 34, StoreSelectedInventoryItem);
+            SetButtonArt(storeItem, "ui_inventory", 20);
+            Tint(storeItem, InventoryCellIdle);
+            storeItem.button.gameObject.AddComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 34;
+            RectTransform actions = FlowRow("Gear Actions", content, 382, 38);
+            equipSelected = Button("Equip Selected Gear", actions, "装备并切换", 0, 0, 122, 36, EquipSelectedGear, true);
+            repairGear = Button("Repair Gear", actions, "维修装备", 130, 0, 122, 36, () => InventoryCommand("gearrepair", selectedGear));
+            salvageGear = Button("Salvage Gear", actions, "回收装备", 260, 0, 122, 36, () => InventoryCommand("gearsalvage", selectedGear));
             SetButtonArt(equipSelected, "ui_equip", 22);
             SetButtonArt(repairGear, "ui_repair", 22);
             SetButtonArt(salvageGear, "ui_salvage", 22);
             salvageGear.label.color = Amber;
             gearDetailObjects.Add(actions.gameObject);
-            RectTransform unequipRow = FlowRow("Armor Unequip Actions", content, 390, 36);
-            unequipSelected = Button("Unequip Selected Gear", unequipRow, "脱下防具", 0, 0, 390, 34, () => InventoryCommand("unequip", selectedGear));
+            RectTransform unequipRow = FlowRow("Armor Unequip Actions", content, 382, 36);
+            unequipSelected = Button("Unequip Selected Gear", unequipRow, "脱下防具", 0, 0, 382, 34, () => InventoryCommand("unequip", selectedGear));
             SetButtonArt(unequipSelected, "ui_detach", 22);
-            armorDetailObjects.Add(unequipRow.gameObject);
+            unequipActions = unequipRow.gameObject;
+            itemUsage = FlowLabel("Selected Item Usage", content, "", 382, 64, 13, Ink);
+            itemResearch = Button("View Selected Item Research", content, "查看制造研究", 0, 0, 180, 32,
+                () => OpenResearch(SelectedInventoryResearch()));
+            itemResearch.button.gameObject.AddComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 32;
+            itemStats = FlowLabel("Selected Gear Stats", content, "", 382, 108, 14, Ink);
+            gearDetailObjects.Add(itemStats.gameObject);
             TextMeshProUGUI salvageWarning = FlowLabel("Salvage Gear Warning", content,
-                "回收会永久拆解装备，返还一半制作材料、全部配件和弹匣内弹药。任一库存空间不足时，整次回收取消。", 390, 50, 12, Amber);
+                "回收会永久拆解装备，返还一半制作材料、全部配件和弹匣内弹药。任一库存空间不足时，整次回收取消。", 382, 50, 12, Amber);
             gearDetailObjects.Add(salvageWarning.gameObject);
-            TextMeshProUGUI heading = FlowLabel("Ammo Selection Heading", content, "装填弹种 · 更换前先卸下现有弹药", 390, 32, 13, Accent);
+            TextMeshProUGUI heading = FlowLabel("Ammo Selection Heading", content, "装填弹种 · 更换前先卸下现有弹药", 382, 32, 13, Accent);
             gunDetailObjects.Add(heading.gameObject);
-            RectTransform ammoRow = FlowRow("Ammo Selection", content, 390, 48);
+            RectTransform ammoRow = FlowRow("Ammo Selection", content, 382, 48);
             for (int i = 0; i < DemoCatalog.ItemNames.Length; i++)
             {
                 ItemKind ammo = (ItemKind)i;
@@ -292,62 +411,83 @@ namespace DeadCircuit
                 ammoButtons.Add(button);
             }
             gunDetailObjects.Add(ammoRow.gameObject);
-            RectTransform reloadRow = FlowRow("Magazine Actions", content, 390, 38);
-            reloadGear = Button("Reload Gear", reloadRow, "装填 R", 0, 0, 190, 36, () => InventoryCommand("reload"));
-            unloadGear = Button("Unload Gear", reloadRow, "卸下弹药", 200, 0, 190, 36, () => InventoryCommand("unload", selectedGear));
+            RectTransform reloadRow = FlowRow("Magazine Actions", content, 382, 38);
+            reloadGear = Button("Reload Gear", reloadRow, "装填 R", 0, 0, 187, 36, () => InventoryCommand("reload"));
+            unloadGear = Button("Unload Gear", reloadRow, "卸下弹药", 200, 0, 187, 36, () => InventoryCommand("unload", selectedGear));
             SetButtonArt(reloadGear, "ui_reload", 22);
             SetButtonArt(unloadGear, "ui_detach", 22);
             gunDetailObjects.Add(reloadRow.gameObject);
-            heading = FlowLabel("Attachment Heading", content, "已装配件 · 空槽可直接安装", 390, 32, 13, Accent);
+            heading = FlowLabel("Attachment Heading", content, "已装配件 · 空槽可直接安装", 382, 32, 13, Accent);
             gunDetailObjects.Add(heading.gameObject);
             for (int i = 0; i < EquipmentCatalog.SlotNames.Length; i++)
             {
                 int slot = i;
-                RectTransform row = FlowRow("Attachment Slot " + i, content, 390, 34);
+                RectTransform row = FlowRow("Attachment Slot " + i, content, 382, 34);
                 attachmentLabels.Add(Label("Attachment Slot State " + i, row, "", 0, 0, 274, 32, 13, Ink));
-                UiButton detach = Button("Detach Slot " + i, row, "卸下", 284, 0, 106, 32, () => InventoryCommand("detach", selectedGear, slot));
+                UiButton detach = Button("Detach Slot " + i, row, "卸下", 276, 0, 106, 32, () => InventoryCommand("detach", selectedGear, slot));
                 SetButtonArt(detach, "ui_detach", 18);
                 detachButtons.Add(detach);
                 gunDetailObjects.Add(row.gameObject);
             }
-            heading = FlowLabel("Install Parts Heading", content, "安装配件 · 先选装备，更换前先卸下原配件", 390, 32, 13, Accent);
+            heading = FlowLabel("Install Parts Heading", content, "安装配件 · 先选装备，更换前先卸下原配件", 382, 32, 13, Accent);
             gunDetailObjects.Add(heading.gameObject);
             for (int i = 0; i < EquipmentCatalog.PartNames.Length; i += 2)
             {
-                RectTransform row = FlowRow("Install Parts Row " + i / 2, content, 390, 40);
+                RectTransform row = FlowRow("Install Parts Row " + i / 2, content, 382, 40);
                 for (int j = i; j < Mathf.Min(i + 2, EquipmentCatalog.PartNames.Length); j++)
                 {
                     int part = j;
-                    UiButton button = Button("Attach Part " + j, row, "", (j - i) * 196, 0, 190, 36, () => InventoryCommand("attach", selectedGear, part));
+                    UiButton button = Button("Attach Part " + j, row, "", (j - i) * 192, 0, 190, 36, () => InventoryCommand("attach", selectedGear, part));
                     button.label.fontSizeMax = 13;
                     SetButtonArt(button, "ui_attach", 22);
                     installButtons.Add(button);
                 }
                 gunDetailObjects.Add(row.gameObject);
             }
-            equipmentHint = FlowLabel("Equipment Action Requirement", content, "", 390, 64, 12, Muted);
+            equipmentHint = FlowLabel("Equipment Action Requirement", content, "", 382, 64, 12, Muted);
             gearDetailObjects.Add(equipmentHint.gameObject);
         }
 
         void BrowseInventoryTab(int tab)
         {
+            if (tab == 3)
+            {
+                craftFilter = 0;
+                ResetScroll(craftingScroll);
+                RefreshAll();
+                craftFilterButton.button.Select();
+                return;
+            }
             inventoryTab = tab;
             inventoryFilter = 0;
-            if (tab < 3) inventoryDetailKind = tab;
+            inventoryDetailKind = tab;
             inventorySelectionRevision++;
             ResetScroll(ActiveInventoryScroll());
             RefreshAll();
         }
 
-        UnityEngine.UI.ScrollRect ActiveInventoryScroll() => inventoryTab == 0 ? materialScroll : inventoryTab == 1 ? gearScroll : inventoryTab == 2 ? partScroll : craftingScroll;
+        UnityEngine.UI.ScrollRect ActiveInventoryScroll() => inventoryTab == 0 ? materialScroll : inventoryTab == 1 ? gearScroll : partScroll;
 
         void CycleInventoryFilter()
         {
-            int count = inventoryTab == 0 ? 5 : inventoryTab == 1 ? 4 : inventoryTab == 2 ? EquipmentCatalog.SlotNames.Length + 1 : 4;
+            int count = inventoryTab == 0 ? 6 : inventoryTab == 1 ? 4 : EquipmentCatalog.SlotNames.Length + 1;
             inventoryFilter = (inventoryFilter + 1) % count;
             ResetScroll(ActiveInventoryScroll());
             RefreshAll();
         }
+
+        InventoryCell SelectedInventoryMaterial => selectedMaterial >= 0 ? materialCells[selectedMaterial] : null;
+
+        void StoreSelectedInventoryItem()
+        {
+            InventoryCell cell = SelectedInventoryMaterial;
+            if (inventory.gameObject.activeSelf && inventoryDetailKind == 0 && CanStoreInventoryItem(bridge.LocalPlayer, cell))
+                Send("storeitem", cell.id);
+        }
+
+        static bool CanStoreInventoryItem(PlayerState player, InventoryCell cell) =>
+            cell != null && cell.supply == InventorySupply.Material && cell.id != (int)ItemKind.NuclearWaste &&
+            player != null && player.connected && player.hp > 0 && player.interactCooldown <= 0 && Count(player.items, cell.id) > 0;
 
         void SelectInventoryDetail(int kind)
         {
@@ -361,7 +501,13 @@ namespace DeadCircuit
             PlayerState player = bridge.LocalPlayer;
             if (player == null) return;
             int id = slot == 0 ? player.weaponId : player.toolId;
-            if (EquipmentCatalog.Find(player, id) == null) return;
+            if (EquipmentCatalog.Find(player, id) == null)
+            {
+                BrowseInventoryTab(1);
+                inventoryFilter = slot + 1;
+                RefreshAll();
+                return;
+            }
             selectedGear = id;
             inventoryDetailKind = 1;
             inventorySelectionRevision++;
@@ -404,41 +550,46 @@ namespace DeadCircuit
             {
                 inventoryPlayer = player.id;
                 selectedGear = EquipmentCatalog.Equipped(player)?.id ?? -1;
-                selectedMaterial = selectedPart = inventoryDetailKind = inventoryTab = inventoryFilter = 0;
+                selectedMaterial = selectedPart = -1;
+                inventoryDetailKind = inventoryTab = inventoryFilter = craftFilter = 0;
+                ResetScroll(craftingScroll);
                 inventorySelectionRevision++;
                 ResetScroll(materialScroll);
             }
             GearState target = EquipmentCatalog.Find(player, selectedGear);
             if (target == null && selectedGear > 0) { selectedGear = -1; inventorySelectionRevision++; }
             bool ready = player.hp > 0f && player.connected;
-            string[] armorNames = { "头部", "躯干", "腿部", "脚部" };
+            RefreshInventoryWeight(player);
             for (int i = 0; i < armorSlots.Length; i++)
             {
                 GearState armor = EquipmentCatalog.Find(player, Count(player.armorIds, i));
-                Set(armorSlots[i].label, armorNames[i] + " · " + (armor == null ? "空槽 · 选择防具" : EquipmentCatalog.GearNames[(int)armor.kind] + "\n耐久 " + GearDurability(armor)));
-                armorSlots[i].button.interactable = ready;
-                Tint(armorSlots[i], armor != null && armor.id == selectedGear ? Selected : Raised);
-                armorSlots[i].label.color = armor != null && armor.durability <= 0 ? Danger : Ink;
-                SetButtonArt(armorSlots[i], armor == null ? null : "gear_" + (int)armor.kind, 28);
+                UiButton socket = armorSlots[i];
+                string details = armor == null ? "选择防具" : EquipmentCatalog.GearNames[(int)armor.kind] + "\n耐久 " + GearDurability(armor);
+                Set(socket.label, InventoryArmorNames[i] + "\n" + details);
+                Stretch(socket.label.rectTransform, 4, armor == null ? 5 : 41, 4, 4);
+                socket.button.interactable = ready;
+                Tint(socket, armor != null && armor.id == selectedGear ? InventoryArmorSelected : InventoryArmorIdle);
+                socket.label.color = armor == null ? InventoryRed : armor.durability <= 0 ? Danger : Ink;
             }
-            Set(armorSummary, "总护甲 " + EquipmentCatalog.ArmorRating(player).ToString("0.#") + "\n移速 -" + (EquipmentCatalog.MovementPenalty(player) * 100f).ToString("0.#") + "%");
+            Set(armorSummary, "总护甲 " + EquipmentCatalog.ArmorRating(player).ToString("0.#") + "  ·  移速 -" + (EquipmentCatalog.MovementPenalty(player) * 100f).ToString("0.#") + "%");
+            int activeSlot = EquipmentCatalog.Equipped(player) == null ? 2 : player.activeSlot;
             for (int i = 0; i < equipmentSlots.Length; i++)
             {
-                GearState gear = EquipmentCatalog.Find(player, i == 0 ? player.weaponId : player.toolId);
-                string name = i == 2 ? "徒手" : (i == 0 ? "武器位  " : "工具位  ") + (gear == null ? "空" : EquipmentCatalog.GearNames[(int)gear.kind]);
-                Set(equipmentSlots[i].label, name + (player.activeSlot == i ? "  [当前]" : ""));
-                equipmentSlots[i].button.interactable = ready && (i == 2 || gear != null);
-                Tint(equipmentSlots[i], player.activeSlot == i ? Selected : Raised);
-                if (i < 2) SetButtonArt(equipmentSlots[i], gear == null ? null : "gear_" + (int)gear.kind, 30);
+                GearState gear = i == 2 ? null : EquipmentCatalog.Find(player, i == 0 ? player.weaponId : player.toolId);
+                UiButton socket = equipmentSlots[i];
+                string name = i == 2 ? "徒手" : (i == 0 ? "主武器" : "副手工具") + " · " + (gear == null ? "空" : EquipmentCatalog.GearNames[(int)gear.kind]);
+                if (activeSlot == i) name += i == 2 ? "\n使用中" : "  [当前]";
+                Set(socket.label, name);
+                Stretch(socket.label.rectTransform, gear == null ? 8 : 50, 0, 8, 0);
+                socket.label.color = gear == null ? InventoryBlue : gear.durability <= 0 ? Danger : Ink;
+                socket.button.interactable = ready;
+                Tint(socket, activeSlot == i ? InventorySocketSelected : InventorySocketIdle);
             }
-            Set(inventorySelection, "当前：" + (player.activeSlot == 0 ? "武器" : player.activeSlot == 1 ? "工具" : "徒手") +
-                "\n选中：" + (target == null ? "无装备" : EquipmentCatalog.GearNames[(int)target.kind] + " #" + target.id));
-            for (int i = 0; i < inventoryTabs.Length; i++) Tint(inventoryTabs[i], inventoryTab == i ? Selected : Raised);
+            Set(inventorySelection, "当前：" + (activeSlot == 0 ? "武器" : activeSlot == 1 ? "工具" : "徒手"));
+            for (int i = 0; i < 3; i++) Tint(inventoryTabs[i], inventoryTab == i ? InventoryCellSelected : InventoryCellIdle);
             materialScroll.gameObject.SetActive(inventoryTab == 0);
             gearScroll.gameObject.SetActive(inventoryTab == 1);
             partScroll.gameObject.SetActive(inventoryTab == 2);
-            craftingScroll.gameObject.SetActive(inventoryTab == 3);
-            sortInventory.button.interactable = inventoryTab != 3;
             Set(sortInventory.label, "排序：" + (inventorySort == 0 ? "分类" : inventorySort == 1 ? "名称" : "数量"));
             Set(filterInventory.label, "分类：" + InventoryFilterName());
             bool bench = EquipmentCatalog.HasWorkbench(world, player);
@@ -447,7 +598,7 @@ namespace DeadCircuit
                 "制作、维修、装配与回收需在工作台 2.4 格内，且视线畅通。燃料和普通弹药可随身制作。");
             workbenchHint.color = bench ? Accent : Muted;
             RefreshInventoryCells(player);
-            if (inventoryTab == 3) RefreshInventoryRecipes(world, player, bench);
+            RefreshInventoryRecipes(world, player, bench);
             RefreshItemDetails(world, player, target, bench);
             if (paintedSelectionRevision != inventorySelectionRevision)
             {
@@ -526,23 +677,84 @@ namespace DeadCircuit
             inventoryPreviewOrigin.anchoredPosition = new Vector2(
                 Mathf.Clamp(0f, -stage.rect.width * .5f + padding - minimum.x * scale, stage.rect.width * .5f - padding - maximum.x * scale),
                 Mathf.Clamp(20f, padding - minimum.y * scale, stage.rect.height - padding - maximum.y * scale));
-            inventoryFootRule.anchoredPosition = new Vector2(38f, inventoryPreviewOrigin.anchoredPosition.y - stage.rect.height);
+            inventoryFootRule.anchoredPosition = new Vector2(24f, inventoryPreviewOrigin.anchoredPosition.y - stage.rect.height);
             return scale;
+        }
+
+        void RefreshInventoryWeight(PlayerState player)
+        {
+            long grams = InventoryWeight.CarriedGrams(player);
+            int capacity = InventoryWeight.CapacityGrams;
+            bool full = grams >= capacity;
+            Set(inventoryWeightValue, "负重  " + InventoryKilograms(grams) + " / " + InventoryKilograms(capacity) + " kg" + (full ? "  ·  已满载" : ""));
+            Color color = full ? Danger : grams >= capacity * .9f ? Amber : InventoryCyan;
+            inventoryWeightValue.color = color;
+            inventoryWeightFill.color = color;
+            inventoryWeightFill.rectTransform.anchorMax = new Vector2(Mathf.Clamp01(grams / (float)capacity), 1);
+        }
+
+        static string InventoryKilograms(long grams) => (grams / 1000m).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+        static string InventoryMass(long grams) => grams < 1000 ? grams + " g" : InventoryKilograms(grams) + " kg";
+        static string StackMass(int unitGrams, int quantity) => "单件 " + InventoryMass(unitGrams) + "  ·  整堆 " + InventoryMass((long)unitGrams * quantity);
+
+        static int InventorySupplyQuantity(PlayerState player, InventoryCell cell)
+        {
+            switch (cell.supply)
+            {
+                case InventorySupply.Food: return Count(player.needs?.foods, cell.id);
+                case InventorySupply.Seed: return Count(player.needs?.seeds, cell.id);
+                case InventorySupply.Water: return (cell.id == 0 ? player.needs?.waterRaw : player.needs?.waterClean) ?? 0;
+                default: return Count(player.items, cell.id);
+            }
+        }
+
+        static int InventorySupplyGrams(InventoryCell cell)
+        {
+            switch (cell.supply)
+            {
+                case InventorySupply.Food: return InventoryWeight.Grams((FoodKind)cell.id);
+                case InventorySupply.Seed: return InventoryWeight.Grams((CropKind)cell.id);
+                case InventorySupply.Water: return InventoryWeight.WaterGrams;
+                default: return InventoryWeight.Grams((ItemKind)cell.id);
+            }
+        }
+
+        void SelectInventoryGear(int id)
+        {
+            PlayerState player = bridge.LocalPlayer;
+            if (player == null) return;
+            if (id == player.weaponId) { BrowseEquipmentSlot(0); return; }
+            if (id == player.toolId) { BrowseEquipmentSlot(1); return; }
+            selectedGear = id;
+            SelectInventoryDetail(1);
+        }
+
+        UiButton GearInventorySocket(PlayerState player, GearState gear)
+        {
+            if (gear.id == player.weaponId) return equipmentSlots[0];
+            if (gear.id == player.toolId) return equipmentSlots[1];
+            int slot = EquipmentCatalog.ArmorSlot(gear.kind);
+            return slot >= 0 && Count(player.armorIds, slot) == gear.id ? armorSlots[slot] : null;
+        }
+
+        void MountGearInventoryCell(InventoryCell cell, UiButton socket, bool armor)
+        {
+            // Move the existing button into the slot as its icon. This keeps gear IDs unique and selectable after equipping.
+            var rect = (RectTransform)cell.widget.button.transform;
+            Transform parent = socket == null ? gearGrid : socket.button.transform;
+            if (rect.parent != parent)
+            {
+                rect.SetParent(parent, false);
+                cell.widget.label.gameObject.SetActive(socket == null);
+                if (socket == null) Place(rect, 0, 0, 117, 84);
+                else Place(rect, armor ? 31 : 8, armor ? 6 : 3, 36, 32);
+            }
+            cell.widget.icon.rectTransform.anchoredPosition = socket == null ? new Vector2(6, -5) : new Vector2(4, -2);
         }
 
         void RefreshInventoryCells(PlayerState player)
         {
-            foreach (InventoryCell cell in materialCells)
-            {
-                cell.quantity = Count(player.items, cell.id);
-                Set(cell.widget.label, cell.title + "\n× " + cell.quantity + "\n<size=11>" + MaterialCategoryName(cell.category) + "</size>");
-                cell.widget.label.color = cell.quantity > 0 ? Ink : Muted;
-                SetButtonArt(cell.widget, "item_" + cell.id);
-                cell.widget.icon.color = cell.id == (int)ItemKind.Stone ? new Color(.75f,.79f,.75f) :
-                    cell.id == (int)ItemKind.Clay ? new Color(1f,.55f,.32f) :
-                    cell.id == (int)ItemKind.Charcoal ? new Color(.38f,.42f,.39f) :
-                    cell.id == (int)ItemKind.Brick ? new Color(1f,.48f,.30f) : Color.white;
-            }
+            foreach (InventoryCell cell in gearCells) cell.quantity = 0;
             if (player.gear != null) foreach (GearState gear in player.gear)
             {
                 if (gear == null) continue;
@@ -551,90 +763,108 @@ namespace DeadCircuit
                 {
                     int id = gear.id;
                     cell = MakeInventoryCell("Gear Slot " + id, gearGrid, id, EquipmentCatalog.GearNames[(int)gear.kind],
-                        GearCategory(gear.kind), () => { selectedGear = id; SelectInventoryDetail(1); });
+                        GearCategory(gear.kind), () => SelectInventoryGear(id));
                     gearCells.Add(cell);
                 }
-                cell.title = EquipmentCatalog.GearNames[(int)gear.kind];
-                cell.category = GearCategory(gear.kind);
-                cell.quantity = 1;
-                string status = IsWorn(player, gear) ? "防具已穿戴" : player.weaponId == gear.id ? "武器位" : player.toolId == gear.id ? "工具位" : "背包";
-                Set(cell.widget.label, cell.title + "  #" + gear.id + "\n耐久 " + GearDurability(gear) +
-                    (EquipmentCatalog.IsGun(gear.kind) ? " · " + gear.magazine + "/" + EquipmentCatalog.Stats(gear).magazine : "") + "\n<size=11>" + status + "</size>");
+                if (cell.gearKind != gear.kind)
+                {
+                    cell.gearKind = gear.kind;
+                    cell.title = EquipmentCatalog.GearNames[(int)gear.kind];
+                    cell.category = GearCategory(gear.kind);
+                    SetInventoryCellArt(cell, "gear_" + (int)gear.kind);
+                }
+                bool equipped = InventoryWeight.IsEquipped(player, gear);
+                UiButton socket = equipped ? GearInventorySocket(player, gear) : null;
+                MountGearInventoryCell(cell, socket, EquipmentCatalog.IsArmor(gear.kind));
+                if (socket != null)
+                {
+                    cell.widget.button.gameObject.SetActive(true);
+                    cell.widget.button.interactable = socket.button.interactable;
+                    Tint(cell.widget, socket.button.colors.normalColor);
+                }
+                cell.quantity = equipped ? 0 : 1;
+                Set(cell.widget.label, cell.title + "\n耐久 " + GearDurability(gear));
                 cell.widget.label.color = gear.durability <= 0 ? Danger : Ink;
-                SetButtonArt(cell.widget, "gear_" + (int)gear.kind);
             }
-            foreach (InventoryCell cell in partCells)
-            {
-                cell.quantity = Count(player.parts, cell.id);
-                Set(cell.widget.label, cell.title + "\n× " + cell.quantity + "\n<size=11>" + EquipmentCatalog.SlotNames[cell.category - 1] + "</size>");
-                cell.widget.label.color = cell.quantity > 0 ? Ink : Muted;
-                SetButtonArt(cell.widget, "part_" + cell.id);
-            }
-            if (inventoryTab == 3) { inventoryEmpty.gameObject.SetActive(false); return; }
+            foreach (InventoryCell cell in gearCells)
+                if (cell.quantity == 0 && EquipmentCatalog.Find(player, cell.id) == null)
+                    cell.widget.button.gameObject.SetActive(false);
+
             List<InventoryCell> cells = inventoryTab == 0 ? materialCells : inventoryTab == 1 ? gearCells : partCells;
             visibleCells.Clear();
             int owned = 0;
             foreach (InventoryCell cell in cells)
             {
-                bool exists = inventoryTab != 1 || EquipmentCatalog.Find(player, cell.id) != null;
-                bool visible = exists && (inventoryFilter == 0 || cell.category == inventoryFilter);
+                if (inventoryTab == 1 && cell.widget.button.transform.parent != gearGrid) continue;
+                if (inventoryTab == 0) cell.quantity = InventorySupplyQuantity(player, cell);
+                if (inventoryTab == 2) cell.quantity = Count(player.parts, cell.id);
+                bool visible = cell.quantity > 0 && (inventoryFilter == 0 || cell.category == inventoryFilter);
                 cell.widget.button.gameObject.SetActive(visible);
-                if (exists && cell.quantity > 0) owned++;
+                if (cell.quantity > 0) owned++;
                 if (!visible) continue;
                 visibleCells.Add(cell);
-                bool selected = inventoryDetailKind == inventoryTab && cell.id == (inventoryTab == 0 ? selectedMaterial : inventoryTab == 1 ? selectedGear : selectedPart);
-                Tint(cell.widget, selected ? Selected : Raised);
+                if (inventoryTab != 1) Set(cell.widget.label, cell.title + "\n×" + cell.quantity);
+                cell.widget.button.interactable = true;
+                bool selected = inventoryDetailKind == inventoryTab && (inventoryTab == 0 ? cell == SelectedInventoryMaterial : cell.id == (inventoryTab == 1 ? selectedGear : selectedPart));
+                Tint(cell.widget, selected ? InventoryCellSelected : InventoryCellIdle);
             }
             visibleCells.Sort((a, b) =>
             {
                 int comparison = inventorySort == 0 ? a.category.CompareTo(b.category) : inventorySort == 1 ? string.Compare(a.title, b.title, StringComparison.Ordinal) : b.quantity.CompareTo(a.quantity);
+                if (comparison == 0) comparison = a.supply.CompareTo(b.supply);
                 return comparison != 0 ? comparison : a.id.CompareTo(b.id);
             });
             for (int i = 0; i < visibleCells.Count; i++)
                 if (visibleCells[i].widget.button.transform.GetSiblingIndex() != i) visibleCells[i].widget.button.transform.SetSiblingIndex(i);
-            Set(inventorySummary, "持有 " + owned + (inventoryTab == 1 ? " 件装备" : " 类") + " · 显示 " + visibleCells.Count + " / " + (inventoryTab == 1 ? (player.gear == null ? 0 : player.gear.Count) : cells.Count));
+            Set(inventorySummary, "显示 " + visibleCells.Count + " / " + owned + (inventoryTab == 1 ? " 件" : " 类"));
             inventoryEmpty.gameObject.SetActive(visibleCells.Count == 0);
-            Set(inventoryEmpty, inventoryTab == 1 ? "暂无此类装备。\n前往「制作」查看所需科技和材料。" : "此分类暂无物品。");
+            Set(inventoryEmpty, inventoryTab == 1 ? "没有符合分类的未装备物品。" : "此分类暂无物品。");
         }
 
         void RefreshItemDetails(WorldState world, PlayerState player, GearState target, bool bench)
         {
             itemResearch.button.gameObject.SetActive(false);
-            bool hasGear = inventoryDetailKind != 0 && target != null;
+            InventoryCell material = inventoryDetailKind == 0 ? SelectedInventoryMaterial : null;
+            storeItem.button.gameObject.SetActive(material != null && material.supply == InventorySupply.Material);
+            bool hasGear = target != null && (inventoryDetailKind == 1 || inventoryDetailKind == 2 && selectedPart >= 0);
             bool gun = hasGear && EquipmentCatalog.IsGun(target.kind);
+            bool equipped = hasGear && InventoryWeight.IsEquipped(player, target);
             bool armor = hasGear && EquipmentCatalog.IsArmor(target.kind);
             foreach (GameObject item in gearDetailObjects) item.SetActive(hasGear);
             foreach (GameObject item in gunDetailObjects) item.SetActive(gun);
-            foreach (GameObject item in armorDetailObjects) item.SetActive(armor);
+            unequipActions.SetActive(equipped && inventoryDetailKind == 1);
             if (inventoryDetailKind == 0)
             {
-                Set(itemTitle, DemoCatalog.ItemNames[selectedMaterial]);
-                SetFlowText(itemMeta, "数量：×" + Count(player.items, selectedMaterial) + " / " + WorldSimulator.InventoryLimit + " · " + MaterialCategoryName(MaterialCategory(selectedMaterial)));
-                ResearchRef research = EquipmentResearchCatalog.AmmoResearch((ItemKind)selectedMaterial);
-                string rule = research == null ? "" : EquipmentResearchCatalog.Known(world, research)
-                    ? "制造研究已解锁" : "制造缺少研究：" + EquipmentResearchCatalog.Missing(research);
-                SetFlowText(itemUsage, MaterialUsage(selectedMaterial) + (research == null ? "" : "\n弹药可正常使用与装填；" + rule));
-                itemResearch.button.gameObject.SetActive(research != null);
+                RefreshInventoryMaterialDetail(world, player, material);
                 return;
             }
             if (inventoryDetailKind == 2)
             {
-                PartDefinition part = EquipmentCatalog.Part((PartKind)selectedPart);
-                ResearchRef research = EquipmentResearchCatalog.PartResearch((PartKind)selectedPart);
-                Set(itemTitle, part.name);
-                SetFlowText(itemMeta, "未安装配件：×" + Count(player.parts, selectedPart) + " · 插槽：" + EquipmentCatalog.SlotNames[(int)part.slot] + " · " + TechCatalog.EraName(part.era));
-                SetFlowText(itemUsage, part.description + "\n装配目标：" + (target == null ? "请先在装备页选择一件装备。" : EquipmentCatalog.GearNames[(int)target.kind] + " #" + target.id) +
-                    "\n持有后可正常安装；制作研究：" + (EquipmentResearchCatalog.Known(world, research) ? "已解锁" : "缺少" + EquipmentResearchCatalog.Missing(research)) +
-                    "。先选装备再安装。");
-                itemResearch.button.gameObject.SetActive(research != null);
+                PartDefinition part = selectedPart < 0 ? null : EquipmentCatalog.Part((PartKind)selectedPart);
+                if (part == null)
+                {
+                    Set(itemTitle, "尚未选择配件");
+                    SetFlowText(itemMeta, "在右侧选择配件。", 24);
+                    SetFlowText(itemUsage, "先选武器，再选择配件可查看安装操作。", 24);
+                }
+                else
+                {
+                    int quantity = Count(player.parts, selectedPart);
+                    ResearchRef research = EquipmentResearchCatalog.PartResearch((PartKind)selectedPart);
+                    Set(itemTitle, part.name);
+                    SetFlowText(itemMeta, "未安装：×" + quantity + "  ·  插槽：" + EquipmentCatalog.SlotNames[(int)part.slot] + "\n" + StackMass(InventoryWeight.Grams((PartKind)selectedPart), quantity));
+                    SetFlowText(itemUsage, part.description + "\n装配目标：" + (target == null ? "请先选择一件武器。" : EquipmentCatalog.GearNames[(int)target.kind] + " #" + target.id) +
+                        "\n制作研究：" + (EquipmentResearchCatalog.Known(world, research) ? "已解锁" : "缺少" + EquipmentResearchCatalog.Missing(research)));
+                    itemResearch.button.gameObject.SetActive(research != null);
+                }
             }
             else
             {
                 ResearchRef research = target == null ? null : GearResearchReference(target.kind);
                 Set(itemTitle, target == null ? "尚未选择装备" : EquipmentCatalog.GearNames[(int)target.kind] + "  #" + target.id);
-                SetFlowText(itemMeta, target == null ? "在左侧选择装备；「制作」页可查看全部装备及制作条件。" : "数量：×1 · 耐久：" + target.durability + " / " + EquipmentCatalog.Gear(target.kind).maxDurability +
-                    " · " + (IsWorn(player, target) ? "防具已穿戴" : player.weaponId == target.id ? "已放入武器位" : player.toolId == target.id ? "已放入工具位" : "存放于背包"));
-                SetFlowText(itemUsage, target == null ? "在左侧选择装备；回收后需重新选择。" : GearUsage(target.kind) +
+                SetFlowText(itemMeta, target == null ? "在右侧选择装备。" : "耐久 " + GearDurability(target) + "\n含弹药与配件 " + InventoryMass(InventoryWeight.GearGrams(target)) +
+                    (equipped ? "  ·  已装备，不计入负重" : "  ·  计入负重"));
+                SetFlowText(itemUsage, target == null ? "在左侧查看装备配方和制作条件。" : GearUsage(target.kind) +
                     (research == null ? "" : "\n持有后可正常装备与使用；制造研究：" +
                         (EquipmentResearchCatalog.Known(world, research) ? "已解锁" : "缺少" + EquipmentResearchCatalog.Missing(research))));
                 itemResearch.button.gameObject.SetActive(research != null);
@@ -670,9 +900,16 @@ namespace DeadCircuit
                         " · 需穿戴在躯干位生效；暴露作业持续磨损。\n制作研究：核作业防护。完好时仍有20%残余暴露，请留意累计暴露并及时撤离。";
             }
             SetFlowText(itemStats, combat + (armor ? "" : "\n属性已计入配件加成；命中效果与成长加成在攻击时计算。"));
-            equipSelected.button.interactable = alive && !active;
-            Set(equipSelected.label, active ? armor ? "已穿戴" : "使用中" : armor ? "穿戴防具" : definition.tool ? "切换至此工具" : "切换至此武器");
-            unequipSelected.button.interactable = alive && armor && active;
+            int slot = EquipmentCatalog.ArmorSlot(target.kind);
+            int previousId = slot >= 0 ? Count(player.armorIds, slot) : definition.tool ? player.toolId : player.weaponId;
+            GearState previous = EquipmentCatalog.Find(player, previousId);
+            long swapGrams = previous == target ? 0 : (long)InventoryWeight.GearGrams(previous) - InventoryWeight.GearGrams(target);
+            bool swapFits = InventoryWeight.CanFit(player, swapGrams);
+            equipSelected.button.interactable = alive && !active && swapFits;
+            Set(equipSelected.label, active ? armor ? "已穿戴" : "使用中" : !swapFits ? "替换后超重" : armor ? "穿戴防具" : definition.tool ? "切换至此工具" : "切换至此武器");
+            bool unequipFits = !equipped || InventoryWeight.CanFit(player, InventoryWeight.GearGrams(target));
+            unequipSelected.button.interactable = alive && equipped && unequipFits;
+            Set(unequipSelected.label, unequipFits ? armor ? "脱下防具" : "卸下至背包" : "剩余负重不足，无法卸下");
             bool stone = target.kind == GearKind.StoneAxe || target.kind == GearKind.StonePickaxe;
             bool repairMaterials = stone ? Count(player.items, (int)ItemKind.Wood) >= 1 && Count(player.items, (int)ItemKind.Stone) >= 1 :
                 Count(player.items, (int)ItemKind.Iron) >= 2 && Count(player.items, (int)ItemKind.Scrap) >= 1;
@@ -690,7 +927,9 @@ namespace DeadCircuit
             bool sameAmmo = target.magazine == 0 || target.loadedAmmo == player.selectedAmmo;
             reloadGear.button.interactable = ready && active && !loading && target.durability > 0 && target.magazine < stats.magazine && selectedCompatible && sameAmmo && Count(player.items, (int)nextAmmo) > 0;
             Set(reloadGear.label, loading && player.reloadingGearId == target.id ? "装填中 " + player.reloadRemaining.ToString("0.0") + "秒" : !active ? "请先装备并使用" : !sameAmmo ? "先卸弹再换弹种" : "装填 R");
-            unloadGear.button.interactable = ready && target.magazine > 0 && Count(player.items, (int)target.loadedAmmo) + target.magazine <= WorldSimulator.InventoryLimit;
+            bool unloadFits = !equipped || target.magazine == 0 || InventoryWeight.CanFit(player, (long)target.magazine * InventoryWeight.Grams(target.loadedAmmo));
+            unloadGear.button.interactable = ready && target.magazine > 0 && unloadFits && Count(player.items, (int)target.loadedAmmo) + target.magazine <= WorldSimulator.InventoryLimit;
+            Set(unloadGear.label, unloadFits ? "卸下弹药" : "卸弹后超重");
             for (int i = 0; i < ammoButtons.Count; i++)
             {
                 ItemKind ammo = inventoryAmmo[i];
@@ -703,8 +942,9 @@ namespace DeadCircuit
                 int value = AttachedPart(target, i);
                 Set(attachmentLabels[i], EquipmentCatalog.SlotNames[i] + "：" + (value < 0 ? "空" : EquipmentCatalog.PartNames[value]));
                 bool capacity = i != (int)AttachmentSlot.Magazine || target.magazine <= definition.magazine;
-                detachButtons[i].button.interactable = ready && bench && value >= 0 && capacity && Count(player.parts, value) < WorldSimulator.InventoryLimit;
-                Set(detachButtons[i].label, !capacity ? "先卸弹" : "卸下");
+                bool detachFits = value < 0 || !equipped || InventoryWeight.CanFit(player, InventoryWeight.Grams((PartKind)value));
+                detachButtons[i].button.interactable = ready && bench && value >= 0 && capacity && detachFits && Count(player.parts, value) < WorldSimulator.InventoryLimit;
+                Set(detachButtons[i].label, !capacity ? "先卸弹" : !detachFits ? "卸下后超重" : "卸下");
             }
             for (int i = 0; i < installButtons.Count; i++)
             {
@@ -717,21 +957,50 @@ namespace DeadCircuit
             }
         }
 
+        void RefreshInventoryMaterialDetail(WorldState world, PlayerState player, InventoryCell cell)
+        {
+            if (cell == null)
+            {
+                Set(itemTitle, "尚未选择物品");
+                SetFlowText(itemMeta, "在右侧选择材料或补给，查看数量和重量。", 24);
+                SetFlowText(itemUsage, "", 0);
+                return;
+            }
+            int quantity = InventorySupplyQuantity(player, cell);
+            Set(itemTitle, cell.title);
+            SetFlowText(itemMeta, "数量 ×" + quantity + "  ·  " + MaterialCategoryName(cell.category) + "\n" + StackMass(InventorySupplyGrams(cell), quantity));
+            if (cell.supply != InventorySupply.Material)
+            {
+                SetFlowText(itemUsage, cell.supply == InventorySupply.Seed ? "在生存界面的种植页播种。" :
+                    cell.supply == InventorySupply.Water ? "在生存界面饮用或煮水。喝原水会增加感染。" : "在生存界面选择食用或烹饪。", 24);
+                return;
+            }
+            storeItem.button.interactable = CanStoreInventoryItem(player, cell);
+            ResearchRef research = EquipmentResearchCatalog.AmmoResearch((ItemKind)cell.id);
+            string rule = research == null ? "" : EquipmentResearchCatalog.Known(world, research)
+                ? "制造研究已解锁" : "制造缺少研究：" + EquipmentResearchCatalog.Missing(research);
+            SetFlowText(itemUsage, MaterialUsage(cell.id) + (research == null ? "" : "\n弹药可正常使用与装填；" + rule));
+            itemResearch.button.gameObject.SetActive(research != null);
+        }
+
         static bool HasSalvageSpace(PlayerState player, GearState gear)
         {
             int[] cost = EquipmentCatalog.Gear(gear.kind).cost;
+            long deltaGrams = InventoryWeight.IsEquipped(player, gear) ? 0L : -InventoryWeight.GearGrams(gear);
             for (int i = 0; i < DemoCatalog.ItemCount; i++)
             {
                 int returned = Count(cost, i) / 2 + (gear.magazine > 0 && (int)gear.loadedAmmo == i ? gear.magazine : 0);
                 if (returned > WorldSimulator.InventoryLimit - Count(player.items, i)) return false;
+                if (returned > 0) deltaGrams += (long)returned * InventoryWeight.Grams((ItemKind)i);
             }
             for (int i = 0; i < EquipmentCatalog.PartNames.Length; i++)
             {
                 int returned = 0;
                 if (gear.attachments != null) foreach (int part in gear.attachments) if (part == i) returned++;
                 if (returned > WorldSimulator.InventoryLimit - Count(player.parts, i)) return false;
+                if (returned > 0) deltaGrams += (long)returned * InventoryWeight.Grams((PartKind)i);
             }
-            return true;
+            return InventoryWeight.CanFit(player, deltaGrams);
         }
 
         void RefreshInventoryRecipes(WorldState world, PlayerState player, bool bench)
@@ -739,16 +1008,16 @@ namespace DeadCircuit
             int count = 0;
             foreach (RecipeRow row in manualRecipes)
             {
-                bool visible = inventoryFilter == 0 || inventoryFilter == 1;
+                bool visible = craftFilter == 0 || craftFilter == 1;
                 row.craft.button.transform.parent.gameObject.SetActive(visible);
                 if (!visible) continue;
                 count++;
                 RecipeDefinition recipe = row.recipe;
-                bool era = PrimitiveCatalog.IsRecipeUnlocked(world, recipe), needsBench = recipe.id > 1;
-                bool materials = CanAfford(player.items, recipe.inputs), space = HasRecipeSpace(player.items, recipe);
-                string state = !era ? PrimitiveCatalog.RecipeRequirement(world, recipe) : needsBench && !bench ? "请靠近工作台并保持视线畅通" : !materials ? "缺少材料" : !space ? "背包已满" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
+                bool era = PrimitiveCatalog.IsRecipeUnlocked(world, recipe), needsBench = recipe.id > 0;
+                bool materials = CanAfford(player.items, recipe.inputs), space = HasRecipeSpace(player, recipe);
+                string state = !era ? PrimitiveCatalog.RecipeRequirement(world, recipe) : needsBench && !bench ? "请靠近工作台并保持视线畅通" : !materials ? "缺少材料" : !space ? "剩余负重不足" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
                 row.craft.button.interactable = player.hp > 0f && player.connected && era && (!needsBench || bench) && materials && space && player.interactCooldown <= 0f;
-                Set(row.craft.label, recipe.name + "\n" + state);
+                Set(row.craft.label, recipe.name);
                 ResearchRef research = RecipeResearch(recipe);
                 row.research.button.gameObject.SetActive(research != null);
                 string evidence = research == null ? "" : EquipmentResearchCatalog.Evidence(world, research);
@@ -758,7 +1027,7 @@ namespace DeadCircuit
             }
             foreach (EquipmentRecipeRow row in equipmentRecipes)
             {
-                bool visible = inventoryFilter == 0 || inventoryFilter == (row.part ? 3 : 2);
+                bool visible = craftFilter == 0 || craftFilter == (row.part ? 3 : 2);
                 row.craft.button.transform.parent.gameObject.SetActive(visible);
                 if (!visible) continue;
                 count++;
@@ -774,7 +1043,7 @@ namespace DeadCircuit
                 string reason = requirement;
                 if (reason.Length == 0) reason = player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
                 row.craft.button.interactable = canCraft && player.interactCooldown <= 0f;
-                Set(row.craft.label, name + "\n" + reason);
+                Set(row.craft.label, name);
                 row.research.button.gameObject.SetActive(research != null);
                 string evidence = research == null ? "" : EquipmentResearchCatalog.Evidence(world, research);
                 string station = gear != null && EquipmentCatalog.IsHandcraftedTool(gear.kind) ? "随身" : "工作台";
@@ -782,20 +1051,22 @@ namespace DeadCircuit
                     (research == null ? "" : "\n研究实产：" + (string.IsNullOrEmpty(evidence) ? "已满足" : evidence)) +
                     "\n" + (row.part ? EquipmentCatalog.SlotNames[(int)part.slot] + " · " + part.description : EquipmentCatalog.IsArmor(gear.kind) ? "防具位 · " + GearUsage(gear.kind) : gear.tool ? "工具位 · " + GearUsage(gear.kind) : "武器位 · " + GearUsage(gear.kind)));
             }
-            Set(inventorySummary, "配方 " + count + " 项 · 持有 / 需求");
+            Set(craftFilterButton.label, "配方：" + (craftFilter == 0 ? "全部" : craftFilter == 1 ? "手工" : craftFilter == 2 ? "装备" : "配件"));
+            Set(craftSummary, count + " 项 · 持有 / 需求");
         }
 
         static void SetRecipeText(TextMeshProUGUI details, string value)
         {
+            if (details.text == value) return;
             Set(details, value);
-            float height = Mathf.Max(112, details.GetPreferredValues(value, 362, float.PositiveInfinity).y + 12);
+            float height = Mathf.Max(112, details.GetPreferredValues(value, details.rectTransform.rect.width, float.PositiveInfinity).y + 12);
             details.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height - 8);
             details.transform.parent.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = height;
         }
 
         void CraftEquipment(int kind, bool part)
         {
-            if (bridge.World == null || bridge.LocalPlayer == null || inventoryTab != 3) return;
+            if (bridge.World == null || bridge.LocalPlayer == null || !inventory.gameObject.activeSelf) return;
             bool allowed = part ? EquipmentCatalog.CanCraftPart(bridge.World, bridge.LocalPlayer, (PartKind)kind) : EquipmentCatalog.CanCraft(bridge.World, bridge.LocalPlayer, (GearKind)kind);
             if (!part) allowed &= PrimitiveCatalog.IsGearUnlocked(bridge.World, (GearKind)kind);
             if (allowed && bridge.LocalPlayer.interactCooldown <= 0f) InventoryCommand(part ? "partcraft" : "gearcraft", kind);
@@ -837,8 +1108,7 @@ namespace DeadCircuit
             if (inventoryFilter == 0) return "全部";
             if (inventoryTab == 0) return MaterialCategoryName(inventoryFilter);
             if (inventoryTab == 1) return inventoryFilter == 1 ? "武器" : inventoryFilter == 2 ? "工具" : "防具";
-            if (inventoryTab == 2) return EquipmentCatalog.SlotNames[inventoryFilter - 1];
-            return inventoryFilter == 1 ? "手工" : inventoryFilter == 2 ? "装备" : "配件";
+            return EquipmentCatalog.SlotNames[inventoryFilter - 1];
         }
 
         static int MaterialCategory(int item)
@@ -849,7 +1119,7 @@ namespace DeadCircuit
             return 2;
         }
 
-        static string MaterialCategoryName(int category) => category == 1 ? "原料" : category == 2 ? "加工材料" : category == 3 ? "弹药" : "补给 / 能源";
+        static string MaterialCategoryName(int category) => category == 1 ? "原料" : category == 2 ? "加工材料" : category == 3 ? "弹药" : category == 4 ? "补给 / 能源" : "种子";
 
         static string GearUsage(GearKind kind)
         {
@@ -901,7 +1171,7 @@ namespace DeadCircuit
             for (int i = 0; i < EquipmentCatalog.GearNames.Length; i++) if (Count(EquipmentCatalog.Gear((GearKind)i).cost, item) > 0) { equipment = true; break; }
             if (!equipment) for (int i = 0; i < EquipmentCatalog.PartNames.Length; i++) if (Count(EquipmentCatalog.Part((PartKind)i).cost, item) > 0) { equipment = true; break; }
             return (construction ? "建造材料。" : "工业材料。") + (equipment ? "可制作装备 / 配件。" : "") +
-                (uses.Count > 0 ? "\n配方：" + string.Join("、", uses) : "") + "\n在「制作」页查看所需科技与材料；按 T 查看科技和建造。";
+                (uses.Count > 0 ? "\n配方：" + string.Join("、", uses) : "") + "\n在左侧快捷制作查看所需科技与材料；按 T 查看科技和建造。";
         }
     }
 }

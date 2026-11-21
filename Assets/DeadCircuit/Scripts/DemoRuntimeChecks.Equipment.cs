@@ -15,8 +15,15 @@ namespace DeadCircuit
             // This opt-in fixture uses the separate QA save, with explicit material grants.
             PrepareQaPlot(bridge.World, true);
             var p = bridge.LocalPlayer;
-            for (int i = 0; i < p.items.Length; i++)
-                if (i != (int)ItemKind.NuclearWaste) p.items[i] = 100;
+            System.Array.Clear(p.items, 0, p.items.Length);
+            p.items[(int)ItemKind.PrecisionAmmo] = 24;
+            var attachments = new[] { PartKind.Scope4x, PartKind.ExtendedMag, PartKind.Suppressor };
+            var armorKinds = new[] { GearKind.SteelHelmet, GearKind.ArmorVest, GearKind.WorkPants, GearKind.TacticalBoots };
+            var costs = armorKinds.Append(GearKind.PrecisionRifle).Select(kind => EquipmentCatalog.Gear(kind).cost)
+                .Concat(attachments.Select(kind => EquipmentCatalog.Part(kind).cost)).Append(DemoCatalog.BuildCost(BuildKind.Workbench));
+            foreach (var cost in costs)
+                for (int item = 0; item < cost.Length; item++) p.items[item] += cost[item];
+            Require(InventoryWeight.CarriedGrams(p) < InventoryWeight.CapacityGrams, "equipment QA supplies fit in the backpack");
             yield return BuildQa(bridge, BuildKind.Workbench, 30, 28);
             yield return new WaitForSecondsRealtime(.6f);
             yield return ClickHudTool("Open Inventory");
@@ -28,13 +35,12 @@ namespace DeadCircuit
             var rifle = p.gear.SingleOrDefault(g => g.kind == GearKind.PrecisionRifle);
             Require(rifle != null, "craft precision rifle through inventory UI");
             qaGearId = rifle.id;
-            foreach (var kind in new[] { PartKind.Scope4x, PartKind.ExtendedMag, PartKind.Suppressor })
+            foreach (var kind in attachments)
             {
                 yield return ClickScrolled("Part Craft " + (int)kind);
                 yield return new WaitForSecondsRealtime(.65f);
                 Require(p.parts[(int)kind] > 0, "craft attachment through UI " + kind);
             }
-            var armorKinds = new[] { GearKind.SteelHelmet, GearKind.ArmorVest, GearKind.WorkPants, GearKind.TacticalBoots };
             foreach (var kind in armorKinds)
             {
                 yield return ClickScrolled("Gear Craft " + (int)kind);
@@ -48,7 +54,7 @@ namespace DeadCircuit
             yield return ClickScrolled("Equip Selected Gear");
             yield return new WaitForSecondsRealtime(.35f);
             Require(p.weaponId == rifle.id && p.activeSlot == 0, "equip selected rifle from inventory");
-            foreach (var kind in new[] { PartKind.Scope4x, PartKind.ExtendedMag, PartKind.Suppressor })
+            foreach (var kind in attachments)
             {
                 yield return ClickScrolled("Attach Part " + (int)kind);
                 yield return new WaitForSecondsRealtime(.35f);
@@ -73,7 +79,7 @@ namespace DeadCircuit
             yield return ClickScrolled("Equip Selected Gear");
             yield return new WaitForSecondsRealtime(.3f);
             qaArmorIds = (int[])p.armorIds.Clone();
-            yield return ClickScrolled("Gear Slot " + rifle.id);
+            Click("Weapon Equipment Slot");
             yield return new WaitForSecondsRealtime(.25f);
             yield return Capture("equipment-precision");
             yield return ClickScrolled("Select Ammo " + (int)ItemKind.PrecisionAmmo);

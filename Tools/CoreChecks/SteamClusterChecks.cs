@@ -259,7 +259,7 @@ static partial class Checks
                 if (destroy) Building(sim, parts.chimney.id).hp = 0;
                 else
                 {
-                    var player = Builder(sim);
+                    var player = sim.AddPlayer("chimney-dismantler", "Builder");
                     player.x = 9; player.y = 8;
                     sim.Apply(Command(player, "dismantle", 9, 10));
                     Require(!sim.State.buildings.Any(b => b.id == parts.chimney.id), "bridge dismantle rejected");
@@ -437,6 +437,7 @@ static partial class Checks
             parts.chamber.fuel = .025f;
             var sim = new WorldSimulator(state);
             var player = Builder(sim);
+            player.items = DemoCatalog.Materials(ItemKind.Wood, 9);
             player.x = 20; player.y = 20;
             for (int refresh = 0; refresh < 3; refresh++)
             {

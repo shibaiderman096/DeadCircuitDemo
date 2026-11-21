@@ -343,6 +343,7 @@ namespace DeadCircuit
             yield return SetQaInspector(false);
             p.x=32; p.y=29;
             bridge.Send(new PlayerCommand { action="recipe",x=31,y=30,arg=52 });
+            GrantSamples(p, TechCatalog.Recipe(52).inputs);
             yield return new WaitForSecondsRealtime(.3f);
             bridge.Send(new PlayerCommand { action="interact",x=31,y=30 });
             float ammoDeadline=Time.realtimeSinceStartup+9f;
@@ -421,7 +422,8 @@ namespace DeadCircuit
         }
         static void GrantSamples(PlayerState player,int[] cost)
         {
-            for(int i=0;i<cost.Length;i++) if(i!=(int)ItemKind.NuclearWaste) player.items[i]=Math.Max(player.items[i],cost[i]+10);
+            for (int i = 0; i < cost.Length; i++) if (cost[i] > 0 && i != (int)ItemKind.NuclearWaste)
+                player.items[i] = Math.Max(player.items[i], cost[i]);
         }
         static void PrepareQaPlot(WorldState world,bool clearBuildings)
         {
@@ -1081,12 +1083,18 @@ namespace DeadCircuit
             RectTransform preview = Rect("Character Preview Surface");
             RectTransform equipment = Rect("Equipment Slots Surface");
             RectTransform detail = Rect("Inventory Detail Surface");
-            Require(browser.rect.width > 300f && preview.rect.width > 300f && equipment.rect.width > 400f && detail.rect.width > 400f,
-                "PUBG-style inventory keeps three usable columns");
+            RectTransform backpack = Rect("Inventory Backpack Surface");
+            Require(browser.rect.width > 280f && preview.rect.width > 300f && equipment.rect.width > 380f && backpack.rect.height > 280f,
+                "inventory keeps three usable columns");
             Require(browser.anchoredPosition.x < preview.anchoredPosition.x && preview.anchoredPosition.x < equipment.anchoredPosition.x,
                 "inventory columns are ordered browser, character, equipment");
-            Require(preview.anchoredPosition.y == equipment.anchoredPosition.y && detail.anchoredPosition.y < equipment.anchoredPosition.y,
-                "equipment and detail stack in the right column");
+            Require(preview.anchoredPosition.y == equipment.anchoredPosition.y && backpack.anchoredPosition.y < equipment.anchoredPosition.y &&
+                backpack.anchoredPosition.x == equipment.anchoredPosition.x && detail.anchoredPosition.x == preview.anchoredPosition.x,
+                "backpack sits under weapon slots and details sit below the survivor");
+            Require(Rect("Craft Scroll View").gameObject.activeInHierarchy && Rect("Inventory Scroll View").gameObject.activeInHierarchy,
+                "quick crafting and the backpack grid are selectable together");
+            Require(Rect("Inventory Weight Value").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("120"),
+                "backpack displays the shared weight cap");
             Rect browserBounds = RelativeBounds(card, browser);
             Rect previewBounds = RelativeBounds(card, preview);
             Rect equipmentBounds = RelativeBounds(card, equipment);
@@ -1095,7 +1103,8 @@ namespace DeadCircuit
                 new KeyValuePair<string, Rect>("browser", browserBounds),
                 new KeyValuePair<string, Rect>("preview", previewBounds),
                 new KeyValuePair<string, Rect>("equipment", equipmentBounds),
-                new KeyValuePair<string, Rect>("detail", detailBounds) })
+                new KeyValuePair<string, Rect>("detail", detailBounds),
+                new KeyValuePair<string, Rect>("backpack", RelativeBounds(card, backpack)) })
                 Require(card.rect.Contains(pair.Value.min) && card.rect.Contains(pair.Value.max), "inventory surface stays inside card: " + pair.Key);
             Require(!browserBounds.Overlaps(previewBounds) && !browserBounds.Overlaps(equipmentBounds) &&
                 !browserBounds.Overlaps(detailBounds) && !previewBounds.Overlaps(equipmentBounds) &&

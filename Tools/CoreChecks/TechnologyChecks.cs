@@ -51,6 +51,7 @@ static partial class Checks
                 var entry=Flat(era:previous); if(target==TechEra.Nuclear) { entry.hvPowered=4; entry.produced=PrecisionEvidence(TechEra.Nuclear); }
                 var sim=new WorldSimulator(entry);var a=Builder(sim,"a","A");var b=Builder(sim,"b","B");
                 var cost=TechCatalog.ResearchCost(target);Require(cost.Length==DemoCatalog.ItemCount && cost.Any(v=>v>0),"research has no material cost");
+                a.items = Copy(cost); b.items = Copy(cost);
                 var before=Copy(a.items);var partner=Copy(b.items);
                 Require(!TechCatalog.CanResearch(sim.State,a,target) && TechCatalog.ResearchRequirement(sim.State,target).Length>0,"unbuilt prerequisite accepted");
                 sim.Apply(Command(a,"research",arg:(int)target));Inventory(a.items,before,"missing-prerequisite research charged");Require(sim.State.era==previous,"missing-prerequisite research unlocked");
@@ -66,6 +67,7 @@ static partial class Checks
                 if(target==TechEra.Steam)
                 {
                     Require(!TechCatalog.IsUnlocked(sim.State,BuildKind.CokeOven),"era entry skipped coking research");
+                    b.items = Copy(SteamCatalog.Definition((int)SteamTech.Coking).cost);
                     Add(sim.State,BuildKind.Workbench,10,13);b.x=8;b.y=13;Ready(b);sim.Apply(Command(b,"steam",arg:0));
                 }
                 if(target==TechEra.LowVoltage)
@@ -83,6 +85,7 @@ static partial class Checks
                     Require(sim.State.hvResearch==0 && PrecisionCatalog.BuildRequirement(sim.State,BuildKind.HighPole).Length>0,"era entry bypassed precision research");
                     return;
                 }
+                b.items = DemoCatalog.BuildCost(NewlyUnlocked[index]);
                 Require(TechCatalog.IsUnlocked(sim.State,NewlyUnlocked[index]),"teammate did not see shared unlock");b.x=8;b.y=15;Ready(b);int buildings=sim.State.buildings.Count;sim.Apply(Command(b,"build",10,15,(int)NewlyUnlocked[index]));
                 Require(sim.State.buildings.Count==buildings+1 && sim.State.buildings.Any(m=>m.x==10 && m.y==15 && m.kind==NewlyUnlocked[index]),"teammate cannot use shared research");
             });
@@ -108,7 +111,7 @@ static partial class Checks
             {
                 var state=Flat(era:TechEra.Primitive);int w=DemoCatalog.Width(kind),h=DemoCatalog.Height(kind);if(!ModularMachineCatalog.IsModular(kind)) Water(state,10,10+h);if(kind==BuildKind.Miner || kind==BuildKind.SteamMiner)Ore(state,10+w,10);
                 if(kind==BuildKind.OilPump)state.nodes.Add(new NodeState{id=state.nextId++,kind=NodeKind.Oil,x=10+w,y=10,stock=100});
-                var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var before=Copy(p.items);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==0,$"locked {kind} built");Inventory(p.items,before,$"locked {kind} paid");
+                var sim=new WorldSimulator(state);var p=Builder(sim);p.items=DemoCatalog.BuildCost(kind);p.x=8;p.y=10;var before=Copy(p.items);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==0,$"locked {kind} built");Inventory(p.items,before,$"locked {kind} paid");
                 if(ModularMachineCatalog.IsModular(kind)) HoldModularWrench(sim,p);
                 sim.State.era=TechCatalog.RequiredEra(kind);sim.State.steamResearch=255;sim.State.lvResearch=255;sim.State.mvResearch=255;sim.State.hvResearch=PrecisionCatalog.AllResearch;Ready(p);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{kind} negative control was invalid even when unlocked");if(ModularMachineCatalog.IsModular(kind))
                 {
@@ -129,7 +132,7 @@ static partial class Checks
                 {
                     var state=Flat(era:era);Water(state,10,10+DemoCatalog.Height(kind));if(kind==BuildKind.Miner || kind==BuildKind.SteamMiner)Ore(state,10+DemoCatalog.Width(kind),10);
                     if(kind==BuildKind.OilPump)state.nodes.Add(new NodeState{id=state.nextId++,kind=NodeKind.Oil,x=10+DemoCatalog.Width(kind),y=10,stock=100});
-                    Require(TechCatalog.IsUnlocked(state,kind),$"{era} hotbar offers locked {kind}");var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var before=Copy(p.items);sim.Apply(Command(p,"build",10,10,(int)kind));
+                    Require(TechCatalog.IsUnlocked(state,kind),$"{era} hotbar offers locked {kind}");var sim=new WorldSimulator(state);var p=Builder(sim);p.items=DemoCatalog.BuildCost(kind);p.x=8;p.y=10;var before=Copy(p.items);sim.Apply(Command(p,"build",10,10,(int)kind));
                     Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{era} hotbar {kind} cannot actually build");Paid(p.items,before,DemoCatalog.BuildCost(kind),"hotbar construction");
                 }
             }
@@ -162,7 +165,7 @@ static partial class Checks
         {
             foreach(var (era,benchX,allowed) in new[] { (TechEra.Primitive,40,false),(TechEra.Primitive,10,true),(TechEra.Water,10,true) })
             {
-                var state=Flat(era:era);Add(state,BuildKind.Workbench,benchX,10);var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var expected=Copy(p.items);sim.Apply(Command(p,"craft",arg:2));if(allowed){expected[(int)ItemKind.Copper]-=3;expected[(int)ItemKind.Tin]--;expected[(int)ItemKind.Bronze]+=4;}Inventory(p.items,expected,"workbench bronze gate");
+                var state=Flat(era:era);Add(state,BuildKind.Workbench,benchX,10);var sim=new WorldSimulator(state);var p=Builder(sim);p.items=Copy(TechCatalog.Recipe(2).inputs);p.x=8;p.y=10;var expected=Copy(p.items);sim.Apply(Command(p,"craft",arg:2));if(allowed){expected[(int)ItemKind.Copper]-=3;expected[(int)ItemKind.Tin]--;expected[(int)ItemKind.Bronze]+=4;}Inventory(p.items,expected,"workbench bronze gate");
             }
         });
         Run("machine recipe IDs cannot be submitted as manual crafting even at Nuclear", () =>

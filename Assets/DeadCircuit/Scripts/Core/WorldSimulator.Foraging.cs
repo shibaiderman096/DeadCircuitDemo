@@ -1,11 +1,10 @@
-using System;
 using System.Text;
 
 namespace DeadCircuit
 {
     public sealed partial class WorldSimulator
     {
-        // Interact calls once after depletion and immediately removes the finite source.
+        // HarvestNode adds the main yield first, then calls once before removing the finite source.
         // Destruction, mining machines and partial harvesting do not award forage.
         private string AwardForageLoot(PlayerState p, NodeState n)
         {
@@ -30,21 +29,21 @@ namespace DeadCircuit
             {
                 // Depleting a tree includes gathering its undergrowth. No new/free forage action.
                 // Meadow/broadleaf/sakura: fruit; wet ground and cold biomes: mushrooms.
-                AddForageStack(p.needs.foods, (int)FoodKind.Berries, biome == 3 ? 1 : 1 + (int)(loot % 3));
-                if (biome == 0 || biome == 1 || biome == (int)BiomeKind.SakuraGrove || biome == (int)BiomeKind.RiverValley) AddForageStack(p.needs.foods, (int)FoodKind.Apple, 1 + (int)((loot >> 4) % 2));
-                if (biome == 2 || biome == 4 || biome == 5 || biome == (int)BiomeKind.Swamp || biome == (int)BiomeKind.SnowMountain) AddForageStack(p.needs.foods, (int)FoodKind.Mushroom, 1 + (int)((loot >> 6) % 3));
-                if ((loot & 3u) == 0) AddForageStack(p.needs.seeds, (int)((loot >> 10) % SurvivalCatalog.CropCount), 1);
+                AddSurvivalFood(p, FoodKind.Berries, biome == 3 ? 1 : 1 + (int)(loot % 3));
+                if (biome == 0 || biome == 1 || biome == (int)BiomeKind.SakuraGrove || biome == (int)BiomeKind.RiverValley) AddSurvivalFood(p, FoodKind.Apple, 1 + (int)((loot >> 4) % 2));
+                if (biome == 2 || biome == 4 || biome == 5 || biome == (int)BiomeKind.Swamp || biome == (int)BiomeKind.SnowMountain) AddSurvivalFood(p, FoodKind.Mushroom, 1 + (int)((loot >> 6) % 3));
+                if ((loot & 3u) == 0) AddSurvivalSeeds(p, (CropKind)((loot >> 10) % SurvivalCatalog.CropCount), 1);
             }
             else if (AwardSiteForage(p, n, loot)) { }
             else
             {
                 // Finite wilderness supply crates and building/site provisions share NodeKind.Crate.
                 // Eggs/fish are guaranteed, so neither cooking ingredient depends on rare RNG luck.
-                AddForageStack(p.needs.foods, (int)FoodKind.Egg, 2 + (int)(loot % 2));
-                AddForageStack(p.needs.foods, (int)FoodKind.RawFish, 1 + (int)((loot >> 3) % 2));
-                AddForageStack(p.needs.foods, (int)FoodKind.Apple, 1 + (int)((loot >> 6) % 2));
-                AddForageStack(p.needs.foods, (int)FoodKind.Berries, 1 + (int)((loot >> 8) % 3));
-                AddForageStack(p.needs.seeds, (int)((loot >> 12) % SurvivalCatalog.CropCount), 1 + (int)((loot >> 17) & 1u));
+                AddSurvivalFood(p, FoodKind.Egg, 2 + (int)(loot % 2));
+                AddSurvivalFood(p, FoodKind.RawFish, 1 + (int)((loot >> 3) % 2));
+                AddSurvivalFood(p, FoodKind.Apple, 1 + (int)((loot >> 6) % 2));
+                AddSurvivalFood(p, FoodKind.Berries, 1 + (int)((loot >> 8) % 3));
+                AddSurvivalSeeds(p, (CropKind)((loot >> 12) % SurvivalCatalog.CropCount), 1 + (int)((loot >> 17) & 1u));
             }
             // Capacity overflow is discarded when the source is exhausted, never banked for replay.
             // No node stock or weather/wildlife PRNG is changed.
@@ -83,19 +82,19 @@ namespace DeadCircuit
             if (profile == '\0') return false;
             if (profile == 'F')
             {
-                AddForageStack(player.needs.foods, (int)FoodKind.Bread, 2 + (int)(loot % 3));
-                AddForageStack(player.needs.foods, (int)FoodKind.Apple, 1 + (int)((loot >> 4) % 3));
+                AddSurvivalFood(player, FoodKind.Bread, 2 + (int)(loot % 3));
+                AddSurvivalFood(player, FoodKind.Apple, 1 + (int)((loot >> 4) % 3));
             }
             else if (profile == 'M')
             {
-                AddForageStack(player.needs.foods, (int)FoodKind.Herb, 3 + (int)(loot % 4));
-                player.needs.waterClean += Math.Min(SurvivalCatalog.StackLimit - player.needs.waterClean, 2);
+                AddSurvivalFood(player, FoodKind.Herb, 3 + (int)(loot % 4));
+                AddSurvivalCleanWater(player, 2);
             }
             else if (profile == 'S')
             {
                 int crop = (int)(loot % SurvivalCatalog.CropCount);
-                AddForageStack(player.needs.seeds, crop, 3 + (int)((loot >> 4) % 3));
-                AddForageStack(player.needs.seeds, (crop + 1) % SurvivalCatalog.CropCount, 2);
+                AddSurvivalSeeds(player, (CropKind)crop, 3 + (int)((loot >> 4) % 3));
+                AddSurvivalSeeds(player, (CropKind)((crop + 1) % SurvivalCatalog.CropCount), 2);
             }
             return true;
         }
@@ -109,13 +108,6 @@ namespace DeadCircuit
                 value ^= value >> 15; value *= 0x846CA68Bu;
                 return value ^ (value >> 16);
             }
-        }
-
-        private static void AddForageStack(int[] inventory, int index, int amount)
-        {
-            // Clamp before addition: even malformed host-side extreme ints cannot wrap or go negative.
-            int current = Math.Max(0, Math.Min(SurvivalCatalog.StackLimit, inventory[index]));
-            inventory[index] = current + Math.Min(SurvivalCatalog.StackLimit - current, Math.Max(0, amount));
         }
     }
 }

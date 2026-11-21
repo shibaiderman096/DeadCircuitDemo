@@ -165,8 +165,8 @@ namespace DeadCircuit
             if (owner != null)
             {
                 GainXp(owner, 12 + z.variant * 4);
-                // A corpse is an explicit loot source; a full backpack never wraps or becomes negative.
-                owner.items[(int)ItemKind.Scrap] = Math.Min(InventoryLimit, owner.items[(int)ItemKind.Scrap] + 1);
+                if (InventoryWeight.CanFit(owner, InventoryWeight.Grams(ItemKind.Scrap)))
+                    owner.items[(int)ItemKind.Scrap]++;
             }
             else foreach (PlayerState p in State.players) if (p.connected && p.hp > 0f && DistSq(p.x, p.y, z.x, z.y) <= 196f) GainXp(p, 5);
         }

@@ -1079,8 +1079,8 @@ namespace DeadCircuit
             RecipeRow row = manualRecipes.Find(r => r.recipe.id == id);
             PlayerState player = bridge.LocalPlayer;
             if (row == null || !PrimitiveCatalog.IsRecipeUnlocked(bridge.World, row.recipe) || player.interactCooldown > 0f ||
-                !CanAfford(player.items, row.recipe.inputs) || !HasRecipeSpace(player.items, row.recipe)) return;
-            if (id > 1 && !NearWorkbench(bridge.World, player)) { Notify("请靠近工作台 2.4 格内并保持视线畅通。", true); return; }
+                !CanAfford(player.items, row.recipe.inputs) || !HasRecipeSpace(player, row.recipe)) return;
+            if (id > 0 && !EquipmentCatalog.HasWorkbench(bridge.World, player)) { Notify("请靠近工作台 2.4 格内并保持视线畅通。", true); return; }
             Send("craft", id);
         }
 
@@ -1272,7 +1272,7 @@ namespace DeadCircuit
                 case BuildKind.SteamMiner: return "蒸汽驱动 · 采集相邻矿床中的资源";
                 case BuildKind.Belt: return "物料 → 箭头方向的相邻设备";
                 case BuildKind.Turret: return "装入弹药后自动攻击敌人";
-                case BuildKind.Chest: return "接收物料 → 左键/E 取出库存";
+                case BuildKind.Chest: return "左键/E 取货 · 背包选择物品可存入附近储物箱";
                 case BuildKind.PowerPole: case BuildKind.MediumPole: case BuildKind.HighPole: return "同电压连线 7 格 · 覆盖 4 格";
                 case BuildKind.SolarPanel: return building.powerGeneration > 0 ? "日照发电 · 夜间停机" : "夜间待机 · 无需燃料";
                 case BuildKind.Wall: return "阻挡敌人 · 修理消耗木材";
@@ -1313,24 +1313,8 @@ namespace DeadCircuit
             return count;
         }
 
-        static bool NearWorkbench(WorldState world, PlayerState player)
-        {
-            // Core also checks line of sight; it remains authoritative on command receipt.
-            foreach (BuildingState building in world.buildings)
-            {
-                if (building.kind != BuildKind.Workbench || building.hp <= 0f) continue;
-                float dx = player.x - DemoCatalog.CenterX(building), dy = player.y - DemoCatalog.CenterY(building);
-                if (dx * dx + dy * dy <= 2.4f * 2.4f) return true;
-            }
-            return false;
-        }
-
-        static bool HasRecipeSpace(int[] items, RecipeDefinition recipe)
-        {
-            for (int i = 0; i < DemoCatalog.ItemNames.Length; i++)
-                if (Count(items, i) - Count(recipe.inputs, i) + Count(recipe.outputs, i) > WorldSimulator.InventoryLimit) return false;
-            return true;
-        }
+        static bool HasRecipeSpace(PlayerState player, RecipeDefinition recipe) =>
+            InventoryWeight.CanExchange(player, recipe.inputs, recipe.outputs);
 
         static string MaterialText(int[] materials, int[] owned = null, bool compare = false)
         {

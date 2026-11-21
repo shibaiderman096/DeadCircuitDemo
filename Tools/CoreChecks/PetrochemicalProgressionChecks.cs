@@ -3,6 +3,14 @@ using DeadCircuit;
 static partial class Checks
 {
     static WorldState mvPlayerCheckpoint, mvPlayerEarned;
+    static readonly ItemKind[] MvPriorMaterials =
+    {
+        ItemKind.Wood, ItemKind.Stone, ItemKind.Scrap, ItemKind.Food, ItemKind.Fuel, ItemKind.Clay,
+        ItemKind.Brick, ItemKind.Charcoal, ItemKind.Copper, ItemKind.Iron, ItemKind.Bronze, ItemKind.Steel,
+        ItemKind.IronPlate, ItemKind.SteelPlate, ItemKind.Gear, ItemKind.Bearing, ItemKind.RefractoryBrick,
+        ItemKind.PipeFitting, ItemKind.CopperWire, ItemKind.Insulator, ItemKind.Cable, ItemKind.Coil,
+        ItemKind.Motor, ItemKind.Relay, ItemKind.Circuit, ItemKind.Coal
+    };
     static readonly ItemKind[] MvPlayerProducts =
     {
         ItemKind.CrudeOil, ItemKind.LightFraction, ItemKind.ChemicalFeedstock,
@@ -47,12 +55,7 @@ static partial class Checks
         foreach (var (x,y) in new[] { (14,7), (20,7), (26,7), (14,17) }) Add(s, BuildKind.Generator, x, y);
         var sim = new WorldSimulator(s); p = sim.AddPlayer("mv-builder", "MV builder");
         Array.Clear(p.items);
-        foreach (var item in new[] { ItemKind.Wood, ItemKind.Stone, ItemKind.Scrap, ItemKind.Food,
-            ItemKind.Fuel, ItemKind.Clay, ItemKind.Brick, ItemKind.Charcoal, ItemKind.Copper, ItemKind.Iron,
-            ItemKind.Bronze, ItemKind.Steel, ItemKind.IronPlate, ItemKind.SteelPlate, ItemKind.Gear,
-            ItemKind.Bearing, ItemKind.RefractoryBrick, ItemKind.PipeFitting, ItemKind.CopperWire,
-            ItemKind.Insulator, ItemKind.Cable, ItemKind.Coil, ItemKind.Motor, ItemKind.Relay,
-            ItemKind.Circuit, ItemKind.Coal }) p.items[(int)item] = 500;
+        RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.HighVoltage), MvPriorMaterials);
         p.x = 8; p.y = 10;
         sim.AddPlayer("mv-peer", "MV teammate");
         Require(s.version == WorldSimulator.SaveVersion && LowVoltageCatalog.MediumVoltageRequirement(sim.State).Length == 0,
@@ -71,8 +74,9 @@ static partial class Checks
         sim.Apply(Command(p, action, b.x, b.y, arg));
         Require(p.hp > 0, "MV player died during " + action);
     }
-    static BuildingState MvPlayerBuild(WorldSimulator sim, PlayerState p, BuildKind kind, int x, int y, int rotation = 0)
+    static BuildingState MvPlayerBuild(WorldSimulator sim, PlayerState p, BuildKind kind, int x, int y, int rotation = 0, ItemKind[] supplies = null)
     {
+        RestockPriorEra(p, DemoCatalog.BuildCost(kind), supplies ?? MvPriorMaterials);
         Advance(sim, .55f); p.x = x; p.y = y - 1;
         int count = sim.State.buildings.Count; var before = Copy(p.items);
         sim.Apply(Command(p, "build", x, y, (int)kind, rotation));
@@ -91,6 +95,7 @@ static partial class Checks
     static void MvPlayerUnlock(WorldSimulator sim, PlayerState p, PetrochemicalTech id)
     {
         Advance(sim, .55f); p.x = 8; p.y = 10;
+        RestockPriorEra(p, PetrochemicalCatalog.Definition((int)id).cost, MvPriorMaterials);
         var peer = sim.State.players.Single(q => q.id == "mv-peer");
         var before = Copy(p.items); var peerBefore = Copy(peer.items); int mask = sim.State.mvResearch;
         int xp = p.xp, skills = p.skillPoints, attributes = p.attributePoints;
@@ -113,9 +118,16 @@ static partial class Checks
             foreach (var g in sim.State.buildings.Where(b => b.kind == BuildKind.Generator || b.kind == BuildKind.DieselGenerator))
             {
                 int fuel = (int)(g.kind == BuildKind.DieselGenerator ? ItemKind.Diesel : ItemKind.Fuel);
-                if (g.items[fuel] < 2 && p.items[fuel] > 0) MvPlayerAct(sim, p, "interact", g);
+                if (g.items[fuel] >= 2) continue;
+                if (g.kind == BuildKind.Generator)
+                    RestockPriorEra(p, DemoCatalog.Materials(ItemKind.Fuel, 8), MvPriorMaterials);
+                if (p.items[fuel] > 0) MvPlayerAct(sim, p, "interact", g);
             }
-            if (p.hunger < 65) { Advance(sim, .55f); sim.Apply(Command(p, "eat")); }
+            if (p.hunger < 65)
+            {
+                RestockPriorEra(p, DemoCatalog.Materials(ItemKind.Food, 1), MvPriorMaterials);
+                Advance(sim, .55f); sim.Apply(Command(p, "eat"));
+            }
             service?.Invoke(); Advance(sim, 2);
             Require(p.hp > 0, "MV player died while waiting: " + message + "; " + MvPlayerDiagnostic(sim, p));
         }
@@ -166,9 +178,13 @@ static partial class Checks
             p.items[(int)ItemKind.ChemicalFeedstock] >= 32 && p.items[(int)ItemKind.HeavyFraction] >= 32 &&
             p.items[(int)ItemKind.ProcessWater] >= 80, "player distillation/water supply did not bootstrap research", () =>
         {
-            MvPlayerAct(sim, p, "interact", distill);
-            if (light.items[(int)ItemKind.LightFraction] > 0) MvPlayerAct(sim, p, "interact", light);
-            if (water.items[(int)ItemKind.ProcessWater] > 0 && p.items[(int)ItemKind.ProcessWater] < 100)
+            if (p.items[(int)ItemKind.ChemicalFeedstock] < 32 || p.items[(int)ItemKind.HeavyFraction] < 32)
+            {
+                RestockPriorEra(p, DemoCatalog.Materials(ItemKind.Fuel, 2), MvPriorMaterials);
+                MvPlayerAct(sim, p, "interact", distill);
+            }
+            if (light.items[(int)ItemKind.LightFraction] > 0 && p.items[(int)ItemKind.LightFraction] < 64) MvPlayerAct(sim, p, "interact", light);
+            if (water.items[(int)ItemKind.ProcessWater] > 0 && p.items[(int)ItemKind.ProcessWater] < 80)
                 MvPlayerAct(sim, p, "interact", water);
         });
         Require(pump.powered && distill.powered && TechCatalog.EnergyTier(distill) == 2 && TechCatalog.NearWater(sim.State, distill),
@@ -204,12 +220,21 @@ static partial class Checks
     static void MvPlayerFinish(WorldSimulator sim)
     {
         var p = sim.State.players.Single(q => q.id == "mv-builder");
-        // Earlier reactor interactions can retain spare process water as input.
-        // Refill the player's tower supply from the real pump-fed tank, never a gift.
+        // Reserve a small haul by collecting from the outlet pipe while the tank retains bulk stock.
+        int processWater = (int)ItemKind.ProcessWater;
         var waterSupply = sim.State.buildings.Single(b => b.kind == BuildKind.LiquidTank && b.x == 29 && b.y == 10);
-        MvPlayerWait(sim, p, () => waterSupply.items[(int)ItemKind.ProcessWater] >= 20, "water pump failed to refill tower supply");
-        MvPlayerAct(sim, p, "interact", waterSupply);
-        Require(p.items[(int)ItemKind.ProcessWater] >= 20, "tower water samples were not collected");
+        MvPlayerWait(sim, p, () => waterSupply.items[processWater] >= 20, "water pump failed to refill tower supply");
+        var outlet = MvPlayerPipe(sim, p, DemoCatalog.OutputX(waterSupply), DemoCatalog.OutputY(waterSupply), ItemKind.ProcessWater);
+        while (p.items[processWater] < 20)
+        {
+            LvProgressionAwait(sim, () => p.interactCooldown <= 0 && outlet.items[processWater] > 0,
+                "pump outlet never offered water for the tower");
+            p.x = outlet.x; p.y = outlet.y - 1;
+            int carried = p.items[processWater];
+            sim.Apply(Command(p, "interact", outlet.x, outlet.y));
+            Require(p.items[processWater] > carried, "tower water could not be collected from the outlet");
+        }
+        Require(p.items[processWater] >= 20, "tower water samples were not collected");
         var diesel = MvPlayerBuild(sim, p, BuildKind.DieselGenerator, 14, 27);
         MvPlayerBuild(sim, p, BuildKind.MediumPole, 20, 27);
         var plant = MvPlayerBuild(sim, p, BuildKind.ChemicalPlant, 14, 30);
@@ -243,6 +268,7 @@ static partial class Checks
             MvPlayerProducts.All(i => sim.State.produced[(int)i] > 0), "a petroleum acceptance/product was never actually earned");
         Require(PetrochemicalCatalog.HighVoltageRequirement(sim.State).Length == 0 &&
             TechCatalog.ResearchRequirement(sim.State, TechEra.HighVoltage).Length == 0, "earned MV chain cannot reach HV");
+        RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.HighVoltage), MvPriorMaterials);
         Advance(sim, .55f); p.x = 8; p.y = 10; var before = Copy(p.items);
         sim.Apply(Command(p, "research", arg: (int)TechEra.HighVoltage));
         Require(sim.State.era == TechEra.HighVoltage, "earned MV player cannot enter HV: " + p.notice);

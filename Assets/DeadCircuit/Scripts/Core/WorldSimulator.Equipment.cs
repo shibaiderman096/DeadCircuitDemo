@@ -36,6 +36,7 @@ namespace DeadCircuit
             if(p.reloadRemaining>.00001f) return;
             // No ammunition is reserved or removed at start. Recheck current stock exactly once
             // on completion, so cancellation, save/reload, and competing commands cannot mint ammo.
+            // The active gun is mounted, so moving reserve rounds into it can only lighten the backpack.
             int amount=Math.Min(EquipmentCatalog.Stats(g).magazine-g.magazine,p.items[(int)p.selectedAmmo]);
             if(amount>0) { p.items[(int)p.selectedAmmo]-=amount; g.magazine+=amount; g.loadedAmmo=p.selectedAmmo; }
             CancelReload(p);
@@ -62,7 +63,8 @@ namespace DeadCircuit
         {
             if(p.interactCooldown>0f || arg<0 || arg>=EquipmentCatalog.PartNames.Length) return;
             PartKind kind=(PartKind)arg;
-            if(!EquipmentCatalog.CanCraftPart(State,p,kind)) { Notice(p,"配件制作失败：请检查工作台、科技、材料及配件库存。"); return; }
+            string requirement=EquipmentCatalog.PartCraftRequirement(State,p,kind);
+            if(requirement.Length>0) { Notice(p,"配件制作失败："+requirement); return; }
             PartDefinition d=EquipmentCatalog.Part(kind); Pay(p.items,d.cost); p.parts[arg]++;
             p.interactCooldown=.4f; Notice(p,"已制作："+d.name);
         }
@@ -72,10 +74,14 @@ namespace DeadCircuit
             GearState g=EquipmentCatalog.Find(p,id);
             if(g==null) return;
             int armorSlot=EquipmentCatalog.ArmorSlot(g.kind);
+            bool tool=armorSlot<0 && EquipmentCatalog.Gear(g.kind).tool;
+            int previousId=armorSlot>=0 ? p.armorIds[armorSlot] : tool ? p.toolId : p.weaponId;
+            GearState previous=EquipmentCatalog.Find(p,previousId);
+            if(previous!=null && previous!=g &&
+                !CheckEquipmentCapacity(p,(long)InventoryWeight.GearGrams(previous)-InventoryWeight.GearGrams(g))) return;
             if(armorSlot>=0)
             { p.armorIds[armorSlot]=g.id; Notice(p,"已穿戴："+EquipmentCatalog.GearNames[(int)g.kind]); return; }
             if(EquipmentCatalog.Equipped(p)!=g) CancelReload(p);
-            bool tool=EquipmentCatalog.Gear(g.kind).tool;
             if(tool) p.toolId=g.id; else p.weaponId=g.id;
             p.activeSlot=tool ? 1 : 0; p.aiming=false;
             if(EquipmentCatalog.IsGun(g.kind)) p.selectedAmmo=g.magazine>0 ? g.loadedAmmo : EquipmentCatalog.AmmoCompatible(g.kind,p.selectedAmmo) ? p.selectedAmmo : EquipmentCatalog.Gear(g.kind).ammo;
@@ -94,13 +100,26 @@ namespace DeadCircuit
         private void UnequipGear(PlayerState p,int id)
         {
             GearState g=EquipmentCatalog.Find(p,id);
-            if(g==null) return;
-            if(p.reloadingGearId==id) CancelReload(p);
-            if(EquipmentCatalog.Equipped(p)==g) { p.activeSlot=2; p.aiming=false; }
-            if(p.weaponId==id) p.weaponId=0;
-            if(p.toolId==id) p.toolId=0;
-            for(int i=0;i<p.armorIds.Length;i++) if(p.armorIds[i]==id) p.armorIds[i]=0;
+            if(g==null || !InventoryWeight.IsEquipped(p,g)) return;
+            if(!CheckEquipmentCapacity(p,InventoryWeight.GearGrams(g))) return;
+            ClearGearSlots(p,g);
             Notice(p,"已卸下："+EquipmentCatalog.GearNames[(int)g.kind]);
+        }
+
+        private static void ClearGearSlots(PlayerState p,GearState g)
+        {
+            if(p.reloadingGearId==g.id) CancelReload(p);
+            if(EquipmentCatalog.Equipped(p)==g) { p.activeSlot=2; p.aiming=false; }
+            if(p.weaponId==g.id) p.weaponId=0;
+            if(p.toolId==g.id) p.toolId=0;
+            for(int i=0;i<p.armorIds.Length;i++) if(p.armorIds[i]==g.id) p.armorIds[i]=0;
+        }
+
+        private bool CheckEquipmentCapacity(PlayerState p,long deltaGrams)
+        {
+            if(InventoryWeight.CanFit(p,deltaGrams)) return true;
+            Notice(p,"背包剩余负重不足。");
+            return false;
         }
 
         private void StartReload(PlayerState p)
@@ -136,6 +155,8 @@ namespace DeadCircuit
             GearState g=EquipmentCatalog.Find(p,id);
             if(g==null || !EquipmentCatalog.IsGun(g.kind)) return;
             if(p.items[(int)g.loadedAmmo]>InventoryLimit-g.magazine) { Notice(p,"弹药储备已满，无法完整卸弹。"); return; }
+            // Rounds in a gun already in the backpack are already counted.
+            if(InventoryWeight.IsEquipped(p,g) && !CheckEquipmentCapacity(p,(long)g.magazine*InventoryWeight.Grams(g.loadedAmmo))) return;
             if(p.reloadingGearId==id) CancelReload(p);
             p.items[(int)g.loadedAmmo]+=g.magazine; g.magazine=0;
             p.interactCooldown=.2f; Notice(p,"弹匣已卸空，弹药全额退回储备。");
@@ -149,6 +170,7 @@ namespace DeadCircuit
             { Notice(p,"安装失败：请靠近工作台，并确认已解锁科技、拥有对应配件且配件适用。"); return; }
             int slot=(int)d.slot;
             if(g.attachments[slot]!=-1) { Notice(p,"此槽已有配件，请先卸下。"); return; }
+            // Installing a loose part preserves or lowers carried weight, depending on the gun's slot.
             if(p.reloadingGearId==id) CancelReload(p);
             p.parts[arg]--; g.attachments[slot]=arg; p.interactCooldown=.25f; Notice(p,"已安装："+d.name);
         }
@@ -162,6 +184,7 @@ namespace DeadCircuit
             if(p.parts[part]>=InventoryLimit) { Notice(p,"配件库存已满。"); return; }
             if(part==(int)PartKind.ExtendedMag && g.magazine>EquipmentCatalog.Gear(g.kind).magazine)
             { Notice(p,"扩容弹匣仍有超额弹药，请先卸弹。"); return; }
+            if(InventoryWeight.IsEquipped(p,g) && !CheckEquipmentCapacity(p,InventoryWeight.Grams((PartKind)part))) return;
             if(p.reloadingGearId==id) CancelReload(p);
             g.attachments[slot]=-1; p.parts[part]++; p.interactCooldown=.25f; Notice(p,"配件已退回库存。");
         }
@@ -192,13 +215,14 @@ namespace DeadCircuit
             { Notice(p,"背包空间不足：无法收回全部材料与弹药。"); return; }
             for(int i=0;i<returnedParts.Length;i++) if(p.parts[i]>InventoryLimit-returnedParts[i])
             { Notice(p,"配件库存已满，无法收回全部配件。"); return; }
+            long deltaGrams=InventoryWeight.MaterialsGrams(returned);
+            for(int i=0;i<returnedParts.Length;i++)
+                deltaGrams+=(long)returnedParts[i]*InventoryWeight.Grams((PartKind)i);
+            if(!InventoryWeight.IsEquipped(p,g)) deltaGrams-=InventoryWeight.GearGrams(g);
+            if(!CheckEquipmentCapacity(p,deltaGrams)) return;
             for(int i=0;i<returned.Length;i++) p.items[i]+=returned[i];
             for(int i=0;i<returnedParts.Length;i++) p.parts[i]+=returnedParts[i];
-            if(p.reloadingGearId==id) CancelReload(p);
-            if(EquipmentCatalog.Equipped(p)==g) { p.activeSlot=2; p.aiming=false; }
-            if(p.weaponId==id) p.weaponId=0;
-            if(p.toolId==id) p.toolId=0;
-            for(int i=0;i<p.armorIds.Length;i++) if(p.armorIds[i]==id) p.armorIds[i]=0;
+            ClearGearSlots(p,g);
             p.gear.Remove(g); p.interactCooldown=.4f; Notice(p,"装备已回收。已返还一半制作材料、全部配件与弹匣中的弹药。");
         }
 

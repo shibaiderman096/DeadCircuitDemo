@@ -52,6 +52,8 @@ static partial class Checks
         Run("new boiler is modular without shoreline and fuel goes into the separate chamber", () =>
         {
             var sim=new WorldSimulator(Flat(era:TechEra.Steam));var p=Builder(sim);p.x=8;p.y=10;
+            p.items = DemoCatalog.BuildCost(BuildKind.Boiler);
+            p.items[(int)ItemKind.Fuel] = 2;
             sim.Apply(Command(p,"build",10,10,(int)BuildKind.Boiler));
             var boiler=sim.State.buildings.Single();Require(boiler.modularBoiler,"new boiler silently retained old integrated burner");
             Advance(sim,.3f);int fuel=p.items[(int)ItemKind.Fuel];sim.Apply(Command(p,"interact",10,10));

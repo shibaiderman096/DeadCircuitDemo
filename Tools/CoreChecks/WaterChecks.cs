@@ -27,8 +27,22 @@ static partial class Checks
         Require(WaterCatalog.HasResearch(sim.State,id),"could not research "+id+": "+p.notice);
         Paid(p.items,before,WaterCatalog.Definition((int)id).cost,"water research cost");
     }
-    static BuildingState WaterBuild(WorldSimulator sim,PlayerState p,BuildKind kind,int x,int y)
+    // Progression scenarios may restock inputs from already completed eras.
+    // Missing materials outside the allowlist must come from the production route.
+    static void RestockPriorEra(PlayerState p, int[] amounts, ItemKind[] available, int batches = 1)
     {
+        foreach (ItemKind kind in available)
+        {
+            int item = (int)kind;
+            p.items[item] = Math.Max(p.items[item], amounts[item] * batches);
+        }
+        long grams = InventoryWeight.CarriedGrams(p);
+        Require(grams <= InventoryWeight.CapacityGrams, $"progression fixture supplied {grams} g for a single backpack");
+    }
+
+    static BuildingState WaterBuild(WorldSimulator sim,PlayerState p,BuildKind kind,int x,int y,ItemKind[] supplies=null)
+    {
+        if (supplies != null) RestockPriorEra(p, DemoCatalog.BuildCost(kind), supplies);
         Advance(sim,.55f);p.x=x;p.y=y-1;int count=sim.State.buildings.Count;
         sim.Apply(Command(p,"build",x,y,(int)kind));
         Require(sim.State.buildings.Count==count+1,"water chain cannot build "+kind+": "+p.notice);
@@ -55,7 +69,11 @@ static partial class Checks
         Run("water full startup researches constructs feeds processes and delivers without steam electricity or pre-made parts",()=>
         {
             var sim=WaterFixture(out var p,arrange:s=>{var ground=s.ground.ToCharArray();ground[20*64+19]='2';s.ground=new string(ground);});
-            Array.Clear(p.items);foreach(var item in new[]{ItemKind.Wood,ItemKind.Stone,ItemKind.Brick,ItemKind.Charcoal,ItemKind.Iron,ItemKind.Bronze,ItemKind.Ore,ItemKind.Scrap})p.items[(int)item]=150;
+            Array.Clear(p.items);
+            foreach (var (item, amount) in new[] { (ItemKind.Wood, 61), (ItemKind.Stone, 18),
+                (ItemKind.Brick, 14), (ItemKind.Charcoal, 12), (ItemKind.Iron, 31),
+                (ItemKind.Bronze, 27), (ItemKind.Ore, 14), (ItemKind.Scrap, 8) }) p.items[(int)item] = amount;
+            Require(InventoryWeight.CarriedGrams(p) < InventoryWeight.CapacityGrams, "water startup supplies exceed backpack capacity");
             WaterUnlock(sim,p,WaterTech.Wheel);WaterBuild(sim,p,BuildKind.Waterwheel,20,20);
             WaterUnlock(sim,p,WaterTech.Shafts);
             for(int y=20;y<=32;y++)WaterBuild(sim,p,BuildKind.Shaft,22,y);
@@ -64,16 +82,20 @@ static partial class Checks
             Require(p.items[(int)ItemKind.CrushedOre]>=4,"crusher chain has no recovered output");
             WaterUnlock(sim,p,WaterTech.Blast);var blast=WaterBuild(sim,p,BuildKind.BlastFurnace,23,26);
             WaterUse(sim,p,blast);Advance(sim,12);WaterUse(sim,p,blast);
-            WaterUnlock(sim,p,WaterTech.Pressing);var press=WaterBuild(sim,p,BuildKind.MechanicalPress,23,23);
+            WaterUnlock(sim,p,WaterTech.Pressing);var press=WaterBuild(sim,p,BuildKind.MechanicalPress,23,23, new[] { ItemKind.Wood });
             WaterUse(sim,p,press);Advance(sim,30);WaterUse(sim,p,press);
             Require(p.items[(int)ItemKind.IronPlate]>=4 && sim.State.waterPressed>=4,"press failed to bootstrap parts");
-            WaterUnlock(sim,p,WaterTech.Components);var workshop=WaterBuild(sim,p,BuildKind.MechanicalWorkshop,23,29);
+            WaterUnlock(sim,p,WaterTech.Components);var workshop=WaterBuild(sim,p,BuildKind.MechanicalWorkshop,23,29, new[] { ItemKind.Wood, ItemKind.Iron });
             WaterUse(sim,p,workshop);Advance(sim,14);WaterUse(sim,p,workshop);
-            WaterUse(sim,p,workshop,"recipe",115);WaterUse(sim,p,workshop);Advance(sim,14);WaterUse(sim,p,workshop);
+            WaterUse(sim,p,workshop,"recipe",115);
+            RestockPriorEra(p, TechCatalog.Recipe(115).inputs, new[] { ItemKind.Bronze, ItemKind.Iron }, batches: 4);
+            WaterUse(sim,p,workshop);Advance(sim,14);WaterUse(sim,p,workshop);
             Require(p.items[(int)ItemKind.Gear]>=3 && p.items[(int)ItemKind.Bearing]>=2,"workshop cannot bootstrap loader samples and materials");
+            RestockPriorEra(p, DemoCatalog.Materials(ItemKind.Wood, 16), new[] { ItemKind.Wood });
             WaterUnlock(sim,p,WaterTech.Transport);WaterUse(sim,p,press);var hopper=WaterBuild(sim,p,BuildKind.MechanicalHopper,23,32);
             WaterBuild(sim,p,BuildKind.Chest,24,32);WaterUse(sim,p,hopper);Advance(sim,5);
             Require(WaterCatalog.SteamRequirement(sim.State).Length==0,"startup acceptance incomplete: "+WaterCatalog.SteamRequirement(sim.State));
+            RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.Steam), new[] { ItemKind.Iron, ItemKind.Bronze });
             p.x=8;p.y=10;Advance(sim,.55f);sim.Apply(Command(p,"research",arg:(int)TechEra.Steam));
             Require(sim.State.era==TechEra.Steam && sim.State.buildings.All(b=>TechCatalog.RequiredEra(b.kind)<=TechEra.Water),"startup depended on future-era machinery");
             var loaded=new WorldSimulator(Saved(sim.State));
@@ -198,6 +220,7 @@ static partial class Checks
         Run("water steam gate requires all industrial evidence while agriculture remains optional",()=>
         {
             var sim=WaterFixture(out var p,127,s=>Add(s,BuildKind.MechanicalCrusher,20,20));
+            p.items = TechCatalog.ResearchCost(TechEra.Steam);
             var s=sim.State;s.waterCrushed=4;s.waterSmelted=6;s.waterPressed=4;s.waterGears=2;s.waterBearings=2;s.waterTransported=4;
             foreach(var reduce in new Action[]{()=>s.waterCrushed=3,()=>s.waterSmelted=5,()=>s.waterPressed=3,()=>s.waterGears=1,()=>s.waterBearings=1,()=>s.waterTransported=3})
             {
@@ -210,21 +233,23 @@ static partial class Checks
         });
         Run("water powered mill improves flour yield and rejects missing wheat blocked range and full output",()=>
         {
-            foreach(string condition in new[]{"ok","power","wheat","full","range","cooldown"})
+            foreach(string condition in new[]{"ok","exact","power","wheat","full","range","cooldown"})
             {
                 var sim=WaterFixture(out var p,255,s=>
                 {
                     s.survival=new SurvivalWorldState{enabled=true,initialized=true};
                     WaterDrive(s,BuildKind.WaterMill);
                 });
+                Array.Clear(p.items);
                 p.x=25;p.y=20;p.needs.foods[(int)FoodKind.Wheat]=2;p.needs.foods[(int)FoodKind.Flour]=0;
                 if(condition=="power") {sim.State.buildings.Single(b=>b.kind==BuildKind.Shaft).hp=0;sim.Step(.05f);}
                 if(condition=="wheat")p.needs.foods[(int)FoodKind.Wheat]=1;
-                if(condition=="full")p.needs.foods[(int)FoodKind.Flour]=SurvivalCatalog.StackLimit-2;
+                // The complete batch gains 510 g: three flour (750 g) minus two wheat (240 g).
+                if(condition=="full" || condition=="exact") FillSurvivalLoad(p, condition=="exact" ? 510 : 500);
                 if(condition=="range")p.x=30;
                 if(condition=="cooldown")p.interactCooldown=1;
                 var before=Copy(p.needs.foods);sim.Apply(Command(p,"mill",24,20));
-                if(condition=="ok")
+                if(condition=="ok" || condition=="exact")
                     Require(p.needs.foods[(int)FoodKind.Wheat]==0 && p.needs.foods[(int)FoodKind.Flour]==3 && sim.State.waterMilled==3,"powered flour output/yield/proof incorrect: "+p.notice);
                 else Require(p.needs.foods.SequenceEqual(before) && sim.State.waterMilled==0,"rejected mill changed foods: "+condition);
             }

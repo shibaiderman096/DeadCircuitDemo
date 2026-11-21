@@ -30,7 +30,7 @@ static partial class Checks
             Add(state,BuildKind.Reactor,13,10).fuel=2f;
             var sim=new WorldSimulator(state);
             var plain=Builder(sim,"plain"); plain.x=11.5f; plain.y=10;
-            var protectedPlayer=Builder(sim,"protected"); protectedPlayer.x=11.5f; protectedPlayer.y=10;
+            var protectedPlayer=sim.AddPlayer("protected", "Protected"); protectedPlayer.x=11.5f; protectedPlayer.y=10;
             var suit=new GearState {id=sim.State.nextId++,kind=GearKind.RadiationSuit,durability=150};
             protectedPlayer.gear.Add(suit);
             sim.Apply(Command(protectedPlayer,"equip",arg:suit.id));

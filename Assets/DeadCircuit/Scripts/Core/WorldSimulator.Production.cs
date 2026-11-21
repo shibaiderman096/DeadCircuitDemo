@@ -59,7 +59,7 @@ namespace DeadCircuit
                 RecipeDefinition recipe=TechCatalog.SelectedRecipe(b);
                 // Reconfiguration never deletes old buffers: unload all possible outputs first.
                 for(int i=0;i<DemoCatalog.ItemCount;i++) if(IsOutput(b.kind,i) && b.kind!=BuildKind.Reactor)
-                    moved += Transfer(b.items,p.items,i,BufferLimit,InventoryLimit);
+                    moved += TransferToPlayer(b.items, p, i, BufferLimit);
                 if(b.kind==BuildKind.CombustionChamber)
                 {
                     foreach(ItemKind fuel in new[] { ItemKind.Coal, ItemKind.Coke, ItemKind.Fuel })
@@ -85,25 +85,25 @@ namespace DeadCircuit
                     moved = TransferIntoBuilding(p.items, b, (int)ItemKind.Fuel, 8);
                     Notice(p, moved > 0 ? "添加燃料 " + moved + "（120 kW，每份运行20秒；节点7格连线，供电覆盖占地外4格）。" : "需携带燃料；3木材可制作2燃料。"); return;
                 case BuildKind.Miner:
-                    moved = Transfer(b.items, p.items, (int)ItemKind.Ore, BufferLimit, InventoryLimit); break;
+                    moved = TransferToPlayer(b.items, p, (int)ItemKind.Ore, BufferLimit); break;
                 case BuildKind.Smelter:
                     moved += TransferIntoBuilding(p.items, b, (int)ItemKind.Ore, 20);
-                    moved += Transfer(b.items, p.items, (int)ItemKind.Iron, BufferLimit, InventoryLimit); break;
+                    moved += TransferToPlayer(b.items, p, (int)ItemKind.Iron, BufferLimit); break;
                 case BuildKind.Assembler:
                     moved += TransferIntoBuilding(p.items, b, (int)ItemKind.Iron, 20);
-                    moved += Transfer(b.items, p.items, (int)ItemKind.Ammo, BufferLimit, InventoryLimit); break;
+                    moved += TransferToPlayer(b.items, p, (int)ItemKind.Ammo, BufferLimit); break;
                 case BuildKind.Turret:
                     moved = TransferIntoBuilding(p.items, b, (int)ItemKind.Ammo, 40);
                     Notice(p, moved > 0 ? "装填炮塔弹药 " + moved : "炮塔需供电及弹药；E装填，弹药也可从相邻朝向它的箱/带自动输入。"); return;
                 case BuildKind.Chest:
-                    for (int i = 0; i < DemoCatalog.ItemCount; i++) if(i!=(int)ItemKind.NuclearWaste) moved += Transfer(b.items, p.items, i, BufferLimit, InventoryLimit); break;
+                    for (int i = 0; i < DemoCatalog.ItemCount; i++) if(i!=(int)ItemKind.NuclearWaste) moved += TransferToPlayer(b.items, p, i, BufferLimit); break;
                 case BuildKind.MechanicalHopper:
-                    for (int i = 0; i < DemoCatalog.ItemCount; i++) if(i!=(int)ItemKind.NuclearWaste) moved += Transfer(b.items, p.items, i, BufferLimit, InventoryLimit);
+                    for (int i = 0; i < DemoCatalog.ItemCount; i++) if(i!=(int)ItemKind.NuclearWaste) moved += TransferToPlayer(b.items, p, i, BufferLimit);
                     if (moved == 0 && arg >= 0 && arg < DemoCatalog.ItemCount && !PetrochemicalCatalog.IsFluid(arg))
                         moved = TransferIntoBuilding(p.items, b, arg, 20);
                     break;
                 case BuildKind.Belt:
-                    for (int i = 0; i < DemoCatalog.ItemCount; i++) if(i!=(int)ItemKind.NuclearWaste) moved += Transfer(b.items, p.items, i, 2, InventoryLimit);
+                    for (int i = 0; i < DemoCatalog.ItemCount; i++) if(i!=(int)ItemKind.NuclearWaste) moved += TransferToPlayer(b.items, p, i, 2);
                     if (moved == 0 && TotalItems(b.items) == 0 && arg >= 0 && arg < DemoCatalog.ItemCount && !PetrochemicalCatalog.IsFluid(arg))
                         moved = TransferIntoBuilding(p.items, b, arg, 1);
                     break;
@@ -112,6 +112,35 @@ namespace DeadCircuit
                 case BuildKind.SolarPanel: Notice(p, "太阳能板白昼最高40 kW，夜间停机；连接电线杆可扩展供电网络。"); return;
             }
             Notice(p, moved > 0 ? "设备交互完成（转移 " + moved + " 件）。" : "暂无可转移物资；检查输入、供电与背包余量。");
+        }
+
+        private void StoreBackpackItem(PlayerState player, int item)
+        {
+            if (player.interactCooldown > 0f || item < 0 || item >= DemoCatalog.ItemCount ||
+                item == (int)ItemKind.NuclearWaste || player.items[item] == 0) return;
+            BuildingState nearest = null;
+            float distance = Reach * Reach;
+            foreach (var chest in State.buildings)
+            {
+                if (chest.kind != BuildKind.Chest || chest.hp <= 0f || !Accepts(chest, item)) continue;
+                float current = DistSq(player.x, player.y, chest.x, chest.y);
+                if (current > distance || current == distance && nearest != null && chest.id > nearest.id ||
+                    !LineClear(player.x, player.y, chest.x, chest.y, chest.x, chest.y)) continue;
+                distance = current;
+                nearest = chest;
+            }
+            if (nearest == null) { Notice(player, "请靠近可存放这种物品的储物箱。"); return; }
+            int amount = TransferIntoBuilding(player.items, nearest, item, player.items[item]);
+            if (amount == 0) { Notice(player, "附近储物箱已装满该物品。"); return; }
+            player.interactCooldown = .25f;
+            Notice(player, "已存入储物箱：" + DemoCatalog.ItemNames[item] + " ×" + amount);
+        }
+
+        private static int TransferToPlayer(int[] from, PlayerState player, int item, int maximum)
+        {
+            if (from[item] == 0 || item == (int)ItemKind.NuclearWaste) return 0;
+            int available = InventoryWeight.Allowance(player, InventoryWeight.Grams((ItemKind)item));
+            return Transfer(from, player.items, item, Math.Min(available, maximum), InventoryLimit);
         }
 
         private static int Transfer(int[] from, int[] to, int item, int maximum, int limit)
@@ -564,8 +593,8 @@ namespace DeadCircuit
             int damage = power + player.attributes[0] / 3 + player.skills[2];
             int item = node.kind == NodeKind.Crate ? SiteCrateItem(node) : NodeItem(node.kind);
             bool completes = pickup || node.hp <= damage;
-            if (completes && player.items[item] > InventoryLimit - node.stock)
-            { Notice(player, "背包空间不足，需要容纳" + DemoCatalog.ItemNames[item] + " ×" + node.stock + "。"); return; }
+            if (completes && !InventoryWeight.CanFit(player, (long)node.stock * InventoryWeight.Grams((ItemKind)item)))
+            { Notice(player, "背包负重不足，需要容纳" + DemoCatalog.ItemNames[item] + " ×" + node.stock + "。"); return; }
 
             if (!pickup) tool.durability--;
             player.interactCooldown = pickup ? .25f : (power >= 20 ? .2f : .3f) * (1f - player.attributes[0] * .025f);

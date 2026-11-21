@@ -130,7 +130,7 @@ namespace DeadCircuit
             if (b.kind != BuildKind.FilterSplitter) return false;
             int moved = 0;
             for (int item = 0; item < DemoCatalog.ItemCount; item++)
-                moved += Transfer(b.items, p.items, item, BufferLimit, InventoryLimit);
+                moved += TransferToPlayer(b.items, p, item, BufferLimit);
             if (moved == 0 && arg >= 0 && arg < DemoCatalog.ItemCount)
                 moved = TransferIntoBuilding(p.items, b, arg, 20);
             Notice(p, moved > 0 ? "分流器转移 " + moved + " 件。" :

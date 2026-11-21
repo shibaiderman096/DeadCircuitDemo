@@ -83,7 +83,7 @@ namespace DeadCircuit
             int moved = 0;
             if(empty) moved = TransferIntoBuilding(p.items,b,item,20);
             else for(int i=0;i<DemoCatalog.ItemCount;i++)
-                moved += Transfer(b.items,p.items,i,BufferLimit,InventoryLimit);
+                moved += TransferToPlayer(b.items, p, i, BufferLimit);
             Notice(p,moved > 0 ? "已转移 " + moved + " 单位。" :
                 "管道与储液罐只能装入所选液体。按 E 取出，空置时可装入。");
             return true;

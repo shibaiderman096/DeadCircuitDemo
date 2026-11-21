@@ -2,6 +2,13 @@ using DeadCircuit;
 
 static partial class Checks
 {
+    static readonly ItemKind[] HvPriorMaterials =
+    {
+        ItemKind.Food, ItemKind.Fuel, ItemKind.Coke, ItemKind.Diesel, ItemKind.Steel, ItemKind.SteelPlate,
+        ItemKind.Copper, ItemKind.CopperWire, ItemKind.Coil, ItemKind.Motor, ItemKind.Bearing, ItemKind.Cable,
+        ItemKind.Relay, ItemKind.Circuit, ItemKind.RefractoryBrick, ItemKind.PipeFitting, ItemKind.Polymer,
+        ItemKind.Lubricant, ItemKind.ProcessWater, ItemKind.Coolant
+    };
     static readonly ItemKind[] HvProgressionMaterials =
     {
         ItemKind.Quartz, ItemKind.IndustrialSilicon, ItemKind.PureSilicon, ItemKind.Wafer,
@@ -30,11 +37,7 @@ static partial class Checks
         var sim = new WorldSimulator(state);
         p = sim.AddPlayer("hv-builder", "HV builder");
         Array.Clear(p.items);
-        foreach (var item in new[] { ItemKind.Food, ItemKind.Fuel, ItemKind.Coke, ItemKind.Diesel,
-            ItemKind.Steel, ItemKind.SteelPlate, ItemKind.Copper, ItemKind.CopperWire, ItemKind.Coil,
-            ItemKind.Motor, ItemKind.Bearing, ItemKind.Cable, ItemKind.Relay, ItemKind.Circuit,
-            ItemKind.RefractoryBrick, ItemKind.PipeFitting, ItemKind.Polymer, ItemKind.Lubricant,
-            ItemKind.ProcessWater, ItemKind.Coolant }) p.items[(int)item] = 200;
+        RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.HighVoltage), HvPriorMaterials);
         Require(sim.State.era == TechEra.MediumVoltage && sim.State.version == WorldSimulator.SaveVersion,
             "HV route did not start with a current MV fixture");
         Require(sim.State.hvResearch == 0 && sim.State.hvPowered == 0 &&
@@ -69,6 +72,7 @@ static partial class Checks
     static void HvProgressionUnlock(WorldSimulator sim, PlayerState p, PrecisionTech tech)
     {
         Advance(sim, .55f); p.x = 8; p.y = 10;
+        RestockPriorEra(p, PrecisionCatalog.Definition((int)tech).cost, HvPriorMaterials);
         int mask = sim.State.hvResearch; var before = Copy(p.items);
         sim.Apply(Command(p, "hv", arg: (int)tech));
         Require(sim.State.hvResearch == (mask | (1 << (int)tech)), "HV research failed: " + tech + ": " + p.notice);
@@ -84,6 +88,7 @@ static partial class Checks
             "invalid production target for HV recipe " + id);
         MvPlayerAct(sim, p, "recipe", machine, id);
         Require(machine.recipe == id, "could not select HV recipe " + id + ": " + p.notice);
+        RestockPriorEra(p, recipe.inputs, HvPriorMaterials, batches: 8);
         MvPlayerAct(sim, p, "interact", machine);
         for (int n = 0; n < 240 && p.items[item] < minimum; n++)
         {
@@ -91,11 +96,20 @@ static partial class Checks
             {
                 int fuel = source.kind == BuildKind.Boiler ? (int)ItemKind.Fuel :
                     source.kind == BuildKind.DieselGenerator ? (int)ItemKind.Diesel : -1;
-                if (fuel >= 0 && source.items[fuel] < 2) MvPlayerAct(sim, p, "interact", source);
+                if (fuel >= 0 && source.items[fuel] < 2)
+                {
+                    RestockPriorEra(p, DemoCatalog.Materials((ItemKind)fuel, 8), HvPriorMaterials);
+                    MvPlayerAct(sim, p, "interact", source);
+                }
             }
-            if (p.hunger < 65) { Advance(sim, .55f); sim.Apply(Command(p, "eat")); }
-            if (p.items[item] + machine.items[item] >= minimum ||
-                Enumerable.Range(0, DemoCatalog.ItemCount).Any(i => machine.items[i] < recipe.inputs[i]))
+            if (p.hunger < 65)
+            {
+                RestockPriorEra(p, DemoCatalog.Materials(ItemKind.Food, 1), HvPriorMaterials);
+                Advance(sim, .55f); sim.Apply(Command(p, "eat"));
+            }
+            bool needsInput = Enumerable.Range(0, DemoCatalog.ItemCount).Any(i => machine.items[i] < recipe.inputs[i]);
+            if (needsInput) RestockPriorEra(p, recipe.inputs, HvPriorMaterials, batches: 8);
+            if (p.items[item] + machine.items[item] >= minimum || needsInput)
                 MvPlayerAct(sim, p, "interact", machine);
             if (p.items[item] < minimum) Advance(sim, 2);
         }
@@ -108,7 +122,9 @@ static partial class Checks
     static void HvProgressionRejectNuclear(WorldSimulator sim, PlayerState p, int expectedPowered)
     {
         Advance(sim, .55f);
-        var before = Copy(p.items); var cost = TechCatalog.ResearchCost(TechEra.Nuclear);
+        var cost = TechCatalog.ResearchCost(TechEra.Nuclear);
+        RestockPriorEra(p, cost, HvPriorMaterials);
+        var before = Copy(p.items);
         Require(sim.State.hvResearch == PrecisionCatalog.AllResearch &&
             sim.State.hvPowered == expectedPowered && sim.State.produced[(int)ItemKind.ControlModule] >= 4 &&
             sim.State.produced[(int)ItemKind.HeatAlloy] >= 6 &&
@@ -137,7 +153,7 @@ static partial class Checks
             var boiler = sim.State.buildings.Single(b => b.kind == BuildKind.Boiler);
             var diesel = sim.State.buildings.Single(b => b.kind == BuildKind.DieselGenerator);
             HvProgressionUnlock(sim, p, PrecisionTech.Silicon);
-            var refiner = MvPlayerBuild(sim, p, BuildKind.SiliconRefiner, 23, 18);
+            var refiner = MvPlayerBuild(sim, p, BuildKind.SiliconRefiner, 23, 18, supplies: HvPriorMaterials);
             HvProgressionProduce(sim, p, furnace, 170, ItemKind.IndustrialSilicon, 24);
             HvProgressionProduce(sim, p, refiner, 171, ItemKind.PureSilicon, 20);
             HvProgressionUnlock(sim, p, PrecisionTech.Wafers);
@@ -145,7 +161,7 @@ static partial class Checks
             Require(p.items[(int)ItemKind.HotCoolant] > 0 && sim.State.produced[(int)ItemKind.HotCoolant] > 0,
                 "wafer cutting did not yield hot coolant");
             HvProgressionUnlock(sim, p, PrecisionTech.Devices);
-            var bench = MvPlayerBuild(sim, p, BuildKind.ElectronicsBench, 21, 21);
+            var bench = MvPlayerBuild(sim, p, BuildKind.ElectronicsBench, 21, 21, supplies: HvPriorMaterials);
             HvProgressionProduce(sim, p, bench, 173, ItemKind.Semiconductor, 24);
             HvProgressionUnlock(sim, p, PrecisionTech.Circuits);
             HvProgressionProduce(sim, p, bench, 174, ItemKind.AdvancedCircuit, 34);
@@ -170,19 +186,21 @@ static partial class Checks
                 .Where(i => i != ItemKind.Quartz).All(i => sim.State.produced[(int)i] > 0),
                 "the HV route skipped a research or recipe product");
 
-            var generator = MvPlayerBuild(sim, p, BuildKind.HighGenerator, 38, 20);
-            var pole = MvPlayerBuild(sim, p, BuildKind.HighPole, 45, 20);
-            var assembler = MvPlayerBuild(sim, p, BuildKind.PrecisionAssembler, 49, 20);
+            var generator = MvPlayerBuild(sim, p, BuildKind.HighGenerator, 38, 20, supplies: HvPriorMaterials);
+            var pole = MvPlayerBuild(sim, p, BuildKind.HighPole, 45, 20, supplies: HvPriorMaterials);
+            var assembler = MvPlayerBuild(sim, p, BuildKind.PrecisionAssembler, 49, 20, supplies: HvPriorMaterials);
             HvProgressionRejectNuclear(sim, p, 0);
             int module = (int)ItemKind.ControlModule, hot = (int)ItemKind.HotCoolant;
             int modulesBefore = sim.State.produced[module];
             MvPlayerAct(sim, p, "recipe", assembler, 80);
             Require(assembler.recipe == 80, "could not select HV module recipe: " + p.notice);
-            MvPlayerAct(sim, p, "interact", assembler);
             var recipe = TechCatalog.Recipe(80);
+            RestockPriorEra(p, recipe.inputs, HvPriorMaterials, batches: 2);
+            MvPlayerAct(sim, p, "interact", assembler);
             var loaded = Copy(assembler.items);
             Require(recipe.inputs.Select((amount, i) => loaded[i] >= 2 * amount).All(enough => enough),
                 "HV assembler lacked two batches of earned inputs");
+            RestockPriorEra(p, DemoCatalog.Materials(ItemKind.Fuel, 4), HvPriorMaterials);
             int fuelBefore = p.items[(int)ItemKind.Fuel];
             MvPlayerAct(sim, p, "interact", generator);
             Require(p.items[(int)ItemKind.Fuel] < fuelBefore, "player did not fuel the HV generator");
@@ -217,6 +235,7 @@ static partial class Checks
             int heldModules = p.items[module];
             MvPlayerAct(sim, p, "interact", assembler);
             Require(p.items[module] == heldModules + 4, "player did not collect the four HV modules");
+            RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.Nuclear), HvPriorMaterials);
             Advance(sim, .55f); before = Copy(p.items);
             sim.Apply(Command(p, "research", arg: (int)TechEra.Nuclear));
             Require(sim.State.era == TechEra.Nuclear && sim.State.hvPowered == 4,
