@@ -41,7 +41,7 @@ namespace DeadCircuit
             "低压电气化：建立低压发电与输电网络，制造电路，让采矿、冶炼与装配自动运行。",
             "勘探油藏，搭建采油、炼油与化工产线。生产柴油、聚合物与润滑油，用变压器向低压电网供电。",
             "提纯硅材，制造电子器件、控制模块与耐热合金。建立高压电网，逐级降压为其他产线供电。",
-            "加工铀矿，制造核燃料。启用反应堆控制台，接通冷却循环和核废料专用仓，留意温度与停堆状态。"
+            "实际开采铀矿并研究铀矿选冶，在中压化工厂生产铀精矿，再用高压核燃料处理机制造核燃料。启用反应堆控制台，接通冷却循环和核废料专用仓，留意温度与停堆状态。"
         };
 
         // One dynamic asset for every label, also available to the world view.
@@ -1158,6 +1158,8 @@ namespace DeadCircuit
                 case BuildKind.Waterwheel: return "近水驱动 · 接触传动轴输出动力";
                 case BuildKind.Shaft: return "接触传递机械动力";
                 case BuildKind.SteamPipe: return "接触传递蒸汽动力";
+                case BuildKind.ChemicalPlant: return "中压化工生产 · 研究铀矿选冶后可切换铀精矿配方";
+                case BuildKind.NuclearProcessor: return "高压加工 · 铀精矿 → 核燃料 · 先由中压化工厂选冶铀矿";
                 case BuildKind.Reactor: return "满足启动条件后自动运行 · E 补核燃料 / 冷却液";
                 case BuildKind.ReactorControlConsole: return "在设备详情中启用或停用控制台";
                 case BuildKind.NuclearWasteVault: return "自动接收核废料 · 无法手动收发";
@@ -1250,7 +1252,14 @@ namespace DeadCircuit
                 string acceptance = PrecisionCatalog.NuclearRequirement(world);
                 if (!string.IsNullOrEmpty(acceptance)) return acceptance;
             }
-            else if (world.era == TechEra.Nuclear) return "监控冷却、温度与核废料";
+            else if (world.era == TechEra.Nuclear)
+            {
+                if (world.nuclearUraniumMined < 4) return "实际开采铀矿 " + world.nuclearUraniumMined + " / 4，准备铀矿选冶研究";
+                if (!NuclearCatalog.HasResearch(world, NuclearTech.UraniumBeneficiation)) return "靠近工作台，按 T 研究铀矿选冶";
+                if (Count(world.produced, (int)ItemKind.UraniumConcentrate) == 0) return "在中压化工厂选择铀矿选冶：铀矿 + 化工原料 + 工艺水 → 铀精矿";
+                if (Count(world.produced, (int)ItemKind.NuclearFuel) < 2) return "将铀精矿送入高压核燃料处理机，制造核燃料";
+                return "监控冷却、温度与核废料";
+            }
             TechEra next = (TechEra)((int)world.era + 1);
             int[] cost = TechCatalog.ResearchCost(next);
             for (int i = 0; i < cost.Length; i++)

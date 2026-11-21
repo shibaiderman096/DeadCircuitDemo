@@ -18,6 +18,7 @@ namespace DeadCircuit
 
         private static void CopyNuclearProgression(WorldState source,WorldState target)
         {
+            SaveCheck(source.nuclearUraniumMined>=0 && source.nuclearUraniumMined<=source.gathered,"uranium mining evidence");
             SaveCheck(source.nuclearResearch>=0 && source.nuclearResearch<=NuclearCatalog.AllResearch,"nuclear research bits");
             SaveCheck(source.era>=TechEra.Nuclear || source.nuclearResearch==0,"nuclear research era");
             foreach(var definition in NuclearCatalog.All) if(NuclearCatalog.HasResearch(source,definition.id))
@@ -26,6 +27,7 @@ namespace DeadCircuit
                 SaveCheck(NuclearCatalog.ResearchEvidence(source,definition.id).Length==0,"nuclear research production evidence");
             }
             target.nuclearResearch=source.nuclearResearch;
+            target.nuclearUraniumMined=source.nuclearUraniumMined;
         }
     }
 }

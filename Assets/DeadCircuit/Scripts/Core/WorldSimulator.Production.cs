@@ -47,6 +47,8 @@ namespace DeadCircuit
                 int amount = Math.Min(n.stock, Math.Min(InventoryLimit - p.items[item], 3 + p.attributes[0] / 3 + (p.skills[2] >= 1 ? p.skills[2] : 0) + bonus));
                 if (amount <= 0) { Notice(p, "背包已满。"); return; }
                 n.stock -= amount; p.items[item] += amount;
+                if (n.kind == NodeKind.UraniumOre)
+                    State.nuclearUraniumMined = SaturatingAdd(State.nuclearUraniumMined, amount);
                 if(tool!=null && EquipmentCatalog.Gear(tool.kind).tool && tool.durability>0) tool.durability--;
                 State.gathered = SaturatingAdd(State.gathered, amount);
                 GainXp(p, amount * 2);
@@ -473,6 +475,8 @@ namespace DeadCircuit
                     b.progress=Math.Min(3f,b.progress+FixedStep*engineeringRate*b.powerRatio);
                     if(b.progress+.00001f<3f) continue;
                     ore.stock--; b.items[item]++; b.progress=0f;
+                    if (ore.kind == NodeKind.UraniumOre)
+                        State.nuclearUraniumMined = SaturatingAdd(State.nuclearUraniumMined, 1);
                     State.gathered=SaturatingAdd(State.gathered,1);
                     if(ore.stock==0) RemoveNode(ore);
                     continue;
@@ -483,6 +487,7 @@ namespace DeadCircuit
                 if(!WaterCatalog.IsBuildUnlocked(State,b.kind) || !WaterCatalog.IsRecipeUnlocked(State,r)) continue;
                 if(!LowVoltageCatalog.IsBuildUnlocked(State,b.kind) || !LowVoltageCatalog.IsRecipeUnlocked(State,r)) continue;
                 if(!PetrochemicalCatalog.IsRecipeUnlocked(State,r)) continue;
+                if(!NuclearCatalog.IsRecipeUnlocked(State,r)) continue;
                 if((b.kind==BuildKind.ChemicalReactor || b.kind==BuildKind.DistillationUnit || b.kind==BuildKind.CoolingTower || r.id==71) && !NearWater(b)) continue;
                 int outputLimit=b.kind==BuildKind.PrecisionAssembler && b.setting==1 ? PrecisionCatalog.ControlledBuffer : BufferLimit;
                 if(!CanRunRecipe(b.items,r,BufferLimit,Incoming(b.id),outputLimit)) continue;

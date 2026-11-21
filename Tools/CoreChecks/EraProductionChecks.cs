@@ -10,7 +10,7 @@ static partial class Checks
             (2,TechEra.Primitive),(3,TechEra.Primitive),(10,TechEra.Primitive),(11,TechEra.Primitive),(12,TechEra.Primitive),
             (13,TechEra.Water),(20,TechEra.Water),(30,TechEra.Steam),(31,TechEra.Steam),(32,TechEra.Steam),(33,TechEra.Steam),
             (40,TechEra.LowVoltage),(41,TechEra.LowVoltage),(42,TechEra.LowVoltage),(43,TechEra.LowVoltage),(50,TechEra.LowVoltage),(60,TechEra.LowVoltage),
-            (70,TechEra.MediumVoltage),(71,TechEra.MediumVoltage),(80,TechEra.HighVoltage),(90,TechEra.Nuclear),(91,TechEra.MediumVoltage),(92,TechEra.Nuclear),
+            (70,TechEra.MediumVoltage),(71,TechEra.MediumVoltage),(80,TechEra.HighVoltage),(90,TechEra.Nuclear),(91,TechEra.MediumVoltage),(92,TechEra.Nuclear),(93,TechEra.Nuclear),
             (52,TechEra.LowVoltage),(53,TechEra.LowVoltage),(54,TechEra.MediumVoltage),(55,TechEra.HighVoltage),(56,TechEra.LowVoltage),(57,TechEra.LowVoltage),
             (170,TechEra.HighVoltage),(171,TechEra.HighVoltage),(172,TechEra.HighVoltage),(173,TechEra.HighVoltage),
             (174,TechEra.HighVoltage),(175,TechEra.HighVoltage),(176,TechEra.HighVoltage),(177,TechEra.HighVoltage)
@@ -110,7 +110,7 @@ static partial class Checks
         });
         Run("nuclear processor feeds a reactor which recirculates coolant and exports real waste", () =>
         {
-            var state=Flat(era:TechEra.Nuclear);var processor=Add(state,BuildKind.NuclearProcessor,10,10);processor.recipe=90;processor.items[(int)ItemKind.UraniumOre]=2;processor.items[(int)ItemKind.Steel]=1;
+            var state=Flat(era:TechEra.Nuclear);var processor=Add(state,BuildKind.NuclearProcessor,10,10);processor.recipe=90;processor.items[(int)ItemKind.UraniumConcentrate]=2;processor.items[(int)ItemKind.Steel]=1;
             var generator=Add(state,BuildKind.HighGenerator,4,10);generator.items[(int)ItemKind.Fuel]=100;Add(state,BuildKind.HighPole,9,14);var console=Add(state,BuildKind.ReactorControlConsole,10,14);console.setting=1;
             var reactor=Add(state,BuildKind.Reactor,13,10);var waste=Add(state,BuildKind.NuclearWasteVault,16,10);
             var tower=Add(state,BuildKind.CoolingTower,13,7);Water(state,13,6);Add(state,BuildKind.DieselGenerator,10,7).items[(int)ItemKind.Diesel]=100;
@@ -122,17 +122,19 @@ static partial class Checks
             Require(sim.State.produced[(int)ItemKind.NuclearFuel]==1 && sim.State.produced[(int)ItemKind.Coolant]>=4 && sim.State.produced[(int)ItemKind.NuclearWaste]==1,"nuclear chain fabricated or omitted a production stage");
             var totals=ItemTotals(sim.State);
             Require(totals[(int)ItemKind.Coolant]+totals[(int)ItemKind.HotCoolant]==6 && totals[(int)ItemKind.ProcessWater]<20,"coolant loop lost mass, made new coolant, or did not debit process water");
-            Require(Building(sim,processor.id).items[(int)ItemKind.UraniumOre]==0 && Building(sim,processor.id).items[(int)ItemKind.Steel]==0,"nuclear processing did not debit ore/steel");
+            Require(Building(sim,processor.id).items[(int)ItemKind.UraniumConcentrate]==0 && Building(sim,processor.id).items[(int)ItemKind.Steel]==0,"nuclear processing did not debit concentrate/steel");
         });
     }
 
     static WorldState RecipeFixture(RecipeDefinition recipe)
     {
         var state=Flat(era:recipe.era);
-        if(recipe.id==92)
+        if(recipe.id==92 || recipe.id==93)
         {
+            state.nuclearUraniumMined=state.gathered=4;
             state.produced[(int)ItemKind.NuclearFuel]=2;
-            state.nuclearResearch=NuclearBit(NuclearTech.UraniumEnrichment);
+            state.nuclearResearch=NuclearBit(NuclearTech.UraniumBeneficiation) |
+                (recipe.id==92 ? NuclearBit(NuclearTech.UraniumEnrichment) : 0);
         }
         return state;
     }

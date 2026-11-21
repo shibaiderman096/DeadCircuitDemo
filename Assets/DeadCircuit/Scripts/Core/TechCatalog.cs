@@ -197,9 +197,10 @@ namespace DeadCircuit
             R(70,"基础聚合",TechEra.MediumVoltage,BuildKind.ChemicalReactor,4f,DemoCatalog.Materials(ItemKind.ChemicalFeedstock,2),DemoCatalog.Materials(ItemKind.Polymer,2)),
             R(71,"冷却液配制",TechEra.MediumVoltage,BuildKind.ChemicalReactor,3f,DemoCatalog.Materials(ItemKind.ProcessWater,2,ItemKind.Polymer,1),DemoCatalog.Materials(ItemKind.Coolant,2)),
             R(80,"高压控制模块",TechEra.HighVoltage,BuildKind.PrecisionAssembler,4f,DemoCatalog.Materials(ItemKind.AdvancedCircuit,2,ItemKind.PrecisionPart,2,ItemKind.Coolant,1),DemoCatalog.Materials(ItemKind.ControlModule,2,ItemKind.HotCoolant,1)),
-            R(90,"核燃料加工",TechEra.Nuclear,BuildKind.NuclearProcessor,4f,DemoCatalog.Materials(ItemKind.UraniumOre,2,ItemKind.Steel,1),DemoCatalog.Materials(ItemKind.NuclearFuel,1)),
+            R(90,"铀精矿燃料加工",TechEra.Nuclear,BuildKind.NuclearProcessor,4f,DemoCatalog.Materials(ItemKind.UraniumConcentrate,2,ItemKind.Steel,1),DemoCatalog.Materials(ItemKind.NuclearFuel,1)),
             R(91,"冷却液回收（近水）",TechEra.MediumVoltage,BuildKind.CoolingTower,3f,DemoCatalog.Materials(ItemKind.HotCoolant,2,ItemKind.ProcessWater,1),DemoCatalog.Materials(ItemKind.Coolant,2)),
-            R(92,"高效核燃料加工",TechEra.Nuclear,BuildKind.NuclearProcessor,4f,DemoCatalog.Materials(ItemKind.UraniumOre,3,ItemKind.Steel,2,ItemKind.HeatAlloy,1),DemoCatalog.Materials(ItemKind.NuclearFuel,2)),
+            R(92,"高效核燃料加工",TechEra.Nuclear,BuildKind.NuclearProcessor,4f,DemoCatalog.Materials(ItemKind.UraniumConcentrate,3,ItemKind.Steel,2,ItemKind.HeatAlloy,1),DemoCatalog.Materials(ItemKind.NuclearFuel,2)),
+            R(93,"铀矿化学浸取",TechEra.Nuclear,BuildKind.ChemicalPlant,4f,DemoCatalog.Materials(ItemKind.UraniumOre,4,ItemKind.ChemicalFeedstock,1,ItemKind.ProcessWater,2),DemoCatalog.Materials(ItemKind.UraniumConcentrate,2)),
             R(110,"鼓风碎矿炼铁",TechEra.Water,BuildKind.BlastFurnace,3f,DemoCatalog.Materials(ItemKind.CrushedOre,1,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Iron,3)),
             R(111,"鼓风炼铜",TechEra.Water,BuildKind.BlastFurnace,3f,DemoCatalog.Materials(ItemKind.CopperOre,2,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Copper,3)),
             R(112,"鼓风炼锡",TechEra.Water,BuildKind.BlastFurnace,3f,DemoCatalog.Materials(ItemKind.TinOre,2,ItemKind.Charcoal,1),DemoCatalog.Materials(ItemKind.Tin,3)),
@@ -242,6 +243,7 @@ namespace DeadCircuit
         public static RecipeDefinition DefaultRecipe(BuildKind kind)
         {
             if(kind==BuildKind.PrecisionAssembler) return Recipe(80);
+            if(kind==BuildKind.ChemicalPlant) return Recipe(164);
             foreach(var r in Recipes) if(r.building==kind && kind!=BuildKind.Workbench) return r;
             return null;
         }

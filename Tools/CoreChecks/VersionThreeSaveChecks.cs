@@ -7,7 +7,7 @@ static partial class Checks
     static WorldState VersionThreeFixture(bool current = false)
     {
         var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,10,10);reactor.temperature=440;reactor.fuel=3;reactor.progress=.4f;reactor.items[(int)ItemKind.NuclearFuel]=2;reactor.items[(int)ItemKind.Coolant]=8;
-        var processor=Add(state,BuildKind.NuclearProcessor,20,10);processor.recipe=90;processor.items[(int)ItemKind.UraniumOre]=2;processor.items[(int)ItemKind.Steel]=1;
+        var processor=Add(state,BuildKind.NuclearProcessor,20,10);processor.recipe=90;processor.items[(int)ItemKind.UraniumConcentrate]=2;processor.items[(int)ItemKind.Steel]=1;
         Add(state,BuildKind.Transformer,25,10).setting=1;state.produced[(int)ItemKind.NuclearWaste]=7;
         var sim=new WorldSimulator(state);Builder(sim);return current ? Saved(sim.State) : AsVersionThree(Saved(sim.State));
     }

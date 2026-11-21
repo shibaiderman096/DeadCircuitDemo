@@ -21,7 +21,7 @@ static partial class Checks
         Run("v3 appended ordinals harvest the right new minerals", () =>
         {
             var items=new[] { ItemKind.Wood,ItemKind.Ore,ItemKind.Iron,ItemKind.Scrap,ItemKind.Fuel,ItemKind.Ammo,ItemKind.Food,ItemKind.CopperOre,ItemKind.Copper,ItemKind.Bronze,ItemKind.Steel,ItemKind.Circuit,ItemKind.Polymer,ItemKind.AdvancedCircuit,ItemKind.UraniumOre,ItemKind.NuclearFuel,ItemKind.Coolant,ItemKind.NuclearWaste,ItemKind.CrushedOre,ItemKind.TinOre,ItemKind.Tin };
-            Require(items.Length==21 && DemoCatalog.ItemCount==62,"item ordinals and current inventory length");
+            Require(items.Length==21 && DemoCatalog.ItemCount==63 && (int)ItemKind.UraniumConcentrate==62,"item ordinals and current inventory length");
             for(int i=0;i<items.Length;i++) Require((int)items[i]==i,$"saved item {items[i]} was renumbered");
             var appended=new[] { BuildKind.Workbench,BuildKind.StoneFurnace,BuildKind.Waterwheel,BuildKind.Shaft,BuildKind.MechanicalCrusher,BuildKind.Boiler,BuildKind.SteamPipe,BuildKind.SteamMiner,BuildKind.SteamFurnace,BuildKind.SteamTurbine,BuildKind.CircuitAssembler,BuildKind.DieselGenerator,BuildKind.ChemicalPlant,BuildKind.MediumPole,BuildKind.Transformer,BuildKind.HighGenerator,BuildKind.HighPole,BuildKind.PrecisionAssembler,BuildKind.NuclearProcessor,BuildKind.Reactor,BuildKind.CoolingTower };
             for(int i=0;i<appended.Length;i++) Require((int)appended[i]==10+i,$"saved building {appended[i]} was renumbered");

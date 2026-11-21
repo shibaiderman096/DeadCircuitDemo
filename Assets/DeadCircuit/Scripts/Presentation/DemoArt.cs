@@ -95,6 +95,8 @@ namespace DeadCircuit
                 case "item_59": fallback = "item_3"; break;
                 case "item_60": fallback = "item_13"; break;
                 case "item_61": fallback = "item_9"; break;
+                // Uranium concentrate reuses the existing uranium ore cell until dedicated art is supplied.
+                case "item_62": fallback = "item_14"; break;
                 default: return null;
             }
             return sprites.TryGetValue(fallback, out sprite) ? sprite : null;

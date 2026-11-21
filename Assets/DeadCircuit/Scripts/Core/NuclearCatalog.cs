@@ -3,7 +3,8 @@ namespace DeadCircuit
     public enum NuclearTech
     {
         UraniumEnrichment, FuelAssembly, CoreDiagnostics, ShieldedStorage,
-        HeatResistantStructures, ClosedCooling, HeatConversion, WasteTransfer
+        HeatResistantStructures, ClosedCooling, HeatConversion, WasteTransfer,
+        UraniumBeneficiation
     }
 
     public sealed class NuclearTechnologyDefinition
@@ -16,14 +17,14 @@ namespace DeadCircuit
 
     public static class NuclearCatalog
     {
-        public const int AllResearch = (1 << 8) - 1;
+        public const int AllResearch = (1 << 9) - 1;
         static int Bit(NuclearTech id) => 1 << (int)id;
         static NuclearTechnologyDefinition T(NuclearTech id, string name, string description, int parents, int[] cost) =>
             new NuclearTechnologyDefinition { id=id, name=name, description=description, prerequisites=parents, cost=cost };
 
         public static readonly NuclearTechnologyDefinition[] All =
         {
-            T(NuclearTech.UraniumEnrichment, "铀矿富集", "用耐热合金优化处理工艺，解锁高效核燃料配方。", 0,
+            T(NuclearTech.UraniumEnrichment, "铀矿富集", "用耐热合金优化燃料组件，解锁高效核燃料配方。", Bit(NuclearTech.UraniumBeneficiation),
                 DemoCatalog.Materials(ItemKind.ControlModule,1,ItemKind.HeatAlloy,2)),
             T(NuclearTech.FuelAssembly, "高密度燃料组件", "改进燃料组件封装，使单份核燃料维持反应堆运行30秒。", Bit(NuclearTech.UraniumEnrichment),
                 DemoCatalog.Materials(ItemKind.NuclearFuel,2,ItemKind.SteelPlate,2)),
@@ -38,7 +39,9 @@ namespace DeadCircuit
             T(NuclearTech.HeatConversion, "热电转化", "回收更多堆芯热能，将反应堆输出从1200千瓦提高到1500千瓦。", Bit(NuclearTech.ClosedCooling),
                 DemoCatalog.Materials(ItemKind.ControlModule,2,ItemKind.HeatAlloy,2)),
             T(NuclearTech.WasteTransfer, "专用废料转运", "允许核废料在相邻专用仓之间自动转运，仍禁止普通物流和背包收发。", Bit(NuclearTech.ShieldedStorage),
-                DemoCatalog.Materials(ItemKind.SteelPlate,6,ItemKind.RefractoryBrick,4,ItemKind.ControlModule,1))
+                DemoCatalog.Materials(ItemKind.SteelPlate,6,ItemKind.RefractoryBrick,4,ItemKind.ControlModule,1)),
+            T(NuclearTech.UraniumBeneficiation, "铀矿选冶", "先采集至少4份铀矿，再研究化学浸取；在化工厂将铀矿处理为铀精矿，后续核燃料配方须使用精矿。", 0,
+                DemoCatalog.Materials(ItemKind.UraniumOre,2,ItemKind.SteelPlate,2))
         };
 
         public static NuclearTechnologyDefinition Definition(int id) => id>=0 && id<All.Length ? All[id] : null;
@@ -54,6 +57,8 @@ namespace DeadCircuit
             if(s==null) return "世界尚未就绪。";
             switch(id)
             {
+                case NuclearTech.UraniumBeneficiation:
+                    return s.nuclearUraniumMined<4 ? "需累计实际开采铀矿×4。" : "";
                 case NuclearTech.UraniumEnrichment:
                 case NuclearTech.CoreDiagnostics:
                     return Produced(s,ItemKind.NuclearFuel)<2 ? "需累计生产核燃料×2。" : "";
@@ -100,6 +105,8 @@ namespace DeadCircuit
         public static string RecipeRequirement(WorldState s,RecipeDefinition recipe)
         {
             if(recipe==null) return "无法识别这项配方。";
+            if(recipe.id==93 && !HasResearch(s,NuclearTech.UraniumBeneficiation))
+                return "需要核工业研究：铀矿选冶";
             return recipe.id==92 && !HasResearch(s,NuclearTech.UraniumEnrichment)
                 ? "需要核工业研究：铀矿富集" : "";
         }

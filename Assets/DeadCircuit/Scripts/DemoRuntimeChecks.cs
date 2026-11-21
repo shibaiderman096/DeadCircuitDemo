@@ -356,9 +356,12 @@ namespace DeadCircuit
             Require(bridge.IsRunning && bridge.IsHost && bridge.LocalPlayer != null && Path.GetFullPath(bridge.SavePath) == qaSavePath &&
                 bridge.World.generation.worldName == qaWorldName && bridge.World.seed == 73149, "load confirmation restores the selected isolated QA world");
             Require(bridge.World.era == TechEra.Nuclear && bridge.LocalPlayer.items.Length == DemoCatalog.ItemNames.Length && bridge.LocalPlayer.attributes[1] == 1 && bridge.LocalPlayer.skills[0] == 1 && bridge.World.buildings.Count == buildings, "selected world restores technology, materials, personal growth and factory");
-            Require(NuclearCatalog.HasResearch(bridge.World, NuclearTech.UraniumEnrichment) &&
-                PrimitiveCatalog.IsRecipeUnlocked(bridge.World, TechCatalog.Recipe(92)),
-                "selected world restores the nuclear study and its recipe unlock");
+            Require(NuclearCatalog.HasResearch(bridge.World, NuclearTech.UraniumBeneficiation) &&
+                NuclearCatalog.HasResearch(bridge.World, NuclearTech.UraniumEnrichment) &&
+                PrimitiveCatalog.IsRecipeUnlocked(bridge.World, TechCatalog.Recipe(93)) &&
+                PrimitiveCatalog.IsRecipeUnlocked(bridge.World, TechCatalog.Recipe(92)) &&
+                bridge.World.nuclearUraniumMined >= 4 && bridge.World.nuclearUraniumMined <= bridge.World.gathered,
+                "selected world restores both nuclear studies, recipe unlocks and real mining evidence");
             VerifyRestoredEquipment(bridge.LocalPlayer);
             yield return PointAtWorld(32, 34);
             RequireDefaultHud();
@@ -573,17 +576,61 @@ namespace DeadCircuit
             player.x = DemoCatalog.CenterX(workbench);
             player.y = DemoCatalog.CenterY(workbench) + 1.1f;
 
+            int beneficiationId = (int)NuclearTech.UraniumBeneficiation;
             int researchId = (int)NuclearTech.UraniumEnrichment;
+            var beneficiationRecipe = TechCatalog.Recipe(93);
             var recipe = TechCatalog.Recipe(92);
+            GrantSamples(player, NuclearCatalog.Definition(beneficiationId).cost);
             GrantSamples(player, NuclearCatalog.Definition(researchId).cost);
             yield return SelectQaTechnologyEra((int)TechEra.Nuclear);
             yield return new WaitForSecondsRealtime(.6f);
+            Require(TechnologyTreeModel.All.Count(n => !n.IsEra && n.era == (int)TechEra.Nuclear) == NuclearCatalog.All.Length &&
+                NuclearCatalog.All.Length == 9, "technology tree includes all nine nuclear studies");
+            Click("Nuclear Research " + beneficiationId);
+            yield return null;
+            Require(world.nuclearUraniumMined == 0 && !FindButton("Research Button").interactable &&
+                !PrimitiveCatalog.IsRecipeUnlocked(world, beneficiationRecipe),
+                "beneficiation stays locked without real mining even with research samples");
+            bridge.Send(new PlayerCommand { action = "nuclear", arg = beneficiationId });
+            yield return new WaitForSecondsRealtime(.3f);
+            Require(!NuclearCatalog.HasResearch(world, beneficiationId), "authority rejects beneficiation without mining evidence");
+
+            // This isolated QA plot was cleared by PrepareQaPlot. Only real interact commands
+            // generate mining evidence; never seed nuclearUraniumMined or gathered.
+            const int mineX = 51, mineY = 31;
+            Require(!world.nodes.Any(n => n.x == mineX && n.y == mineY) &&
+                !world.buildings.Any(b => DemoCatalog.Contains(b, mineX, mineY)), "QA uranium plot is free");
+            world.nodes.Add(new NodeState { id = world.nextId++, x = mineX, y = mineY, kind = NodeKind.UraniumOre, stock = 4, hp = 35 });
+            player.x = mineX; player.y = mineY + 1;
+            int gatheredBefore = world.gathered;
+            int uraniumBefore = player.items[(int)ItemKind.UraniumOre];
+            for (int attempt = 0; attempt < 4 && world.nuclearUraniumMined < 4; attempt++)
+            {
+                yield return new WaitForSecondsRealtime(.5f);
+                bridge.Send(new PlayerCommand { action = "interact", x = mineX, y = mineY });
+                yield return null;
+            }
+            Require(world.nuclearUraniumMined == 4 && world.gathered >= gatheredBefore + 4 &&
+                player.items[(int)ItemKind.UraniumOre] == uraniumBefore + 4 &&
+                world.nuclearUraniumMined <= world.gathered, "real uranium interaction records saveable mining and gathered evidence");
+            player.x = DemoCatalog.CenterX(workbench);
+            player.y = DemoCatalog.CenterY(workbench) + 1.1f;
+            yield return new WaitForSecondsRealtime(.6f);
+            Require(FindButton("Research Button").interactable, "beneficiation becomes researchable at the workbench after mining");
+            Click("Research Button");
+            yield return new WaitForSecondsRealtime(.7f);
+            Require(NuclearCatalog.HasResearch(world, beneficiationId) && PrimitiveCatalog.IsRecipeUnlocked(world, beneficiationRecipe) &&
+                PrimitiveCatalog.IsRecipeUnlocked(world, TechCatalog.Recipe(90)), "beneficiation opens chemical extraction and preserves startup fuel access");
             Click("Nuclear Research " + researchId);
             yield return null;
-            Require(!FindButton("Research Button").interactable && !PrimitiveCatalog.IsRecipeUnlocked(world, recipe),
-                "nuclear research and its recipe are locked without production evidence");
+            Require(world.produced[(int)ItemKind.NuclearFuel] < 2 && !FindButton("Research Button").interactable &&
+                !PrimitiveCatalog.IsRecipeUnlocked(world, recipe), "enrichment still requires fuel production after beneficiation");
+            bridge.Send(new PlayerCommand { action = "nuclear", arg = researchId });
+            yield return new WaitForSecondsRealtime(.3f);
+            Require(!NuclearCatalog.HasResearch(world, researchId), "authority rejects enrichment without fuel production evidence");
 
-            // Supply only the evidence in the isolated QA world; research still goes through the HUD.
+            // Fuel production is a fixture here, not end-to-end chemical/fuel manufacturing.
+            // Verify that production chain separately in core checks; this QA covers HUD/authority gates.
             world.produced[(int)ItemKind.NuclearFuel] = 2;
             yield return new WaitForSecondsRealtime(.2f);
             Click("Research Button");

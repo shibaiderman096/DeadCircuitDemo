@@ -1,3 +1,5 @@
+using System;
+using System.Text.Json;
 using DeadCircuit;
 
 static partial class Checks
@@ -6,6 +8,8 @@ static partial class Checks
 
     static void EarnNuclearEvidence(WorldState state)
     {
+        state.nuclearUraniumMined = 4;
+        state.gathered = Math.Max(state.gathered, 4);
         state.produced[(int)ItemKind.NuclearFuel] = 2;
         state.produced[(int)ItemKind.NuclearWaste] = 8;
         state.produced[(int)ItemKind.HotCoolant] = 12;
@@ -14,7 +18,156 @@ static partial class Checks
 
     static void NuclearProgressionChecks()
     {
-        Run("nuclear technology validates all eight studies and saves their full progression", () =>
+        Run("uranium mining records finite ore from both powered miner families without claiming production", () =>
+        {
+            foreach(var kind in new[] {BuildKind.Miner,BuildKind.SteamMiner})
+            {
+                var state=Flat(era:TechEra.Nuclear);
+                var miner=Add(state,kind,10,10);
+                AddRecipePower(state,miner);
+                var ore=new NodeState {id=state.nextId++,kind=NodeKind.UraniumOre,x=12,y=11,stock=4};
+                state.nodes.Add(ore);
+                var sim=new WorldSimulator(state);
+                Advance(sim,13f);
+                Require(sim.State.nuclearUraniumMined==4 && sim.State.gathered==4 && sim.State.nodes.All(n=>n.id!=ore.id) &&
+                    ItemTotals(sim.State)[(int)ItemKind.UraniumOre]==4 && sim.State.produced[(int)ItemKind.UraniumOre]==0,
+                    kind+" lost finite ore, duplicated mining evidence or claimed fabricated manufacturing");
+                var restored=new WorldSimulator(Saved(sim.State));
+                Advance(restored,4f);
+                Require(restored.State.nuclearUraniumMined==4 && restored.State.gathered==4 && restored.State.nodes.All(n=>n.id!=ore.id),
+                    kind+" replenished ore or recounted mining on restore");
+            }
+        });
+
+        Run("uranium current saves reject false mining evidence locked leaching and malformed concentrate slots", () =>
+        {
+            foreach(int mined in new[] {-1,5})
+            {
+                var state=Flat(era:TechEra.Nuclear);
+                state.gathered=4; state.nuclearUraniumMined=mined;
+                Reject(state,"invalid uranium mining evidence was accepted");
+            }
+            var insufficient=Flat(era:TechEra.Nuclear);
+            insufficient.gathered=4; insufficient.nuclearUraniumMined=3;
+            insufficient.nuclearResearch=NuclearBit(NuclearTech.UraniumBeneficiation);
+            Reject(insufficient,"beneficiation without four actually mined uranium was accepted");
+            var locked=Flat(era:TechEra.Nuclear);
+            Add(locked,BuildKind.ChemicalPlant,10,10).recipe=93;
+            Reject(locked,"locked beneficiation recipe was restored");
+            var truncated=Flat(era:TechEra.Nuclear);
+            truncated.produced=new int[62];
+            Reject(truncated,"current-format production history omitted the new material slot");
+            var duplicate=Flat(era:TechEra.Nuclear);
+            Add(duplicate,BuildKind.NuclearWasteVault,10,10).items[(int)ItemKind.UraniumConcentrate]=1;
+            Reject(duplicate,"uranium concentrate was accepted in a dedicated waste vault");
+        });
+
+        Run("uranium beneficiation progresses from real finite mining through research and two powered production stages", () =>
+        {
+            var state = Flat(era: TechEra.Nuclear);
+            Add(state, BuildKind.Workbench, 10, 10);
+            var ore = new NodeState { id=state.nextId++, kind=NodeKind.UraniumOre, x=10, y=14, stock=6 };
+            state.nodes.Add(ore);
+            var plant = Add(state, BuildKind.ChemicalPlant, 10, 20);
+            Add(state, BuildKind.DieselGenerator, 7, 20).items[(int)ItemKind.Diesel] = 20;
+            foreach (int x in new[] {13,14,15}) Add(state, BuildKind.Belt, x, 20);
+            var processor = Add(state, BuildKind.NuclearProcessor, 16, 20);
+            processor.items[(int)ItemKind.Steel] = 1;
+            Add(state, BuildKind.HighGenerator, 20, 20).items[(int)ItemKind.Fuel] = 20;
+            var output = Add(state, BuildKind.Chest, 19, 20);
+            var sim = new WorldSimulator(state);
+            var player = Builder(sim);
+            player.items[(int)ItemKind.UraniumConcentrate] = player.items[(int)ItemKind.NuclearFuel] = 0;
+            player.x=8; player.y=10;
+            int[] lockedInventory=Copy(player.items);
+            sim.Apply(Command(player,"nuclear",arg:(int)NuclearTech.UraniumBeneficiation));
+            Require(sim.State.nuclearResearch==0 && player.items.SequenceEqual(lockedInventory),
+                "stockpiled ore bypassed the real mining prerequisite");
+            player.items[(int)ItemKind.UraniumOre]=0;
+            player.x=8; player.y=14;
+            for(int i=0;i<2;i++)
+            {
+                Ready(player); sim.Apply(Command(player,"interact",10,14)); Advance(sim,.55f);
+            }
+            Require(sim.State.nodes.All(n=>n.id!=ore.id) && sim.State.nuclearUraniumMined==6 && sim.State.gathered==6 &&
+                player.items[(int)ItemKind.UraniumOre]==6 && sim.State.produced[(int)ItemKind.UraniumOre]==0,
+                "finite uranium mining did not record the real mined amount independently of manufactured output");
+            player.x=10; player.y=18.8f; Ready(player);
+            sim.Apply(Command(player,"recipe",10,20,93));
+            Require(Building(sim,plant.id).recipe!=93,"unresearched beneficiation recipe could be selected");
+            player.x=8; player.y=10; Ready(player);
+            int[] before=Copy(player.items);
+            sim.Apply(Command(player,"nuclear",arg:(int)NuclearTech.UraniumBeneficiation));
+            Require(NuclearCatalog.HasResearch(sim.State,NuclearTech.UraniumBeneficiation),"mined ore could not unlock the startup research");
+            Paid(player.items,before,NuclearCatalog.Definition((int)NuclearTech.UraniumBeneficiation).cost,"beneficiation research");
+            Advance(sim,.55f); player.x=10; player.y=18.8f; Ready(player);
+            sim.Apply(Command(player,"recipe",10,20,93));
+            Advance(sim,.3f);
+            player.items[(int)ItemKind.ChemicalFeedstock]=1; player.items[(int)ItemKind.ProcessWater]=2;
+            sim.Apply(Command(player,"interact",10,20));
+            Advance(sim,1f);
+            Require(Building(sim,plant.id).progress>0 && sim.State.produced[(int)ItemKind.UraniumConcentrate]==0,
+                "beneficiation did not start a powered, unfinished batch");
+            string folder=Path.Combine(Path.GetTempPath(),"dead-circuit-uranium-"+Guid.NewGuid().ToString("N"));
+            try
+            {
+                var archive=new WorldArchive(folder,Dump,text=>JsonSerializer.Deserialize<WorldState>(text,Json));
+                string id=Guid.NewGuid().ToString("N");
+                archive.Write(id,sim.State);
+                var restored=new WorldSimulator(archive.Read(id));
+                Require(restored.State.nuclearUraniumMined==6 && NuclearCatalog.HasResearch(restored.State,NuclearTech.UraniumBeneficiation),
+                    "archive read lost the actual mining evidence or startup research");
+                Advance(restored,12f);
+                Require(Building(restored,output.id).items[(int)ItemKind.NuclearFuel]==1 &&
+                    restored.State.produced[(int)ItemKind.UraniumConcentrate]==2 && restored.State.produced[(int)ItemKind.NuclearFuel]==1,
+                    "restored beneficiation and logistics did not feed a real nuclear fuel batch");
+                Require(Building(restored,plant.id).items[(int)ItemKind.UraniumOre]==0 &&
+                    Building(restored,plant.id).items[(int)ItemKind.ChemicalFeedstock]==0 &&
+                    Building(restored,plant.id).items[(int)ItemKind.ProcessWater]==0 &&
+                    Building(restored,processor.id).items[(int)ItemKind.Steel]==0 &&
+                    ItemTotals(restored.State)[(int)ItemKind.UraniumConcentrate]==0,
+                    "the uranium chain fabricated or failed to consume a required material");
+            }
+            finally { if(Directory.Exists(folder)) Directory.Delete(folder,true); }
+        });
+
+        Run("uranium beneficiation routes uranium through concentrate and preserves the current save slot", () =>
+        {
+            bool hasConcentrate = Enum.TryParse("UraniumConcentrate", out ItemKind concentrate);
+            bool hasBeneficiation = Enum.TryParse("UraniumBeneficiation", out NuclearTech beneficiation);
+            Require(hasConcentrate && (int)concentrate == 62 && DemoCatalog.ItemCount == 63,
+                "uranium concentrate did not append one persistent material slot");
+            Require(hasBeneficiation && NuclearCatalog.AllResearch == (1 << 9) - 1 && NuclearCatalog.Definition((int)beneficiation) != null,
+                "uranium beneficiation is missing from the nuclear research catalog");
+
+            var milling = TechCatalog.Recipe(93);
+            var baseFuel = TechCatalog.Recipe(90);
+            var enrichedFuel = TechCatalog.Recipe(92);
+            Require(milling != null && milling.building == BuildKind.ChemicalPlant && milling.inputs[(int)ItemKind.UraniumOre] == 4 &&
+                milling.inputs[(int)ItemKind.ChemicalFeedstock] == 1 && milling.inputs[(int)ItemKind.ProcessWater] == 2 &&
+                milling.outputs[(int)concentrate] == 2, "the uranium beneficiation recipe is incomplete");
+            Require(baseFuel.inputs[(int)concentrate] == 2 && baseFuel.inputs[(int)ItemKind.UraniumOre] == 0 &&
+                enrichedFuel.inputs[(int)concentrate] == 3 && enrichedFuel.inputs[(int)ItemKind.UraniumOre] == 0,
+                "nuclear fuel can still bypass beneficiation");
+
+            var state = Flat(era: TechEra.Nuclear);
+            state.nuclearUraniumMined = state.gathered = 4;
+            state.nuclearResearch = NuclearBit(beneficiation);
+            var sim = new WorldSimulator(state);
+            var player = Builder(sim);
+            player.items[(int)concentrate] = 3;
+            var plant = Add(sim.State, BuildKind.ChemicalPlant, 10, 10);
+            plant.recipe = milling.id;
+            plant.items[(int)concentrate] = 2;
+            sim.State.produced[(int)concentrate] = 3;
+
+            var restored = new WorldSimulator(Saved(sim.State));
+            Require(restored.State.version == 17 && restored.State.produced[(int)concentrate] == 3 &&
+                restored.State.players[0].items[(int)concentrate] == 3 && Building(restored, plant.id).items[(int)concentrate] == 2,
+                "current-format save did not preserve uranium concentrate in world counters and inventories");
+        });
+
+        Run("nuclear technology validates all nine studies and saves their full progression", () =>
         {
             var state = Flat(era: TechEra.Nuclear);
             EarnNuclearEvidence(state);
@@ -22,7 +175,7 @@ static partial class Checks
             var player = Builder(sim);
             player.x = 8; player.y = 10;
             Add(sim.State, BuildKind.Workbench, 10, 10);
-            foreach (var definition in NuclearCatalog.All)
+            foreach (var definition in NuclearCatalog.All.OrderBy(d => d.id == NuclearTech.UraniumBeneficiation ? -1 : (int)d.id))
             {
                 Ready(player);
                 string requirement = NuclearCatalog.ResearchRequirement(sim.State, player, (int)definition.id);
@@ -42,7 +195,7 @@ static partial class Checks
         Run("nuclear saves reject unknown bits missing parents missing production evidence and early research", () =>
         {
             var badMask = Flat(era: TechEra.Nuclear);
-            badMask.nuclearResearch = 1 << 8;
+            badMask.nuclearResearch = 1 << 9;
             Reject(badMask, "unknown nuclear research bit was accepted");
 
             var badParent = Flat(era: TechEra.Nuclear);
@@ -52,7 +205,8 @@ static partial class Checks
             Reject(badParent, "fuel assembly without uranium enrichment was accepted");
 
             var badEvidence = Flat(era: TechEra.Nuclear);
-            badEvidence.nuclearResearch = NuclearBit(NuclearTech.UraniumEnrichment);
+            badEvidence.nuclearResearch = NuclearBit(NuclearTech.UraniumBeneficiation) | NuclearBit(NuclearTech.UraniumEnrichment);
+            badEvidence.nuclearUraniumMined = badEvidence.gathered = 4;
             Reject(badEvidence, "uranium enrichment without real fuel evidence was accepted");
 
             var early = Flat(era: TechEra.HighVoltage);
@@ -61,7 +215,8 @@ static partial class Checks
             Reject(early, "nuclear research before the nuclear era was accepted");
 
             var valid = Flat(era: TechEra.Nuclear);
-            valid.nuclearResearch = NuclearBit(NuclearTech.UraniumEnrichment);
+            valid.nuclearResearch = NuclearBit(NuclearTech.UraniumBeneficiation) | NuclearBit(NuclearTech.UraniumEnrichment);
+            valid.nuclearUraniumMined = valid.gathered = 4;
             valid.produced[(int)ItemKind.NuclearFuel] = 2;
             Require(new WorldSimulator(Saved(valid)).State.nuclearResearch == valid.nuclearResearch,
                 "valid nuclear research evidence did not restore");
@@ -70,6 +225,8 @@ static partial class Checks
         Run("uranium enrichment gates the high-yield fuel recipe and the technology tree command", () =>
         {
             var state = Flat(era: TechEra.Nuclear);
+            state.nuclearResearch = NuclearBit(NuclearTech.UraniumBeneficiation);
+            state.nuclearUraniumMined = state.gathered = 4;
             state.produced[(int)ItemKind.NuclearFuel] = 2;
             var sim = new WorldSimulator(state);
             var player = Builder(sim);
@@ -147,8 +304,9 @@ static partial class Checks
             var state = Flat(era: TechEra.Nuclear);
             state.produced[(int)ItemKind.NuclearFuel] = 2;
             state.produced[(int)ItemKind.NuclearWaste] = 4;
-            state.nuclearResearch = NuclearBit(NuclearTech.UraniumEnrichment) |
+            state.nuclearResearch = NuclearBit(NuclearTech.UraniumBeneficiation) | NuclearBit(NuclearTech.UraniumEnrichment) |
                 NuclearBit(NuclearTech.CoreDiagnostics) | NuclearBit(NuclearTech.ShieldedStorage);
+            state.nuclearUraniumMined = state.gathered = 4;
             var fullVault = Add(state, BuildKind.NuclearWasteVault, 24, 24);
             fullVault.items[(int)ItemKind.NuclearWaste] = WorldSimulator.BufferLimit * 2;
             var accepted = new WorldSimulator(Saved(state));
