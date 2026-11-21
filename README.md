@@ -38,12 +38,14 @@ python Tools/generate_art.py
 
 ## Project notes
 
-- [Development outline](DEVELOPMENT_OUTLINE.md)
-- [Biome generation](BIOMES.md)
-- [Seasons and chunk worlds](SEASONS_CHUNKS.md)
-- [Settlements](SETTLEMENTS.md)
-- [Floors](FLOORS.md)
-- [Landmark buildings](LANDMARK_BUILDINGS.md)
+- [Reference document index](Docs/README.md)
+- [Development outline](Docs/DEVELOPMENT_OUTLINE.md)
+- [Weapons and tools research](Docs/WEAPONS_TOOLS.md)
+- [Biome generation](Docs/BIOMES.md)
+- [Seasons and chunk worlds](Docs/SEASONS_CHUNKS.md)
+- [Settlements](Docs/SETTLEMENTS.md)
+- [Floors](Docs/FLOORS.md)
+- [Landmark buildings](Docs/LANDMARK_BUILDINGS.md)
 
 ## License
 
@@ -82,6 +84,10 @@ dotnet run --project Tools/CoreChecks/CoreChecks.csproj --configuration Release
 ### 图集生成
 
 安装 Python 和 Pillow 后，可运行 `python Tools/generate_art.py` 确定性地生成项目图集。
+
+### 项目参考文档
+
+项目大纲、系统设计和验证记录统一放在 [Docs 文档目录](Docs/README.md)，包括[开发总纲](Docs/DEVELOPMENT_OUTLINE.md)和[武器与工具分支](Docs/WEAPONS_TOOLS.md)。文档中的源码、工具路径和运行命令均以项目根目录为基准。
 
 ### 许可证
 
