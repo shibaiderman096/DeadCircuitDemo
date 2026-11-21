@@ -55,6 +55,7 @@ static partial class Checks
         Add(s, BuildKind.ResearchBench, 7, 14);
         foreach (var (x,y) in new[] { (14,7), (20,7), (26,7), (14,17) }) Add(s, BuildKind.Generator, x, y);
         var sim = new WorldSimulator(s); p = sim.AddPlayer("mv-builder", "MV builder");
+        GrantReinforcedBackpack(sim.State, p);
         Array.Clear(p.items);
         RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.HighVoltage), MvPriorMaterials);
         p.x = 8; p.y = 10;

@@ -8,7 +8,7 @@ namespace DeadCircuit
     public enum NodeKind { Tree, Ore, Scrap, Crate, Wall, CopperOre = 5, TinOre = 6, UraniumOre = 7, Stone = 8, Clay = 9, Coal = 10, Limestone = 11, FireClay = 12, Oil = 13, Quartz = 14, Branch = 15, LooseStone = 16, DryGrass = 17 }
     public enum BuildKind { Wall, Generator, Miner, Belt, Smelter, Assembler, Turret, Chest, PowerPole, SolarPanel, Workbench = 10, StoneFurnace, Waterwheel, Shaft, MechanicalCrusher, Boiler, SteamPipe, SteamMiner, SteamFurnace, SteamTurbine, CircuitAssembler, DieselGenerator, ChemicalPlant, MediumPole, Transformer, HighGenerator, HighPole, PrecisionAssembler, NuclearProcessor, Reactor, CoolingTower, Door = 31, CombustionChamber, Chimney, FeedwaterPump, SteamEngine, CharcoalKiln = 36, ClayKiln = 37, BlastFurnace = 38, MechanicalPress = 39, MechanicalWorkshop = 40, WaterMill = 41, IrrigationPump = 42, MechanicalHopper = 43, CokeOven = 44, RefractoryKiln = 45, IronBlastFurnace = 46, RefiningForge = 47, MachineTool = 48, WindingBench = 49, FilterSplitter = 50, CircuitBreaker = 51, ElectricCrusher = 52, OilPump = 53, LiquidPipe = 54, LiquidTank = 55, DistillationUnit = 56, ChemicalReactor = 57, ProcessWaterPump = 58, SiliconRefiner = 59, ElectronicsBench = 60, ReactorControlConsole = 61, NuclearWasteVault = 62, LargeSteamFurnace = 63, LargeAssemblyPlant = 64, LargeOreProcessor = 65, ResearchBench = 66 }
     public enum ItemKind { Wood, Ore, Iron, Scrap, Fuel, Ammo, Food, CopperOre = 7, Copper, Bronze, Steel, Circuit, Polymer, AdvancedCircuit, UraniumOre, NuclearFuel, Coolant, NuclearWaste, CrushedOre, TinOre, Tin, RifleAmmo = 21, Shell = 22, PrecisionAmmo = 23, ArmorPiercingAmmo = 24, Stone = 25, Clay = 26, Charcoal = 27, Brick = 28, IronPlate = 29, Gear = 30, Bearing = 31, Coal = 32, Limestone = 33, FireClay = 34, Coke = 35, RefractoryBrick = 36, PigIron = 37, SteelPlate = 38, PipeFitting = 39, CopperWire = 40, Insulator = 41, Cable = 42, Coil = 43, Motor = 44, Relay = 45, CrudeOil = 46, LightFraction = 47, ChemicalFeedstock = 48, HeavyFraction = 49, Diesel = 50, Lubricant = 51, ProcessWater = 52, HotCoolant = 53, Quartz = 54, IndustrialSilicon = 55, PureSilicon = 56, Wafer = 57, Semiconductor = 58, PrecisionPart = 59, ControlModule = 60, HeatAlloy = 61, UraniumConcentrate = 62, Branch = 63, LooseStone = 64, DryGrass = 65 }
-    public enum GearKind { StoneAxe = 0, StonePickaxe = 1, SteelAxe = 2, SteelPickaxe = 3, Wrench = 4, Knife = 5, Pistol = 6, Shotgun = 7, AssaultRifle = 8, PrecisionRifle = 9, ClothHood = 10, LeatherJacket = 11, WorkPants = 12, WorkBoots = 13, SteelHelmet = 14, ArmorVest = 15, TacticalHelmet = 16, TacticalVest = 17, TacticalBoots = 18, RadiationSuit = 19 }
+    public enum GearKind { StoneAxe = 0, StonePickaxe = 1, SteelAxe = 2, SteelPickaxe = 3, Wrench = 4, Knife = 5, Pistol = 6, Shotgun = 7, AssaultRifle = 8, PrecisionRifle = 9, ClothHood = 10, LeatherJacket = 11, WorkPants = 12, WorkBoots = 13, SteelHelmet = 14, ArmorVest = 15, TacticalHelmet = 16, TacticalVest = 17, TacticalBoots = 18, RadiationSuit = 19, GrassBackpack = 20, ReinforcedBackpack = 21, EngineerBackpack = 22 }
     public enum PartKind { RedDot = 0, Scope4x = 1, Suppressor = 2, MuzzleBrake = 3, ExtendedMag = 4, ErgonomicGrip = 5, MatchBarrel = 6 }
     public enum AttachmentSlot { Optic = 0, Muzzle = 1, Magazine = 2, Grip = 3, Barrel = 4 }
 
@@ -19,6 +19,23 @@ namespace DeadCircuit
         public int durability = 100, magazine;
         public ItemKind loadedAmmo = ItemKind.Ammo;
         public int[] attachments = { -1, -1, -1, -1, -1 };
+        public BackpackInventoryState backpackInventory;
+    }
+
+    [Serializable] public sealed class BackpackInventoryState
+    {
+        public int[] items = new int[DemoCatalog.ItemCount], parts = new int[EquipmentCatalog.PartNames.Length];
+        public int[] foods = new int[SurvivalCatalog.FoodCount], seeds = new int[SurvivalCatalog.CropCount];
+        public int waterRaw, waterClean;
+        // Worn packs reference the owner's accessible equipment. Ground packs own their gear.
+        public List<int> gearIds = new List<int>();
+    }
+
+    [Serializable] public sealed class DroppedBackpackState
+    {
+        public int x, y;
+        public GearState gear;
+        public List<GearState> packedGear = new List<GearState>();
     }
 
     [Serializable] public sealed class WorldState
@@ -52,6 +69,7 @@ namespace DeadCircuit
         public int kills, manufactured, gathered;
         public List<PlayerState> players = new List<PlayerState>();
         public List<NodeState> nodes = new List<NodeState>();
+        public List<DroppedBackpackState> droppedBackpacks = new List<DroppedBackpackState>();
         public List<BuildingState> buildings = new List<BuildingState>();
         public List<ZombieState> zombies = new List<ZombieState>();
         public List<TraceState> traces = new List<TraceState>();
@@ -74,7 +92,7 @@ namespace DeadCircuit
         public int[] items = new int[DemoCatalog.ItemCount], attributes = new int[5], skills = new int[3];
         public List<GearState> gear = new List<GearState>();
         public int[] parts = new int[7];
-        public int weaponId, toolId, activeSlot;
+        public int weaponId, toolId, backpackId, activeSlot;
         public int[] armorIds = new int[4];
         public ItemKind selectedAmmo = ItemKind.Ammo;
         public float reloadRemaining, recoil;

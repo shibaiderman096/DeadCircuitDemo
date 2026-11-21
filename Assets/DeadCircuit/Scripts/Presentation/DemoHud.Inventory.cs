@@ -8,6 +8,8 @@ namespace DeadCircuit
     public sealed partial class DemoHud
     {
         enum InventorySupply { Material, Food, Seed, Water }
+        // Values are passed in PlayerCommand.x for packput and packtake.
+        enum PackItemKind { Material = 0, Part = 1, Food = 2, Seed = 3, RawWater = 4, CleanWater = 5, Gear = 6 }
 
         sealed class InventoryCell
         {
@@ -42,7 +44,8 @@ namespace DeadCircuit
         readonly List<TextMeshProUGUI> attachmentLabels = new List<TextMeshProUGUI>();
         readonly List<GameObject> gearDetailObjects = new List<GameObject>();
         readonly List<GameObject> gunDetailObjects = new List<GameObject>();
-        GameObject unequipActions;
+        GameObject gearActions, unequipActions, packTransferActions;
+        const int BackpackFilter = 4;
         const float InventoryPreviewMaxScale = 256f;
         static readonly Color InventoryGraphite = new Color32(23, 28, 33, 255);
         static readonly Color InventoryInset = new Color32(17, 22, 26, 255);
@@ -65,8 +68,8 @@ namespace DeadCircuit
         TextMeshProUGUI equipmentSummary, inventorySummary, inventoryEmpty, inventorySelection;
         TextMeshProUGUI inventoryPreviewEmpty, inventoryWeightValue, craftSummary;
         UnityEngine.UI.Image inventoryWeightFill;
-        UiButton craftFilterButton, storeItem;
-        TextMeshProUGUI itemTitle, itemMeta, itemUsage, itemStats, equipmentHint, armorSummary;
+        UiButton craftFilterButton, storeItem, backpackSlot, packPut, packTake;
+        TextMeshProUGUI itemTitle, itemMeta, itemUsage, itemStats, equipmentHint, armorSummary, salvageWarning;
         UiButton sortInventory, filterInventory, equipSelected, unequipSelected, repairGear, reloadGear, unloadGear, salvageGear, itemResearch;
         int inventoryTab, inventorySort, inventoryFilter, craftFilter, selectedMaterial = -1, selectedGear = -1, selectedPart = -1;
         // Keep identities rather than indices or snapshot references, even when sorting and syncing.
@@ -90,7 +93,11 @@ namespace DeadCircuit
             RectTransform card = Box("Inventory Card", inventory, 0, 0, 1216, 688, InventoryGraphite, true);
             Center(card, 1216, 688);
             PanelRule(card, 1216, 58);
-            Label("Inventory Heading", card, "背包与装备", 24, 12, 540, 36, 25, Ink, FontStyles.Bold);
+            Label("Inventory Heading", card, "背包与装备", 24, 12, 350, 36, 25, Ink, FontStyles.Bold);
+            backpackSlot = Button("Backpack Equipment Slot", card, "背包位 · 空", 394, 10, 244, 40, BrowseBackpackSlot);
+            SetButtonArt(backpackSlot, "ui_inventory", 28);
+            backpackSlot.label.fontSizeMax = 14;
+            backpackSlot.label.fontSizeMin = 12;
             inventoryWeightValue = Label("Inventory Weight Value", card, "", 650, 10, 392, 28, 17, InventoryCyan, FontStyles.Bold);
             RectTransform track = Box("Inventory Weight Track", card, 650, 43, 392, 6, InventoryInset);
             RectTransform fill = Box("Inventory Weight Fill", track, 0, 0, 392, 6, InventoryCyan);
@@ -286,6 +293,7 @@ namespace DeadCircuit
         {
             MakeEquipmentRecipe((int)GearKind.StoneAxe, false);
             MakeEquipmentRecipe((int)GearKind.StonePickaxe, false);
+            MakeEquipmentRecipe((int)GearKind.GrassBackpack, false);
             var handcraft = new List<RecipeDefinition>
             {
                 new RecipeDefinition { id = 0, name = "手工燃料", era = TechEra.Primitive, building = BuildKind.Workbench, duration = .5f,
@@ -309,7 +317,7 @@ namespace DeadCircuit
                 manualRecipes.Add(new RecipeRow { recipe = entry, craft = craft, research = research, details = RecipeDetails(row) });
             }
             for (int i = 0; i < EquipmentCatalog.GearNames.Length; i++)
-                if (!EquipmentCatalog.IsHandcraftedTool((GearKind)i)) MakeEquipmentRecipe(i, false);
+                if (!IsPortableGearRecipe((GearKind)i)) MakeEquipmentRecipe(i, false);
             for (int i = 0; i < EquipmentCatalog.PartNames.Length; i++) MakeEquipmentRecipe(i, true);
         }
 
@@ -327,6 +335,7 @@ namespace DeadCircuit
             RectTransform row = FlowRow(prefix + kind + " Row", inventoryRecipes, 270, 112);
             UiButton craft = Button(prefix + kind, row, "", 2, 6, 108, 66, () => CraftEquipment(kind, part));
             SetButtonArt(craft, part ? "ui_attach" : "gear_" + kind, 18);
+            if (!part) TintBackpackIcon(craft, (GearKind)kind);
             Tint(craft, InventoryCraftIdle);
             ResearchRef research = part ? EquipmentResearchCatalog.PartResearch((PartKind)kind) : GearResearchReference((GearKind)kind);
             UiButton view = Button("View Research " + prefix + kind, row, "查看研究", 2, 76, 108, 28,
@@ -370,11 +379,20 @@ namespace DeadCircuit
             StyleInventoryScroll(itemDetailScroll, InventoryCyan);
             itemTitle = FlowLabel("Selected Item Name", content, "", 382, 36, 20, Accent);
             itemMeta = FlowLabel("Selected Item Quantity", content, "", 382, 54, 13, Muted);
+            RectTransform transfer = FlowRow("Backpack Transfer Actions", content, 382, 38);
+            packTransferActions = transfer.gameObject;
+            packPut = Button("Put Selected Item in Backpack", transfer, "放入背包", 0, 0, 187, 36, () => MoveSelectedPackItem(true));
+            packTake = Button("Take Selected Item from Backpack", transfer, "取回随身", 195, 0, 187, 36, () => MoveSelectedPackItem(false));
+            SetButtonArt(packPut, "ui_inventory", 20);
+            SetButtonArt(packTake, "ui_detach", 20);
+            Tint(packPut, InventoryCellIdle);
+            Tint(packTake, InventoryCellIdle);
             storeItem = Button("Store Nearby Item", content, "存入近处箱子", 0, 0, 180, 34, StoreSelectedInventoryItem);
             SetButtonArt(storeItem, "ui_inventory", 20);
             Tint(storeItem, InventoryCellIdle);
             storeItem.button.gameObject.AddComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 34;
             RectTransform actions = FlowRow("Gear Actions", content, 382, 38);
+            gearActions = actions.gameObject;
             equipSelected = Button("Equip Selected Gear", actions, "装备并切换", 0, 0, 122, 36, EquipSelectedGear, true);
             repairGear = Button("Repair Gear", actions, "维修装备", 130, 0, 122, 36, () => InventoryCommand("gearrepair", selectedGear));
             salvageGear = Button("Salvage Gear", actions, "回收装备", 260, 0, 122, 36, () => InventoryCommand("gearsalvage", selectedGear));
@@ -393,7 +411,7 @@ namespace DeadCircuit
             itemResearch.button.gameObject.AddComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 32;
             itemStats = FlowLabel("Selected Gear Stats", content, "", 382, 108, 14, Ink);
             gearDetailObjects.Add(itemStats.gameObject);
-            TextMeshProUGUI salvageWarning = FlowLabel("Salvage Gear Warning", content,
+            salvageWarning = FlowLabel("Salvage Gear Warning", content,
                 "回收会永久拆解装备，返还一半制作材料、全部配件和弹匣内弹药。任一库存空间不足时，整次回收取消。", 382, 50, 12, Amber);
             gearDetailObjects.Add(salvageWarning.gameObject);
             TextMeshProUGUI heading = FlowLabel("Ammo Selection Heading", content, "装填弹种 · 更换前先卸下现有弹药", 382, 32, 13, Accent);
@@ -470,7 +488,7 @@ namespace DeadCircuit
 
         void CycleInventoryFilter()
         {
-            int count = inventoryTab == 0 ? 6 : inventoryTab == 1 ? 4 : EquipmentCatalog.SlotNames.Length + 1;
+            int count = inventoryTab == 0 ? 6 : inventoryTab == 1 ? BackpackFilter + 1 : EquipmentCatalog.SlotNames.Length + 1;
             inventoryFilter = (inventoryFilter + 1) % count;
             ResetScroll(ActiveInventoryScroll());
             RefreshAll();
@@ -532,6 +550,18 @@ namespace DeadCircuit
             RefreshAll();
         }
 
+        void BrowseBackpackSlot()
+        {
+            PlayerState player = bridge.LocalPlayer;
+            if (player == null) return;
+            inventoryTab = inventoryDetailKind = 1;
+            inventoryFilter = BackpackFilter;
+            selectedGear = InventoryWeight.EquippedPack(player)?.id ?? -1;
+            inventorySelectionRevision++;
+            ResetScroll(gearScroll);
+            RefreshAll();
+        }
+
         void RefreshEquipmentSummary(PlayerState player)
         {
             GearState current = EquipmentCatalog.Equipped(player);
@@ -560,6 +590,13 @@ namespace DeadCircuit
             if (target == null && selectedGear > 0) { selectedGear = -1; inventorySelectionRevision++; }
             bool ready = player.hp > 0f && player.connected;
             RefreshInventoryWeight(player);
+            GearState backpack = InventoryWeight.EquippedPack(player);
+            Set(backpackSlot.label, "背包位 · " + (backpack == null ? "空" : EquipmentCatalog.GearNames[(int)backpack.kind]));
+            backpackSlot.icon.enabled = backpack == null;
+            backpackSlot.button.interactable = ready;
+            backpackSlot.label.color = backpack == null ? InventoryCyan : Ink;
+            bool packSelected = backpack == null ? inventoryTab == 1 && inventoryFilter == BackpackFilter && target == null : backpack.id == selectedGear;
+            Tint(backpackSlot, inventoryDetailKind == 1 && packSelected ? InventoryCellSelected : InventoryCellIdle);
             for (int i = 0; i < armorSlots.Length; i++)
             {
                 GearState armor = EquipmentCatalog.Find(player, Count(player.armorIds, i));
@@ -594,7 +631,7 @@ namespace DeadCircuit
             Set(filterInventory.label, "分类：" + InventoryFilterName());
             bool bench = EquipmentCatalog.HasWorkbench(world, player);
             Set(workbenchHint, bench ? "工作台可用。制作、维修、装配与回收还需满足科技、材料和库存空间要求。" :
-                PrimitiveCatalog.Enabled(world) ? "按 T 研究原始工艺。制作、维修、装配与回收需在工作台 2.4 格内，且视线畅通。" :
+                 PrimitiveCatalog.Enabled(world) ? "草绳背包可随身制作。其他配方请查看左侧条件，工作台需在 2.4 格内且视线畅通。" :
                 "制作、维修、装配与回收需在工作台 2.4 格内，且视线畅通。燃料和普通弹药可随身制作。");
             workbenchHint.color = bench ? Accent : Muted;
             RefreshInventoryCells(player);
@@ -684,7 +721,7 @@ namespace DeadCircuit
         void RefreshInventoryWeight(PlayerState player)
         {
             long grams = InventoryWeight.CarriedGrams(player);
-            int capacity = InventoryWeight.CapacityGrams;
+            int capacity = InventoryWeight.CapacityGrams(player);
             bool full = grams >= capacity;
             Set(inventoryWeightValue, "负重  " + InventoryKilograms(grams) + " / " + InventoryKilograms(capacity) + " kg" + (full ? "  ·  已满载" : ""));
             Color color = full ? Danger : grams >= capacity * .9f ? Amber : InventoryCyan;
@@ -719,12 +756,76 @@ namespace DeadCircuit
             }
         }
 
+        (PackItemKind kind, int id, int total, int packed, int grams)? SelectedPackItem(PlayerState player,
+            GearState target, BackpackInventoryState contents)
+        {
+            if (inventoryDetailKind == 0 && SelectedInventoryMaterial is InventoryCell cell)
+            {
+                PackItemKind kind;
+                int packed;
+                switch (cell.supply)
+                {
+                    case InventorySupply.Food: kind = PackItemKind.Food; packed = Count(contents?.foods, cell.id); break;
+                    case InventorySupply.Seed: kind = PackItemKind.Seed; packed = Count(contents?.seeds, cell.id); break;
+                    case InventorySupply.Water:
+                        kind = cell.id == 0 ? PackItemKind.RawWater : PackItemKind.CleanWater;
+                        packed = (cell.id == 0 ? contents?.waterRaw : contents?.waterClean) ?? 0;
+                        break;
+                    default: kind = PackItemKind.Material; packed = Count(contents?.items, cell.id); break;
+                }
+                return (kind, cell.id, InventorySupplyQuantity(player, cell), packed, InventorySupplyGrams(cell));
+            }
+            if (inventoryDetailKind == 2 && selectedPart >= 0)
+                return (PackItemKind.Part, selectedPart, Count(player.parts, selectedPart), Count(contents?.parts, selectedPart), InventoryWeight.Grams((PartKind)selectedPart));
+            if (inventoryDetailKind == 1 && target != null && !InventoryWeight.IsEquipped(player, target))
+                return (PackItemKind.Gear, target.id, 1, contents?.gearIds?.Contains(target.id) == true ? 1 : 0, InventoryWeight.GearGrams(target));
+            return null;
+        }
+
+        void RefreshPackTransfer(PlayerState player, GearState target, BackpackInventoryState contents,
+            (PackItemKind kind, int id, int total, int packed, int grams)? selected)
+        {
+            bool visible = contents != null && selected.HasValue && selected.Value.total > 0 &&
+                (selected.Value.kind != PackItemKind.Gear || !EquipmentCatalog.IsBackpack(target.kind));
+            packTransferActions.SetActive(visible);
+            if (!visible)
+            {
+                packPut.button.interactable = packTake.button.interactable = false;
+                return;
+            }
+
+            var item = selected.Value;
+            long packedGrams = InventoryWeight.BackpackContentsGrams(contents, player.gear);
+            bool fitsInPack = item.grams <= InventoryWeight.CapacityGrams(player) - InventoryWeight.BaseCapacityGrams - packedGrams;
+            bool fitsOnPerson = item.grams <= InventoryWeight.BaseCapacityGrams - (InventoryWeight.CarriedGrams(player) - packedGrams);
+            bool ready = player.connected && player.hp > 0;
+            packPut.button.interactable = ready && item.total > item.packed && fitsInPack;
+            packTake.button.interactable = ready && item.packed > 0 && fitsOnPerson;
+            Set(packPut.label, item.total > item.packed && !fitsInPack ? "包内空间不足" : "放入背包");
+            Set(packTake.label, item.packed > 0 && !fitsOnPerson ? "随身空间不足" : "取回随身");
+        }
+
+        void MoveSelectedPackItem(bool put)
+        {
+            PlayerState player = bridge.LocalPlayer;
+            if (player == null || !inventory.gameObject.activeSelf) return;
+            GearState target = EquipmentCatalog.Find(player, selectedGear);
+            BackpackInventoryState contents = InventoryWeight.EquippedPack(player)?.backpackInventory;
+            var selected = SelectedPackItem(player, target, contents);
+            RefreshPackTransfer(player, target, contents, selected);
+            if (selected.HasValue && (put ? packPut : packTake).button.interactable)
+                Send(put ? "packput" : "packtake", selected.Value.id, (int)selected.Value.kind);
+        }
+
+        static string PackSplit(int total, int packed) => "随身 " + (total - packed) + " · 包内 " + packed;
+
         void SelectInventoryGear(int id)
         {
             PlayerState player = bridge.LocalPlayer;
             if (player == null) return;
             if (id == player.weaponId) { BrowseEquipmentSlot(0); return; }
             if (id == player.toolId) { BrowseEquipmentSlot(1); return; }
+            if (id == player.backpackId) { BrowseBackpackSlot(); return; }
             selectedGear = id;
             SelectInventoryDetail(1);
         }
@@ -733,6 +834,7 @@ namespace DeadCircuit
         {
             if (gear.id == player.weaponId) return equipmentSlots[0];
             if (gear.id == player.toolId) return equipmentSlots[1];
+            if (gear.id == player.backpackId) return backpackSlot;
             int slot = EquipmentCatalog.ArmorSlot(gear.kind);
             return slot >= 0 && Count(player.armorIds, slot) == gear.id ? armorSlots[slot] : null;
         }
@@ -747,7 +849,7 @@ namespace DeadCircuit
                 rect.SetParent(parent, false);
                 cell.widget.label.gameObject.SetActive(socket == null);
                 if (socket == null) Place(rect, 0, 0, 117, 84);
-                else Place(rect, armor ? 31 : 8, armor ? 6 : 3, 36, 32);
+                else Place(rect, armor ? 31 : 8, armor ? 6 : socket == backpackSlot ? 4 : 3, 36, 32);
             }
             cell.widget.icon.rectTransform.anchoredPosition = socket == null ? new Vector2(6, -5) : new Vector2(4, -2);
         }
@@ -772,6 +874,7 @@ namespace DeadCircuit
                     cell.title = EquipmentCatalog.GearNames[(int)gear.kind];
                     cell.category = GearCategory(gear.kind);
                     SetInventoryCellArt(cell, "gear_" + (int)gear.kind);
+                    TintBackpackIcon(cell.widget, gear.kind);
                 }
                 bool equipped = InventoryWeight.IsEquipped(player, gear);
                 UiButton socket = equipped ? GearInventorySocket(player, gear) : null;
@@ -783,8 +886,9 @@ namespace DeadCircuit
                     Tint(cell.widget, socket.button.colors.normalColor);
                 }
                 cell.quantity = equipped ? 0 : 1;
-                Set(cell.widget.label, cell.title + "\n耐久 " + GearDurability(gear));
-                cell.widget.label.color = gear.durability <= 0 ? Danger : Ink;
+                bool bag = EquipmentCatalog.IsBackpack(gear.kind);
+                Set(cell.widget.label, cell.title + "\n" + (bag ? BackpackCapacityText(gear.kind) : "耐久 " + GearDurability(gear)));
+                cell.widget.label.color = !bag && gear.durability <= 0 ? Danger : Ink;
             }
             foreach (InventoryCell cell in gearCells)
                 if (cell.quantity == 0 && EquipmentCatalog.Find(player, cell.id) == null)
@@ -826,16 +930,25 @@ namespace DeadCircuit
             itemResearch.button.gameObject.SetActive(false);
             InventoryCell material = inventoryDetailKind == 0 ? SelectedInventoryMaterial : null;
             storeItem.button.gameObject.SetActive(material != null && material.supply == InventorySupply.Material);
-            bool hasGear = target != null && (inventoryDetailKind == 1 || inventoryDetailKind == 2 && selectedPart >= 0);
+            GearState wornPack = InventoryWeight.EquippedPack(player);
+            BackpackInventoryState contents = wornPack?.backpackInventory;
+            var packItem = SelectedPackItem(player, target, contents);
+            RefreshPackTransfer(player, target, contents, packItem);
+            bool backpack = target != null && EquipmentCatalog.IsBackpack(target.kind);
+            bool hasGear = target != null && (inventoryDetailKind == 1 || inventoryDetailKind == 2 && selectedPart >= 0 && !backpack);
             bool gun = hasGear && EquipmentCatalog.IsGun(target.kind);
             bool equipped = hasGear && InventoryWeight.IsEquipped(player, target);
             bool armor = hasGear && EquipmentCatalog.IsArmor(target.kind);
             foreach (GameObject item in gearDetailObjects) item.SetActive(hasGear);
             foreach (GameObject item in gunDetailObjects) item.SetActive(gun);
+            repairGear.button.gameObject.SetActive(!backpack);
+            RectTransform equipRect = (RectTransform)equipSelected.button.transform;
+            float equipWidth = backpack ? 252 : 122;
+            if (equipRect.sizeDelta.x != equipWidth) equipRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, equipWidth);
             unequipActions.SetActive(equipped && inventoryDetailKind == 1);
             if (inventoryDetailKind == 0)
             {
-                RefreshInventoryMaterialDetail(world, player, material);
+                RefreshInventoryMaterialDetail(world, player, material, packItem?.packed ?? 0);
                 return;
             }
             if (inventoryDetailKind == 2)
@@ -852,8 +965,8 @@ namespace DeadCircuit
                     int quantity = Count(player.parts, selectedPart);
                     ResearchRef research = EquipmentResearchCatalog.PartResearch((PartKind)selectedPart);
                     Set(itemTitle, part.name);
-                    SetFlowText(itemMeta, "未安装：×" + quantity + "  ·  插槽：" + EquipmentCatalog.SlotNames[(int)part.slot] + "\n" + StackMass(InventoryWeight.Grams((PartKind)selectedPart), quantity));
-                    SetFlowText(itemUsage, part.description + "\n装配目标：" + (target == null ? "请先选择一件武器。" : EquipmentCatalog.GearNames[(int)target.kind] + " #" + target.id) +
+                    SetFlowText(itemMeta, PackSplit(quantity, packItem?.packed ?? 0) + "  ·  插槽：" + EquipmentCatalog.SlotNames[(int)part.slot] + "\n" + StackMass(InventoryWeight.Grams((PartKind)selectedPart), quantity));
+                    SetFlowText(itemUsage, part.description + "\n装配目标：" + (target == null || backpack ? "请先选择一件武器。" : EquipmentCatalog.GearNames[(int)target.kind] + " #" + target.id) +
                         "\n制作研究：" + (EquipmentResearchCatalog.Known(world, research) ? "已解锁" : "缺少" + EquipmentResearchCatalog.Missing(research)));
                     itemResearch.button.gameObject.SetActive(research != null);
                 }
@@ -862,8 +975,15 @@ namespace DeadCircuit
             {
                 ResearchRef research = target == null ? null : GearResearchReference(target.kind);
                 Set(itemTitle, target == null ? "尚未选择装备" : EquipmentCatalog.GearNames[(int)target.kind] + "  #" + target.id);
-                SetFlowText(itemMeta, target == null ? "在右侧选择装备。" : "耐久 " + GearDurability(target) + "\n含弹药与配件 " + InventoryMass(InventoryWeight.GearGrams(target)) +
-                    (equipped ? "  ·  已装备，不计入负重" : "  ·  计入负重"));
+                if (backpack)
+                {
+                    RefreshBackpackDetails(player, target, wornPack, bench);
+                    itemResearch.button.gameObject.SetActive(research != null);
+                    return;
+                }
+                SetFlowText(itemMeta, target == null ? (inventoryFilter == BackpackFilter && inventoryTab == 1 ? "在右侧选择背包。" : "在右侧选择装备。") :
+                    "耐久 " + GearDurability(target) + "\n含弹药与配件 " + InventoryMass(InventoryWeight.GearGrams(target)) +
+                    (equipped ? "  ·  已装备，不计入负重" : "  ·  " + PackSplit(1, packItem?.packed ?? 0)));
                 SetFlowText(itemUsage, target == null ? "在左侧查看装备配方和制作条件。" : GearUsage(target.kind) +
                     (research == null ? "" : "\n持有后可正常装备与使用；制造研究：" +
                         (EquipmentResearchCatalog.Known(world, research) ? "已解锁" : "缺少" + EquipmentResearchCatalog.Missing(research))));
@@ -957,7 +1077,30 @@ namespace DeadCircuit
             }
         }
 
-        void RefreshInventoryMaterialDetail(WorldState world, PlayerState player, InventoryCell cell)
+        void RefreshBackpackDetails(PlayerState player, GearState target, GearState wornPack, bool bench)
+        {
+            bool worn = target.id == wornPack?.id;
+            bool alive = player.connected && player.hp > 0;
+            bool swapping = !worn && wornPack != null;
+            SetFlowText(itemMeta, "总容量 " + BackpackCapacityText(target.kind) + "  ·  自重 " + InventoryMass(InventoryWeight.GearGrams(target)) + "\n" +
+                (worn ? "已穿戴 · 已装 " + InventoryMass(InventoryWeight.BackpackContentsGrams(target.backpackInventory, player.gear)) : PackSplit(1, 0)));
+            gearActions.SetActive(!worn);
+            salvageWarning.gameObject.SetActive(!worn);
+            equipSelected.button.interactable = alive && !worn && InventoryWeight.CanEquipBackpack(player, target);
+            Set(equipSelected.label, swapping ? "换包 · 旧包连同内容落地" : "背上背包");
+            unequipSelected.button.interactable = alive && worn;
+            Set(unequipSelected.label, "卸下到地面");
+
+            bool salvageSpace = !worn && HasSalvageSpace(player, target);
+            salvageGear.button.interactable = alive && bench && player.interactCooldown <= 0f && salvageSpace;
+            Set(salvageGear.label, salvageSpace ? "回收装备" : "回收空间不足");
+            SetFlowText(itemUsage, worn ? "卸下后，包内物品会留在落地的背包里。" : GearUsage(target.kind));
+            SetFlowText(itemStats, "随身容量 " + InventoryMass(InventoryWeight.BaseCapacityGrams) + " · 包内容量 " +
+                InventoryMass(EquipmentCatalog.BackpackCapacityGrams(target.kind) - InventoryWeight.BaseCapacityGrams));
+            SetFlowText(equipmentHint, worn || bench ? "" : "回收需在工作台 2.4 格内，且视线畅通。", 0);
+        }
+
+        void RefreshInventoryMaterialDetail(WorldState world, PlayerState player, InventoryCell cell, int packed)
         {
             if (cell == null)
             {
@@ -968,7 +1111,7 @@ namespace DeadCircuit
             }
             int quantity = InventorySupplyQuantity(player, cell);
             Set(itemTitle, cell.title);
-            SetFlowText(itemMeta, "数量 ×" + quantity + "  ·  " + MaterialCategoryName(cell.category) + "\n" + StackMass(InventorySupplyGrams(cell), quantity));
+            SetFlowText(itemMeta, PackSplit(quantity, packed) + "  ·  " + MaterialCategoryName(cell.category) + "\n" + StackMass(InventorySupplyGrams(cell), quantity));
             if (cell.supply != InventorySupply.Material)
             {
                 SetFlowText(itemUsage, cell.supply == InventorySupply.Seed ? "在生存界面的种植页播种。" :
@@ -1027,7 +1170,8 @@ namespace DeadCircuit
             }
             foreach (EquipmentRecipeRow row in equipmentRecipes)
             {
-                bool visible = craftFilter == 0 || craftFilter == (row.part ? 3 : 2);
+                bool portable = !row.part && IsPortableGearRecipe((GearKind)row.kind);
+                bool visible = craftFilter == 0 || craftFilter == (row.part ? 3 : 2) || craftFilter == 1 && portable;
                 row.craft.button.transform.parent.gameObject.SetActive(visible);
                 if (!visible) continue;
                 count++;
@@ -1046,10 +1190,11 @@ namespace DeadCircuit
                 Set(row.craft.label, name);
                 row.research.button.gameObject.SetActive(research != null);
                 string evidence = research == null ? "" : EquipmentResearchCatalog.Evidence(world, research);
-                string station = gear != null && EquipmentCatalog.IsHandcraftedTool(gear.kind) ? "随身" : "工作台";
+                string station = portable ? "随身" : "工作台";
+                string purpose = row.part ? EquipmentCatalog.SlotNames[(int)part.slot] + " · " + part.description : GearRecipePurpose(gear);
                 SetRecipeText(row.details, "成本：" + MaterialText(cost, player.items, true) + "\n" + TechCatalog.EraName(era) + " · " + station + " · " + reason +
                     (research == null ? "" : "\n研究实产：" + (string.IsNullOrEmpty(evidence) ? "已满足" : evidence)) +
-                    "\n" + (row.part ? EquipmentCatalog.SlotNames[(int)part.slot] + " · " + part.description : EquipmentCatalog.IsArmor(gear.kind) ? "防具位 · " + GearUsage(gear.kind) : gear.tool ? "工具位 · " + GearUsage(gear.kind) : "武器位 · " + GearUsage(gear.kind)));
+                    "\n" + purpose);
             }
             Set(craftFilterButton.label, "配方：" + (craftFilter == 0 ? "全部" : craftFilter == 1 ? "手工" : craftFilter == 2 ? "装备" : "配件"));
             Set(craftSummary, count + " 项 · 持有 / 需求");
@@ -1095,7 +1240,30 @@ namespace DeadCircuit
 
         static int AttachedPart(GearState gear, int slot) => gear?.attachments != null && slot >= 0 && slot < gear.attachments.Length ? gear.attachments[slot] : -1;
         static ItemKind ReloadAmmo(PlayerState player, GearState gear) => EquipmentCatalog.AmmoCompatible(gear.kind, player.selectedAmmo) ? player.selectedAmmo : EquipmentCatalog.Gear(gear.kind).ammo;
-        static int GearCategory(GearKind kind) => EquipmentCatalog.IsArmor(kind) ? 3 : EquipmentCatalog.Gear(kind).tool ? 2 : 1;
+        static bool IsPortableGearRecipe(GearKind kind) => kind == GearKind.GrassBackpack || EquipmentCatalog.IsHandcraftedTool(kind);
+        static string BackpackCapacityText(GearKind kind) => InventoryMass(EquipmentCatalog.BackpackCapacityGrams(kind));
+        static string GearRecipePurpose(GearDefinition gear)
+        {
+            if (EquipmentCatalog.IsBackpack(gear.kind)) return "背包位 · 总容量 " + BackpackCapacityText(gear.kind);
+            string slot = EquipmentCatalog.IsArmor(gear.kind) ? "防具位" : gear.tool ? "工具位" : "武器位";
+            return slot + " · " + GearUsage(gear.kind);
+        }
+
+        static void TintBackpackIcon(UiButton button, GearKind kind)
+        {
+            button.icon.color = kind switch
+            {
+                GearKind.ReinforcedBackpack => new Color32(183, 240, 172, 255),
+                GearKind.EngineerBackpack => new Color32(155, 209, 255, 255),
+                _ => Color.white
+            };
+        }
+
+        static int GearCategory(GearKind kind)
+        {
+            if (EquipmentCatalog.IsBackpack(kind)) return BackpackFilter;
+            return EquipmentCatalog.IsArmor(kind) ? 3 : EquipmentCatalog.Gear(kind).tool ? 2 : 1;
+        }
         static string GearDurability(GearState gear) => gear.durability + " / " + EquipmentCatalog.Gear(gear.kind).maxDurability;
         static bool IsWorn(PlayerState player, GearState gear)
         {
@@ -1107,7 +1275,7 @@ namespace DeadCircuit
         {
             if (inventoryFilter == 0) return "全部";
             if (inventoryTab == 0) return MaterialCategoryName(inventoryFilter);
-            if (inventoryTab == 1) return inventoryFilter == 1 ? "武器" : inventoryFilter == 2 ? "工具" : "防具";
+            if (inventoryTab == 1) return inventoryFilter == BackpackFilter ? "背包" : inventoryFilter == 1 ? "武器" : inventoryFilter == 2 ? "工具" : "防具";
             return EquipmentCatalog.SlotNames[inventoryFilter - 1];
         }
 
@@ -1123,6 +1291,7 @@ namespace DeadCircuit
 
         static string GearUsage(GearKind kind)
         {
+            if (EquipmentCatalog.IsBackpack(kind)) return EquipmentCatalog.Gear(kind).description;
             if (kind == GearKind.RadiationSuit)
                 return "躯干防具 · 研究核作业防护后制作；穿戴且耐久有效时减少80%辐射暴露。持续作业磨损，耐久耗尽后防护失效；不能清除已有暴露。";
             if (EquipmentCatalog.IsArmor(kind)) return "防具 · 独立装备格；耐久耗尽后无防御。可在工作台维修或回收。";

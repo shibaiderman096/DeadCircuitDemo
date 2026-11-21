@@ -64,6 +64,17 @@ static partial class Checks
             arrange?.Invoke(state, p);
         });
 
+    // The complete branch uses one stockpile for all of its studies and fabrication.
+    static void StockEquipmentBranch(WorldState state, PlayerState player)
+    {
+        player.items[(int)ItemKind.Steel] = 69;
+        player.items[(int)ItemKind.Copper] = 13;
+        player.items[(int)ItemKind.Scrap] = 15;
+        player.items[(int)ItemKind.Polymer] = 23;
+        player.items[(int)ItemKind.Circuit] = 9;
+        GrantReinforcedBackpack(state, player);
+    }
+
     static readonly (ItemKind item, int amount)[][] WeaponResearchSamples =
     {
         new[] {(ItemKind.Steel,2),(ItemKind.Copper,2)},
@@ -138,7 +149,7 @@ static partial class Checks
 
         Run("equipment research fourteen optional studies pay exact samples and unlock existing manufacturing", () =>
         {
-            var sim = EquipmentTechFixture(out var player);
+            var sim = EquipmentTechFixture(out var player, arrange: StockEquipmentBranch);
             Require(sim.State.weaponResearch == 0 && sim.State.toolResearch == 0, "fixture pre-unlocked equipment studies");
             foreach (int id in Enumerable.Range(0, 12)) EquipmentStudy(sim, player, false, id);
             EquipmentStudy(sim, player, true, 0); EquipmentStudy(sim, player, true, 1);
@@ -224,7 +235,7 @@ static partial class Checks
 
         Run("equipment research current archive rejects corrupt branches and preserves independent team knowledge", () =>
         {
-            var sim = EquipmentTechFixture(out var player);
+            var sim = EquipmentTechFixture(out var player, arrange: StockEquipmentBranch);
             foreach (int id in Enumerable.Range(0, 12)) EquipmentStudy(sim, player, false, id);
             EquipmentStudy(sim, player, true, 0); EquipmentStudy(sim, player, true, 1);
             var before = Dump(sim.State);

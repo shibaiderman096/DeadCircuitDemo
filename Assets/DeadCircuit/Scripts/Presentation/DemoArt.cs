@@ -51,6 +51,7 @@ namespace DeadCircuit
             string fallback;
             switch (key)
             {
+                case "gear_20": case "gear_21": case "gear_22": fallback = "ui_inventory"; break;
                 case "node_8": case "node_9": case "node_10": case "node_11": case "node_12": fallback = "node_1"; break;
                 case "node_13": fallback = "node_1"; break;
                 case "node_14": fallback = "node_1"; break;

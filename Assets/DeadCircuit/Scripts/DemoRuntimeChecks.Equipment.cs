@@ -23,7 +23,7 @@ namespace DeadCircuit
                 .Concat(attachments.Select(kind => EquipmentCatalog.Part(kind).cost)).Append(DemoCatalog.BuildCost(BuildKind.Workbench));
             foreach (var cost in costs)
                 for (int item = 0; item < cost.Length; item++) p.items[item] += cost[item];
-            Require(InventoryWeight.CarriedGrams(p) < InventoryWeight.CapacityGrams, "equipment QA supplies fit in the backpack");
+            Require(InventoryWeight.CarriedGrams(p) < InventoryWeight.CapacityGrams(p), "equipment QA supplies fit in the backpack");
             yield return BuildQa(bridge, BuildKind.Workbench, 30, 28);
             yield return new WaitForSecondsRealtime(.6f);
             yield return ClickHudTool("Open Inventory");

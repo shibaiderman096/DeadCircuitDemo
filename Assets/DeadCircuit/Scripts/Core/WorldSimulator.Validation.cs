@@ -209,6 +209,20 @@ namespace DeadCircuit
                 };
                 if(source.version>=4) CopyEquipment(p,clone,entityIds,ref highestId);
                 CopyNeeds(p, clone, source.version);
+                if (source.version >= 21)
+                {
+                    clone.backpackId = p.backpackId;
+                    GearState wornPack = InventoryWeight.EquippedPack(clone);
+                    SaveCheck(clone.backpackId == 0 || wornPack != null && EquipmentCatalog.IsBackpack(wornPack.kind), "equipped backpack ownership/type");
+                    for (int i = 0; i < clone.gear.Count; i++)
+                    {
+                        var contents = p.gear[i].backpackInventory;
+                        if (contents == null) continue;
+                        SaveCheck(clone.gear[i] == wornPack, "unexpected backpack contents");
+                        wornPack.backpackInventory = CopyBackpackInventory(contents, clone.gear,
+                            EquipmentCatalog.BackpackCapacityGrams(wornPack.kind), clone);
+                    }
+                }
                 clone.explored=CopyExplored(source,p);
                 clone.exploredChunks=CopyExploredChunks(source,p);
                 Aim(clone, p.aimX, p.aimY); s.players.Add(clone);
@@ -236,6 +250,7 @@ namespace DeadCircuit
             CopyExploration(source, s, entityIds, ref highestId);
             ValidateFloors(s, occupied);
             CopySurvival(source, s, entityIds, ref highestId);
+            CopyDroppedBackpacks(source, s, occupied, entityIds, ref highestId);
             SaveCheck(source.nextId > 0 && source.nextId < int.MaxValue - 1 && highestId < int.MaxValue - 2, "next entity id");
             if(source.version>=4) SaveCheck(source.nextId>highestId,"next entity id must exceed all equipment and world ids");
             s.nextId = Math.Max(source.nextId, highestId + 1);
@@ -276,26 +291,10 @@ namespace DeadCircuit
         {
             SaveCheck(source.gear!=null && source.gear.Count<=InventoryWeight.MaxSavedGear,"gear list");
             target.parts=CopyStats(source.parts,EquipmentCatalog.PartNames.Length,InventoryLimit,"part inventory");
-            foreach(GearState g in source.gear)
-            {
-                SaveCheck(g!=null,"null gear"); CheckEntityId(g.id,ids,ref highestId);
-                SaveCheck((int)g.kind>=0 && (int)g.kind<EquipmentCatalog.GearNames.Length,"gear kind");
-                SaveCheck(g.durability>=0 && g.durability<=EquipmentCatalog.Gear(g.kind).maxDurability,"gear durability");
-                SaveCheck(g.attachments!=null && g.attachments.Length==EquipmentCatalog.SlotNames.Length,"attachment slots");
-                for(int i=0;i<g.attachments.Length;i++)
-                {
-                    int part=g.attachments[i];
-                    SaveCheck(part>=-1 && part<EquipmentCatalog.PartNames.Length,"attachment kind");
-                    if(part>=0) SaveCheck((int)EquipmentCatalog.Part((PartKind)part).slot==i && EquipmentCatalog.PartCompatible(g.kind,(PartKind)part),"attachment compatibility/slot");
-                }
-                bool gun=EquipmentCatalog.IsGun(g.kind);
-                SaveCheck(g.magazine>=0 && g.magazine<=EquipmentCatalog.Stats(g).magazine,"magazine capacity");
-                SaveCheck(gun ? EquipmentCatalog.AmmoCompatible(g.kind,g.loadedAmmo) : g.loadedAmmo==ItemKind.Ammo && g.magazine==0,"loaded ammunition");
-                target.gear.Add(new GearState { id=g.id,kind=g.kind,durability=g.durability,magazine=g.magazine,loadedAmmo=g.loadedAmmo,attachments=(int[])g.attachments.Clone() });
-            }
+            foreach (GearState gear in source.gear) target.gear.Add(CopyGear(gear, ids, ref highestId));
             SaveCheck(source.activeSlot>=0 && source.activeSlot<=2 && source.weaponId>=0 && source.toolId>=0,"equipped slots");
             GearState weapon=EquipmentCatalog.Find(target,source.weaponId), tool=EquipmentCatalog.Find(target,source.toolId);
-            SaveCheck(source.weaponId==0 || weapon!=null && !EquipmentCatalog.Gear(weapon.kind).tool && !EquipmentCatalog.IsArmor(weapon.kind),"weapon ownership/type");
+            SaveCheck(source.weaponId==0 || weapon!=null && !EquipmentCatalog.Gear(weapon.kind).tool && !EquipmentCatalog.IsArmor(weapon.kind) && !EquipmentCatalog.IsBackpack(weapon.kind),"weapon ownership/type");
             SaveCheck(source.toolId==0 || tool!=null && EquipmentCatalog.Gear(tool.kind).tool,"tool ownership/type");
             SaveCheck(source.armorIds!=null && source.armorIds.Length==4,"armor slots");
             var worn=new HashSet<int>();
@@ -323,6 +322,88 @@ namespace DeadCircuit
             }
             target.reloadRemaining=source.reloadRemaining; target.reloadingGearId=source.reloadingGearId;
         }
+        private static GearState CopyGear(GearState g, HashSet<int> ids, ref int highestId)
+        {
+            SaveCheck(g!=null,"null gear"); CheckEntityId(g.id,ids,ref highestId);
+            SaveCheck((int)g.kind>=0 && (int)g.kind<EquipmentCatalog.GearNames.Length,"gear kind");
+            SaveCheck(g.durability>=0 && g.durability<=EquipmentCatalog.Gear(g.kind).maxDurability,"gear durability");
+            SaveCheck(g.attachments!=null && g.attachments.Length==EquipmentCatalog.SlotNames.Length,"attachment slots");
+            for(int i=0;i<g.attachments.Length;i++)
+            {
+                int part=g.attachments[i];
+                SaveCheck(part>=-1 && part<EquipmentCatalog.PartNames.Length,"attachment kind");
+                if(part>=0) SaveCheck((int)EquipmentCatalog.Part((PartKind)part).slot==i && EquipmentCatalog.PartCompatible(g.kind,(PartKind)part),"attachment compatibility/slot");
+            }
+            bool gun=EquipmentCatalog.IsGun(g.kind);
+            SaveCheck(g.magazine>=0 && g.magazine<=EquipmentCatalog.Stats(g).magazine,"magazine capacity");
+            SaveCheck(gun ? EquipmentCatalog.AmmoCompatible(g.kind,g.loadedAmmo) : g.loadedAmmo==ItemKind.Ammo && g.magazine==0,"loaded ammunition");
+            return new GearState { id=g.id,kind=g.kind,durability=g.durability,magazine=g.magazine,loadedAmmo=g.loadedAmmo,attachments=(int[])g.attachments.Clone() };
+        }
+
+        private static BackpackInventoryState CopyBackpackInventory(BackpackInventoryState source,
+            List<GearState> contents, int capacity, PlayerState owner = null)
+        {
+            SaveCheck(source != null && source.gearIds != null && source.gearIds.Count <= contents.Count, "backpack inventory");
+            var result = new BackpackInventoryState
+            {
+                items = CopyItems(source.items, InventoryLimit, "backpack items", DemoCatalog.ItemCount),
+                parts = CopyStats(source.parts, EquipmentCatalog.PartNames.Length, InventoryLimit, "backpack parts"),
+                foods = CopyStats(source.foods, SurvivalCatalog.FoodCount, InventoryLimit, "backpack foods"),
+                seeds = CopyStats(source.seeds, SurvivalCatalog.CropCount, InventoryLimit, "backpack seeds"),
+                waterRaw = source.waterRaw, waterClean = source.waterClean
+            };
+            SaveCheck(result.items[(int)ItemKind.NuclearWaste] == 0 && result.waterRaw >= 0 && result.waterRaw <= InventoryLimit &&
+                result.waterClean >= 0 && result.waterClean <= InventoryLimit, "backpack water or waste");
+            var ids = new HashSet<int>();
+            foreach (int id in source.gearIds)
+            {
+                GearState gear = contents.Find(g => g.id == id);
+                SaveCheck(ids.Add(id) && gear != null && !EquipmentCatalog.IsBackpack(gear.kind) &&
+                    !InventoryWeight.IsEquipped(owner, gear), "backpack gear membership");
+                result.gearIds.Add(id);
+            }
+            SaveCheck(owner != null || ids.Count == contents.Count, "unlisted ground backpack gear");
+            SaveCheck(InventoryWeight.BackpackContentsGrams(result, contents) <= capacity - InventoryWeight.BaseCapacityGrams, "backpack weight");
+            if (owner != null)
+            {
+                CheckPackedCounts(result.items, owner.items); CheckPackedCounts(result.parts, owner.parts);
+                CheckPackedCounts(result.foods, owner.needs.foods); CheckPackedCounts(result.seeds, owner.needs.seeds);
+                SaveCheck(result.waterRaw <= owner.needs.waterRaw && result.waterClean <= owner.needs.waterClean, "backpack exceeds owner water");
+            }
+            return result;
+        }
+
+        private static void CheckPackedCounts(int[] packed, int[] holdings)
+        {
+            for (int i = 0; i < packed.Length; i++) SaveCheck(packed[i] <= holdings[i], "backpack exceeds owner inventory");
+        }
+
+        private static void CopyDroppedBackpacks(WorldState source, WorldState target, HashSet<long> occupied, HashSet<int> ids, ref int highestId)
+        {
+            if (source.version < 21) return;
+            SaveCheck(source.droppedBackpacks != null && source.droppedBackpacks.Count <= MaxDroppedBackpacks, "ground backpack list");
+            var cells = new HashSet<long>();
+            foreach (var drop in source.droppedBackpacks)
+            {
+                SaveCheck(drop != null && drop.gear != null && EquipmentCatalog.IsBackpack(drop.gear.kind) &&
+                    drop.packedGear != null && drop.packedGear.Count < InventoryWeight.MaxSavedGear, "ground backpack");
+                CheckCell(drop.x, drop.y, source);
+                char terrain = WorldTiles.Ground(source, drop.x, drop.y);
+                long cell = WorldTiles.Key(drop.x, drop.y);
+                SaveCheck(cells.Add(cell) && terrain != '2' && terrain != '?' && !occupied.Contains(cell) &&
+                    !FloorWorld.IsProtectedCell(source, drop.x, drop.y), "ground backpack cell");
+                var copy = new DroppedBackpackState { x = drop.x, y = drop.y, gear = CopyGear(drop.gear, ids, ref highestId) };
+                foreach (var gear in drop.packedGear)
+                {
+                    SaveCheck(gear != null && gear.backpackInventory == null, "nested backpack storage");
+                    copy.packedGear.Add(CopyGear(gear, ids, ref highestId));
+                }
+                copy.gear.backpackInventory = CopyBackpackInventory(drop.gear.backpackInventory, copy.packedGear,
+                    EquipmentCatalog.BackpackCapacityGrams(copy.gear.kind));
+                target.droppedBackpacks.Add(copy);
+            }
+        }
+
         private static int[] CopyStats(int[] values, int length, int maximum, string label)
         {
             SaveCheck(values != null && values.Length == length, label + " length");

@@ -65,6 +65,52 @@ class EntryChecks(unittest.TestCase):
                 self.assertIn('拾取',self.renderer.entity_article(self.catalog.entries[f'item-{index}']))
                 self.assertTrue(any(entry['id']=='gear-0' for entry in self.catalog.cost_uses(f'item-{index}')))
 
+    def test_backpack_specs_and_material_links(self):
+        cases = (
+            (20, 'GrassBackpack', '草绳背包', '原始', None, ('50', '100', '0.9'), {0:3,65:1}),
+            (21, 'ReinforcedBackpack', '加固背包', '水力', 'building-10', ('70', '120', '1.7'), {0:4,3:4,9:2}),
+            (22, 'EngineerBackpack', '工程背包', 'LV', 'building-10', ('110', '160', '2.8'), {38:2,42:2,3:4}),
+        )
+        dry_grass = self.renderer.entity_article(self.catalog.entries['item-65'])
+        self.assertIn('首堆有3份', dry_grass)
+        self.assertIn('href="#/gear-20"', dry_grass)
+        self.assertNotIn('href="#/gear-21"', dry_grass)
+        for index, identifier, title, era, station, weights, materials in cases:
+            slug = f'gear-{index}'
+            with self.subTest(backpack=identifier):
+                self.assertEqual(index, self.catalog.gear_ids[identifier])
+                entry = self.catalog.entries[slug]
+                self.assertEqual((title, era, '背包', 'armor', station), tuple(entry[key] for key in ('name', 'era', 'category', 'parent', 'station')))
+                facts = dict(entry['facts'])
+                self.assertEqual('独立背包位', facts['穿戴位置'])
+                self.assertEqual(tuple(weight + '千克' for weight in weights), tuple(facts[key] for key in ('包内容量', '穿戴后总容量', '备用时单重')))
+                self.assertNotIn('research', entry)
+                self.assertEqual({f'item-{i}': n for i, n in materials.items()}, dict(entry['cost']))
+                article = self.renderer.entity_article(entry)
+                self.assertIn('包内物品随背包落地与拾回', article)
+                for material, _ in entry['cost']:
+                    self.assertIn(f'data-entry="{material}"', article)
+                    self.assertIn(entry, self.catalog.cost_uses(material))
+                if station:
+                    self.assertIn(f'data-entry="{station}"', article)
+                else:
+                    self.assertIn('随身制作', article)
+
+    def test_backpacks_have_a_separate_filterable_gallery(self):
+        weapon_gallery = self.renderer.illustration('weapons')
+        gear_galleries = self.renderer.illustration('armor')
+        backpack_gallery, rest = gear_galleries.split('</section>', 1)
+        self.assertIn('背包图鉴', backpack_gallery)
+        self.assertEqual(3, backpack_gallery.count('class="item-card"'))
+        for index, era in ((20, 'primitive'), (21, 'water'), (22, 'lv')):
+            with self.subTest(gear=index):
+                slug = f'gear-{index}'
+                self.assertIn(f'data-entry="{slug}"', backpack_gallery)
+                self.assertIn(f'data-filter="{era}"', backpack_gallery)
+                self.assertNotIn(slug, weapon_gallery)
+                self.assertNotIn(slug, rest)
+        self.assertIn('href="#/armor/背包与负重"', self.renderer.inline('[背包与负重](#背包与负重)', 'controls'))
+
     def test_modular_recipe_data(self):
         expected = {
             200: ('building-63','4',[('item-37',6),('item-33',2)],[('item-10',6)]),
@@ -148,7 +194,10 @@ class EntryChecks(unittest.TestCase):
         self.assertGreater(metadata['entity_entries'],300)
         for link in parsed.links:
             if link.startswith('#/'):
-                self.assertIn(link[2:].split('/')[0],parsed.routes)
+                route, _, anchor = link[2:].partition('/')
+                self.assertIn(route, parsed.routes)
+                if anchor:
+                    self.assertIn(f'{route}--{anchor}', parsed.ids)
 
 
 if __name__=='__main__':

@@ -214,6 +214,7 @@ static partial class Checks
                 s.waterCrushed=4;s.waterSmelted=6;s.waterPressed=4;s.waterGears=2;s.waterBearings=2;s.waterTransported=4;
                 var ground=s.ground.ToCharArray();ground[20*64+19]='2';ground[44*64+20]='2';s.ground=new string(ground);
             });
+            GrantReinforcedBackpack(sim.State, p);
             Array.Clear(p.items);
             p.items[(int)ItemKind.Food] = 4;
             WaterBuild(sim,p,BuildKind.Waterwheel,20,20,SteamPriorMaterials);

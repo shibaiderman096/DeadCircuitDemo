@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
@@ -78,6 +79,10 @@ namespace DeadCircuit
         static readonly Color Amber = new Color(1f, .70f, .33f);
         static readonly Color Mint = new Color(.46f, .94f, .77f);
         static readonly Color Danger = new Color(1f, .35f, .26f);
+        static readonly Color[] BackpackFallbackTints =
+        {
+            new Color(1f, .83f, .54f), new Color(.69f, 1f, .72f), new Color(.59f, .86f, 1f)
+        };
         static readonly string[] MachineNames = { "wall", "generator", "miner", "belt", "smelter", "assembler", "turret", "chest" };
         static readonly Color[] NetworkColors =
         {
@@ -106,6 +111,9 @@ namespace DeadCircuit
         };
 
         GameBridge bridge;
+        DemoHud backpackHud;
+        Sprite backpackFallback;
+        readonly Sprite[] backpackSprites = new Sprite[3];
         Transform worldRoot, terrainRoot, entityRoot, effectsRoot;
         GameObject minimapCanvas;
         GameObject ownedAudioListener;
@@ -119,6 +127,7 @@ namespace DeadCircuit
         readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>();
         readonly Sprite[] itemSprites = new Sprite[DemoCatalog.ItemCount];
         readonly Dictionary<int, Visual> nodes = new Dictionary<int, Visual>();
+        readonly Dictionary<int, Visual> droppedBackpacks = new Dictionary<int, Visual>();
         readonly Dictionary<int, Visual> buildings = new Dictionary<int, Visual>();
         readonly Dictionary<int, Visual> zombies = new Dictionary<int, Visual>();
         readonly Dictionary<string, Visual> players = new Dictionary<string, Visual>();
@@ -186,6 +195,9 @@ namespace DeadCircuit
                 sprites.Add(e.name, sprite);
             }
             for (int i = 0; i < itemSprites.Length; i++) itemSprites[i] = Art("item_" + i);
+            backpackFallback = Art("ui_inventory");
+            for (int i = 0; i < backpackSprites.Length; i++)
+                backpackSprites[i] = DemoArt.GetIcon("gear_" + ((int)GearKind.GrassBackpack + i)) ?? backpackFallback;
             CreatePowerArt();
             CreateIndustryArt();
             var supplied = Resources.Load<Material>("Art/WorldMaterial");
@@ -220,8 +232,6 @@ namespace DeadCircuit
             selectionRing.transform.localScale = new Vector3(.61f, .38f, 1);
             hoverRing = NewSprite("Inspection marker", effectsRoot, 9800);
             hoverRing.sprite = Art("ring");
-            hoverRing.color = new Color(1f, .79f, .45f, .7f);
-            hoverRing.transform.localScale = new Vector3(.77f, .46f, 1);
             lantern = NewSprite("Survivor lantern", effectsRoot, 9000);
             lantern.sprite = Art("glow");
             lantern.transform.localScale = Vector3.one * 5.5f;
@@ -424,11 +434,12 @@ namespace DeadCircuit
             DrawRooms(world);
             DrawSites(world);
             DrawNodes(world, local);
+            DrawDroppedBackpacks(world);
             DrawBuildings(world);
             DrawNaturalEntranceGuides();
             DrawActors(world, local);
             DrawExpansion(world, local);
-            Sweep(nodes); Sweep(buildings); Sweep(zombies);
+            Sweep(nodes); Sweep(droppedBackpacks); Sweep(buildings); Sweep(zombies);
             removePlayers.Clear();
             foreach (var pair in players) if (pair.Value.stamp != stamp) removePlayers.Add(pair.Key);
             foreach (var key in removePlayers) { Release(players[key]); players.Remove(key); }
@@ -650,6 +661,42 @@ namespace DeadCircuit
             visual.body.color = tint;
             visual.shadow.transform.localScale = new Vector3(.46f, .55f, 1);
             visual.bar.enabled = visual.barBack.enabled = false;
+        }
+
+        void DrawDroppedBackpacks(WorldState world)
+        {
+            if (world.droppedBackpacks == null) return;
+            foreach (var pack in world.droppedBackpacks)
+            {
+                if (pack?.gear == null || !EquipmentCatalog.IsBackpack(pack.gear.kind)) continue;
+                // Placement previews share pickup cells; backpack visuals are keyed by gear ID.
+                groundPickupCells.Add(WorldTiles.Key(pack.x, pack.y));
+                if (!Visible(pack.x, pack.y) || NaturalInteriorHidden(pack.x, pack.y)) continue;
+
+                var position = new Vector2(pack.x, pack.y);
+                if (!droppedBackpacks.TryGetValue(pack.gear.id, out var visual))
+                {
+                    int tier = (int)pack.gear.kind - (int)GearKind.GrassBackpack;
+                    if (tier < 0 || tier >= backpackSprites.Length) continue;
+                    Sprite sprite = backpackSprites[tier];
+                    if (sprite == null) continue;
+
+                    visual = Acquire(position, 1f, 1f);
+                    droppedBackpacks.Add(pack.gear.id, visual);
+                    visual.body.sprite = sprite;
+                    visual.body.color = sprite == backpackFallback ? BackpackFallbackTints[tier] : Color.white;
+                    var bounds = sprite.bounds;
+                    float scale = (.48f + tier * .07f) / Mathf.Max(bounds.size.x, bounds.size.y);
+                    var bagScale = new Vector3(scale, scale * .84f, 1f);
+                    visual.body.transform.localScale = bagScale;
+                    visual.body.transform.localPosition = new Vector3(0f, .07f, 0f) - Vector3.Scale(bounds.center, bagScale);
+                    visual.shadow.transform.localScale = new Vector3(.58f + tier * .06f, .56f, 1f);
+                }
+                // A drop always occupies its exact cell, including when a snapshot moves an existing gear ID.
+                visual.stamp = stamp;
+                visual.root.transform.position = position;
+                visual.body.sortingOrder = Order(pack.y) - 1;
+            }
         }
 
         void DrawBuildings(WorldState world)
@@ -973,6 +1020,8 @@ namespace DeadCircuit
             ResetRooms();
             ResetExpansion();
             foreach (var v in nodes.Values) Release(v); nodes.Clear();
+            foreach (var v in droppedBackpacks.Values) Release(v); droppedBackpacks.Clear();
+            if (backpackHud != null) backpackHud.ShowDroppedBackpackHint(null, Vector2.zero);
             foreach (var v in buildings.Values) Release(v); buildings.Clear();
             foreach (var v in zombies.Values) Release(v); zombies.Clear();
             foreach (var v in players.Values) Release(v); players.Clear();
@@ -1297,9 +1346,45 @@ namespace DeadCircuit
             }
             for (int i = rangeCount; i < ranges.Count; i++) ranges[i].enabled = false;
             for (int i = wireCount; i < previewWires.Count; i++) previewWires[i].enabled = false;
-            if (!ui && !selected && hovered == null && world.nodes != null) foreach (var n in world.nodes)
+            bool backpackHovered = DrawBackpackHover(world, local, x, y);
+            if (!backpackHovered && !ui && !selected && hovered == null && world.nodes != null) foreach (var n in world.nodes)
                 if (n.x == x && n.y == y && n.hp > 0 && n.stock > 0)
-                { hoverRing.enabled = true; hoverRing.transform.position = new Vector3(x,y,0); break; }
+                {
+                    hoverRing.enabled = true;
+                    hoverRing.color = new Color(1f, .79f, .45f, .7f);
+                    hoverRing.transform.localScale = new Vector3(.77f, .46f, 1f);
+                    hoverRing.transform.position = new Vector3(x, y, 0);
+                    break;
+                }
+        }
+
+        bool DrawBackpackHover(WorldState world, PlayerState local, int x, int y)
+        {
+            GearState gear = null;
+            var mouse = Mouse.current;
+            Vector2 pointerPosition = mouse?.position.ReadValue() ?? Vector2.zero;
+            var keyboard = Keyboard.current;
+            bool aiming = keyboard != null && (keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed);
+            if (droppedBackpacks.Count > 0 && local != null && local.hp > 0 && !bridge.BuildSelection.HasValue &&
+                !aiming && mouse != null && WorldCamera.pixelRect.Contains(pointerPosition) && !bridge.WorldInputBlocked)
+            {
+                foreach (var pack in world.droppedBackpacks)
+                {
+                    if (pack?.gear == null || pack.x != x || pack.y != y || !droppedBackpacks.ContainsKey(pack.gear.id)) continue;
+                    gear = pack.gear;
+                    break;
+                }
+            }
+            if (gear != null)
+            {
+                hoverRing.enabled = true;
+                hoverRing.color = Amber;
+                hoverRing.transform.localScale = new Vector3(.67f, .34f, 1f);
+                hoverRing.transform.position = new Vector3(x, y - .10f, 0f);
+                if (backpackHud == null) TryGetComponent(out backpackHud);
+            }
+            if (backpackHud != null) backpackHud.ShowDroppedBackpackHint(gear, pointerPosition);
+            return gear != null;
         }
 
         BuildingState NearestSupplyNode(BuildingState consumer,int networkId)
@@ -1505,7 +1590,11 @@ namespace DeadCircuit
             if (hurtOverlay!=null) hurtOverlay.gameObject.SetActive(show);
             if (weatherVeil!=null) weatherVeil.gameObject.SetActive(show);
             if (volume!=null) volume.enabled=enabledView;
-            if (!enabledView) { observedWorld=null; observedElapsed=-1; observedTick=-1; }
+            if (!enabledView)
+            {
+                observedWorld = null; observedElapsed = -1; observedTick = -1;
+                if (backpackHud != null) backpackHud.ShowDroppedBackpackHint(null, Vector2.zero);
+            }
         }
 
         void OnDestroy()

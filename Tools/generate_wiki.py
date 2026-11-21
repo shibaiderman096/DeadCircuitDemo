@@ -39,7 +39,7 @@ PAGES = [
     ("recipes", "生产配方速查", "工业与科技", "材料目录与关键生产链，按图寻找下一道工序。", "item_38"),
     ("power", "能源与物流", "工业与科技", "动力、电网、运输，以及核设施安全作业。", "build_29"),
     ("weapons", "武器与工具", "装备与战斗", "武器图鉴、工具用途、弹药与维护。", "gear_8"),
-    ("armor", "防具与配件", "装备与战斗", "防具部位、枪械配件与核作业防护服。", "gear_17"),
+    ("armor", "防具与配件", "装备与战斗", "三档背包、穿戴防具、枪械配件与核作业防护服。", "gear_17"),
     ("combat", "战斗与复活", "装备与战斗", "攻击、敌人、尸潮和死亡后的救援。", "enemy_1"),
     ("growth", "角色成长", "装备与战斗", "人物属性、技能点和三个专精方向。", "gear_5"),
     ("multiplayer", "合作与存档", "资料与帮助", "四人合作、身份、保存与读取。", "build_7"),
@@ -48,7 +48,9 @@ PAGES = [
     ("maintenance", "Wiki维护", "资料与帮助", "规则来源、更新方式和核对记录。", "item_11"),
 ]
 PAGE_IDS = {title: slug for slug, title, *_ in PAGES}
+SECTION_ROUTES = {"背包与负重": "armor/背包与负重"}
 ERA_LABELS = {"primitive": "原始", "water": "水力", "steam": "蒸汽", "lv": "LV", "mv": "MV", "hv": "HV", "nuclear": "核工业"}
+ERA_KEYS = {label: key for key, label in ERA_LABELS.items()}
 
 
 def esc(text: object) -> str:
@@ -137,6 +139,11 @@ class ArtBank:
             return f'<span class="{cls} missing-art" role="img" aria-label="{esc(label)}：游戏内按格组合模块，无整机缩略图" title="游戏内按格组合模块，布局见蓝图预览">▦</span>'
         if key in ("build_61", "build_62"):
             return f'<span class="{cls} missing-art" aria-hidden="true" title="当前游戏没有专用图标">◇</span>'
+        if key in ("gear_20", "gear_21", "gear_22"):
+            try:
+                self.resolve(key)
+            except ValueError:
+                return f'<span class="{cls} missing-art" aria-hidden="true" title="游戏图集中暂无背包图标">◇</span>'
         return f'<img class="{cls}" src="{self.uri(key)}" alt="{esc(label)}" loading="lazy" decoding="async">'
 
     def hero(self) -> str:
@@ -154,22 +161,12 @@ class WikiRenderer:
         self.buildings = read_array("DemoState.cs", "BuildNames")
         self.gear = read_array("EquipmentCatalog.cs", "GearNames")
         self.parts = read_array("EquipmentCatalog.cs", "PartNames")
-        equipment_source = (CORE / "EquipmentCatalog.cs").read_text(encoding="utf-8-sig")
-        state_source = (CORE / "DemoState.cs").read_text(encoding="utf-8-sig")
-        gear_enum = re.search(r"enum GearKind\s*\{([^}]+)\}", state_source).group(1)
-        self.gear_metadata = []
-        era_keys = {"Primitive": "primitive", "Water": "water", "Steam": "steam", "LowVoltage": "lv", "MediumVoltage": "mv", "HighVoltage": "hv", "Nuclear": "nuclear"}
-        for enum_name in [part.strip().split("=")[0].strip() for part in gear_enum.split(",")]:
-            block = re.search(r"case GearKind\." + enum_name + r":(.*?)(?=case GearKind\.|\n\s*\}\n\s*return d;)", equipment_source, re.S)
-            if not block:
-                raise ValueError(f"Missing equipment definition: {enum_name}")
-            era = re.search(r"d.era\s*=\s*TechEra\.(\w+)", block.group(1))
-            self.gear_metadata.append({"era": era_keys[era.group(1)] if era else "primitive", "armor": "SetArmor(" in block.group(1)})
         self.foods = re.findall(r'new SurvivalFoodDefinition\(FoodKind\.\w+, "([^"\n]+)"', (CORE / "SurvivalCatalog.cs").read_text(encoding="utf-8-sig"))
         self.sections = dict(re.findall(r"^## ([^\n]+)\n(.*?)(?=^## |\Z)", source, re.M | re.S))
         self.date = re.search(r"最后核对：(\d{4}-\d{2}-\d{2})", source).group(1)
         self.baseline = re.search(r"规则基线：" + re.escape(TICK) + r"([^" + TICK + "]+)", source).group(1)
         self.catalog = EntryCatalog(ROOT, {"item": self.items, "building": self.buildings, "gear": self.gear, "part": self.parts, "food": self.foods})
+        self.gear_categories = [self.catalog.entries[f"gear-{index}"]["category"] for index in range(len(self.gear))]
         self.term_names = self.catalog.names
         self.term_pattern = re.compile("|".join(re.escape(name) for name in sorted(self.term_names, key=len, reverse=True)))
         self.research_names = {entry["name"]: entry["id"] for entry in self.catalog.entries.values() if entry["id"].startswith("research-")}
@@ -193,7 +190,7 @@ class WikiRenderer:
             label, target = match.group(1), match.group(2)
             if target.startswith("#"):
                 raw = target[1:]
-                target = "#/" + PAGE_IDS.get(raw, raw if raw != "wiki维护" else "maintenance")
+                target = "#/" + SECTION_ROUTES.get(raw, PAGE_IDS.get(raw, raw if raw != "wiki维护" else "maintenance"))
             if re.match(r"(?i)(?:javascript|data):", target):
                 raise ValueError("Unsafe document link")
             return save(f'<a href="{esc(target)}">{esc(label)}</a>')
@@ -285,21 +282,24 @@ class WikiRenderer:
         selected_eras = []
         cards = []
         for number in indices:
-            era = self.gear_metadata[number]["era"] if mode == "gear" else ("lv" if number in (0, 3, 4) else "hv" if number == 6 else "mv")
+            slug = f"{mode}-{number}"
+            entry = self.catalog.entries[slug]
+            era = ERA_KEYS[entry["era"]]
             if era not in selected_eras:
                 selected_eras.append(era)
-            kind = "工具" if mode == "gear" and number < 5 else "武器" if mode == "gear" and number < 10 else "防具" if mode == "gear" else "枪械配件"
+            kind = entry["category"]
             note = '<span class="art-note">沿用游戏中的防具示意图</span>' if mode == "gear" and number == 19 else ''
-            slug = f"{mode}-{number}"
             cards.append(f'<article class="item-card" data-era="{era}" data-name="{esc(labels[number])}"><a class="item-entry" href="#/{slug}" data-entry="{slug}"><div class="item-art">{self.art.img(f"{mode}_{number}",labels[number],"catalog-art")}</div><span class="item-type">{kind} · {ERA_LABELS[era]}</span><h3>{esc(labels[number])}</h3>{note}</a></article>')
         filters = '<button type="button" data-filter="all" aria-pressed="true">全部</button>' + ''.join(f'<button type="button" data-filter="{era}" aria-pressed="false">{ERA_LABELS[era]}</button>' for era in selected_eras)
         return f'<section class="gallery" data-gallery="{mode}-{indices[0]}"><div class="section-heading"><h2>{title}</h2><span>{len(indices):02d} 条目</span></div><div class="gallery-tools"><div class="filter-list" role="group" aria-label="按时代筛选">{filters}</div><label class="gallery-search"><span class="sr-only">搜索{title}</span><input type="search" data-gallery-search placeholder="搜索名称…"></label></div><div class="gallery-grid">{"".join(cards)}</div><p class="gallery-empty" hidden>没有符合条件的条目，试试其他名称或时代。</p></section>'
 
     def illustration(self, page: str) -> str:
         if page == "weapons":
-            return self.gallery("武器与工具图鉴", [index for index, value in enumerate(self.gear_metadata) if not value["armor"]])
+            return self.gallery("武器与工具图鉴", [index for index, category in enumerate(self.gear_categories) if category in ("武器", "工具")])
         if page == "armor":
-            return self.gallery("防具图鉴", [index for index, value in enumerate(self.gear_metadata) if value["armor"]]) + self.gallery("配件图鉴", list(range(len(self.parts))), "part")
+            packs = [index for index, category in enumerate(self.gear_categories) if category == "背包"]
+            armor = [index for index, category in enumerate(self.gear_categories) if category == "防具"]
+            return self.gallery("背包图鉴", packs) + self.gallery("防具图鉴", armor) + self.gallery("配件图鉴", list(range(len(self.parts))), "part")
         if page in ("survival", "world", "combat", "building", "power", "technology", "recipes"):
             collections = {
                 "survival": [("food_0", "浆果"), ("food_14", "烤肉"), ("food_21", "蔬菜炖汤"), ("creature_0", "野兔"), ("creature_4", "狼"), ("creature_5", "熊")],
@@ -349,6 +349,10 @@ class WikiRenderer:
                 body += [heading('制作研究'), '<p>自主制作需要完成 ' + self.entry_link(entry['research'],current=slug) + '，并满足时代、工位、材料及容量条件。成品使用与制造研究分别判断。</p>']
         if entry.get('cost'):
             body += [heading('最小职责集合报价' if entry.get('module_costs') else '研究样品' if '研究' in entry['category'] else '制造材料'), '<p class="entry-materials">' + self.quantity_links(entry['cost'],slug) + '</p>']
+        if entry['category'] == '背包':
+            station = self.entry_link(entry['station'], current=slug) if entry['station'] else None
+            craft = '靠近无遮挡的' + station + '制作。' if station else '在背包面板随身制作。'
+            body += [heading('制作与穿戴'), '<p>' + craft + ' 拾起地上的包会立即穿戴，原包连同全部内容落地。具体操作见<a href="#/armor/背包与负重">背包与负重</a>。</p>']
         if entry.get('module_costs'):
             rows = ''.join('<tr><td>' + esc(module['name']) + '</td><td>' + str(module['minimum']) + '</td><td>' + self.quantity_links(module['cost'],slug) + '</td></tr>' for module in entry['module_costs'])
             body += [heading('逐格施工材料'), '<p>先手持有效扳手，在T中选机器、从八类模块菜单选控制器起画，再逐格自由放置；R独立旋转当前模块，擦图删除单格。上方合计仅是最小职责集合报价，不是固定3×3模板，也不在画图时预扣。退出绘制后对具体格按E分批投料，增加机壳另付该格材料；包围盒内空洞不占地。</p>', '<div class="table-wrap" role="region" tabindex="0" aria-label="逐格施工材料"><table><thead><tr><th>模块</th><th>最少格数</th><th>每格材料</th></tr></thead><tbody>' + rows + '</tbody></table></div>']
@@ -380,7 +384,7 @@ class WikiRenderer:
                 54: '用镐开采石英节点取得，用于工业硅制造。',
                 63: '在出生附近或后续区块的地面用左键、E或按住Space拾取。',
                 64: '在地面直接拾取，用于随身制作石斧和石镐。采矿产出的石材另有用途。',
-                65: '在出生附近或后续区块直接拾取，用于随身制作石斧和石镐。',
+                65: '在出生附近或后续区块直接拾取。首堆有3份，可各用1份随身制作石斧、石镐和草绳背包。',
             }
             description = raw.get(int(slug.split('-')[1]), '获取方式请结合下方相关说明和游戏当前工艺界面查看。')
             body += [heading('获取'), '<p>' + self.inline(description,slug) + '</p>']

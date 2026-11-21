@@ -55,6 +55,7 @@ static partial class Checks
         Add(s, BuildKind.SteamFurnace, 50, 50);
         var sim = new WorldSimulator(s);
         p = sim.AddPlayer("lv-builder", "LV builder");
+        GrantReinforcedBackpack(sim.State, p);
         Array.Clear(p.items);
         RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.LowVoltage), LvPriorMaterials);
         p.x = 8; p.y = 10;

@@ -34,6 +34,8 @@ namespace DeadCircuit
 
         private void Interact(PlayerState p, int x, int y, int arg)
         {
+            if (DroppedBackpackAt(x, y) is DroppedBackpackState backpack)
+            { ChangeBackpack(p, backpack.gear, backpack); return; }
             if (TryFloorInteraction(p, x, y)) return;
             BuildingState b = BuildingAt(x, y);
             if (b == null)

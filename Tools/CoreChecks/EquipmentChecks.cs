@@ -37,9 +37,9 @@ static partial class Checks
         // Supply equipment recipes, research samples and full test magazines without filling unrelated stacks.
         foreach (var (item, amount) in new[]
         {
-            (ItemKind.Wood, 9), (ItemKind.Stone, 2), (ItemKind.Iron, 5), (ItemKind.Scrap, 15),
-            (ItemKind.Steel, 69), (ItemKind.Copper, 13), (ItemKind.Bronze, 3), (ItemKind.Gear, 2),
-            (ItemKind.Polymer, 23), (ItemKind.Circuit, 9), (ItemKind.AdvancedCircuit, 4),
+            (ItemKind.Wood, 9), (ItemKind.Stone, 2), (ItemKind.Iron, 5), (ItemKind.Scrap, 10),
+            (ItemKind.Steel, 8), (ItemKind.Copper, 4), (ItemKind.Bronze, 3), (ItemKind.Gear, 2),
+            (ItemKind.Polymer, 12), (ItemKind.Circuit, 6), (ItemKind.AdvancedCircuit, 4),
             (ItemKind.Lubricant, 3), (ItemKind.PrecisionPart, 2), (ItemKind.HeatAlloy, 1),
             (ItemKind.SteelPlate, 2), (ItemKind.RefractoryBrick, 2),
             (ItemKind.Branch, 2), (ItemKind.LooseStone, 3), (ItemKind.DryGrass, 1),
@@ -60,7 +60,7 @@ static partial class Checks
         var sim = new WorldSimulator(state); player = sim.State.players.Single(candidate => candidate.id == "equipment"); return sim;
     }
     static string EquipmentEconomy(PlayerState p) => JsonSerializer.Serialize(new
-    { p.items, p.gear, p.parts, p.weaponId, p.toolId, p.activeSlot, p.armorIds, p.selectedAmmo, p.reloadingGearId, p.reloadRemaining }, Json);
+    { p.items, p.gear, p.parts, p.weaponId, p.toolId, p.activeSlot, p.armorIds, p.backpackId, p.selectedAmmo, p.reloadingGearId, p.reloadRemaining }, Json);
     static GearState CraftGear(WorldSimulator sim, PlayerState p, GearKind kind)
     {
         Advance(sim, .6f); var before = p.gear.Select(g => g.id).ToHashSet();
@@ -136,13 +136,15 @@ static partial class Checks
         Run("equipment catalog keeps persistent gear part and slot ordinals", () =>
         {
             var gears = new[] { GearKind.StoneAxe, GearKind.StonePickaxe, GearKind.SteelAxe, GearKind.SteelPickaxe, GearKind.Wrench, GearKind.Knife, GearKind.Pistol, GearKind.Shotgun, GearKind.AssaultRifle, GearKind.PrecisionRifle };
+            var backpacks = new[] { GearKind.GrassBackpack, GearKind.ReinforcedBackpack, GearKind.EngineerBackpack };
             var parts = new[] { PartKind.RedDot, PartKind.Scope4x, PartKind.Suppressor, PartKind.MuzzleBrake, PartKind.ExtendedMag, PartKind.ErgonomicGrip, PartKind.MatchBarrel };
             var slots = new[] { AttachmentSlot.Optic, AttachmentSlot.Muzzle, AttachmentSlot.Magazine, AttachmentSlot.Grip, AttachmentSlot.Barrel };
-            Require(EquipmentCatalog.GearNames.Length == 20 && (int)GearKind.RadiationSuit==19 && EquipmentCatalog.PartNames.Length == 7 && EquipmentCatalog.SlotNames.Length == 5, "equipment catalog lengths changed");
+            Require(EquipmentCatalog.GearNames.Length == 23 && (int)GearKind.RadiationSuit==19 && EquipmentCatalog.PartNames.Length == 7 && EquipmentCatalog.SlotNames.Length == 5, "equipment catalog lengths changed");
             for (int i = 0; i < gears.Length; i++) Require((int)gears[i] == i, "gear ordinal changed: " + gears[i]);
             for (int i = 0; i < parts.Length; i++) Require((int)parts[i] == i, "part ordinal changed: " + parts[i]);
             for (int i = 0; i < slots.Length; i++) Require((int)slots[i] == i, "slot ordinal changed: " + slots[i]);
-            foreach (var kind in gears)
+            for (int i = 0; i < backpacks.Length; i++) Require((int)backpacks[i] == 20 + i, "backpack ordinal changed: " + backpacks[i]);
+            foreach (var kind in gears.Concat(backpacks))
             {
                 var d = EquipmentCatalog.Gear(kind);
                 Require(d.kind == kind && !string.IsNullOrWhiteSpace(d.name) && d.cost.Length == DemoCatalog.ItemCount && d.cost.Any(n => n > 0) && d.cost.All(n => n >= 0), "incomplete gear catalog: " + kind);
@@ -163,17 +165,25 @@ static partial class Checks
         foreach (var kind in Enum.GetValues<GearKind>())
             Run($"equipment craft {kind} charges declared materials once and respects technology", () =>
             {
-                var sim = EquipmentFixture(out var p); var d = EquipmentCatalog.Gear(kind); int[] before = Copy(p.items);
+                var d = EquipmentCatalog.Gear(kind);
+                var sim = EquipmentFixture(out var p, arrange: (_, player) => player.items = Copy(d.cost));
+                int[] before = Copy(p.items);
                 var made = CraftGear(sim, p, kind); Paid(p.items, before, d.cost, "gear crafting cost");
                 Require(made.durability == d.maxDurability && made.magazine == 0 && made.attachments.Length == 5 && made.attachments.All(n => n == -1), "new gear is preloaded or malformed");
                 Require(EquipmentCatalog.Find(p, made.id) == made, "crafted ID not retrievable");
                 int missing = Array.FindIndex(d.cost, n => n > 0);
-                var poor = EquipmentFixture(out var q, arrange: (_, player) => player.items[missing] = d.cost[missing] - 1);
+                var poor = EquipmentFixture(out var q, arrange: (_, player) =>
+                {
+                    player.items = Copy(d.cost);
+                    player.items[missing]--;
+                });
                 string economy = EquipmentEconomy(q); Require(!EquipmentCatalog.CanCraft(poor.State, q, kind), "underfunded gear is craftable");
                 poor.Apply(Command(q, "gearcraft", arg: (int)kind)); Require(EquipmentEconomy(q) == economy, "failed gear craft changed inventory");
                 if (d.era > TechEra.Primitive)
                 {
-                    var locked = EquipmentFixture(out var r, era: (TechEra)((int)d.era - 1)); economy = EquipmentEconomy(r);
+                    var locked = EquipmentFixture(out var r, era: (TechEra)((int)d.era - 1),
+                        arrange: (_, player) => player.items = Copy(d.cost));
+                    economy = EquipmentEconomy(r);
                     Require(!EquipmentCatalog.CanCraft(locked.State, r, kind), "locked gear reported craftable");
                     locked.Apply(Command(r, "gearcraft", arg: (int)kind)); Require(EquipmentEconomy(r) == economy, "locked gear bypassed technology");
                 }
@@ -213,10 +223,10 @@ static partial class Checks
             });
         Run("equipment craft rejects invalid indices and fits a twenty-fifth light item", () =>
         {
-            foreach (int value in new[] { -1, 20, int.MaxValue })
+            foreach (int value in new[] { -1, EquipmentCatalog.GearNames.Length, int.MaxValue })
             {
                 var sim = EquipmentFixture(out var p); string before = EquipmentEconomy(p);
-                sim.Apply(Command(p, "gearcraft", arg: value)); sim.Apply(Command(p, "partcraft", arg: value == 20 ? 7 : value));
+                sim.Apply(Command(p, "gearcraft", arg: value)); sim.Apply(Command(p, "partcraft", arg: value == EquipmentCatalog.GearNames.Length ? EquipmentCatalog.PartNames.Length : value));
                 Require(EquipmentEconomy(p) == before, "invalid craft enum changed inventory");
             }
             var full = EquipmentFixture(out var q, arrange: (state, player) =>
@@ -270,7 +280,7 @@ static partial class Checks
         {
             ("null gear list", p => p.gear = null), ("null gear", p => p.gear[0] = null),
             ("zero id", p => p.gear[0].id = 0), ("negative id", p => p.gear[0].id = -1),
-            ("invalid kind", p => p.gear[0].kind = (GearKind)20),
+            ("invalid kind", p => p.gear[0].kind = (GearKind)EquipmentCatalog.GearNames.Length),
             ("negative durability", p => p.gear[0].durability = -1), ("excess durability", p => p.gear[0].durability = 101),
             ("negative magazine", p => p.gear[0].magazine = -1), ("excess magazine", p => p.gear[0].magazine = 31),
             ("wrong caliber", p => { p.gear[0].magazine = 1; p.gear[0].loadedAmmo = ItemKind.Shell; }),
@@ -751,13 +761,13 @@ static partial class Checks
 
     static void EquipmentWeightCommandChecks()
     {
-        Run("equipment weight crafting checks net cost and accepts exactly 120 kg", () =>
+        Run("equipment weight crafting checks net cost and accepts exactly 50 kg without a backpack", () =>
         {
             var sim = EquipmentFixture(out var p, arrange: (_, player) =>
             {
                 // The axe weighs 1,200 g; the recipe costs 690 g.
                 Array.Clear(player.items);
-                player.items[(int)ItemKind.Wood] = 237;
+                player.items[(int)ItemKind.Wood] = 97;
                 player.items[(int)ItemKind.Ammo] = 21;
                 player.items[(int)ItemKind.Branch] = 2;
                 player.items[(int)ItemKind.LooseStone] = 2;
@@ -765,17 +775,17 @@ static partial class Checks
             });
             string before = EquipmentEconomy(p);
             int nextId = sim.State.nextId;
-            Require(!EquipmentCatalog.CanCraft(sim.State, p, GearKind.StoneAxe), "catalog offered a craft that would exceed 120 kg");
+            Require(!EquipmentCatalog.CanCraft(sim.State, p, GearKind.StoneAxe), "catalog offered a craft that would exceed 50 kg");
             sim.Apply(Command(p, "gearcraft", arg: (int)GearKind.StoneAxe));
             Require(EquipmentEconomy(p) == before && sim.State.nextId == nextId && p.interactCooldown == 0,
                 "overweight craft changed inventory, allocated a gear ID, or spent the cooldown");
 
             p.items[(int)ItemKind.Ammo]--;
-            Require(EquipmentCatalog.CanCraft(sim.State, p, GearKind.StoneAxe), "catalog rejected a craft whose final weight is exactly 120 kg");
+            Require(EquipmentCatalog.CanCraft(sim.State, p, GearKind.StoneAxe), "catalog rejected a craft whose final weight is exactly 50 kg");
             int[] expected = Copy(p.items);
             expected[(int)ItemKind.Branch] = expected[(int)ItemKind.LooseStone] = expected[(int)ItemKind.DryGrass] = 0;
             sim.Apply(Command(p, "gearcraft", arg: (int)GearKind.StoneAxe));
-            Require(p.gear.Single().kind == GearKind.StoneAxe && InventoryWeight.CarriedGrams(p) == 120000,
+            Require(p.gear.Single().kind == GearKind.StoneAxe && InventoryWeight.CarriedGrams(p) == 50000,
                 "net weight of the axe craft did not fit exactly");
             Inventory(p.items, expected, "axe material cost at the weight boundary");
         });
@@ -807,14 +817,14 @@ static partial class Checks
             var sim = EquipmentFixture(out var p, arrange: (_, player) =>
             {
                 Array.Clear(player.items);
-                player.items[(int)ItemKind.Wood] = 240;
+                player.items[(int)ItemKind.Wood] = 100;
                 player.items[(int)ItemKind.Copper] = 2;
                 player.items[(int)ItemKind.Circuit] = 1;
             });
             Require(EquipmentCatalog.CanCraftPart(sim.State, p, PartKind.RedDot), "catalog rejected an overweight player's lighter craft");
             sim.Apply(Command(p, "partcraft", arg: (int)PartKind.RedDot));
             Require(p.parts[(int)PartKind.RedDot] == 1 && p.items[(int)ItemKind.Copper] == 0 &&
-                p.items[(int)ItemKind.Circuit] == 0 && InventoryWeight.CarriedGrams(p) == 120130,
+                p.items[(int)ItemKind.Circuit] == 0 && InventoryWeight.CarriedGrams(p) == 50130,
                 "red dot craft did not reduce weight while still overweight");
         });
 
@@ -823,25 +833,25 @@ static partial class Checks
             var sim = EquipmentFixture(out var p, GearKind.Pistol, arrange: (state, player) =>
             {
                 Array.Clear(player.items);
-                player.items[(int)ItemKind.Wood] = 238;
+                player.items[(int)ItemKind.Wood] = 98;
                 player.gear[0].magazine = 5;
                 player.gear[0].attachments[0] = (int)PartKind.RedDot;
                 player.gear.Add(new GearState { id = state.nextId++, kind = GearKind.Knife });
             });
             var pistol = p.gear[0]; var knife = p.gear[1];
             sim.Apply(Command(p, "switch", arg: 2));
-            Require(p.weaponId == pistol.id && InventoryWeight.CarriedGrams(p) == 119500, "unarmed selection put the pistol in the backpack");
+            Require(p.weaponId == pistol.id && InventoryWeight.CarriedGrams(p) == 49500, "unarmed selection put the pistol in the backpack");
             string before = EquipmentEconomy(p);
             sim.Apply(Command(p, "equip", arg: knife.id));
             Require(EquipmentEconomy(p) == before, "failed swap changed the mounted weapon or its loadout");
 
             p.items[(int)ItemKind.Wood]--;
             sim.Apply(Command(p, "equip", arg: knife.id));
-            Require(p.weaponId == knife.id && InventoryWeight.CarriedGrams(p) == 119605,
+            Require(p.weaponId == knife.id && InventoryWeight.CarriedGrams(p) == 49605,
                 "swap failed to credit the departing 500 g knife against the returning 1,105 g pistol");
             p.items[(int)ItemKind.Wood] += 2;
             sim.Apply(Command(p, "equip", arg: pistol.id));
-            Require(p.weaponId == pistol.id && InventoryWeight.CarriedGrams(p) == 120000,
+            Require(p.weaponId == pistol.id && InventoryWeight.CarriedGrams(p) == 50000,
                 "an overweight backpack could not be lightened by equipping the heavier weapon");
         });
 
@@ -852,7 +862,7 @@ static partial class Checks
                 var sim = EquipmentFixture(out var p, kind, arrange: (_, player) =>
                 {
                     Array.Clear(player.items);
-                    player.items[(int)ItemKind.Wood] = 240;
+                    player.items[(int)ItemKind.Wood] = 100;
                 });
                 var gear = p.gear.Single();
                 string before = EquipmentEconomy(p);
@@ -861,7 +871,7 @@ static partial class Checks
                 p.items[(int)ItemKind.Wood] -= 3;
                 sim.Apply(Command(p, "unequip", arg: gear.id));
                 Require(p.toolId == 0 && p.armorIds.All(id => id == 0) && p.activeSlot == 2 &&
-                    p.gear.Single() == gear && InventoryWeight.CarriedGrams(p) == 118500 + grams,
+                    p.gear.Single() == gear && InventoryWeight.CarriedGrams(p) == 48500 + grams,
                     "unequip did not move the whole " + kind + " back into the backpack");
             }
         });
@@ -873,7 +883,7 @@ static partial class Checks
                 var sim = EquipmentFixture(out var p, GearKind.Pistol, arrange: (_, player) =>
                 {
                     Array.Clear(player.items);
-                    player.items[(int)ItemKind.Wood] = 240;
+                    player.items[(int)ItemKind.Wood] = 100;
                     player.activeSlot = 2;
                     if (!mounted) player.weaponId = 0;
                     player.gear[0].magazine = 5;
@@ -887,7 +897,7 @@ static partial class Checks
                 sim.Apply(Command(p, "detach", x: (int)AttachmentSlot.Optic, arg: pistol.id));
                 if (mounted) Require(EquipmentEconomy(p) == before && p.interactCooldown == 0, "detach changed a mounted gun with no free weight");
                 else Require(pistol.magazine == 0 && p.items[(int)ItemKind.Ammo] == 5 && pistol.attachments[0] == -1 &&
-                    p.parts[(int)PartKind.RedDot] == 1 && InventoryWeight.CarriedGrams(p) == 121105,
+                    p.parts[(int)PartKind.RedDot] == 1 && InventoryWeight.CarriedGrams(p) == 51105,
                     "unload or detach was blocked or lost contents when the gun already counted toward weight");
             }
         });
@@ -897,7 +907,7 @@ static partial class Checks
             var sim = EquipmentFixture(out var p, GearKind.Pistol, arrange: (_, player) =>
             {
                 Array.Clear(player.items);
-                player.items[(int)ItemKind.Wood] = 241;
+                player.items[(int)ItemKind.Wood] = 101;
                 player.items[(int)ItemKind.Ammo] = 17;
                 player.parts[(int)PartKind.RedDot] = 1;
             });
@@ -905,7 +915,7 @@ static partial class Checks
             sim.Apply(Command(p, "attach", x: (int)PartKind.RedDot, arg: pistol.id));
             Require(pistol.attachments[0] == (int)PartKind.RedDot && p.parts[(int)PartKind.RedDot] == 0, "overweight actor could not install a loose part");
             LoadEquipment(sim, p, pistol);
-            Require(pistol.magazine == 17 && p.items[(int)ItemKind.Ammo] == 0 && InventoryWeight.CarriedGrams(p) == 120500,
+            Require(pistol.magazine == 17 && p.items[(int)ItemKind.Ammo] == 0 && InventoryWeight.CarriedGrams(p) == 50500,
                 "overweight actor could not move reserve ammunition into a mounted gun");
         });
 
@@ -916,7 +926,7 @@ static partial class Checks
                 var sim = EquipmentFixture(out var p, GearKind.PrecisionRifle, arrange: (_, player) =>
                 {
                     Array.Clear(player.items);
-                    player.items[(int)ItemKind.Wood] = 240;
+                    player.items[(int)ItemKind.Wood] = 100;
                     var rifle = player.gear[0];
                     rifle.magazine = 1;
                     rifle.attachments[0] = (int)PartKind.Scope4x;
@@ -932,7 +942,7 @@ static partial class Checks
                 else
                     Require(p.gear.Count == 0 && p.items[(int)ItemKind.Steel] == 5 && p.items[(int)ItemKind.Polymer] == 2 &&
                         p.items[(int)ItemKind.AdvancedCircuit] == 1 && p.items[(int)ItemKind.PrecisionAmmo] == 1 &&
-                        p.parts[(int)PartKind.Scope4x] == 1 && InventoryWeight.CarriedGrams(p) == 125735,
+                        p.parts[(int)PartKind.Scope4x] == 1 && InventoryWeight.CarriedGrams(p) == 55735,
                         "salvage failed to credit the removed rifle or return every refund");
             }
         });

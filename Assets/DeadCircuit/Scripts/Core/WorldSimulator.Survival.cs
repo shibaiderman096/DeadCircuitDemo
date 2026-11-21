@@ -298,7 +298,7 @@ namespace DeadCircuit
             {
                 char terrain = WorldTiles.Ground(State, cmd.x, cmd.y);
                 if (cmd.arg != 0 || plot != null || State.survival.plots.Count >= SurvivalCatalog.MaxPlots ||
-                    (terrain != '0' && terrain != '1') || NodeAt(cmd.x, cmd.y) != null || BuildingAt(cmd.x, cmd.y) != null ||
+                    (terrain != '0' && terrain != '1') || DroppedBackpackAt(cmd.x, cmd.y) != null || NodeAt(cmd.x, cmd.y) != null || BuildingAt(cmd.x, cmd.y) != null ||
                     NearSpawn(cmd.x, cmd.y) || OccupiedByActor(cmd.x, cmd.y) || SurvivalOccupiesCell(cmd.x, cmd.y) ||
                     p.items[(int)ItemKind.Wood] < 1 || State.nextId >= int.MaxValue - 2) return;
                 int id = AllocateId();

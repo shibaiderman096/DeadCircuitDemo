@@ -50,7 +50,7 @@ static partial class Checks
     static void SupplyModularMaterials(PlayerState p, int[] required)
     {
         for (int i = 0; i < required.Length; i++) p.items[i] = Math.Max(p.items[i], required[i]);
-        Require(InventoryWeight.CarriedGrams(p) <= InventoryWeight.CapacityGrams, "modular fixture supplies exceed backpack capacity");
+        Require(InventoryWeight.CarriedGrams(p) <= InventoryWeight.CapacityGrams(p), "modular fixture supplies exceed backpack capacity");
     }
     static void CompleteModular(WorldSimulator sim,PlayerState p,BuildingState b)
     {
@@ -160,7 +160,7 @@ static partial class Checks
             var expectedRefund = actor.items.Zip(refund, (held, returned) => held + returned).ToArray();
             EraseModule(restored,actor,copy,module);
             Require(actor.items.SequenceEqual(expectedRefund) && copy.modularModules.Count==9 &&
-                InventoryWeight.CarriedGrams(actor)==InventoryWeight.CapacityGrams,"single-cell erase did not refund exact real payment");
+                InventoryWeight.CarriedGrams(actor)==InventoryWeight.CapacityGrams(actor),"single-cell erase did not refund exact real payment");
             EraseModule(restored,actor,copy,0);Require(restored.State.buildings.Contains(copy),"controller erased while other modules remained");
         });
         Run("modular U energy terminal inside bbox powers ore batching with maintenance and byproduct blockage",()=>
@@ -258,7 +258,7 @@ static partial class Checks
             var expectedBackpack = p.items.Zip(expected, (held, returned) => held + returned).ToArray();
             p.interactCooldown=0;sim.Apply(Command(p,"dismantle",10,10));
             Require(!sim.State.buildings.Contains(b) && sim.State.cargo.Count==0 && p.items.SequenceEqual(expectedBackpack) &&
-                InventoryWeight.CarriedGrams(p)==InventoryWeight.CapacityGrams,"whole cancellation failed exact payment inventory flight refund");
+                InventoryWeight.CarriedGrams(p)==InventoryWeight.CapacityGrams(p),"whole cancellation failed exact payment inventory flight refund");
         });
         Run("modular signed cross chunk plans save restore and snapshots include intersecting cells with detached payments",()=>
         {

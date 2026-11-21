@@ -90,6 +90,17 @@ static partial class Checks
         player.items[(int)ItemKind.NuclearWaste] = 0;
         return player;
     }
+    static void GrantReinforcedBackpack(WorldState state, PlayerState player)
+    {
+        var backpack = new GearState
+        {
+            id = state.nextId++,
+            kind = GearKind.ReinforcedBackpack,
+            durability = EquipmentCatalog.Gear(GearKind.ReinforcedBackpack).maxDurability
+        };
+        player.gear.Add(backpack);
+        player.backpackId = backpack.id;
+    }
     static BuildingState Add(WorldState state, BuildKind kind, int x, int y, int rotation = 0, int footprintVersion = 1)
     {
         var b = new BuildingState { id = state.nextId++, kind = kind, x = x, y = y, rotation = rotation,

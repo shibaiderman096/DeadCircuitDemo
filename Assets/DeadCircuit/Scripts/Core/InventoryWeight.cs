@@ -4,7 +4,7 @@ namespace DeadCircuit
 {
     public static class InventoryWeight
     {
-        public const int CapacityGrams = 120000, WaterGrams = 500;
+        public const int BaseCapacityGrams = 50000, MaxCapacityGrams = 160000, WaterGrams = 500;
         // This guard also allows former inventories to be reduced by net-lighter crafts.
         internal const int MaxSavedGear = 512;
 
@@ -48,6 +48,7 @@ namespace DeadCircuit
             GearKind.ClothHood => 500, GearKind.LeatherJacket => 1800, GearKind.WorkPants => 750, GearKind.WorkBoots => 1400,
             GearKind.SteelHelmet => 1900, GearKind.ArmorVest => 5900, GearKind.TacticalHelmet => 1500,
             GearKind.TacticalVest => 6400, GearKind.TacticalBoots => 1650, GearKind.RadiationSuit => 4200,
+            GearKind.GrassBackpack => 900, GearKind.ReinforcedBackpack => 1700, GearKind.EngineerBackpack => 2800,
             _ => throw new ArgumentOutOfRangeException(nameof(gear))
         };
 
@@ -82,7 +83,7 @@ namespace DeadCircuit
         public static bool IsEquipped(PlayerState player, GearState gear)
         {
             if (player == null || gear == null || gear.id == 0) return false;
-            if (gear.id == player.weaponId || gear.id == player.toolId) return true;
+            if (gear.id == player.weaponId || gear.id == player.toolId || gear.id == player.backpackId) return true;
             foreach (int id in player.armorIds) if (id == gear.id) return true;
             return false;
         }
@@ -134,13 +135,36 @@ namespace DeadCircuit
 
         public static int MillingDeltaGrams => 3 * Grams(FoodKind.Flour) - 2 * Grams(FoodKind.Wheat);
 
+        public static GearState EquippedPack(PlayerState player) => player == null || player.backpackId == 0
+            ? null : EquipmentCatalog.Find(player, player.backpackId);
+
+        public static int CapacityGrams(PlayerState player) => EquippedPack(player) is GearState bag
+            ? EquipmentCatalog.BackpackCapacityGrams(bag.kind) : BaseCapacityGrams;
+
+        public static long BackpackContentsGrams(BackpackInventoryState inventory, System.Collections.Generic.List<GearState> gear)
+        {
+            if (inventory == null) return 0;
+            long grams = MaterialsGrams(inventory.items) + ((long)inventory.waterRaw + inventory.waterClean) * WaterGrams;
+            for (int i = 0; i < inventory.parts.Length; i++) grams += (long)inventory.parts[i] * Grams((PartKind)i);
+            for (int i = 0; i < inventory.foods.Length; i++) grams += (long)inventory.foods[i] * Grams((FoodKind)i);
+            for (int i = 0; i < inventory.seeds.Length; i++) grams += (long)inventory.seeds[i] * Grams((CropKind)i);
+            foreach (var item in gear) if (inventory.gearIds.Contains(item.id)) grams += GearGrams(item);
+            return grams;
+        }
+
+        public static bool CanEquipBackpack(PlayerState player, GearState next) =>
+            player != null && (next == null || IsOwnedBackpack(player, next));
+
+        private static bool IsOwnedBackpack(PlayerState player, GearState gear) =>
+            EquipmentCatalog.IsBackpack(gear.kind) && player.gear.Contains(gear);
+
         public static bool CanFit(PlayerState player, long deltaGrams) =>
-            deltaGrams <= 0 || deltaGrams <= CapacityGrams - CarriedGrams(player);
+            deltaGrams <= 0 || deltaGrams <= CapacityGrams(player) - CarriedGrams(player);
 
         public static bool CanExchange(PlayerState player, int[] costs, int[] outputs) =>
             CanFit(player, MaterialsGrams(outputs) - MaterialsGrams(costs));
 
         public static int Allowance(PlayerState player, int unitGrams) =>
-            (int)(Math.Max(0, CapacityGrams - CarriedGrams(player)) / unitGrams);
+            (int)(Math.Max(0, CapacityGrams(player) - CarriedGrams(player)) / unitGrams);
     }
 }

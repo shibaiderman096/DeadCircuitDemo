@@ -38,7 +38,7 @@ namespace DeadCircuit
     /// </summary>
     public static class EquipmentCatalog
     {
-        public static readonly string[] GearNames = { "石斧", "石镐", "钢斧", "钢镐", "扳手", "KA-BAR 1217军刀", "GLOCK 17手枪", "Mossberg 590霰弹枪", "M4A1卡宾枪", "M24狙击步枪", "布头巾", "皮夹克", "工装裤", "工装靴", "钢盔", "防弹背心", "战术头盔", "战术背心", "战术靴", "核作业防护服" };
+        public static readonly string[] GearNames = { "石斧", "石镐", "钢斧", "钢镐", "扳手", "KA-BAR 1217军刀", "GLOCK 17手枪", "Mossberg 590霰弹枪", "M4A1卡宾枪", "M24狙击步枪", "布头巾", "皮夹克", "工装裤", "工装靴", "钢盔", "防弹背心", "战术头盔", "战术背心", "战术靴", "核作业防护服", "草绳背包", "加固背包", "工程背包" };
         public static readonly string[] PartNames = { "红点瞄具", "四倍瞄具", "消音器", "制退器", "扩容弹匣", "人体工学握把", "精密枪管" };
         public static readonly string[] SlotNames = { "瞄具", "枪口", "弹匣", "握把", "枪管" };
         public static readonly string[] ArmorSlotNames = { "头部", "躯干", "腿部", "脚部" };
@@ -99,6 +99,17 @@ namespace DeadCircuit
                     d.description="穿戴于躯干，耐久大于0时降低80%辐射暴露。";
                     d.era=TechEra.Nuclear; d.maxDurability=150; d.radiationProtection=.8f;
                     d.cost=DemoCatalog.Materials(ItemKind.Polymer,6,ItemKind.SteelPlate,2,ItemKind.RefractoryBrick,2); SetArmor(d,8f,.06f); break;
+                case GearKind.GrassBackpack:
+                    d.cost = DemoCatalog.Materials(ItemKind.Wood, 3, ItemKind.DryGrass, 1);
+                    d.description = "用干草和木条随身扎成，装备后总携带容量100千克。"; break;
+                case GearKind.ReinforcedBackpack:
+                    d.era = TechEra.Water;
+                    d.cost = DemoCatalog.Materials(ItemKind.Wood, 4, ItemKind.Scrap, 4, ItemKind.Bronze, 2);
+                    d.description = "用青铜扣加固，装备后总携带容量120千克。"; break;
+                case GearKind.EngineerBackpack:
+                    d.era = TechEra.LowVoltage;
+                    d.cost = DemoCatalog.Materials(ItemKind.SteelPlate, 2, ItemKind.Cable, 2, ItemKind.Scrap, 4);
+                    d.description = "有钢板支撑的工装包，装备后总携带容量160千克。"; break;
             }
             return d;
         }
@@ -159,6 +170,14 @@ namespace DeadCircuit
         public static GearState Find(PlayerState player, int id) => player == null || player.gear == null || id <= 0 ? null : player.gear.Find(g => g != null && g.id == id);
         public static GearState Equipped(PlayerState player) => player == null ? null : player.activeSlot == 0 ? Find(player,player.weaponId) : player.activeSlot == 1 ? Find(player,player.toolId) : null;
         public static bool IsGun(GearKind kind) => kind >= GearKind.Pistol && kind <= GearKind.PrecisionRifle;
+        public static int BackpackCapacityGrams(GearKind kind) => kind switch
+        {
+            GearKind.GrassBackpack => 100000,
+            GearKind.ReinforcedBackpack => 120000,
+            GearKind.EngineerBackpack => 160000,
+            _ => 0
+        };
+        public static bool IsBackpack(GearKind kind) => BackpackCapacityGrams(kind) > 0;
         public static bool IsArmor(GearKind kind) => ArmorSlot(kind)>=0;
         public static int ArmorSlot(GearKind kind)
         {
@@ -232,7 +251,7 @@ namespace DeadCircuit
             var research=EquipmentResearchCatalog.GearResearch(kind);
             if(research!=null && !EquipmentResearchCatalog.Known(world,research)) return EquipmentResearchCatalog.Missing(research);
             if (!ValidCrafter(world, player)) return "请确认角色已连接且仍存活。";
-            if (!IsHandcraftedTool(kind) && !HasWorkbench(world, player)) return "请靠近工作台，并确保中间没有障碍。";
+            if (!IsHandcraftedTool(kind) && kind != GearKind.GrassBackpack && !HasWorkbench(world, player)) return "请靠近工作台，并确保中间没有障碍。";
             if(!(player.interactCooldown<=0f)) return "操作尚未结束，请稍候。";
             if(!CanPay(player.items,d.cost)) return "制作材料不足。";
             if (player.gear.Count >= InventoryWeight.MaxSavedGear) return "请先整理已持有的装备。";

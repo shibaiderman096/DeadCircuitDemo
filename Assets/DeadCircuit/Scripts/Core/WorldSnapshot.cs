@@ -24,6 +24,7 @@ namespace DeadCircuit
             for(int y=cy-radius;y<=cy+radius;y++) for(int x=cx-radius;x<=cx+radius;x++)
                 if(WorldTiles.TryChunk(source,x,y,out var chunk)) result.chunks.records.Add(chunk);
             result.nodes=source.nodes.FindAll(n=>nearby(n.x,n.y));
+            result.droppedBackpacks = source.droppedBackpacks.FindAll(pack => nearby(pack.x, pack.y));
             result.buildings=source.buildings.FindAll(b=>ModularMachineCatalog.IsModular(b.kind)
                 ? b.modularModules.Exists(m=>nearby(m.x,m.y))
                 : WorldTiles.FloorDiv(b.x,16)<=cx+radius && WorldTiles.FloorDiv(b.x+DemoCatalog.Width(b)-1,16)>=cx-radius &&

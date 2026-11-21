@@ -214,6 +214,11 @@ class EntryCatalog:
 
     def read_equipment(self) -> None:
         source = self.read("EquipmentCatalog.cs")
+        weights = self.read("InventoryWeight.cs")
+        capacity_block = source.split("int BackpackCapacityGrams(GearKind kind)", 1)[1].split("};", 1)[0]
+        pack_capacities = {name: int(grams) for name, grams in re.findall(r"GearKind\.(\w+)\s*=>\s*(\d+)", capacity_block)}
+        gear_weights = {name: int(grams) for name, grams in re.findall(r"GearKind\.(\w+)\s*=>\s*(\d+)", weights)}
+        base_capacity = int(re.search(r"\bBaseCapacityGrams\s*=\s*(\d+)", weights).group(1))
         gear_switch = source.split("switch (kind)", 1)[1].split("return d;", 1)[0]
         for name, i in self.gear_ids.items():
             block = re.search(r"case GearKind\." + name + r":(.*?)(?=case GearKind\.|\Z)", gear_switch, re.S).group(1)
@@ -225,10 +230,23 @@ class EntryCatalog:
                 entry["summary"] = string(description.group(1))
             armor = list(calls(block, "SetArmor"))
             gun = list(calls(block, "SetGun"))
+            if name in pack_capacities:
+                capacity = pack_capacities[name]
+                station = None if name == "GrassBackpack" else f"building-{self.build_ids['Workbench']}"
+                entry.update(category="背包", parent="armor", station=station)
+                entry["facts"] += [
+                    ("穿戴位置", "独立背包位"),
+                    ("包内容量", f"{(capacity - base_capacity) / 1000:g}千克"),
+                    ("穿戴后总容量", f"{capacity / 1000:g}千克"),
+                    ("备用时单重", f"{gear_weights[name] / 1000:g}千克"),
+                ]
+                entry["summary"] += " 包内物品随背包落地与拾回。"
+                continue
             if armor:
                 entry.update(category="防具", parent="armor")
                 entry["facts"] += [("基础护甲", number(armor[0][1])), ("移速代价", f"{float(number(armor[0][2]))*100:g}%")]
             elif gun:
+                entry["category"] = "武器"
                 entry["facts"] += [("基础伤害", number(gun[0][3])), ("基础射程", number(gun[0][4]) + "格"), ("弹匣容量", gun[0][2]), ("装填时间", number(gun[0][6]) + "秒")]
                 entry["ammo"] = f"item-{self.item_ids[gun[0][1].split('.')[-1]]}"
             elif i < 5:
@@ -237,6 +255,8 @@ class EntryCatalog:
                     entry["summary"] = "在T的原始页随身制作并装备，无需工作台或研究。可用于砍树和拆取补给箱。"
                 elif name == "StonePickaxe":
                     entry["summary"] = "在T的原始页随身制作并装备，无需工作台或研究。可用于开采石材、黏土和矿床。"
+            else:
+                entry["category"] = "武器"
             max_durability = re.search(r"d.maxDurability\s*=\s*(\d+)", block)
             entry["facts"].append(("最大耐久", max_durability.group(1) if max_durability else "100"))
         part_source = source.split("public static PartDefinition Part", 1)[1].split("return d;", 1)[0]

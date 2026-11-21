@@ -42,7 +42,7 @@ static partial class Checks
     static void FillBackpackLeaving(PlayerState p, int freeGrams)
     {
         int wood = (int)ItemKind.Wood, ammo = (int)ItemKind.Ammo;
-        int ballast = checked((int)(InventoryWeight.CapacityGrams - freeGrams - InventoryWeight.CarriedGrams(p)));
+        int ballast = checked((int)(InventoryWeight.CapacityGrams(p) - freeGrams - InventoryWeight.CarriedGrams(p)));
         Require(ballast >= 0, "fixture already exceeds the requested backpack weight");
         int woodGrams = InventoryWeight.Grams(ItemKind.Wood), ammoGrams = InventoryWeight.Grams(ItemKind.Ammo);
         int logs = ballast / woodGrams;
@@ -50,7 +50,7 @@ static partial class Checks
         Require(logs >= 0, "fixture cannot reach the requested backpack weight");
         p.items[wood] += logs;
         p.items[ammo] += (ballast - logs * woodGrams) / ammoGrams;
-        Require(InventoryWeight.CarriedGrams(p) == InventoryWeight.CapacityGrams - freeGrams,
+        Require(InventoryWeight.CarriedGrams(p) == InventoryWeight.CapacityGrams(p) - freeGrams,
             "fixture backpack weight differs from the requested boundary");
     }
 
@@ -238,7 +238,7 @@ static partial class Checks
             expected[(int)ItemKind.Bronze] += 4;
             sim.Apply(Command(p, "craft", arg: 2));
             Inventory(p.items, expected, "bronze crafting balance at the weight limit");
-            Require(sim.State.produced[(int)ItemKind.Bronze] == 4 && InventoryWeight.CarriedGrams(p) == InventoryWeight.CapacityGrams,
+            Require(sim.State.produced[(int)ItemKind.Bronze] == 4 && InventoryWeight.CarriedGrams(p) == InventoryWeight.CapacityGrams(p),
                 "weight-neutral crafting did not complete at the full backpack weight");
         });
         Run("primitive crafting rejects short inputs and insufficient backpack weight without side effects", () =>
@@ -277,7 +277,9 @@ static partial class Checks
         });
         Run("primitive real kiln copper tin bronze iron chain unlocks water", () =>
         {
-            var sim = PrimitiveFixture(out var p); Array.Clear(p.items);
+            var sim = PrimitiveFixture(out var p);
+            GrantReinforcedBackpack(sim.State, p);
+            Array.Clear(p.items);
             p.items[(int)ItemKind.Wood] = 75; p.items[(int)ItemKind.Stone] = 24; p.items[(int)ItemKind.Clay] = 28;
             p.items[(int)ItemKind.Ore] = 20; p.items[(int)ItemKind.CopperOre] = 20; p.items[(int)ItemKind.TinOre] = 20;
             PrimitiveUnlock(sim, p, PrimitiveTech.Tools, DemoCatalog.Materials(ItemKind.Wood, 2, ItemKind.Stone, 2));

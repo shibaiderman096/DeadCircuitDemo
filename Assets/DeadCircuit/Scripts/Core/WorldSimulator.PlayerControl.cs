@@ -6,7 +6,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         private enum PlayerControlIntent { None, Walk, Primary, Secondary, Work, Fight }
-        private enum PlayerControlTarget { None, Node, Building, Stair, Repair, Water, Plot, Corpse, Zombie, Creature }
+        private enum PlayerControlTarget { None, Backpack, Node, Building, Stair, Repair, Water, Plot, Corpse, Zombie, Creature }
         private const int ControlPathRadius = 64, ControlPathNodes = 4096;
         private const float ControlRadius = .28f;
 
@@ -42,10 +42,16 @@ namespace DeadCircuit
             if (cmd.action == "primary" || cmd.action == "secondary")
             {
                 RefreshSpatial();
-                if (cmd.action == "primary" && BindPlayerControlEnemy(input, cmd))
+                bool secondary = cmd.action == "secondary";
+                var drop = !secondary && cmd.arg == 0 ? DroppedBackpackAt(cmd.x, cmd.y) : null;
+                if (drop != null)
+                {
+                    input.targetKind = PlayerControlTarget.Backpack; input.targetId = drop.gear.id;
+                    input.intent = PlayerControlIntent.Primary; return true;
+                }
+                if (!secondary && BindPlayerControlEnemy(input, cmd))
                 { input.intent = PlayerControlIntent.Primary; return true; }
                 BuildingState building = BuildingAt(cmd.x, cmd.y); NodeState node = NodeAt(cmd.x, cmd.y);
-                bool secondary = cmd.action == "secondary";
                 if (!secondary && FloorWorld.IsStairCell(State, cmd.x, cmd.y)) input.targetKind = PlayerControlTarget.Stair;
                 else if (building != null)
                 {
@@ -259,6 +265,8 @@ namespace DeadCircuit
                 if (creature == null || (input.intent == PlayerControlIntent.Fight && !input.allowNeutral && !PlayerControlHostileCreature(p, creature))) return false;
                 SetPlayerControlEnemy(input, creature.id, creature.x, creature.y, true); return true;
             }
+            if (input.targetKind == PlayerControlTarget.Backpack)
+                return DroppedBackpackAt(input.targetX, input.targetY)?.gear.id == input.targetId;
             if (input.targetKind == PlayerControlTarget.Node)
             {
                 NodeState node = NodeAt(input.targetX, input.targetY);

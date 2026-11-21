@@ -38,7 +38,7 @@ static partial class Checks
             p.items[item] = Math.Max(p.items[item], amounts[item] * batches);
         }
         long grams = InventoryWeight.CarriedGrams(p);
-        Require(grams <= InventoryWeight.CapacityGrams, $"progression fixture supplied {grams} g for a single backpack");
+        Require(grams <= InventoryWeight.CapacityGrams(p), $"progression fixture supplied {grams} g for a single backpack");
     }
 
     static BuildingState WaterBuild(WorldSimulator sim,PlayerState p,BuildKind kind,int x,int y,ItemKind[] supplies=null)
@@ -70,11 +70,12 @@ static partial class Checks
         Run("water full startup researches constructs feeds processes and delivers without steam electricity or pre-made parts",()=>
         {
             var sim=WaterFixture(out var p,arrange:s=>{var ground=s.ground.ToCharArray();ground[20*64+19]='2';s.ground=new string(ground);});
+            GrantReinforcedBackpack(sim.State, p);
             Array.Clear(p.items);
             foreach (var (item, amount) in new[] { (ItemKind.Wood, 61), (ItemKind.Stone, 18),
                 (ItemKind.Brick, 14), (ItemKind.Charcoal, 12), (ItemKind.Iron, 31),
                 (ItemKind.Bronze, 27), (ItemKind.Ore, 14), (ItemKind.Scrap, 8) }) p.items[(int)item] = amount;
-            Require(InventoryWeight.CarriedGrams(p) < InventoryWeight.CapacityGrams, "water startup supplies exceed backpack capacity");
+            Require(InventoryWeight.CarriedGrams(p) < InventoryWeight.CapacityGrams(p), "water startup supplies exceed backpack capacity");
             WaterUnlock(sim,p,WaterTech.Wheel);WaterBuild(sim,p,BuildKind.Waterwheel,20,20);
             WaterUnlock(sim,p,WaterTech.Shafts);
             for(int y=20;y<=32;y++)WaterBuild(sim,p,BuildKind.Shaft,22,y);

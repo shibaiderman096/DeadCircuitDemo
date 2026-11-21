@@ -14,7 +14,7 @@ namespace DeadCircuit
         public const float FixedStep = 0.05f;
         public const int SaveVersion = 21;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
-        public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = InventoryWeight.CapacityGrams / 10, BufferLimit = 200;
+        public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = InventoryWeight.MaxCapacityGrams / 10, BufferLimit = 200;
         public const int MaxCargo = 1024;
         private const float Reach = 2.4f;
         private const int MaxLevel = 30;
@@ -134,14 +134,20 @@ namespace DeadCircuit
             if (action == "respawn") { Respawn(p); return; }
             if (p.hp <= 0f) return;
             RefreshSpatial();
-            if (ApplySurvival(p, cmd)) return;
+            if (ApplySurvival(p, cmd)) { AllocateBackpackContents(p); return; }
             if(action=="moduleplan" || action=="moduleerase" || action=="moduleunload")
             {
                 var machine=State.buildings.Find(b=>b.id==cmd.buildingId);
                 if(p.interactCooldown>0f || !Inside(cmd.x,cmd.y) || DistSq(p.x,p.y,cmd.x,cmd.y)>Reach*Reach ||
                     !LineClear(p.x,p.y,cmd.x,cmd.y,cmd.x,cmd.y,machine)) return;
-                p.interactCooldown=.25f; EditModularPlan(p,cmd,machine); return;
+                p.interactCooldown=.25f; EditModularPlan(p,cmd,machine); AllocateBackpackContents(p); return;
             }
+            try { ApplyInventoryCommand(p, cmd, action); }
+            finally { AllocateBackpackContents(p); }
+        }
+
+        private void ApplyInventoryCommand(PlayerState p, PlayerCommand cmd, string action)
+        {
             switch (action)
             {
                 case "attack":
@@ -149,6 +155,7 @@ namespace DeadCircuit
                     Aim(p, cmd.aimX, cmd.aimY);
                     p.aiming=cmd.aiming;
                     Attack(p); return;
+                case "packput": case "packtake": MoveBackpackItem(p, cmd, action == "packput"); return;
                 case "storeitem": StoreBackpackItem(p, cmd.arg); return;
                 case "gearcraft": CraftGear(p,cmd.arg); return;
                 case "partcraft": CraftPart(p,cmd.arg); return;
@@ -231,6 +238,8 @@ namespace DeadCircuit
             UpdateTurrets();
             if (flowRevision < 0 || State.tick % 5 == 0) RebuildFlow();
             UpdateZombies();
+            foreach (PlayerState player in State.players)
+                if (player.backpackId != 0) AllocateBackpackContents(player);
             if (State.elapsed >= State.nextWaveAt && LivingPlayers() > 0) StartWave();
             else if (State.tick % 600 == 0 && LivingPlayers() > 0 && State.zombies.Count < 5 + Math.Min(12, State.wave))
                 SpawnZombie((int)(State.tick % 3));
@@ -276,6 +285,7 @@ namespace DeadCircuit
             if (State.buildings.Count >= MaxBuildings) { Notice(p, "设备数量已达上限。"); return; }
             for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
             {
+                if (DroppedBackpackAt(x, y) != null) { Notice(p, "请先拾取地上的背包。"); return; }
                 if (FloorWorld.IsProtectedCell(State, x, y)) { Notice(p, "无法建造：请保持楼梯及其出入口畅通。"); return; }
                 if (SurvivalOccupiesCell(x, y)) { Notice(p, "无法建造：占地范围内有农田或生物。"); return; }
                 if (BlockedAt(x, y) || NodeAt(x, y) != null || BuildingAt(x, y) != null) { Notice(p, "无法建造：占地范围内有资源、障碍、水面或其他设备。"); return; }

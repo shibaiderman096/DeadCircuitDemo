@@ -13,7 +13,7 @@ static partial class Checks
     {
         Run("equipment armor appends nine persistent armor kinds without renumbering weapons", () =>
         {
-            Require(EquipmentCatalog.GearNames.Length == 20 && (int)GearKind.RadiationSuit==19, "armor catalog requires 20 gear kinds");
+            Require((int)GearKind.RadiationSuit == 19, "radiation suit ordinal changed");
             string[] names = { "ClothHood", "LeatherJacket", "WorkPants", "WorkBoots", "SteelHelmet", "ArmorVest", "TacticalHelmet", "TacticalVest", "TacticalBoots" };
             for (int i = 0; i < names.Length; i++)
                 Require(Enum.TryParse<GearKind>(names[i], out var kind) && (int)kind == 10 + i, "missing or reordered armor kind: " + names[i]);
@@ -31,6 +31,9 @@ static partial class Checks
                 Require(!EquipmentCatalog.IsGun(kind) && !EquipmentCatalog.AmmoCompatible(kind,ItemKind.Ammo),"armor classified as firearm");
             }
             for(int n=0;n<10;n++)Require(!EquipmentCatalog.IsArmor((GearKind)n) && EquipmentCatalog.ArmorSlot((GearKind)n)==-1,"old weapon/tool became armor");
+            foreach (var kind in new[] { GearKind.GrassBackpack, GearKind.ReinforcedBackpack, GearKind.EngineerBackpack })
+                Require(!EquipmentCatalog.IsArmor(kind) && EquipmentCatalog.ArmorSlot(kind) == -1 &&
+                    !EquipmentCatalog.IsGun(kind) && !EquipmentCatalog.Gear(kind).tool, "backpack classified as combat gear: " + kind);
             var sim=New(out var p);Require(p.armorIds.Length==4 && p.armorIds.All(id=>id==0) && EquipmentCatalog.ArmorRating(p)==0,"new player has free equipped armor");
         });
         foreach(var kind in Enum.GetValues<GearKind>().Where(EquipmentCatalog.IsArmor))

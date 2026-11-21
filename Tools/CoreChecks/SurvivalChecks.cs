@@ -41,7 +41,7 @@ static partial class Checks
     // Fill within the actual backpack budget while leaving an exact amount for the action under test.
     static void FillSurvivalLoad(PlayerState player, int freeGrams)
     {
-        long fill = InventoryWeight.CapacityGrams - InventoryWeight.CarriedGrams(player) - freeGrams;
+        long fill = InventoryWeight.CapacityGrams(player) - InventoryWeight.CarriedGrams(player) - freeGrams;
         int seedGrams = InventoryWeight.Grams(CropKind.Herb);
         Require(fill >= 0 && fill % seedGrams == 0, "cannot fill this fixture to the intended weight");
         player.needs.waterClean += (int)(fill / InventoryWeight.WaterGrams);

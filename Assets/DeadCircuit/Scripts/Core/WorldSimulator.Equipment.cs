@@ -73,6 +73,7 @@ namespace DeadCircuit
         {
             GearState g=EquipmentCatalog.Find(p,id);
             if(g==null) return;
+            if (EquipmentCatalog.IsBackpack(g.kind)) { ChangeBackpack(p, g); return; }
             int armorSlot=EquipmentCatalog.ArmorSlot(g.kind);
             bool tool=armorSlot<0 && EquipmentCatalog.Gear(g.kind).tool;
             int previousId=armorSlot>=0 ? p.armorIds[armorSlot] : tool ? p.toolId : p.weaponId;
@@ -101,6 +102,7 @@ namespace DeadCircuit
         {
             GearState g=EquipmentCatalog.Find(p,id);
             if(g==null || !InventoryWeight.IsEquipped(p,g)) return;
+            if (p.backpackId == id) { ChangeBackpack(p, null); return; }
             if(!CheckEquipmentCapacity(p,InventoryWeight.GearGrams(g))) return;
             ClearGearSlots(p,g);
             Notice(p,"已卸下："+EquipmentCatalog.GearNames[(int)g.kind]);
@@ -206,6 +208,7 @@ namespace DeadCircuit
             if(p.interactCooldown>0f || !EquipmentCatalog.HasWorkbench(State,p)) return;
             GearState g=EquipmentCatalog.Find(p,id);
             if(g==null) return;
+            if (p.backpackId == id) { Notice(p, "请先放下背包，再回收空包。"); return; }
             int[] returned=EquipmentCatalog.Gear(g.kind).cost;
             for(int i=0;i<returned.Length;i++) returned[i]/=2;
             if(g.magazine>0) returned[(int)g.loadedAmmo]+=g.magazine;

@@ -95,7 +95,7 @@ static partial class Checks
                 expected[item] += 3;
                 sim.Apply(Command(p, "interact", node.x, node.y));
                 Require(!sim.State.nodes.Contains(node) && p.items.SequenceEqual(expected) &&
-                    InventoryWeight.CarriedGrams(p) == InventoryWeight.CapacityGrams &&
+                    InventoryWeight.CarriedGrams(p) == InventoryWeight.CapacityGrams(p) &&
                     sim.State.gathered == gathered + 3 && tool.durability == 97,
                     "a final hit with exactly enough space did not collect the entire deposit");
             }
@@ -181,6 +181,7 @@ static partial class Checks
                 for (int cx = -10; cx <= 10 && !resources.All(r => world.nodes.Any(n => Future(n) && n.kind == r.Item1)); cx += 2)
                     Require(ChunkTerrain.Generate(world, cx, cy), "future gather fixture chunk refused");
             var sim = new WorldSimulator(world); var p = sim.AddPlayer("steam-natural", "Miner");
+            GrantReinforcedBackpack(sim.State, p);
             var pick = EquipGatheringTool(sim, p, GearKind.StonePickaxe);
             foreach (var resource in resources)
             {

@@ -98,6 +98,9 @@ namespace DeadCircuit
         readonly List<RaycastResult> hits = new List<RaycastResult>(16);
         readonly StringBuilder text = new StringBuilder(256);
         RectTransform menu, game, inventory, growth, session, help, technology, death, machinePanel, buildDetails;
+        RectTransform droppedBackpackHint;
+        TextMeshProUGUI droppedBackpackHintText;
+        GearKind? hintedBackpackKind;
         TMP_InputField nameField, seedField, ipField;
         TextMeshProUGUI menuStatus, menuAddress, menuSave, playerTitle, clockText, waveText;
         TextMeshProUGUI networkText, feedback, gameStatus, objectives, buildTitle, buildCost, buildHelp;
@@ -253,6 +256,41 @@ namespace DeadCircuit
                 RefreshAll();
             }
             TickAppearancePreview();
+        }
+
+        internal void ShowDroppedBackpackHint(GearState gear, Vector2 screenPosition)
+        {
+            if (gear == null || !isActiveAndEnabled || game == null || !game.gameObject.activeInHierarchy)
+            {
+                if (droppedBackpackHint != null && droppedBackpackHint.gameObject.activeSelf)
+                    droppedBackpackHint.gameObject.SetActive(false);
+                return;
+            }
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(game, screenPosition, null, out Vector2 point)) return;
+
+            if (droppedBackpackHint == null)
+            {
+                droppedBackpackHint = Box("Dropped Backpack Hint", game, 0, 0, 324, 58, Panel);
+                Box("Pickup Accent", droppedBackpackHint, 0, 0, 3, 58, Amber);
+                droppedBackpackHintText = Label("Pickup Hint", droppedBackpackHint, "", 12, 3, 300, 52, 17, Ink);
+            }
+            if (hintedBackpackKind != gear.kind)
+            {
+                hintedBackpackKind = gear.kind;
+                Set(droppedBackpackHintText, EquipmentCatalog.GearNames[(int)gear.kind] +
+                    " · 左键/E 拾取并穿戴；\n穿戴中的包会连内容落地");
+            }
+
+            Rect viewport = game.rect;
+            Vector2 size = droppedBackpackHint.sizeDelta;
+            float left = point.x - viewport.xMin, top = viewport.yMax - point.y;
+            float x = left + 16, y = top + 18;
+            if (x + size.x > viewport.width - 8) x = left - size.x - 12;
+            if (y + size.y > viewport.height - 8) y = top - size.y - 12;
+            droppedBackpackHint.anchoredPosition = new Vector2(
+                Mathf.Clamp(x, 8, viewport.width - size.x - 8),
+                -Mathf.Clamp(y, 8, viewport.height - size.y - 8));
+            if (!droppedBackpackHint.gameObject.activeSelf) droppedBackpackHint.gameObject.SetActive(true);
         }
 
         void MakeGame(RectTransform root)

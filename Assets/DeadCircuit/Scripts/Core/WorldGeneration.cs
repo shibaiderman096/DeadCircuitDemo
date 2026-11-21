@@ -190,7 +190,7 @@ namespace DeadCircuit
                 state.zombies.Add(new ZombieState { id = state.nextId++, x = x, y = y,
                     variant = variant, hp = variant == 1 ? 32f : 45f });
             }
-            state.announcement = "先捡树枝、石头和干草，按 T 打开原始工艺，制作并装备石斧和石镐。";
+            state.announcement = "捡树枝、石头和干草，制作石器。按 B 可随身制作草绳背包。";
             state.announcementUntil = 28f;
             WorldSimulator.PrepareGeneratedWorld(state);
             if (state.generatorVersion >= NaturalOpeningVersion &&
@@ -258,7 +258,7 @@ namespace DeadCircuit
             });
 
             // The first five piles cover both recipes. The sixth provides extra grass.
-            var supplies = new[] { (NodeKind.Branch, 3), (NodeKind.LooseStone, 3), (NodeKind.DryGrass, 2),
+            var supplies = new[] { (NodeKind.Branch, 3), (NodeKind.LooseStone, 3), (NodeKind.DryGrass, 3),
                 (NodeKind.Branch, 3), (NodeKind.LooseStone, 3), (NodeKind.DryGrass, 2) };
             int added = 0;
             foreach (var candidate in candidates)

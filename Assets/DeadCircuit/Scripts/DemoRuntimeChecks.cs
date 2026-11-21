@@ -44,6 +44,12 @@ namespace DeadCircuit
             string qaSavePath = Path.GetFullPath(bridge.QaSavePath);
             Require(!File.Exists(qaSavePath) && !bridge.IsRunning,
                 "QA starts at the menu with a fresh isolated save path");
+            if (Environment.GetCommandLineArgs().Contains("--demo-backpack-qa"))
+            {
+                yield return CheckBackpackInventory(bridge);
+                Application.Quit(0);
+                yield break;
+            }
             if (Environment.GetCommandLineArgs().Contains("--demo-modular-qa"))
             {
                 yield return CheckModularMachines(bridge);
@@ -1076,6 +1082,50 @@ namespace DeadCircuit
             Require(icon != null && icon.sprite != null && icon.sprite.name == expectedSprite && !icon.raycastTarget,
                 "button icon loads and leaves clicks to its button: " + buttonName + " / " + expectedSprite);
         }
+        IEnumerator CheckBackpackInventory(GameBridge bridge)
+        {
+            bridge.StartHost(73149, false);
+            Require(bridge.IsRunning, "backpack QA starts a world");
+            PlayerState player = bridge.LocalPlayer;
+            player.items[(int)ItemKind.DryGrass] = 1;
+            yield return new WaitForSecondsRealtime(.5f);
+            yield return ClickHudTool("Open Inventory");
+            RequireInventoryLayout();
+            yield return ClickScrolled("Gear Craft " + (int)GearKind.GrassBackpack);
+            yield return new WaitForSecondsRealtime(.55f);
+            GearState pack = player.gear.Single(g => g.kind == GearKind.GrassBackpack);
+            Click("Backpack Equipment Slot");
+            yield return ClickScrolled("Gear Slot " + pack.id);
+            yield return ClickScrolled("Equip Selected Gear");
+            yield return new WaitForSecondsRealtime(.45f);
+            Require(player.backpackId == pack.id && Rect("Inventory Weight Value")
+                .GetComponent<TMPro.TextMeshProUGUI>().text.Contains("100"), "UI equips bag and updates capacity");
+            Click("Inventory Tab Materials");
+            yield return ClickScrolled("Inventory Item " + (int)ItemKind.Wood);
+            yield return ClickScrolled("Put Selected Item in Backpack");
+            yield return new WaitForSecondsRealtime(.35f);
+            int wood = player.items[(int)ItemKind.Wood];
+            Require(wood > 0 && pack.backpackInventory.items[(int)ItemKind.Wood] == wood, "inventory UI moves wood into the bag");
+            yield return Capture("backpack-contents");
+            Click("Backpack Equipment Slot");
+            yield return ClickScrolled("Unequip Selected Gear");
+            yield return new WaitForSecondsRealtime(.35f);
+            Require(player.backpackId == 0 && player.items[(int)ItemKind.Wood] == 0, "UI drops bag and preserves personal stocks");
+            var drop = bridge.World.droppedBackpacks.Single();
+            var restored = new WorldSimulator(JsonUtility.FromJson<WorldState>(JsonUtility.ToJson(bridge.World)));
+            Require(restored.State.droppedBackpacks.Single().gear.backpackInventory.items[(int)ItemKind.Wood] == wood,
+                "Unity JSON preserves ground bag contents");
+            Click("Close Inventory");
+            yield return Capture("backpack-on-ground");
+            yield return new WaitForSecondsRealtime(.25f);
+            bridge.Send(new PlayerCommand { action = "primary", x = drop.x, y = drop.y });
+            yield return new WaitForSecondsRealtime(.75f);
+            Require(player.backpackId == pack.id && player.items[(int)ItemKind.Wood] == wood && bridge.World.droppedBackpacks.Count == 0,
+                "normal world interaction recovers original bag and its stock: " + player.notice +
+                " at " + player.x + "," + player.y + " tick=" + bridge.World.tick);
+            Debug.Log("DEMO_BACKPACK_QA_PASS craft wear pack drop UnityJson pickup");
+        }
+
         static void RequireInventoryLayout()
         {
             RectTransform card = Rect("Inventory Card");
@@ -1093,7 +1143,7 @@ namespace DeadCircuit
                 "backpack sits under weapon slots and details sit below the survivor");
             Require(Rect("Craft Scroll View").gameObject.activeInHierarchy && Rect("Inventory Scroll View").gameObject.activeInHierarchy,
                 "quick crafting and the backpack grid are selectable together");
-            Require(Rect("Inventory Weight Value").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("120"),
+            Require(Rect("Inventory Weight Value").GetComponent<TMPro.TextMeshProUGUI>().text.Contains("50"),
                 "backpack displays the shared weight cap");
             Rect browserBounds = RelativeBounds(card, browser);
             Rect previewBounds = RelativeBounds(card, preview);
