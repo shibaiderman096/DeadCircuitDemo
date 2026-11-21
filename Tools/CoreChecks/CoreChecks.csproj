@@ -8,5 +8,6 @@
   <ItemGroup>
     <Compile Include="../../Assets/DeadCircuit/Scripts/Core/*.cs" Link="Core/%(Filename)%(Extension)" />
     <Compile Include="../../Assets/DeadCircuit/Scripts/Presentation/NaturalBuildingLayout.cs" Link="Presentation/NaturalBuildingLayout.cs" />
+    <Compile Include="../../Assets/DeadCircuit/Scripts/Presentation/TechnologyTreeModel.cs" Link="Presentation/TechnologyTreeModel.cs" />
   </ItemGroup>
 </Project>

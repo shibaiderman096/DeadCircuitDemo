@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -6,7 +5,6 @@ namespace DeadCircuit
 {
     public sealed partial class DemoHud
     {
-        readonly List<PrimitiveResearchRow> waterResearchRows = new List<PrimitiveResearchRow>();
         TextMeshProUGUI waterHeading, waterProduction, waterMillDetails;
         RectTransform waterMillRow;
         UiButton waterMillAction;
@@ -15,17 +13,6 @@ namespace DeadCircuit
         void MakeWaterTechnology(RectTransform content)
         {
             waterHeading = FlowLabel("Water Research Heading", content, "水力工艺 · 用水车与传动轴驱动生产", 768, 30, 18, Accent);
-            foreach (var definition in WaterCatalog.All)
-            {
-                int id = (int)definition.id;
-                RectTransform root = FlowRow("Water Research Row " + id, content, 768, 144);
-                var details = Label("Water Research Details " + id, root, "", 8, 6, 562, 132, 15, Ink);
-                details.enableAutoSizing = false;
-                details.alignment = TextAlignmentOptions.TopLeft;
-                UiButton button = Button("Water Research " + id, root, "", 588, 12, 170, 64, () => ResearchWater(id));
-                SetButtonArt(button, "ui_research", 22);
-                waterResearchRows.Add(new PrimitiveResearchRow { id = id, root = root, details = details, research = button });
-            }
             waterProduction = FlowLabel("Water Production Acceptance", content, "", 768, 128, 15, Ink);
             waterMillRow = FlowRow("Water Mill Actions", content, 768, 132);
             waterMillDetails = Label("Water Mill Details", waterMillRow, "", 8, 6, 562, 120, 15, Ink);
@@ -42,43 +29,9 @@ namespace DeadCircuit
             waterProduction.gameObject.SetActive(visible);
             bool millVisible = selectedEra == 1 && (WaterCatalog.Enabled(world) || world.era >= TechEra.Water);
             waterMillRow.gameObject.SetActive(millVisible);
-            foreach (var row in waterResearchRows)
-            {
-                row.root.gameObject.SetActive(visible);
-                if (!visible) continue;
-                var definition = WaterCatalog.Definition(row.id);
-                bool known = WaterCatalog.HasResearch(world, row.id);
-                bool ready = bridge.IsRunning && player.connected && player.hp > 0f && player.interactCooldown <= 0f;
-                bool can = !known && ready && WaterCatalog.CanResearch(world, player, row.id);
-                string requirement = WaterCatalog.ResearchRequirement(world, player, row.id);
-                string state = known ? "已研究" : !bridge.IsRunning || !player.connected || player.hp <= 0f ? "角色尚未就绪" :
-                    player.interactCooldown > 0f ? "交互冷却中" : can ? "可研究" : "条件未满足";
-                Set(row.details, definition.name + " · " + state + "\n" + definition.description +
-                    "\n前置研究：" + WaterPrerequisites(world, definition.prerequisites) +
-                    "\n研究消耗（持有 / 需要）：" + MaterialText(definition.cost, player.items, true) +
-                    "\n研究条件：" + (known ? "已完成" : string.IsNullOrEmpty(requirement) ? "已满足" : requirement));
-                row.details.color = known ? Accent : Ink;
-                float height = Mathf.Max(144, row.details.GetPreferredValues(row.details.text, 562, float.PositiveInfinity).y + 16);
-                row.details.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height - 12);
-                row.root.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = height;
-                row.research.button.interactable = can;
-                Set(row.research.label, known ? "已研究" : can ? "研究" + definition.name : state);
-                Tint(row.research, known ? Selected : Raised);
-            }
             if (millVisible) RefreshWaterMill(world, player);
             if (!visible) return;
 
-            bool entered = world.era >= TechEra.Water;
-            SetFlowText(researchMaterials, entered
-                ? "逐项研究水力工艺，材料从背包扣除。需靠近2.4格内、视线畅通的工作台；灌溉磨粉为可选研究。"
-                : "进入水力时代后可研究下方工艺。时代研究消耗：" + MaterialText(TechCatalog.ResearchCost(TechEra.Water), player.items, true), 52);
-            if (entered)
-            {
-                SetFlowText(researchRequirement, "设备与配方需先完成对应研究。由水车经传动轴驱动生产，达到下方进度后可研究蒸汽时代。", 48);
-                researchRequirement.color = Accent;
-                researchButton.button.interactable = false;
-                Set(researchButton.label, "在下方选择研究");
-            }
             string steam = WaterCatalog.SteamRequirement(world);
             SetFlowText(waterProduction, "水力生产进度 · 仅计入与供能水车、传动轴同网的生产和运输" +
                 "\n碎铁矿 " + world.waterCrushed + "/4 · 鼓风炉炼铁 " + world.waterSmelted + "/6 · 铁板 " + world.waterPressed + "/4" +
@@ -102,29 +55,6 @@ namespace DeadCircuit
             waterMillRow.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = millHeight;
             waterMillAction.button.interactable = millReady;
             Set(waterMillAction.label, millReady ? "磨粉" : "暂不能磨粉");
-        }
-
-        static string WaterPrerequisites(WorldState world, int mask)
-        {
-            var names = new List<string>();
-            foreach (var definition in WaterCatalog.All)
-            {
-                int id = (int)definition.id;
-                if ((mask & (1 << id)) == 0) continue;
-                names.Add(definition.name + (WaterCatalog.HasResearch(world, id) ? "（已研究）" : "（未研究）"));
-            }
-            return names.Count == 0 ? "无" : string.Join("、", names);
-        }
-
-        void ResearchWater(int id)
-        {
-            var world = bridge.World;
-            var player = bridge.LocalPlayer;
-            if (!technology.gameObject.activeSelf || selectedEra != 1 || !bridge.IsRunning || world == null || player == null ||
-                !player.connected || player.hp <= 0f || player.interactCooldown > 0f ||
-                !WaterCatalog.Enabled(world) || WaterCatalog.HasResearch(world, id) ||
-                !WaterCatalog.CanResearch(world, player, id)) return;
-            Send("water", id);
         }
 
         void RequestWaterMill()

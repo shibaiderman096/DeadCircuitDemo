@@ -152,6 +152,7 @@ namespace DeadCircuit
             Require(Active("Technology Panel") && bridge.GetComponent<DemoHud>().CapturesInput, "T opens technology and captures world input");
             Require(!FindButton("Research Button").interactable, "research is disabled without samples");
             yield return Capture("technology-primitive");
+            yield return CheckQaTechnologyTree(bridge);
             Array.Copy(stored, p.items, stored.Length);
             yield return Press(Key.T);
             Require(!Active("Technology Panel"), "T closes technology");
@@ -504,6 +505,62 @@ namespace DeadCircuit
             world.produced[(int)ItemKind.HeatAlloy] = Math.Max(world.produced[(int)ItemKind.HeatAlloy], 6);
             world.hvPowered = Math.Max(world.hvPowered, 4);
         }
+        IEnumerator CheckQaTechnologyTree(GameBridge bridge)
+        {
+            int lineCount = RequireTechnologyTreeLayout();
+            var era = bridge.World.era;
+            var player = bridge.LocalPlayer;
+            var items = (int[])player.items.Clone();
+            var future = TechnologyTreeModel.All.Single(n => n.IsEra && n.era == (int)TechEra.Nuclear);
+            var panel = Rect("Technology Panel");
+            var content = Rect("Technology Tree Content");
+
+            bool ShowsFutureDetails() => panel.GetComponentsInChildren<TMPro.TextMeshProUGUI>()
+                .Any(label => label.isActiveAndEnabled && !label.transform.IsChildOf(content) &&
+                    label.GetComponentInParent<Button>() == null &&
+                    label.text?.Contains(future.name) == true);
+
+            Require(!ShowsFutureDetails(), "technology details start on a different node");
+            Click("Era Node " + future.era);
+            yield return new WaitForSecondsRealtime(.2f);
+            Require(ShowsFutureDetails(), "clicking a locked future node updates the details");
+            Require(bridge.World.era == era && player.items.SequenceEqual(items) && !FindButton("Research Button").interactable,
+                "selecting a future node preserves research and inventory and disables confirmation");
+
+            yield return Press(Key.T);
+            Require(!Active("Technology Panel"), "technology tree closes");
+            yield return Press(Key.T);
+            Require(Active("Technology Panel"), "technology tree reopens");
+            Require(RequireTechnologyTreeLayout() == lineCount, "reopening the technology tree preserves connection count");
+        }
+
+        static int RequireTechnologyTreeLayout()
+        {
+            var panel = Rect("Technology Panel");
+            var viewport = Rect("Technology Tree Viewport");
+            var content = Rect("Technology Tree Content");
+            var scroll = viewport.GetComponentInParent<ScrollRect>();
+            Require(viewport.IsChildOf(panel) && scroll != null && scroll.isActiveAndEnabled && scroll.horizontal && scroll.vertical &&
+                scroll.viewport == viewport && scroll.content == content && content.IsChildOf(viewport) &&
+                viewport.GetComponent<RectMask2D>() != null, "technology tree has a masked two-axis viewport");
+            Require(content.GetComponent<LayoutGroup>() == null && content.GetComponent<ContentSizeFitter>() == null,
+                "technology tree content allows manual node placement");
+
+            string[] prefixes = { "Primitive Research ", "Water Research ", "Steam Research ",
+                "Low Voltage Research ", "Petrochemical Research ", "Precision Node " };
+            var expected = new HashSet<string>(TechnologyTreeModel.All.Select(node => node.IsEra
+                ? "Era Node " + node.era : prefixes[node.era] + node.researchId));
+            var nodes = content.GetComponentsInChildren<Button>(true);
+            Require(nodes.Length == TechnologyTreeModel.All.Length && expected.SetEquals(nodes.Select(b => b.name)) &&
+                nodes.All(b => b.gameObject.activeInHierarchy), "technology tree has one active button per model node");
+
+            var lines = content.GetComponentsInChildren<TechnologyTreeLines>(true);
+            Require(lines.Length == 1 && lines[0].isActiveAndEnabled &&
+                lines[0].GetComponent<CanvasRenderer>() != null && lines[0].paths.Count > 0,
+                "technology tree has one active renderer with dependency connections");
+            return lines[0].paths.Count;
+        }
+
         IEnumerator ResearchQaWater(GameBridge bridge, WaterTech id)
         {
             var player = bridge.LocalPlayer;
@@ -512,6 +569,8 @@ namespace DeadCircuit
             yield return SelectQaTechnologyEra((int)TechEra.Water);
             yield return new WaitForSecondsRealtime(.6f);
             Click("Water Research " + index);
+            yield return new WaitForSecondsRealtime(.2f);
+            Click("Research Button");
             yield return new WaitForSecondsRealtime(.7f);
             Require(WaterCatalog.HasResearch(bridge.World, id), "water research command: " + id + " " + player.notice);
         }
@@ -523,6 +582,8 @@ namespace DeadCircuit
             yield return SelectQaTechnologyEra((int)TechEra.Steam);
             yield return new WaitForSecondsRealtime(.6f);
             Click("Steam Research " + index);
+            yield return new WaitForSecondsRealtime(.2f);
+            Click("Research Button");
             yield return new WaitForSecondsRealtime(.7f);
             Require(SteamCatalog.HasResearch(bridge.World, id), "steam research command: " + id + " " + player.notice);
         }
@@ -534,6 +595,8 @@ namespace DeadCircuit
             yield return SelectQaTechnologyEra((int)TechEra.LowVoltage);
             yield return new WaitForSecondsRealtime(.6f);
             Click("Low Voltage Research " + index);
+            yield return new WaitForSecondsRealtime(.2f);
+            Click("Research Button");
             yield return new WaitForSecondsRealtime(.7f);
             Require(LowVoltageCatalog.HasResearch(bridge.World, id), "low voltage research command: " + id + " " + player.notice);
         }
@@ -545,6 +608,8 @@ namespace DeadCircuit
             yield return SelectQaTechnologyEra((int)TechEra.MediumVoltage);
             yield return new WaitForSecondsRealtime(.6f);
             Click("Petrochemical Research " + index);
+            yield return new WaitForSecondsRealtime(.2f);
+            Click("Research Button");
             yield return new WaitForSecondsRealtime(.7f);
             Require(PetrochemicalCatalog.HasResearch(bridge.World, id), "petrochemical research command: " + id + " " + player.notice);
         }

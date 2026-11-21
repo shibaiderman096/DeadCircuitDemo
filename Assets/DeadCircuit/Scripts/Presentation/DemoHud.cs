@@ -103,7 +103,7 @@ namespace DeadCircuit
         TextMeshProUGUI machineTitle, machineInfo, machineContents, machineHint;
         TextMeshProUGUI growthSummary, attributeHeading, skillHeading, growthNotice, deathInfo;
         TextMeshProUGUI inventoryNotice, sessionNotice, helpNotice, helpProgress;
-        TextMeshProUGUI eraText, technologyTitle, technologyDescription, researchMaterials, researchRequirement, technologyNotice, workbenchHint;
+        TextMeshProUGUI eraText, technologyTitle, technologyDescription, technologyNotice, workbenchHint;
         TextMeshProUGUI machineRecipe, machineRecipeFlow, machineSafety;
         readonly TextMeshProUGUI[] vitalTexts = new TextMeshProUGUI[3];
         readonly RectTransform[] vitalFills = new RectTransform[3];
@@ -301,47 +301,6 @@ namespace DeadCircuit
             buildTray.gameObject.SetActive(false);
             MakeEquipmentSummary();
             MakeHudTools();
-        }
-
-        void MakeTechnology(RectTransform root)
-        {
-            technology = Backdrop("Technology Panel", root, new Color32(4, 12, 8, 210));
-            RectTransform card = Box("Technology Card", technology, 0, 0, 1040, 608, Panel, true);
-            Center(card, 1040, 608);
-            PanelRule(card, 1040, 64);
-            Label("Technology Heading", card, "科技研究", 22, 16, 760, 38, 25, Ink, FontStyles.Bold);
-            UiButton closeTechnology = Button("Close Technology", card, "返回", 902, 20, 116, 32, () => SetPanel(technology, false));
-            SetButtonArt(closeTechnology, "ui_back", 20);
-            for (int i = 0; i < eraButtons.Length; i++)
-            {
-                int era = i;
-                eraButtons[i] = Button("Technology Era " + i, card, "", 22, 78 + i * 58, 180, 50, () => BrowseEra(era));
-                eraButtons[i].label.fontSizeMax = 16;
-            }
-            Label("Technology Navigation Hint", card, "选择时代查看科技与设备\n完成前置时代后才能研究", 22, 502, 180, 64, 14, Muted);
-            RectTransform content = ScrollContent("Technology Scroll View", card, 226, 78, 792, 424, out technologyScroll);
-            technologyTitle = FlowLabel("Technology Era Title", content, "", 768, 34, 22, Accent);
-            technologyDescription = FlowLabel("Technology Description", content, "", 768, 56, 16, Ink);
-            FlowLabel("Research Materials Heading", content, "研究材料 · 持有 / 所需", 768, 28, 17, Accent);
-            researchMaterials = FlowLabel("Research Materials", content, "", 768, 52, 15, Ink);
-            researchRequirement = FlowLabel("Research Requirement", content, "", 768, 48, 15, Muted);
-            MakePrimitiveTechnology(content);
-            FlowLabel("Era Buildings Heading", content, "建造目录 · 点击已解锁设备开始建造", 768, 28, 17, Accent);
-            for (int i = 0; i < technologyBuildButtons.Length; i++)
-            {
-                int kind = i;
-                RectTransform row = FlowRow("Technology Building Row " + i, content, 768, 88);
-                technologyBuildRows[i] = row;
-                technologyBuildButtons[i] = Button("Technology Build " + i, row, "", 4, 8, 170, 64, () => SelectTechnologyBuild(kind));
-                technologyBuildCosts[i] = Label("Building Materials", row, "", 188, 3, 564, 80, 14, Ink);
-                technologyBuildCosts[i].enableAutoSizing = false;
-                technologyBuildCosts[i].alignment = TextAlignmentOptions.TopLeft;
-            }
-            researchButton = Button("Research Button", card, "", 778, 520, 240, 48, Research, true);
-            SetButtonArt(researchButton, "ui_research", 28);
-            technologyNotice = Label("Technology Feedback", card, "", 226, 518, 532, 58, 14, Amber);
-            Label("Technology Footer", card, "滚轮 / 拖动右侧内容查看全部设备 · 世界继续运行", 226, 578, 792, 22, 13, Muted);
-            technology.gameObject.SetActive(false);
         }
 
         void MakeSession(RectTransform root)
@@ -571,8 +530,7 @@ namespace DeadCircuit
             if (observedEra != era)
             {
                 observedEra = era;
-                selectedEra = DefaultTechnologyEra(world);
-                ResetScroll(technologyScroll);
+                if (technology.gameObject.activeSelf) FocusCurrentTechnology();
             }
             string goal = NextEraGoal(world, player);
             Set(eraText, "科技：" + TechCatalog.EraName(world.era) + "  ·  T 查看 / 建造");
@@ -650,33 +608,14 @@ namespace DeadCircuit
                 DemoCatalog.BuildDescriptions[selected] + "  ·  靠近后左键放置");
         }
 
-        void RefreshTechnology(WorldState world, PlayerState player)
+        void RefreshTechnologyGuide(WorldState world, PlayerState player)
         {
-            int current = (int)world.era;
-            TechEra target = (TechEra)selectedEra;
-            for (int i = 0; i < eraButtons.Length; i++)
-            {
-                string state = i == current ? "当前" : i < current ? "已解锁" : "待解锁";
-                Set(eraButtons[i].label, TechCatalog.EraName((TechEra)i) + "  ·  " + state);
-                Tint(eraButtons[i], i == selectedEra ? Selected : Raised);
-                eraButtons[i].label.color = i == selectedEra ? Accent : i <= current ? Ink : Muted;
-            }
-            Set(technologyTitle, TechCatalog.EraName(target) + (selectedEra == current ? " · 当前时代" : selectedEra < current ? " · 已解锁" : " · 待解锁"));
+            Set(technologyTitle, TechCatalog.EraName((TechEra)selectedEra) + " · 工艺与建造");
             SetFlowText(technologyDescription, EraDescriptions[selectedEra], 56);
-            bool unlocked = selectedEra <= current;
-            bool primitive = selectedEra == 0 && PrimitiveCatalog.Enabled(world);
-            SetFlowText(researchMaterials, selectedEra == 0 ? primitive ? "各项工艺需单独研究，并消耗背包材料。生产进度由全队累计。" : "原始工艺已开放，无需额外研究。" : MaterialText(TechCatalog.ResearchCost(target), player.items, true), 28);
-            string requirement = unlocked ? "此时代已解锁。完成对应工艺研究后，即可选择设备建造。" :
-                selectedEra != current + 1 ? "前置：先完成" + TechCatalog.EraName((TechEra)(selectedEra - 1)) + "研究，不可越级。" :
-                EraResearchRequirement(world, target);
-            if (primitive) requirement = "查看各项工艺的前置研究、所需材料和生产进度。满足条件后，点击研究。";
-            SetFlowText(researchRequirement, string.IsNullOrEmpty(requirement) ? "研究条件已满足。" : requirement, 30);
-            researchRequirement.color = unlocked ? Accent : string.IsNullOrEmpty(requirement) ? Accent : Amber;
-            bool canResearch = selectedEra == current + 1 && player.connected && player.hp > 0f && player.interactCooldown <= 0f &&
-                string.IsNullOrEmpty(EraResearchRequirement(world, target)) && TechCatalog.CanResearch(world, player, target);
-            researchButton.button.interactable = canResearch;
-            Set(researchButton.label, primitive ? "选择下方工艺研究" : unlocked ? "该时代已解锁" : selectedEra != current + 1 ? "请先完成前一时代" : canResearch ? "研究" + TechCatalog.EraName(target) : "研究条件未满足");
-            RefreshPrimitiveTechnology(world, player);
+            RefreshWaterTechnology(world, player);
+            RefreshSteamTechnology(world);
+            RefreshLowVoltageTechnology(world);
+            RefreshPetrochemistryTechnology(world, player);
             for (int i = 0; i < technologyBuildRows.Length; i++)
             {
                 BuildKind kind = (BuildKind)i;
@@ -991,27 +930,6 @@ namespace DeadCircuit
             SelectBuild(kind);
         }
 
-        void BrowseEra(int era)
-        {
-            selectedEra = Mathf.Clamp(era, 0, eraButtons.Length - 1);
-            ResetScroll(technologyScroll);
-            RefreshAll();
-        }
-
-        void Research()
-        {
-            if (!technology.gameObject.activeSelf || bridge.World == null || bridge.LocalPlayer == null) return;
-            if (selectedEra == (int)TechEra.HighVoltage && bridge.World.era >= TechEra.HighVoltage)
-            {
-                ResearchPrecision(bridge.World, bridge.LocalPlayer);
-                return;
-            }
-            if (selectedEra != (int)bridge.World.era + 1 || bridge.LocalPlayer.interactCooldown > 0f ||
-                !string.IsNullOrEmpty(EraResearchRequirement(bridge.World, (TechEra)selectedEra)) ||
-                !TechCatalog.CanResearch(bridge.World, bridge.LocalPlayer, (TechEra)selectedEra)) return;
-            Send("research", selectedEra);
-        }
-
         void CraftRecipe(int id)
         {
             if (!inventory.gameObject.activeSelf || bridge.World == null || bridge.LocalPlayer == null) return;
@@ -1093,12 +1011,8 @@ namespace DeadCircuit
             {
                 bridge.BuildSelection = null;
                 buildTrayOpen = false;
-                if (panel == technology)
-                {
-                    selectedEra = DefaultTechnologyEra(bridge.World);
-                    ResetScroll(technologyScroll);
-                }
                 panel.gameObject.SetActive(true);
+                if (panel == technology) OpenTechnologyTree();
             }
             if (hadPanel && (!open || panel == null || !samePanel)) DemoAudio.UiClose();
             if (open && panel != null && !samePanel) DemoAudio.UiOpen();

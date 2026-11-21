@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -7,7 +6,6 @@ namespace DeadCircuit
 {
     public sealed partial class DemoHud
     {
-        readonly List<PrimitiveResearchRow> petrochemicalResearchRows = new List<PrimitiveResearchRow>();
         TextMeshProUGUI petrochemicalHeading, petrochemicalGuide, petrochemicalProduction, petrochemicalRecipes, petrochemicalSurveyState;
         RectTransform petrochemicalSurveyRow, petrochemicalMachineControls, petrochemicalFluidButtons;
         TextMeshProUGUI petrochemicalMachineState;
@@ -24,17 +22,6 @@ namespace DeadCircuit
             petrochemicalSurveyState.alignment = TextAlignmentOptions.TopLeft;
             petrochemicalSurvey = Button("Prospect Oil", petrochemicalSurveyRow, "勘探油源", 588, 12, 170, 64, ProspectOil);
             SetButtonArt(petrochemicalSurvey, "ui_research", 22);
-            foreach (var definition in PetrochemicalCatalog.All)
-            {
-                int id = (int)definition.id;
-                RectTransform root = FlowRow("Petrochemical Research Row " + id, content, 768, 164);
-                var details = Label("Petrochemical Research Details " + id, root, "", 8, 6, 562, 152, 15, Ink);
-                details.enableAutoSizing = false;
-                details.alignment = TextAlignmentOptions.TopLeft;
-                UiButton button = Button("Petrochemical Research " + id, root, "", 588, 12, 170, 64, () => ResearchPetrochemistry(id));
-                SetButtonArt(button, "ui_research", 22);
-                petrochemicalResearchRows.Add(new PrimitiveResearchRow { id = id, root = root, details = details, research = button });
-            }
             petrochemicalProduction = FlowLabel("High Voltage Petrochemical Acceptance", content, "", 768, 180, 15, Ink);
             petrochemicalRecipes = FlowLabel("Petrochemical Recipe Guide", content, "", 768, 128, 15, Ink);
         }
@@ -48,44 +35,8 @@ namespace DeadCircuit
             petrochemicalProduction.gameObject.SetActive(visible);
             petrochemicalRecipes.gameObject.SetActive(visible);
             bool ready = bridge.IsRunning && player.connected && player.hp > 0f && player.interactCooldown <= 0f;
-            foreach (var row in petrochemicalResearchRows)
-            {
-                row.root.gameObject.SetActive(visible);
-                if (!visible) continue;
-                var definition = PetrochemicalCatalog.Definition(row.id);
-                bool known = PetrochemicalCatalog.HasResearch(world, row.id);
-                bool can = !known && ready && PetrochemicalCatalog.CanResearch(world, player, row.id);
-                string requirement = PetrochemicalCatalog.ResearchRequirement(world, player, row.id);
-                string evidence = PetrochemicalCatalog.ResearchEvidence(world, definition.id);
-                string state = known ? "已研究" : !bridge.IsRunning || !player.connected || player.hp <= 0f ? "角色尚未就绪" :
-                    player.interactCooldown > 0f ? "交互冷却中" : world.era < TechEra.MediumVoltage ? "先进入中压(MV)时代" : can ? "可研究" : "条件未满足";
-                string reason = known ? "全队已完成" : !ready ? state :
-                    !string.IsNullOrEmpty(requirement) ? requirement : can ? "已满足，可研究" : "正在同步研究条件，请稍候";
-                Set(row.details, definition.name + " · " + state + "\n" + definition.description +
-                    "\n前置研究：" + PetrochemicalPrerequisites(world, definition.prerequisites) +
-                    "\n研究消耗（持有 / 需要）：" + MaterialText(definition.cost, player.items, true) +
-                    "\n生产进度：" + (string.IsNullOrEmpty(evidence) ? "已满足" : evidence) +
-                    "\n" + (known || can ? "研究状态：" : "不可研究：") + reason);
-                row.details.color = known ? Accent : Ink;
-                ResizePetrochemicalRow(row.root, row.details, 164);
-                row.research.button.interactable = can;
-                Set(row.research.label, known ? "已研究" : can ? "研究" + definition.name : state + "\n查看条件");
-                Tint(row.research, known ? Selected : Raised);
-            }
             if (!visible) return;
-
             bool entered = world.era >= TechEra.MediumVoltage;
-            SetFlowText(technologyDescription, "中压(MV)石化：完成8项工艺研究。先用低压(LV)电网采油、分馏与加工原料，再以柴油发电，发展中压(MV)生产线和冷却循环。", 56);
-            string rules = "研究消耗背包材料，全队共享成果。需靠近2.4格内、视线畅通的工作台；不消耗角色技能点。";
-            SetFlowText(researchMaterials, entered ? rules : "先完成低压(LV)研究与生产条件，再研究中压(MV)时代。时代研究消耗：" +
-                MaterialText(TechCatalog.ResearchCost(TechEra.MediumVoltage), player.items, true) + "\n" + rules, 52);
-            if (entered)
-            {
-                SetFlowText(researchRequirement, "完成下列8项石化研究，并达到采油、管输、分馏、柴油、聚合、润滑、冷却回收与中压(MV)加工进度后，可在高压(HV)页研究下一时代。", 48);
-                researchRequirement.color = Accent;
-                researchButton.button.interactable = false;
-                Set(researchButton.label, "在下方选择研究");
-            }
             SetFlowText(petrochemicalGuide, "起步：勘探油源 → 抽油输液 → 原油分馏 → 燃料精制 → 聚合、润滑 → 中压变电 → 冷却循环。" +
                 "\n沙漠、湿地、沼泽与河谷更容易发现油源。勘探搜索48格内已生成区域的剩余油源；未发现时，继续探索后再试。" +
                 "\n起步设备使用低压(LV)供电：抽油机20 kW、分馏装置40 kW、基础化学反应器40 kW、工艺取水泵10 kW。分馏装置与基础化学反应器需靠近水源冷却。" +
@@ -117,18 +68,6 @@ namespace DeadCircuit
             RefreshPetrochemicalRecipes(world);
         }
 
-        static string PetrochemicalPrerequisites(WorldState world, int mask)
-        {
-            var names = new List<string>();
-            foreach (var parent in PetrochemicalCatalog.All)
-            {
-                int id = (int)parent.id;
-                if ((mask & (1 << id)) != 0)
-                    names.Add(parent.name + (PetrochemicalCatalog.HasResearch(world, id) ? "（已研究）" : "（未研究）"));
-            }
-            return names.Count == 0 ? "完成低压(LV)研究与生产条件，进入中压(MV)时代" : string.Join("、", names);
-        }
-
         static void ResizePetrochemicalRow(RectTransform root, TextMeshProUGUI details, float minimum)
         {
             float height = Mathf.Max(minimum, details.GetPreferredValues(details.text, 562, float.PositiveInfinity).y + 16);
@@ -152,16 +91,6 @@ namespace DeadCircuit
                     .Append("\n").Append(string.IsNullOrEmpty(requirement) ? "工艺已解锁；接通对应电压的电网、装入原料，并为所有产物留出空间。" : requirement);
             }
             SetFlowText(petrochemicalRecipes, text.ToString(), 128);
-        }
-
-        void ResearchPetrochemistry(int id)
-        {
-            var world = bridge.World;
-            var player = bridge.LocalPlayer;
-            if (!technology.gameObject.activeSelf || selectedEra != 4 || !bridge.IsRunning || world == null || player == null ||
-                !player.connected || player.hp <= 0f || player.interactCooldown > 0f ||
-                PetrochemicalCatalog.HasResearch(world, id) || !PetrochemicalCatalog.CanResearch(world, player, id)) return;
-            Send("mv", id);
         }
 
         void ProspectOil()

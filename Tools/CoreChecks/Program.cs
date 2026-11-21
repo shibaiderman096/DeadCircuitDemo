@@ -171,6 +171,7 @@ static partial class Checks
         QuartzResourceChecks();
         ElectricalAutomationChecks();
         RunLowVoltageProgressionChecks();
+        TechnologyTreeChecks();
         CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); CargoChecks(); SaveAndCombatChecks();
         TechnologyChecks(); EraEnergyChecks(); EraProductionChecks(); VersionThreeSaveChecks(); EquipmentChecks(); WorldGenerationChecks(); WorldArchiveChecks(); SurvivalChecks(); EnemyChecks(); ExpansionIntegrationChecks(); ForagingChecks();
         if (selected == 0) { Console.Error.WriteLine("No check names matched the supplied filters."); return 2; }
