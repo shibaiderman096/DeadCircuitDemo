@@ -65,6 +65,7 @@ static partial class Checks
         {
             for(int item=0;item<DemoCatalog.ItemCount;item++)
             {
+                if(item==(int)ItemKind.NuclearWaste) continue;
                 var state=Flat(era:TechEra.Nuclear);bool liquid=PetrochemicalCatalog.IsFluid(item);
                 var from=Add(state,liquid?BuildKind.LiquidPipe:BuildKind.Belt,10,10);from.items[item]=1;
                 var to=Add(state,liquid?BuildKind.LiquidTank:BuildKind.Chest,11,10);
@@ -107,16 +108,20 @@ static partial class Checks
                 Require(Building(sim,chest.id).items[(int)item]==2 && sim.State.gathered==2,$"{node} mining lost its item identity");Require(sim.State.nodes.Count==0 && sim.State.cargo.Count==0,"mineral chain did not exhaust and deliver two ore");
             }
         });
-        Run("nuclear processor and cooling tower feed a reactor which exports real waste", () =>
+        Run("nuclear processor feeds a reactor which recirculates coolant and exports real waste", () =>
         {
             var state=Flat(era:TechEra.Nuclear);var processor=Add(state,BuildKind.NuclearProcessor,10,10);processor.recipe=90;processor.items[(int)ItemKind.UraniumOre]=2;processor.items[(int)ItemKind.Steel]=1;
-            Add(state,BuildKind.HighGenerator,7,7).items[(int)ItemKind.Fuel]=1;var reactor=Add(state,BuildKind.Reactor,13,10);var waste=Add(state,BuildKind.Chest,16,10);
-            var tower=Add(state,BuildKind.CoolingTower,13,7);Water(state,13,6);Add(state,BuildKind.DieselGenerator,10,4).items[(int)ItemKind.Diesel]=1;
-            tower.items[(int)ItemKind.HotCoolant]=20;tower.items[(int)ItemKind.ProcessWater]=10;
+            var generator=Add(state,BuildKind.HighGenerator,4,10);generator.items[(int)ItemKind.Fuel]=100;Add(state,BuildKind.HighPole,9,14);var console=Add(state,BuildKind.ReactorControlConsole,10,14);console.setting=1;
+            var reactor=Add(state,BuildKind.Reactor,13,10);var waste=Add(state,BuildKind.NuclearWasteVault,16,10);
+            var tower=Add(state,BuildKind.CoolingTower,13,7);Water(state,13,6);Add(state,BuildKind.DieselGenerator,10,7).items[(int)ItemKind.Diesel]=100;
+            tower.recipe=91;tower.items[(int)ItemKind.ProcessWater]=20;
+            reactor.items[(int)ItemKind.Coolant]=6;Add(state,BuildKind.LiquidPipe,14,9,3).setting=7;
             foreach(var cell in new[] {(16,7,1),(16,8,1),(16,9,2),(15,9,1)})Add(state,BuildKind.LiquidPipe,cell.Item1,cell.Item2,cell.Item3).setting=8;
-            var sim=new WorldSimulator(state);Advance(sim,12);reactor=Building(sim,reactor.id);
+            var sim=new WorldSimulator(state);Advance(sim,18);reactor=Building(sim,reactor.id);
             Require(reactor.powerGeneration>0 && reactor.fuel>0,"delivered nuclear fuel/coolant did not start the reactor");Require(Building(sim,waste.id).items[(int)ItemKind.NuclearWaste]==1,"reactor failed to export its real nuclear waste");
             Require(sim.State.produced[(int)ItemKind.NuclearFuel]==1 && sim.State.produced[(int)ItemKind.Coolant]>=4 && sim.State.produced[(int)ItemKind.NuclearWaste]==1,"nuclear chain fabricated or omitted a production stage");
+            var totals=ItemTotals(sim.State);
+            Require(totals[(int)ItemKind.Coolant]+totals[(int)ItemKind.HotCoolant]==6 && totals[(int)ItemKind.ProcessWater]<20,"coolant loop lost mass, made new coolant, or did not debit process water");
             Require(Building(sim,processor.id).items[(int)ItemKind.UraniumOre]==0 && Building(sim,processor.id).items[(int)ItemKind.Steel]==0,"nuclear processing did not debit ore/steel");
         });
     }

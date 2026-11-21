@@ -20,6 +20,7 @@ static partial class Checks
         sim.State.zombies.Clear(); sim.State.survival.creatures.Clear();
         player.needs = new SurvivalPlayerState { initialized = true };
         player.activeSlot = 2; player.x = -18; player.y = -17; Array.Fill(player.items, 100);
+        player.items[(int)ItemKind.NuclearWaste] = 0;
         return sim;
     }
 

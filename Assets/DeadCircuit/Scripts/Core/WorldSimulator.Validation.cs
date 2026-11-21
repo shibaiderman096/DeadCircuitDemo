@@ -75,7 +75,7 @@ namespace DeadCircuit
             {
                 SaveCheck(b != null, "null building"); CheckEntityId(b.id, entityIds, ref highestId);
                 CheckCell(b.x, b.y,source);
-                SaveCheck((int)b.kind >= 0 && (int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : source.version<11 ? 36 : source.version==11 ? 38 : DemoCatalog.BuildNames.Length) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
+                SaveCheck((int)b.kind >= 0 && ((int)b.kind < (legacy ? 10 : source.version < 7 ? 31 : source.version<11 ? 36 : source.version==11 ? 38 : DemoCatalog.BuildNames.Length)) && b.rotation >= 0 && b.rotation <= 3, "building kind/rotation");
                 SaveCheck(b.footprintVersion == 0 || b.footprintVersion == 1, "footprint version");
                 for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
                 {
@@ -89,7 +89,7 @@ namespace DeadCircuit
                 SaveCheck(TechCatalog.IsFuelBurner(b.kind) || b.kind==BuildKind.Reactor || b.fuel==0f,"fuel in non-burner");
                 if(!legacy)
                 {
-                    SaveCheck(b.setting>=0 && b.setting<=(PetrochemicalCatalog.IsLiquidStorage(b.kind) ? FluidCount-1 : b.kind==BuildKind.FilterSplitter ? DemoCatalog.ItemCount-1 : b.kind==BuildKind.Transformer || b.kind==BuildKind.Door || b.kind==BuildKind.CircuitBreaker || b.kind==BuildKind.PrecisionAssembler ? 1 : 0),"machine setting");
+                    SaveCheck(b.setting>=0 && b.setting<=(PetrochemicalCatalog.IsLiquidStorage(b.kind) ? FluidCount-1 : b.kind==BuildKind.FilterSplitter ? DemoCatalog.ItemCount-1 : b.kind==BuildKind.Transformer || b.kind==BuildKind.Door || b.kind==BuildKind.CircuitBreaker || b.kind==BuildKind.PrecisionAssembler || b.kind==BuildKind.ReactorControlConsole ? 1 : 0),"machine setting");
                     SaveCheck(source.version<7 || !b.modularBoiler || (b.kind==BuildKind.Boiler && b.fuel==0f),"modular boiler mode");
                     SaveCheck(b.kind!=BuildKind.Transformer || b.setting==0 || PrecisionCatalog.HasResearch(source,PrecisionTech.Grid),"unresearched transformer setting");
                     SaveCheck(b.kind!=BuildKind.PrecisionAssembler || b.setting==0 || PrecisionCatalog.HasResearch(source,PrecisionTech.Control),"unresearched precision setting");
@@ -100,7 +100,7 @@ namespace DeadCircuit
                     SaveCheck(b.recipe==0 || (r!=null && r.building==b.kind && b.kind!=BuildKind.Workbench),"machine recipe");
                     SaveCheck(r==null || r.era<=source.era,"unresearched machine recipe");
                     if(r!=null) SaveRange(b.progress,0f,r.duration,"recipe progress");
-                    if(b.kind==BuildKind.Reactor) SaveRange(b.progress,0f,1.001f,"reactor coolant reserve");
+                    if(b.kind==BuildKind.Reactor) SaveRange(b.progress,0f,ReactorCoolantSeconds+.001f,"reactor coolant reserve");
                 }
                 int[] items=CopyItems(b.items,BufferLimit,"machine inventory",itemCount);
                 SaveCheck(b.kind!=BuildKind.Belt || TotalItems(items)<=2,"belt capacity");
@@ -125,7 +125,8 @@ namespace DeadCircuit
                 BuildingState from, to;
                 SaveCheck(byId.TryGetValue(c.fromId, out from) && byId.TryGetValue(c.toId, out to), "cargo endpoints");
                 to = byId[c.toId]; from = byId[c.fromId];
-                SaveCheck(ElectricalCargoRouteValid(from,to,c.item) && Accepts(to.kind, c.item) && (!PetrochemicalCatalog.IsLiquidStorage(to.kind) || c.item==FluidItem(to.setting)), "cargo route");
+                SaveCheck(ElectricalCargoRouteValid(from,to,c.item) && Accepts(to.kind, c.item) &&
+                    (!PetrochemicalCatalog.IsLiquidStorage(to.kind) || c.item==FluidItem(to.setting)), "cargo route");
                 SaveRange(c.fromX, from.x - .5f, from.x + DemoCatalog.Width(from) - .5f, "cargo from x");
                 SaveRange(c.fromY, from.y - .5f, from.y + DemoCatalog.Height(from) - .5f, "cargo from y");
                 SaveRange(c.toX, to.x - .5f, to.x + DemoCatalog.Width(to) - .5f, "cargo to x");
@@ -164,6 +165,7 @@ namespace DeadCircuit
                 SaveCheck(p.xp >= 0 && p.xp < XpToNextLevel(p.level), "xp");
                 CheckPosition(p.x, p.y,source);
                 SaveRange(p.hp, 0f, 100f + attributes[1] * 15f, "player hp");
+                SaveCheck(p.items==null || p.items.Length<DemoCatalog.ItemCount || p.items[(int)ItemKind.NuclearWaste]==0,"player nuclear waste inventory");
                 SaveRange(p.hunger, 0f, 100f, "hunger");
                 SaveRange(p.stamina, 0f, 100f + attributes[2] * 8f + skills[2] * 10f, "stamina");
                 SaveCheck(Finite(p.aimX) && Finite(p.aimY), "aim");

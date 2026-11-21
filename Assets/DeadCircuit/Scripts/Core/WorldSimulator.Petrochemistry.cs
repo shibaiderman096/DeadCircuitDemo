@@ -18,18 +18,35 @@ namespace DeadCircuit
         private static bool BlocksFluidLogistics(BuildKind kind) => kind == BuildKind.Belt ||
             kind == BuildKind.Chest || kind == BuildKind.FilterSplitter || kind == BuildKind.MechanicalHopper;
 
+        private static int CargoOutputDirection(BuildingState from,int item) =>
+            from.kind==BuildKind.Reactor && item==(int)ItemKind.HotCoolant ? (from.rotation+3)&3 : from.rotation;
+        private static int CargoOutputX(BuildingState from,int item)
+        {
+            int direction=CargoOutputDirection(from,item);
+            return direction==0 ? from.x+DemoCatalog.Width(from) : direction==2 ? from.x-1 : from.x+(DemoCatalog.Width(from)-1)/2;
+        }
+        private static int CargoOutputY(BuildingState from,int item)
+        {
+            int direction=CargoOutputDirection(from,item);
+            return direction==1 ? from.y+DemoCatalog.Height(from) : direction==3 ? from.y-1 : from.y+(DemoCatalog.Height(from)-1)/2;
+        }
+
         // Compose this with ElectricalCargoRouteValid so live routes and save validation agree.
         // Ordinary solids retain the existing route rules; liquid storage never carries solids.
         public static bool PetrochemicalCargoRouteValid(BuildingState from, BuildingState to, int item)
         {
             if(from == null || to == null || from == to || item < 0 || item >= DemoCatalog.ItemCount) return false;
+            if(item == (int)ItemKind.NuclearWaste)
+                return from.kind == BuildKind.Reactor && to.kind == BuildKind.NuclearWasteVault &&
+                    DemoCatalog.Contains(to,DemoCatalog.OutputX(from),DemoCatalog.OutputY(from));
+            if(from.kind==BuildKind.Reactor && item!=(int)ItemKind.HotCoolant) return false;
             bool sourceStorage = PetrochemicalCatalog.IsLiquidStorage(from.kind);
             bool targetStorage = PetrochemicalCatalog.IsLiquidStorage(to.kind);
             if(!PetrochemicalCatalog.IsFluid(item)) return !sourceStorage && !targetStorage;
             if(BlocksFluidLogistics(from.kind) || BlocksFluidLogistics(to.kind)) return false;
             if(sourceStorage && FluidItem(from.setting) != item) return false;
             if(targetStorage && FluidItem(to.setting) != item) return false;
-            if(!DemoCatalog.Contains(to,DemoCatalog.OutputX(from),DemoCatalog.OutputY(from))) return false;
+            if(!DemoCatalog.Contains(to,CargoOutputX(from,item),CargoOutputY(from,item))) return false;
             if(!sourceStorage)
             {
                 RecipeDefinition recipe = TechCatalog.SelectedRecipe(from);
@@ -45,7 +62,7 @@ namespace DeadCircuit
         // All liquid flights reserve a source slot, including pump and multi-output machine
         // flights: a downstream disappearance must not lose fluid after a new batch completes.
         private static bool ReservesProductionCargoReturn(BuildingState b, int item) =>
-            ReservesCargoReturn(b) || PetrochemicalCatalog.IsFluid(item);
+            ReservesCargoReturn(b) || PetrochemicalCatalog.IsFluid(item) || (b.kind==BuildKind.Reactor && item==(int)ItemKind.NuclearWaste);
 
         private bool InteractPetrochemical(PlayerState p, BuildingState b)
         {

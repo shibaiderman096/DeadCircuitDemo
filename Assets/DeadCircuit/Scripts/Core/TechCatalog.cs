@@ -34,7 +34,7 @@ namespace DeadCircuit
                 case BuildKind.OilPump: case BuildKind.LiquidPipe: case BuildKind.LiquidTank: case BuildKind.DistillationUnit: case BuildKind.ChemicalReactor: case BuildKind.ProcessWaterPump:
                 case BuildKind.DieselGenerator: case BuildKind.ChemicalPlant: case BuildKind.MediumPole: case BuildKind.Transformer: case BuildKind.CoolingTower: return TechEra.MediumVoltage;
                 case BuildKind.SolarPanel: case BuildKind.SiliconRefiner: case BuildKind.ElectronicsBench: case BuildKind.HighGenerator: case BuildKind.HighPole: case BuildKind.PrecisionAssembler: return TechEra.HighVoltage;
-                case BuildKind.NuclearProcessor: case BuildKind.Reactor: return TechEra.Nuclear;
+                case BuildKind.NuclearProcessor: case BuildKind.Reactor: case BuildKind.ReactorControlConsole: case BuildKind.NuclearWasteVault: return TechEra.Nuclear;
                 default: return TechEra.Nuclear;
             }
         }
@@ -93,7 +93,7 @@ namespace DeadCircuit
                 case BuildKind.FilterSplitter: case BuildKind.CircuitBreaker: case BuildKind.ElectricCrusher:
                 case BuildKind.Generator: case BuildKind.Miner: case BuildKind.Smelter: case BuildKind.Assembler: case BuildKind.Turret: case BuildKind.PowerPole: case BuildKind.SteamTurbine: case BuildKind.CircuitAssembler: case BuildKind.Transformer: return 2;
                 case BuildKind.SiliconRefiner: case BuildKind.ElectronicsBench: case BuildKind.SolarPanel: case BuildKind.DieselGenerator: case BuildKind.ChemicalPlant: case BuildKind.MediumPole: case BuildKind.CoolingTower: return 3;
-                case BuildKind.HighGenerator: case BuildKind.HighPole: case BuildKind.PrecisionAssembler: case BuildKind.NuclearProcessor: case BuildKind.Reactor: return 4;
+                case BuildKind.HighGenerator: case BuildKind.HighPole: case BuildKind.PrecisionAssembler: case BuildKind.NuclearProcessor: case BuildKind.Reactor: case BuildKind.ReactorControlConsole: return 4;
                 default: return -1;
             }
         }
@@ -162,7 +162,7 @@ namespace DeadCircuit
                 case TechEra.LowVoltage: return new[] { BuildKind.Generator, BuildKind.Miner, BuildKind.Smelter, BuildKind.Assembler, BuildKind.Turret, BuildKind.PowerPole, BuildKind.CircuitAssembler, BuildKind.SteamTurbine, BuildKind.Belt, BuildKind.Chest };
                 case TechEra.MediumVoltage: return new[] { BuildKind.OilPump, BuildKind.LiquidPipe, BuildKind.LiquidTank, BuildKind.ProcessWaterPump, BuildKind.DistillationUnit, BuildKind.ChemicalReactor, BuildKind.DieselGenerator, BuildKind.MediumPole, BuildKind.ChemicalPlant, BuildKind.CoolingTower };
                 case TechEra.HighVoltage: return new[] { BuildKind.SiliconRefiner, BuildKind.ElectronicsBench, BuildKind.HighGenerator, BuildKind.HighPole, BuildKind.PrecisionAssembler, BuildKind.Transformer, BuildKind.SolarPanel, BuildKind.LiquidPipe, BuildKind.Belt, BuildKind.Chest };
-                case TechEra.Nuclear: return new[] { BuildKind.Reactor, BuildKind.NuclearProcessor, BuildKind.CoolingTower, BuildKind.HighPole, BuildKind.Transformer, BuildKind.PrecisionAssembler, BuildKind.ChemicalPlant, BuildKind.Belt, BuildKind.Chest, BuildKind.MediumPole };
+                case TechEra.Nuclear: return new[] { BuildKind.Reactor, BuildKind.ReactorControlConsole, BuildKind.NuclearWasteVault, BuildKind.NuclearProcessor, BuildKind.CoolingTower, BuildKind.HighPole, BuildKind.Transformer, BuildKind.PrecisionAssembler, BuildKind.ChemicalPlant, BuildKind.Belt };
                 default: return new[] { BuildKind.Workbench, BuildKind.StoneFurnace, BuildKind.CharcoalKiln, BuildKind.ClayKiln, BuildKind.Chest, BuildKind.Wall, BuildKind.Door, BuildKind.Belt, BuildKind.Workbench, BuildKind.StoneFurnace };
             }
         }
@@ -249,6 +249,8 @@ namespace DeadCircuit
         public static bool Stores(BuildKind kind,int item)
         {
             if(item<0 || item>=DemoCatalog.ItemCount) return false;
+            if(item==(int)ItemKind.NuclearWaste) return kind==BuildKind.Reactor || kind==BuildKind.NuclearWasteVault;
+            if(kind==BuildKind.NuclearWasteVault) return false;
             if(PetrochemicalCatalog.IsLiquidStorage(kind)) return PetrochemicalCatalog.IsFluid(item);
             if(kind==BuildKind.Chest || kind==BuildKind.Belt || kind==BuildKind.MechanicalHopper || kind==BuildKind.FilterSplitter) return !PetrochemicalCatalog.IsFluid(item);
             if(kind==BuildKind.OilPump) return item==(int)ItemKind.CrudeOil;
@@ -260,7 +262,8 @@ namespace DeadCircuit
             if(kind==BuildKind.Miner) return item==(int)ItemKind.Ore || item==(int)ItemKind.CopperOre || item==(int)ItemKind.TinOre || item==(int)ItemKind.UraniumOre;
             if(kind==BuildKind.SteamMiner) return item==(int)ItemKind.Quartz || item==(int)ItemKind.Ore || item==(int)ItemKind.CopperOre || item==(int)ItemKind.TinOre || item==(int)ItemKind.UraniumOre || item==(int)ItemKind.Stone || item==(int)ItemKind.Clay || item==(int)ItemKind.Coal || item==(int)ItemKind.Limestone || item==(int)ItemKind.FireClay;
             if(kind==BuildKind.Turret) return item==(int)ItemKind.Ammo;
-            if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearFuel || item==(int)ItemKind.Coolant || item==(int)ItemKind.NuclearWaste;
+            if(kind==BuildKind.ReactorControlConsole) return false;
+            if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearFuel || item==(int)ItemKind.Coolant || item==(int)ItemKind.HotCoolant;
             foreach(var r in Recipes) if(r.building==kind && kind!=BuildKind.Workbench && (r.inputs[item]>0 || r.outputs[item]>0)) return true;
             return false;
         }

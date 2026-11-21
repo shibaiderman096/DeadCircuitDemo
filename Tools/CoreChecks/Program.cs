@@ -79,7 +79,7 @@ static partial class Checks
     }
     static PlayerState Builder(WorldSimulator sim, string id = "p", string name = "P")
     {
-        var player = sim.AddPlayer(id, name); Array.Fill(player.items, 100); return player;
+        var player = sim.AddPlayer(id, name); Array.Fill(player.items, 100); player.items[(int)ItemKind.NuclearWaste]=0; return player;
     }
     static BuildingState Add(WorldState state, BuildKind kind, int x, int y, int rotation = 0, int footprintVersion = 1)
     {

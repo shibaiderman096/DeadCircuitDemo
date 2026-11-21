@@ -5,6 +5,7 @@ namespace DeadCircuit
 {
     public sealed partial class WorldSimulator
     {
+        private const float ReactorCoolantSeconds = 2f;
         private struct ItemTransfer
         {
             public BuildingState from, to;
@@ -60,12 +61,18 @@ namespace DeadCircuit
             int moved = 0;
             if (InteractPetrochemical(p, b)) return;
             if (InteractElectrical(p, b, arg)) return;
+            if (b.kind == BuildKind.ReactorControlConsole)
+            {
+                Notice(p, b.setting == 1 ? "反应堆控制台已启用。" : "反应堆控制台已停用。");
+                return;
+            }
             if(b.kind==BuildKind.Door) { SetDoor(p,b,1-b.setting); return; }
+            if(b.kind==BuildKind.NuclearWasteVault) { Notice(p,"核废料仓仅接受反应堆自动物流，禁止手动收发。"); return; }
             if (b.kind != BuildKind.Chest && b.kind != BuildKind.MechanicalHopper && b.kind != BuildKind.Belt && b.kind != BuildKind.Wall && b.kind != BuildKind.Turret)
             {
                 RecipeDefinition recipe=TechCatalog.SelectedRecipe(b);
                 // Reconfiguration never deletes old buffers: unload all possible outputs first.
-                for(int i=0;i<DemoCatalog.ItemCount;i++) if(IsOutput(b.kind,i))
+                for(int i=0;i<DemoCatalog.ItemCount;i++) if(IsOutput(b.kind,i) && b.kind!=BuildKind.Reactor)
                     moved += Transfer(b.items,p.items,i,BufferLimit,InventoryLimit);
                 if(b.kind==BuildKind.CombustionChamber)
                 {
@@ -103,14 +110,14 @@ namespace DeadCircuit
                     moved = TransferIntoBuilding(p.items, b, (int)ItemKind.Ammo, 40);
                     Notice(p, moved > 0 ? "装填炮塔弹药 " + moved : "炮塔需供电及弹药；E装填，弹药也可从相邻朝向它的箱/带自动输入。"); return;
                 case BuildKind.Chest:
-                    for (int i = 0; i < DemoCatalog.ItemCount; i++) moved += Transfer(b.items, p.items, i, BufferLimit, InventoryLimit); break;
+                    for (int i = 0; i < DemoCatalog.ItemCount; i++) if(i!=(int)ItemKind.NuclearWaste) moved += Transfer(b.items, p.items, i, BufferLimit, InventoryLimit); break;
                 case BuildKind.MechanicalHopper:
-                    for (int i = 0; i < DemoCatalog.ItemCount; i++) moved += Transfer(b.items, p.items, i, BufferLimit, InventoryLimit);
+                    for (int i = 0; i < DemoCatalog.ItemCount; i++) if(i!=(int)ItemKind.NuclearWaste) moved += Transfer(b.items, p.items, i, BufferLimit, InventoryLimit);
                     if (moved == 0 && arg >= 0 && arg < DemoCatalog.ItemCount && !PetrochemicalCatalog.IsFluid(arg))
                         moved = TransferIntoBuilding(p.items, b, arg, 20);
                     break;
                 case BuildKind.Belt:
-                    for (int i = 0; i < DemoCatalog.ItemCount; i++) moved += Transfer(b.items, p.items, i, 2, InventoryLimit);
+                    for (int i = 0; i < DemoCatalog.ItemCount; i++) if(i!=(int)ItemKind.NuclearWaste) moved += Transfer(b.items, p.items, i, 2, InventoryLimit);
                     if (moved == 0 && TotalItems(b.items) == 0 && arg >= 0 && arg < DemoCatalog.ItemCount && !PetrochemicalCatalog.IsFluid(arg))
                         moved = TransferIntoBuilding(p.items, b, arg, 1);
                     break;
@@ -128,7 +135,7 @@ namespace DeadCircuit
         }
         private int TransferIntoBuilding(int[] from, BuildingState to, int item, int maximum)
         {
-            if (PetrochemicalCatalog.IsFluid(item) && !Accepts(to,item)) return 0;
+            if ((PetrochemicalCatalog.IsFluid(item) || item==(int)ItemKind.NuclearWaste) && !Accepts(to,item)) return 0;
             int reserved = 0, totalReserved = 0, returning = 0;
             foreach (CargoState c in State.cargo)
             {
@@ -171,7 +178,7 @@ namespace DeadCircuit
             {
                 if(!l.unlocked) continue;
                 BuildingState b=l.building;
-                b.powerDemand=b.kind==BuildKind.Transformer ? 200f : DemoCatalog.Demand(b.kind);
+                b.powerDemand=DemoCatalog.Demand(b.kind);
                 switch(b.kind)
                 {
                     case BuildKind.Generator: b.powerGeneration=BurnFuel(b,consume,120f,20f); break;
@@ -182,7 +189,6 @@ namespace DeadCircuit
                     case BuildKind.Boiler:
                         if(!b.modularBoiler) b.powerGeneration=NearWater(b) ? BurnFuel(b,consume,120f,20f) : 0f;
                         break;
-                    case BuildKind.Reactor: b.powerGeneration=ReactorOutput(b,consume); break;
                 }
                 if(l.network!=null)
                 {
@@ -191,6 +197,36 @@ namespace DeadCircuit
                 }
                 if(l.inputNetwork!=null) l.inputNetwork.demand+=b.powerDemand;
             }
+            ResolvePowerTiers();
+            foreach(var l in powerLayout)
+            {
+                if(!l.unlocked || l.kind!=BuildKind.ReactorControlConsole) continue;
+                BuildingState b=l.building;
+                b.powerRatio=l.network==null ? 0f : l.network.ratio;
+                b.powered=b.powerRatio>=1f;
+            }
+            // Reactor startup is checked against external generation before its own output is counted.
+            bool reactorGenerated=false;
+            foreach(var l in powerLayout)
+            {
+                if(!l.unlocked || l.kind!=BuildKind.Reactor) continue;
+                BuildingState b=l.building;
+                b.powerGeneration=ReactorOutput(b,consume,ReactorInterlocked(b));
+                if(l.network!=null && b.powerGeneration>0f) { l.network.generation+=b.powerGeneration; reactorGenerated=true; }
+            }
+            if(reactorGenerated) ResolvePowerTiers();
+            ApplyElectricalProtection(consume);
+            foreach(var l in powerLayout)
+            {
+                if(!l.unlocked) continue;
+                BuildingState b=l.building;
+                if(b.kind==BuildKind.ReactorControlConsole) continue;
+                b.powerRatio=Converter(b.kind) ? (l.inputNetwork==null ? 0f : l.inputNetwork.ratio) : l.tier<0 ? 1f : l.network==null ? 0f : l.network.ratio;
+                b.powered=b.powerRatio>0f;
+            }
+        }
+        private void ResolvePowerTiers()
+        {
             // Only downward conversions; input demand is included before output allocation.
             ResolveTier(1);
             foreach(var l in powerLayout) if(l.kind==BuildKind.SteamEngine) ConvertPower(l,.8f);
@@ -201,14 +237,40 @@ namespace DeadCircuit
             ResolveTier(3);
             foreach(var l in powerLayout) if(l.kind==BuildKind.Transformer && l.setting==0) ConvertPower(l,.9f);
             ResolveTier(2);
-            ApplyElectricalProtection(consume);
-            foreach(var l in powerLayout)
+        }
+        private bool ReactorInterlocked(BuildingState reactor)
+        {
+            if (NuclearVaultAt(reactor)==null || reactor.networkId==0) return false;
+            bool enabledConsole=false;
+            foreach (PowerLayout console in powerLayout)
+                if (console.kind==BuildKind.ReactorControlConsole && console.building.setting==1 &&
+                    console.building.networkId==reactor.networkId && console.building.powered)
+                { enabledConsole=true; break; }
+            if (!enabledConsole) return false;
+            foreach (PowerLayout layout in powerLayout)
             {
-                if(!l.unlocked) continue;
-                BuildingState b=l.building;
-                b.powerRatio=Converter(b.kind) ? (l.inputNetwork==null ? 0f : l.inputNetwork.ratio) : l.tier<0 ? 1f : l.network==null ? 0f : l.network.ratio;
-                b.powered=b.powerRatio>0f;
+                BuildingState tower=layout.building;
+                if (tower.kind!=BuildKind.CoolingTower || !layout.unlocked || layout.network==null ||
+                    layout.network.ratio<=0f || !NearWater(tower)) continue;
+                RecipeDefinition recipe=TechCatalog.SelectedRecipe(tower);
+                if (recipe==null || recipe.id!=91 || !PetrochemicalCatalog.IsRecipeUnlocked(State,recipe)) continue;
+                if (HasLiquidRoute(reactor,tower,(int)ItemKind.HotCoolant) && HasLiquidRoute(tower,reactor,(int)ItemKind.Coolant)) return true;
             }
+            return false;
+        }
+        private bool HasLiquidRoute(BuildingState source, BuildingState target, int item)
+        {
+            BuildingState from=source;
+            // Each liquid outlet has one next hop. This bound also terminates pipe cycles.
+            for (int hops=0; hops<State.buildings.Count; hops++)
+            {
+                BuildingState next=BuildingAt(CargoOutputX(from,item),CargoOutputY(from,item));
+                if (next==null || !PetrochemicalCargoRouteValid(from,next,item) || !Accepts(next,item)) return false;
+                if (next==target) return true;
+                if (!PetrochemicalCatalog.IsLiquidStorage(next.kind)) return false;
+                from=next;
+            }
+            return false;
         }
         private void ResolveTier(int tier)
         {
@@ -217,8 +279,9 @@ namespace DeadCircuit
         private static bool Converter(BuildKind kind) => kind==BuildKind.Transformer || kind==BuildKind.SteamTurbine || kind==BuildKind.SteamEngine;
         private static void ConvertPower(PowerLayout l,float efficiency)
         {
-            l.building.powerGeneration=l.inputNetwork==null ? 0f : l.building.powerDemand*l.inputNetwork.ratio*efficiency;
-            if(l.network!=null) l.network.generation+=l.building.powerGeneration;
+            float generation=l.inputNetwork==null ? 0f : l.building.powerDemand*l.inputNetwork.ratio*efficiency;
+            if(l.network!=null) l.network.generation+=generation-l.building.powerGeneration;
+            l.building.powerGeneration=generation;
         }
         private int FuelItem(BuildingState b)
         {
@@ -244,23 +307,36 @@ namespace DeadCircuit
             if(consume) { b.fuel=Math.Max(0f,seconds-FixedStep); if(b.fuel<tolerance) b.fuel=0f; }
             return generation;
         }
-        private float ReactorOutput(BuildingState b,bool consume)
+        private float ReactorOutput(BuildingState b,bool consume,bool interlocked)
         {
             // Latch the hot input before passive cooling can hide an exact-limit trip.
             bool tripped=b.tripped || b.temperature>=900f;
             float temperature=Math.Max(20f,b.temperature-FixedStep*(tripped ? 18f : 4f));
             if(tripped && temperature<=300f) tripped=false;
             float coolant=b.progress, fuel=b.fuel;
-            bool canRun=!tripped && OutputRoom(b,(int)ItemKind.NuclearWaste,1) && (fuel>.0001f || b.items[(int)ItemKind.NuclearFuel]>0) && (coolant>.0001f || b.items[(int)ItemKind.Coolant]>0);
+            bool newFuel=fuel<FixedStep-.0001f;
+            bool newCoolant=coolant<FixedStep-.0001f;
+            bool canRun=interlocked && !tripped &&
+                (!newFuel || (b.items[(int)ItemKind.NuclearFuel]>0 && HasNuclearWasteRoom(b))) &&
+                (!newCoolant || (b.items[(int)ItemKind.Coolant]>0 && OutputRoom(b,(int)ItemKind.HotCoolant,1)));
             if(canRun)
             {
-                // One can supplies one second of cooling and removes that second's
-                // 45 degrees of reaction heat; passive loss provides stable headroom.
-                if(coolant<FixedStep-.0001f && b.items[(int)ItemKind.Coolant]>0) { if(consume) b.items[(int)ItemKind.Coolant]--; coolant+=1f; temperature=Math.Max(20f,temperature-45f); }
-                if(fuel<FixedStep-.0001f && b.items[(int)ItemKind.NuclearFuel]>0)
+                // Convert one cold unit to one hot unit when loading a cooling charge.
+                if (newCoolant)
+                {
+                    if (consume)
+                    {
+                        b.items[(int)ItemKind.Coolant]--;
+                        b.items[(int)ItemKind.HotCoolant]++;
+                        RecordProduced((int)ItemKind.HotCoolant,1);
+                    }
+                    coolant=ReactorCoolantSeconds;
+                    temperature=Math.Max(20f,temperature-45f*ReactorCoolantSeconds);
+                }
+                if (newFuel)
                 {
                     if(consume) { b.items[(int)ItemKind.NuclearFuel]--; b.items[(int)ItemKind.NuclearWaste]++; RecordProduced((int)ItemKind.NuclearWaste,1); }
-                    fuel+=20f;
+                    fuel=20f;
                 }
                 float fraction=Clamp(Math.Min(coolant,fuel)/FixedStep,0f,1f);
                 temperature+=45f*FixedStep*fraction;
@@ -270,7 +346,7 @@ namespace DeadCircuit
                 return canRun ? 1200f*fraction : 0f;
             }
             if(consume) { b.temperature=temperature; b.tripped=tripped; }
-            return canRun ? 1200f : 0f;
+            return 0f;
         }
         private static int OutputTier(BuildingState b) => TechCatalog.EnergyTier(b);
         private bool WaterPowerUnlocked(BuildingState b)
@@ -452,6 +528,23 @@ namespace DeadCircuit
             int[] result; cargoIncoming.TryGetValue(id,out result);
             return result;
         }
+        private BuildingState NuclearVaultAt(BuildingState reactor)
+        {
+            BuildingState vault=BuildingAt(DemoCatalog.OutputX(reactor),DemoCatalog.OutputY(reactor));
+            return vault!=null && vault.kind==BuildKind.NuclearWasteVault ? vault : null;
+        }
+        private bool HasNuclearWasteRoom(BuildingState reactor)
+        {
+            BuildingState vault=NuclearVaultAt(reactor);
+            int item=(int)ItemKind.NuclearWaste;
+            if (vault==null || !OutputRoom(reactor,item,1)) return false;
+            int stored=vault.items[item];
+            foreach (BuildingState other in productionOrder)
+                if (other.kind==BuildKind.Reactor && NuclearVaultAt(other)==vault) stored+=other.items[item];
+            foreach (CargoState cargo in State.cargo)
+                if (cargo.toId==vault.id && cargo.item==item) stored++;
+            return stored<BufferLimit;
+        }
         private bool OutputRoom(BuildingState b,int item,int count)
         {
             int incoming=0; foreach(var c in State.cargo)
@@ -484,7 +577,7 @@ namespace DeadCircuit
             if(kind==BuildKind.ProcessWaterPump) return item==(int)ItemKind.ProcessWater;
             if(kind==BuildKind.Miner) return item==(int)ItemKind.Ore || item==(int)ItemKind.CopperOre || item==(int)ItemKind.TinOre || item==(int)ItemKind.UraniumOre;
             if(kind==BuildKind.SteamMiner) return TechCatalog.Stores(kind,item);
-            if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearWaste;
+            if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearWaste || item==(int)ItemKind.HotCoolant;
             foreach(var r in TechCatalog.Recipes) if(r.building==kind && kind!=BuildKind.Workbench && r.outputs[item]>0) return true;
             return false;
         }
@@ -512,6 +605,12 @@ namespace DeadCircuit
                 {
                     ItemTransfer electricalPlan;
                     if (TryPlanElectricalCargo(from, out electricalPlan)) cargoPlans.Add(electricalPlan);
+                    continue;
+                }
+                if (from.kind==BuildKind.Reactor)
+                {
+                    if (TryPlanReactorOutput(from,(int)ItemKind.NuclearWaste,out ItemTransfer plan) ||
+                        TryPlanReactorOutput(from,(int)ItemKind.HotCoolant,out plan)) cargoPlans.Add(plan);
                     continue;
                 }
                 BuildingState to = BuildingAt(DemoCatalog.OutputX(from), DemoCatalog.OutputY(from));
@@ -579,6 +678,17 @@ namespace DeadCircuit
             }
         }
 
+        private bool TryPlanReactorOutput(BuildingState from,int item,out ItemTransfer plan)
+        {
+            plan=default(ItemTransfer);
+            if (from.items[item]<=0) return false;
+            int x=CargoOutputX(from,item), y=CargoOutputY(from,item);
+            BuildingState to=BuildingAt(x,y);
+            if (to==null || !PetrochemicalCargoRouteValid(from,to,item) || !Accepts(to,item) || !HasCargoRoom(to,item)) return false;
+            plan=new ItemTransfer { from=from,to=to,item=item,x=x,y=y,direction=CargoOutputDirection(from,item) };
+            return true;
+        }
+
         private float CargoExportRate(BuildingState from)
         {
             if(!PetrochemicalCatalog.IsBuildUnlocked(State,from.kind)) return 0f;
@@ -627,6 +737,8 @@ namespace DeadCircuit
         private bool Accepts(BuildingState b,int item)
         {
             if(item<0 || item>=DemoCatalog.ItemCount) return false;
+            if(item==(int)ItemKind.NuclearWaste) return b.kind==BuildKind.NuclearWasteVault;
+            if(b.kind==BuildKind.NuclearWasteVault) return false;
             if(PetrochemicalCatalog.IsLiquidStorage(b.kind)) return PetrochemicalCatalog.IsBuildUnlocked(State,b.kind) && item==FluidItem(b.setting);
             if(PetrochemicalCatalog.IsFluid(item) && BlocksFluidLogistics(b.kind)) return false;
             if(b.kind==BuildKind.Boiler && b.modularBoiler) return false;
@@ -641,6 +753,8 @@ namespace DeadCircuit
         private static bool Accepts(BuildKind kind,int item)
         {
             if(item<0 || item>=DemoCatalog.ItemCount) return false;
+            if(item==(int)ItemKind.NuclearWaste) return kind==BuildKind.NuclearWasteVault;
+            if(kind==BuildKind.NuclearWasteVault) return false;
             if(PetrochemicalCatalog.IsLiquidStorage(kind)) return PetrochemicalCatalog.IsFluid(item);
             if(PetrochemicalCatalog.IsFluid(item) && BlocksFluidLogistics(kind)) return false;
             if(kind==BuildKind.Chest || kind==BuildKind.MechanicalHopper || kind==BuildKind.Belt || kind==BuildKind.FilterSplitter) return true;

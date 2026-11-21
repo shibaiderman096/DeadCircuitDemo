@@ -222,8 +222,8 @@ namespace DeadCircuit
                 }
                 if (Active("Technology Panel")) yield return Press(Key.T);
             }
-            foreach(var kind in new[]{BuildKind.SteamPipe,BuildKind.SteamTurbine,BuildKind.DieselGenerator,BuildKind.MediumPole,
-                BuildKind.HighGenerator,BuildKind.HighPole,BuildKind.Transformer,BuildKind.CoolingTower,BuildKind.NuclearProcessor,BuildKind.Reactor})
+            yield return BuildQaNuclearFacility(bridge);
+            foreach(var kind in new[]{BuildKind.SteamPipe,BuildKind.SteamTurbine,BuildKind.MediumPole,BuildKind.Transformer,BuildKind.NuclearProcessor})
                 yield return BuildQaAtFreePlot(bridge,kind);
             foreach(var machine in bridge.World.buildings)
             {
@@ -238,7 +238,8 @@ namespace DeadCircuit
             yield return SetQaInspector(true);
             yield return PointAtWorld(reactor.x+1,reactor.y+1);
             Require(Active("Mouse Inspector"),"new reactor has a real footprint inspector");
-            Require(reactor.powerGeneration>0 && reactor.items[(int)ItemKind.NuclearWaste]>0,"native nuclear fuel coolant and waste cycle");
+            Require(reactor.powerGeneration>0 && bridge.World.produced[(int)ItemKind.NuclearWaste]>0 &&
+                bridge.World.produced[(int)ItemKind.HotCoolant]>0,"native nuclear fuel coolant and waste cycle");
             yield return Capture("reactor");
             yield return SetQaInspector(false);
             yield return PointAtWorld(34,27);
@@ -374,7 +375,7 @@ namespace DeadCircuit
         }
         static void GrantSamples(PlayerState player,int[] cost)
         {
-            for(int i=0;i<cost.Length;i++) player.items[i]=Math.Max(player.items[i],cost[i]+10);
+            for(int i=0;i<cost.Length;i++) if(i!=(int)ItemKind.NuclearWaste) player.items[i]=Math.Max(player.items[i],cost[i]+10);
         }
         static void PrepareQaPlot(WorldState world,bool clearBuildings)
         {
@@ -569,6 +570,30 @@ namespace DeadCircuit
             yield return new WaitForSecondsRealtime(.1f);
             Require(Active("Technology Panel"), "technology panel refreshes for era " + era);
         }
+        IEnumerator BuildQaNuclearFacility(GameBridge bridge)
+        {
+            yield return BuildQa(bridge,BuildKind.HighGenerator,36,16);
+            yield return BuildQa(bridge,BuildKind.HighPole,41,16);
+            yield return BuildQa(bridge,BuildKind.ReactorControlConsole,42,16);
+            yield return BuildQa(bridge,BuildKind.DieselGenerator,42,13);
+            yield return BuildQa(bridge,BuildKind.CoolingTower,45,13);
+            yield return BuildQa(bridge,BuildKind.Reactor,45,16);
+            foreach(var pipe in new[] {(48,13,1,8),(48,14,1,8),(48,15,2,8),(47,15,1,8),(46,15,3,7)})
+            {
+                yield return BuildQa(bridge,BuildKind.LiquidPipe,pipe.Item1,pipe.Item2,pipe.Item3);
+                bridge.Send(new PlayerCommand { action="configure",x=pipe.Item1,y=pipe.Item2,arg=pipe.Item4 });
+                yield return new WaitForSecondsRealtime(.3f);
+            }
+            yield return BuildQa(bridge,BuildKind.NuclearWasteVault,48,16);
+            var player=bridge.LocalPlayer;
+            player.x=41;player.y=15;
+            bridge.Send(new PlayerCommand { action="configure",x=42,y=16,arg=1 });
+            var diesel=bridge.World.buildings.Single(b=>b.kind==BuildKind.DieselGenerator);
+            diesel.items[(int)ItemKind.Diesel]=8;
+            var tower=bridge.World.buildings.Single(b=>b.kind==BuildKind.CoolingTower);
+            tower.items[(int)ItemKind.ProcessWater]=20;
+        }
+
         IEnumerator BuildQaAtFreePlot(GameBridge bridge,BuildKind kind)
         {
             var world=bridge.World;
@@ -588,12 +613,12 @@ namespace DeadCircuit
             }
             Require(false,"no QA placement for "+kind);
         }
-        IEnumerator BuildQa(GameBridge bridge,BuildKind kind,int x,int y)
+        IEnumerator BuildQa(GameBridge bridge,BuildKind kind,int x,int y,int rotation=0)
         {
             var player=bridge.LocalPlayer;
             GrantSamples(player,DemoCatalog.BuildCost(kind));
             bridge.Send(new PlayerCommand());
-            var candidates=new[]{new Vector2(x,y-1.2f),new Vector2(x-1.2f,y),new Vector2(x,y+DemoCatalog.Height(kind)+.2f)};
+            var candidates=new[]{new Vector2(x,y-1.2f),new Vector2(x-1.2f,y),new Vector2(x,y+DemoCatalog.Height(kind,rotation)+.2f)};
             bool approached=false;
             foreach(var at in candidates)
             {
@@ -604,7 +629,7 @@ namespace DeadCircuit
             }
             Require(approached,"dry QA approach for "+kind);
             yield return new WaitForSecondsRealtime(.3f);
-            bridge.Send(new PlayerCommand { action="build",arg=(int)kind,x=x,y=y });
+            bridge.Send(new PlayerCommand { action="build",arg=(int)kind,x=x,y=y,rotation=rotation });
             Require(bridge.World.buildings.Any(b=>b.kind==kind && b.x==x && b.y==y),"actual build command: "+kind+" "+player.notice);
             yield return new WaitForSecondsRealtime(.3f);
         }

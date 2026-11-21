@@ -827,7 +827,7 @@ namespace DeadCircuit
             if (kind == ItemKind.Clay) return "采集黏土矿床获得。陶窑消耗黏土×4、木炭×1，产出陶砖×4。";
             if (kind == ItemKind.Charcoal) return "炭窑消耗木材×4，产出木炭×2。用于陶窑烧制陶砖与原始冶金。";
             if (kind == ItemKind.Brick) return "由陶窑消耗黏土和木炭烧制，用于建筑与工艺研究。研究要求的生产数量按累计产出计算。";
-            if (kind == ItemKind.NuclearWaste) return "反应堆产物。及时取出并妥善储存，避免设备库存阻塞。";
+            if (kind == ItemKind.NuclearWaste) return "反应堆产物。仅由反应堆自动送入正前方直连的核废料专用仓。";
             var uses = new List<string>();
             foreach (RecipeDefinition recipe in TechCatalog.Recipes) if (Count(recipe.inputs, item) > 0 && !uses.Contains(recipe.name)) uses.Add(recipe.name);
             bool construction = false, equipment = false;

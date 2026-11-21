@@ -85,6 +85,89 @@ static partial class Checks
             saved.era=TechEra.Primitive;saved.produced[17]=999;oldReactor.temperature=1199;oldReactor.tripped=true;oldReactor.items[15]=99;saved.buildings.Single(b=>b.kind==BuildKind.NuclearProcessor).recipe=int.MaxValue;saved.buildings.Single(b=>b.kind==BuildKind.Transformer).setting=0;saved.players[0].items[20]=999;saved.players[0].attributes[0]=9;saved.players[0].skillPoints=0;
             Require(Dump(restored.State)==before,"caller mutation crossed a v3 deep-copy boundary");
         });
+        Run("current nuclear facility restore preserves interlock mode and dedicated waste inventory", () =>
+        {
+            var state=Flat(era:TechEra.Nuclear);var console=Add(state,(BuildKind)61,10,10);console.setting=1;var vault=Add(state,(BuildKind)62,13,10);vault.items[(int)ItemKind.NuclearWaste]=3;
+            var restored=new WorldSimulator(Saved(state));
+            Require(DemoCatalog.BuildNames.Length==63,"nuclear building catalog did not append both facilities");
+            Require(Building(restored,console.id).setting==1,"current restore lost armed reactor console");
+            Require(Building(restored,vault.id).items[(int)ItemKind.NuclearWaste]==3,"current restore lost dedicated waste inventory");
+        });
+        Run("current nuclear restore permits staged waste while a vault route is temporarily disconnected", () =>
+        {
+            var state=Flat(era:TechEra.Nuclear);var reactor=Add(state,BuildKind.Reactor,10,10);reactor.items[(int)ItemKind.NuclearWaste]=3;var vault=Add(state,BuildKind.NuclearWasteVault,20,20);
+            var restored=new WorldSimulator(Saved(state));
+            Require(Building(restored,reactor.id).items[(int)ItemKind.NuclearWaste]==3 && Building(restored,vault.id).items[(int)ItemKind.NuclearWaste]==0,"current restore rejected or changed staged reactor waste");
+            state.buildings.Remove(vault);
+            var withoutVault=new WorldSimulator(Saved(state));
+            Require(Building(withoutVault,reactor.id).items[(int)ItemKind.NuclearWaste]==3,"current restore lost staged waste after the only vault was destroyed");
+
+            var ordinary=Flat(era:TechEra.Nuclear);var chest=Add(ordinary,BuildKind.Chest,10,10);chest.items[(int)ItemKind.NuclearWaste]=1;Reject(Saved(ordinary),"ordinary inventory accepted nuclear waste");
+            var illegalCargo=Flat(era:TechEra.Nuclear);var from=Add(illegalCargo,BuildKind.Reactor,10,10);var to=Add(illegalCargo,BuildKind.Chest,11,10);illegalCargo.cargo.Add(new CargoState { id=illegalCargo.nextId++,fromId=from.id,toId=to.id,item=(int)ItemKind.NuclearWaste,fromX=10,fromY=10,toX=11,toY=10,progress=.2f,duration=.4f });Reject(Saved(illegalCargo),"reactor nuclear waste cargo to an ordinary chest accepted");
+        });
+        Run("current nuclear restore enforces vault inventory and incoming waste capacity", () =>
+        {
+            int waste=(int)ItemKind.NuclearWaste, limit=WorldSimulator.BufferLimit;
+            var state=Flat(era:TechEra.Nuclear);
+            var reactor=Add(state,BuildKind.Reactor,10,10);
+            var vault=Add(state,BuildKind.NuclearWasteVault,13,10);
+            reactor.items[waste]=1;
+            vault.items[waste]=limit-1;
+            var live=new WorldSimulator(state);
+            var flight=AwaitCargo(live,reactor.id,vault.id);
+            Require(flight.item==waste,"capacity fixture did not dispatch waste to the vault");
+
+            var saved=Saved(live.State);
+            var restored=new WorldSimulator(saved);
+            Require(Building(restored,vault.id).items[waste]==limit-1 && restored.State.cargo.Single().id==flight.id,
+                "restore changed a vault with exactly one slot reserved for incoming waste");
+
+            var savedVault=saved.buildings.Single(b=>b.id==vault.id);
+            savedVault.items[waste]=limit;
+            Reject(saved,"full vault accepted an additional incoming waste reservation");
+            saved.cargo.Clear();
+            Require(Building(new WorldSimulator(saved),vault.id).items[waste]==limit,"restore changed a full vault with no incoming reservation");
+            savedVault.items[waste]=limit+1;
+            Reject(saved,"single vault accepted an inventory above its buffer limit");
+        });
+        Run("current nuclear restore preserves and delivers in-flight reactor hot coolant", () =>
+        {
+            int hot=(int)ItemKind.HotCoolant;
+            // Tanks touch the south/east/north/west right outlet for rotations 0/1/2/3.
+            foreach(var (rotation,tankX,tankY) in new[] { (0,11,8),(1,12,11),(2,11,12),(3,8,11) })
+            {
+                var state=Flat(era:TechEra.Nuclear);
+                var reactor=Add(state,BuildKind.Reactor,10,10,rotation);
+                var tank=Add(state,BuildKind.LiquidTank,tankX,tankY);
+                tank.setting=7; // Hot coolant.
+                reactor.items[hot]=2;
+                var live=new WorldSimulator(state);
+                var flight=AwaitCargo(live,reactor.id,tank.id);
+                live.Step(WorldSimulator.FixedStep);
+                Require(flight.item==hot && flight.progress>0f && flight.progress<1f,
+                    "save fixture did not have hot coolant partway to the tank");
+
+                var restored=new WorldSimulator(Saved(live.State));
+                var restoredReactor=Building(restored,reactor.id);
+                var restoredTank=Building(restored,tank.id);
+                Require(restoredReactor.items[hot]==1 && restoredTank.items[hot]==0 &&
+                    JsonSerializer.Serialize(restored.State.cargo.Single(),Json)==JsonSerializer.Serialize(flight,Json),
+                    "restore changed buffered hot coolant or its in-flight packet");
+
+                int deliveriesBefore=live.State.mvPiped;
+                var liveTank=Building(live,tank.id);
+                for(int tick=0;tick<40;tick++)
+                {
+                    live.Step(WorldSimulator.FixedStep);
+                    restored.Step(WorldSimulator.FixedStep);
+                    Require(restoredTank.items[hot]==liveTank.items[hot],"restored hot coolant arrived on a different tick");
+                    Require(ItemTotals(restored.State)[hot]==2,"restored hot coolant was lost or duplicated");
+                }
+                Require(restoredTank.items[hot]==2 && restored.State.cargo.Count==0 && restored.State.mvPiped==deliveriesBefore+2,
+                    "restored reactor did not deliver both hot coolant units exactly once");
+                Require(Dump(live.State)==Dump(restored.State),$"hot coolant replay diverged after restore at rotation {rotation}");
+            }
+        });
         Run("current save roundtrip resumes the same reactor temperature fuel coolant waste and power", () =>
         {
             var live=new WorldSimulator(VersionThreeFixture(current:true));Advance(live,1.25f);var restored=new WorldSimulator(Saved(live.State));

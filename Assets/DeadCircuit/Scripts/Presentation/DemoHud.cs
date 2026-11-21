@@ -41,7 +41,7 @@ namespace DeadCircuit
             "低压电气化：建立低压发电与输电网络，制造电路，让采矿、冶炼与装配自动运行。",
             "勘探油藏，搭建采油、炼油与化工产线。生产柴油、聚合物与润滑油，用变压器向低压电网供电。",
             "提纯硅材，制造电子器件、控制模块与耐热合金。建立高压电网，逐级降压为其他产线供电。",
-            "加工铀矿，制造核燃料。为反应堆持续供应冷却液，及时取出核废料，留意温度与停堆状态。"
+            "加工铀矿，制造核燃料。启用反应堆控制台，接通冷却循环和核废料专用仓，留意温度与停堆状态。"
         };
 
         // One dynamic asset for every label, also available to the world view.
@@ -761,9 +761,13 @@ namespace DeadCircuit
                 Set(interactButton.label, building.kind == BuildKind.Door ? (building.setting == 1 ? "关门 E" : "开门 E") : "交互 E");
                 RecipeDefinition recipe = MachineRecipe(building);
                 RecipeDefinition configured = building.kind == BuildKind.Workbench ? null : TechCatalog.SelectedRecipe(building);
-                machineRecipe.gameObject.SetActive(configured != null || building.kind == BuildKind.Transformer);
-                machineRecipeFlow.gameObject.SetActive(configured != null || building.kind == BuildKind.Reactor);
-                machineSafety.gameObject.SetActive(building.kind == BuildKind.Reactor || building.kind == BuildKind.Transformer || building.kind == BuildKind.SteamTurbine);
+                bool reactor = building.kind == BuildKind.Reactor;
+                bool reactorConsole = building.kind == BuildKind.ReactorControlConsole;
+                bool transformer = building.kind == BuildKind.Transformer;
+                machineRecipe.gameObject.SetActive(configured != null || transformer);
+                machineRecipeFlow.gameObject.SetActive(configured != null || reactor);
+                machineSafety.gameObject.SetActive(reactor || reactorConsole || transformer || building.kind == BuildKind.SteamTurbine);
+                machineSafety.color = Amber;
                 if (recipe != null)
                 {
                     SetFlowText(machineRecipe, "配方：" + recipe.name, 28);
@@ -777,10 +781,19 @@ namespace DeadCircuit
                 }
                 int recipes = MachineRecipeCount(building.kind, world);
                 bool chooseRecipe = recipes > 1 || recipes == 1 && recipe == null;
-                bool transformer = building.kind == BuildKind.Transformer;
-                recipeButton.button.gameObject.SetActive(chooseRecipe || transformer);
-                recipeButton.button.interactable = inRange && (transformer ? CanSwitchTransformer(world, building) : chooseRecipe);
-                Set(recipeButton.label, transformer ? (building.setting == 0 ? "切换：高压 → 中压" : "切换：中压 → 低压") : "切换配方（" + recipes + " 种）");
+                recipeButton.button.gameObject.SetActive(chooseRecipe || transformer || reactorConsole);
+                recipeButton.button.interactable = inRange && (reactorConsole ? CanConfigureReactorConsole(world, player) :
+                    transformer ? CanSwitchTransformer(world, building) : chooseRecipe);
+                Set(recipeButton.label, reactorConsole ? (building.setting == 1 ? "停用控制台" : "启用控制台") :
+                    transformer ? (building.setting == 0 ? "切换：高压 → 中压" : "切换：中压 → 低压") : "切换配方（" + recipes + " 种）");
+                if (reactorConsole)
+                {
+                    bool externalPower = building.powered && building.powerRatio >= 1f;
+                    SetFlowText(machineSafety, (building.setting == 1 ? "控制台已启用" : "控制台已停用") +
+                        "\n外部供电：" + (externalPower ? "充足" : "不足") +
+                        "\n建成默认停用；须与反应堆接入同一高压(HV)电网，由外部电源足额供电。");
+                    machineSafety.color = building.setting == 1 && externalPower ? Accent : Amber;
+                }
                 if (transformer)
                 {
                     SetFlowText(machineRecipe, building.setting == 0 ? "变压：中压 → 低压" : "变压：高压 → 中压", 28);
@@ -788,22 +801,25 @@ namespace DeadCircuit
                 }
                 if (building.kind == BuildKind.SteamTurbine)
                     SetFlowText(machineSafety, "将蒸汽转为低压电力。\n蒸汽管接输入端，低压电网接输出端。");
-                if (building.kind == BuildKind.Reactor)
+                if (reactor)
                 {
                     int coolant = Count(building.items, (int)ItemKind.Coolant);
                     bool cooling = coolant > 0 || building.progress > 0f;
                     bool nuclearFuel = Count(building.items, (int)ItemKind.NuclearFuel) > 0 || building.fuel > 0f;
-                    string state = building.tripped ? "已停堆 · 正在降温" : !cooling ? "停机 · 缺少冷却液" :
-                        !nuclearFuel ? "待机 · 缺少核燃料" : Count(building.items, (int)ItemKind.NuclearWaste) >= WorldSimulator.BufferLimit ? "停机 · 核废料已满" :
-                        building.powerGeneration > 0 ? "运行中" : "待机";
-                    SetFlowText(machineRecipeFlow, "输入：核燃料、冷却液\n产出：高压电力、核废料");
+                    bool running = building.powerGeneration > 0f;
+                    string state = building.tripped ? "已停堆 · 正在降温" : running ? "运行中" :
+                        !cooling ? "停机 · 缺少冷却液" : !nuclearFuel ? "待机 · 缺少核燃料" : "待机 · 检查控制台和出料连接";
+                    SetFlowText(machineRecipeFlow, "输入：核燃料、冷却液\n产出：高压电力、核废料、热冷却液" +
+                        "\n箭头正前方：直连核废料专用仓。" +
+                        "\n面朝箭头时的右侧：用热冷却液管道接到靠近水源的冷却塔，再用独立的冷却液管道接回反应堆。" +
+                        "\n冷却塔需中压(MV)供电和工艺水。" +
+                        "\n启用同一高压(HV)电网中的反应堆控制台，确保控制台由外部电源足额供电。");
                     SetFlowText(machineSafety, "温度 " + building.temperature.ToString("0") + "℃ · " + state +
                         "\n冷却液 " + coolant + " 单位 · 剩余冷却时间 " + building.progress.ToString("0.0") + " 秒" +
-                        "\n核废料 " + Count(building.items, (int)ItemKind.NuclearWaste) + " / " + WorldSimulator.BufferLimit +
-                        "\n达到 900℃时自动停堆，降至 300℃后恢复运行。");
-                    machineSafety.color = building.tripped || !cooling || building.temperature >= 700f ? Danger : nuclearFuel ? Accent : Amber;
+                        "\n堆内核废料 " + Count(building.items, (int)ItemKind.NuclearWaste) + " 件" +
+                        "\n达到 900℃时自动停堆，降至 300℃后可重新运行。");
+                    machineSafety.color = building.tripped || building.temperature >= 700f || !running && !cooling ? Danger : running ? Accent : Amber;
                 }
-                else machineSafety.color = Amber;
                 return;
             }
             machineRecipe.gameObject.SetActive(false);
@@ -1007,10 +1023,20 @@ namespace DeadCircuit
             Send("craft", id);
         }
 
+        bool CanConfigureReactorConsole(WorldState world, PlayerState player) =>
+            world != null && world.era >= TechEra.Nuclear && bridge.IsRunning &&
+            player != null && player.connected && player.hp > 0f && player.interactCooldown <= 0f;
+
         void CycleRecipe()
         {
             BuildingState building = InspectedBuilding();
             if (building == null) return;
+            if (building.kind == BuildKind.ReactorControlConsole)
+            {
+                if (building.hp > 0f && CanConfigureReactorConsole(bridge.World, bridge.LocalPlayer))
+                    SendInspected("configure", building.setting == 1 ? 0 : 1);
+                return;
+            }
             if (building.kind == BuildKind.Transformer)
             {
                 if (CanSwitchTransformer(bridge.World, building)) SendInspected("recipe", building.setting == 0 ? 1 : 0);
@@ -1200,7 +1226,9 @@ namespace DeadCircuit
                 case BuildKind.Waterwheel: return "近水驱动 · 接触传动轴输出动力";
                 case BuildKind.Shaft: return "接触传递机械动力";
                 case BuildKind.SteamPipe: return "接触传递蒸汽动力";
-                case BuildKind.Reactor: return "自动运行 · E 补核燃料 / 冷却液";
+                case BuildKind.Reactor: return "满足启动条件后自动运行 · E 补核燃料 / 冷却液";
+                case BuildKind.ReactorControlConsole: return "在设备详情中启用或停用控制台";
+                case BuildKind.NuclearWasteVault: return "自动接收核废料 · 无法手动收发";
                 default: return "E 投入材料 / 取出产物";
             }
         }
