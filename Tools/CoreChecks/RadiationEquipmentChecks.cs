@@ -158,7 +158,7 @@ static partial class Checks
                 archive.Write(id, sim.State);
                 WorldState loaded = archive.Read(id);
                 PlayerState restored = loaded.players.Single(q => q.id == p.id);
-                Require(loaded.version == 17 && restored.items.Length == 63 && restored.hp > 0,
+                Require(loaded.version == WorldSimulator.SaveVersion && restored.items.Length == 63 && restored.hp > 0,
                     "suit persistence altered the save contract or living player");
                 Require(restored.armorIds[1] == suit.id && restored.gear.Single(g => g.id == suit.id).durability == 150 &&
                     restored.gear.Single(g => g.id == suit.id).kind == GearKind.RadiationSuit && restored.items.SequenceEqual(p.items),

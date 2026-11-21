@@ -57,6 +57,7 @@ namespace DeadCircuit
             CopyPetrochemicalProgression(source, s);
             CopyPrecisionProgression(source, s);
             CopyNuclearProgression(source, s);
+            CopyEquipmentResearchProgression(source, s);
             var entityIds = new HashSet<int>();
             CopyChunks(source,s);
             var occupied = new HashSet<long>();

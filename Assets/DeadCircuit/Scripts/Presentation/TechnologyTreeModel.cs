@@ -6,6 +6,7 @@ namespace DeadCircuit
     public sealed class TechnologyTreeNode
     {
         public int key, era, researchId;
+        public ResearchDomain domain;
         public string name, description, command;
         public int[] cost;
         public int[] parents;
@@ -31,6 +32,8 @@ namespace DeadCircuit
         {
             if (world == null || !Valid(node) || (int)world.era < node.era) return false;
             if (node.IsEra) return true;
+            if (node.domain == ResearchDomain.Weapon) return WeaponTechCatalog.HasResearch(world, node.researchId);
+            if (node.domain == ResearchDomain.Tool) return ToolTechCatalog.HasResearch(world, node.researchId);
             switch (node.era)
             {
                 case 0: return PrimitiveCatalog.HasResearch(world, node.researchId);
@@ -49,6 +52,8 @@ namespace DeadCircuit
             if (world == null) return "世界尚未就绪。";
             if (!Valid(node)) return "无法识别这项研究。";
             if (Known(world, node)) return "";
+            if (node.domain != ResearchDomain.Industry)
+                return EquipmentResearchCatalog.Requirement(world, player, Reference(node));
             int requiredEra = node.IsEra ? node.era - 1 : node.era;
             if ((int)world.era < requiredEra)
                 return "需要先进入：" + TechCatalog.EraName((TechEra)requiredEra) + "。";
@@ -84,13 +89,18 @@ namespace DeadCircuit
         {
             if (node == null) return false;
             var definition = Find(node.key);
-            return definition != null && node.era == definition.era && node.researchId == definition.researchId &&
+            return definition != null && node.domain == definition.domain && node.era == definition.era && node.researchId == definition.researchId &&
                 node.era >= 0 && node.era <= 6 && (node.researchId == -1 ||
-                node.researchId >= 0 && node.researchId < ResearchCount(node.era));
+                node.researchId >= 0 && node.researchId < ResearchCount(node.era, node.domain));
         }
 
-        static int ResearchCount(int era)
+        public static ResearchRef Reference(TechnologyTreeNode node) =>
+            node == null || node.IsEra ? null : new ResearchRef { domain = node.domain, era = node.era, id = node.researchId };
+
+        static int ResearchCount(int era, ResearchDomain domain = ResearchDomain.Industry)
         {
+            if (domain == ResearchDomain.Weapon) return WeaponTechCatalog.All.Length;
+            if (domain == ResearchDomain.Tool) return ToolTechCatalog.All.Length;
             switch (era)
             {
                 case 0: return PrimitiveCatalog.All.Length;
@@ -144,7 +154,7 @@ namespace DeadCircuit
         // Era acceptance still validates every required bit in the original catalog.
         static void AddEraParents(List<TechnologyTreeNode> nodes, int era, int requiredMask)
         {
-            var required = nodes.FindAll(node => !node.IsEra && node.era == era - 1 &&
+            var required = nodes.FindAll(node => node.domain == ResearchDomain.Industry && !node.IsEra && node.era == era - 1 &&
                 (requiredMask & (1 << node.researchId)) != 0);
             var ancestors = new HashSet<int>();
             foreach (var node in required) CollectCraftAncestors(node);
@@ -154,8 +164,11 @@ namespace DeadCircuit
             void CollectCraftAncestors(TechnologyTreeNode node)
             {
                 foreach (int key in node.parents)
-                    if (key % 100 != 0 && key / 100 == era - 1 && ancestors.Add(key))
-                        CollectCraftAncestors(nodes.Find(parent => parent.key == key));
+                {
+                    var parent = nodes.Find(value => value.key == key);
+                    if (parent != null && parent.domain == ResearchDomain.Industry && !parent.IsEra &&
+                        parent.era == era - 1 && ancestors.Add(key)) CollectCraftAncestors(parent);
+                }
             }
         }
 
@@ -204,8 +217,29 @@ namespace DeadCircuit
             AddParents(nodes, Key(2, (int)SteamTech.Refractories), Key(0, (int)PrimitiveTech.Ceramics));
             AddParents(nodes, Key(2, (int)SteamTech.PigIron), Key(1, (int)WaterTech.Blast), Key(1, (int)WaterTech.Crushing));
             AddParents(nodes, Key(2, (int)SteamTech.Machining), Key(1, (int)WaterTech.Pressing), Key(1, (int)WaterTech.Components));
-            nodes.Sort((a, b) => a.key.CompareTo(b.key));
+            foreach (var definition in WeaponTechCatalog.All) AddEquipmentResearch(nodes, definition);
+            foreach (var definition in ToolTechCatalog.All) AddEquipmentResearch(nodes, definition);
+            nodes.Sort((a, b) =>
+            {
+                int era = a.era.CompareTo(b.era);
+                if (era != 0) return era;
+                int domain = a.domain.CompareTo(b.domain);
+                return domain != 0 ? domain : a.researchId.CompareTo(b.researchId);
+            });
             return nodes.ToArray();
+        }
+
+        static void AddEquipmentResearch(List<TechnologyTreeNode> nodes, EquipmentTechnologyDefinition definition)
+        {
+            var parents = new List<int>();
+            foreach (var prerequisite in definition.prerequisites)
+                if (!parents.Contains(prerequisite.Key)) parents.Add(prerequisite.Key);
+            if (parents.Count == 0) parents.Add(definition.era * 100);
+            var reference = new ResearchRef { domain = definition.domain, era = definition.era, id = definition.id };
+            nodes.Add(new TechnologyTreeNode { key = reference.Key, domain = definition.domain, era = definition.era,
+                researchId = definition.id, name = definition.name, description = definition.description,
+                cost = (int[])definition.cost.Clone(), parents = parents.ToArray(),
+                command = definition.domain == ResearchDomain.Weapon ? "weapontech" : "tooltech" });
         }
     }
 }

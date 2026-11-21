@@ -85,6 +85,7 @@ namespace DeadCircuit
         {
             public RecipeDefinition recipe;
             public UiButton craft;
+            public UiButton research;
             public TextMeshProUGUI details;
         }
 

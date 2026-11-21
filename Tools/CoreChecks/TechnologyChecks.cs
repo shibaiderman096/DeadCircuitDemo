@@ -146,7 +146,7 @@ static partial class Checks
         Run("legacy hand fuel and ammo retain material counts and award no XP", () =>
         {
             var sim=new WorldSimulator(Flat(era:TechEra.Primitive));var p=Builder(sim);int xp=p.xp;var before=Copy(p.items);sim.Apply(Command(p,"craft",arg:0));var expected=Copy(before);expected[(int)ItemKind.Wood]-=3;expected[(int)ItemKind.Fuel]+=2;Inventory(p.items,expected,"manual fuel");
-            Advance(sim,.55f);sim.Apply(Command(p,"craft",arg:1));expected[(int)ItemKind.Iron]--;expected[(int)ItemKind.Ammo]+=4;Inventory(p.items,expected,"manual ammo");Require(p.xp==xp,"manual crafting awarded farmable XP");
+            Advance(sim,.55f);sim.Apply(Command(p,"craft",arg:1));Inventory(p.items,expected,"manual ammo remains locked before LV equipment research");Require(p.xp==xp,"manual crafting awarded farmable XP");
         });
         Run("legacy manual bronze is primitive and requires a nearby workbench", () =>
         {

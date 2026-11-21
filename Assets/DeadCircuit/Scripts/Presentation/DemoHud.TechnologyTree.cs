@@ -7,7 +7,7 @@ namespace DeadCircuit
 {
     public sealed partial class DemoHud
     {
-        const float TreeWidth = 816, TreeHeight = 462, NodeWidth = 144, NodeHeight = 70;
+        const float TreeWidth = 816, TreeHeight = 424, NodeWidth = 144, NodeHeight = 70;
         const float TreeColumn = 183, TreeRow = 94, TreeTop = 118;
         const float DefaultTreeZoom = .9f;
         static readonly Color TreeLocked = new Color32(30, 43, 42, 255);
@@ -58,6 +58,13 @@ namespace DeadCircuit
             new List<(int, int, TechnologyTreeLines.Path)>();
         readonly int[] treeEraCounts = new int[7];
         readonly int[] treeEraCompleted = new int[7];
+        readonly UiButton[] treeDomainButtons = new UiButton[4];
+        readonly RectTransform[] treeEraRegions = new RectTransform[7];
+        readonly RectTransform[] treeEraRules = new RectTransform[7];
+        readonly TextMeshProUGUI[] treeEraBands = new TextMeshProUGUI[7];
+        readonly List<UiButton> treeParentButtons = new List<UiButton>();
+        RectTransform treeParentLinks;
+        int treeDomainFilter = -1; // All; remaining values are explicit ResearchDomain values.
         TechnologyTreeViewport treeViewport;
         TechnologyTreeLines treeLines;
         RectTransform treeContent, technologyGuide;
@@ -88,7 +95,15 @@ namespace DeadCircuit
                 eraButtons[i].label.fontSizeMax = 15;
             }
 
-            RectTransform map = Box("Technology Tree Canvas", card, 22, 124, TreeWidth, TreeHeight, Recessed, true);
+            string[] domainNames = { "All", "Industry", "Weapon", "Tool" };
+            string[] domainLabels = { "全部", "工业", "武器", "工具" };
+            for (int i = 0; i < treeDomainButtons.Length; i++)
+            {
+                int filter = i - 1;
+                treeDomainButtons[i] = Button("Technology Domain " + domainNames[i], card, domainLabels[i],
+                    22 + i * 100, 122, 94, 30, () => BrowseTechnologyDomain(filter));
+            }
+            RectTransform map = Box("Technology Tree Canvas", card, 22, 162, TreeWidth, TreeHeight, Recessed, true);
             treeViewport = map.gameObject.AddComponent<TechnologyTreeViewport>();
             treeViewport.horizontal = treeViewport.vertical = true;
             treeViewport.movementType = UnityEngine.UI.ScrollRect.MovementType.Clamped;
@@ -110,7 +125,7 @@ namespace DeadCircuit
             Button("Technology Zoom In", controls, "+", 644, 2, 34, 31, () => ZoomTechnologyTreeAtCenter(1));
             Button("Technology Focus Current", controls, "定位当前", 694, 2, 114, 31, FocusCurrentTechnology);
 
-            technologyGuide = Box("Technology Guide", card, 22, 124, TreeWidth, 508, Recessed, true);
+            technologyGuide = Box("Technology Guide", card, 22, 162, TreeWidth, 470, Recessed, true);
             MakeTechnologyGuide(technologyGuide);
             technologyGuide.gameObject.SetActive(false);
 
@@ -122,6 +137,7 @@ namespace DeadCircuit
             RectTransform body = ScrollContent("Technology Details Scroll View", details, 12, 116, 310, 338, out treeDetailsScroll);
             treeDescription = FlowLabel("Technology Node Description", body, "", 282, 62, 16, Ink);
             treeParents = FlowLabel("Technology Prerequisites", body, "", 282, 32, 15, Ink);
+            treeParentLinks = FlowRow("Technology Prerequisite Links", body, 282, 1);
             treeCost = FlowLabel("Technology Research Materials", body, "", 282, 36, 15, Ink);
             treeRequirement = FlowLabel("Technology Research Requirement", body, "", 282, 48, 15, Amber);
             treeEvidence = FlowLabel("Technology Production Progress", body, "", 282, 32, 14, Muted);
@@ -133,7 +149,7 @@ namespace DeadCircuit
 
         void MakeTechnologyGuide(RectTransform panel)
         {
-            RectTransform content = ScrollContent("Technology Scroll View", panel, 0, 0, TreeWidth, 508, out technologyScroll);
+            RectTransform content = ScrollContent("Technology Scroll View", panel, 0, 0, TreeWidth, 470, out technologyScroll);
             technologyTitle = FlowLabel("Technology Era Title", content, "", 768, 34, 21, Accent);
             technologyDescription = FlowLabel("Technology Description", content, "", 768, 56, 16, Ink);
             MakeWaterTechnology(content);
@@ -157,70 +173,22 @@ namespace DeadCircuit
 
         void MakeTechnologyTree()
         {
-            var depths = new Dictionary<int, int>();
-            var columnSlots = new Dictionary<int, int>();
-            var positions = new Dictionary<int, Vector2>();
-            int columnBase = 0;
             for (int era = 0; era < eraButtons.Length; era++)
             {
-                int farthest = 0;
-                foreach (var node in TechnologyTreeModel.All)
-                {
-                    if (node.era != era) continue;
-                    int depth = TreeDepth(node, depths);
-                    farthest = Mathf.Max(farthest, depth);
-                    int column = columnBase + depth;
-                    columnSlots.TryGetValue(column, out int slot);
-                    columnSlots[column] = slot + 1;
-                    float y = TreeTop + slot * TreeRow;
-                    positions.Add(node.key, new Vector2(26 + column * TreeColumn, y));
-                    if (!node.IsEra) treeEraCounts[era]++;
-                }
-                float left = 12 + columnBase * TreeColumn;
-                float width = (farthest + 1) * TreeColumn - 8;
-                Box("Technology Era Region " + era, treeContent, left, 10, width, 428,
+                treeEraRegions[era] = Box("Technology Era Region " + era, treeContent, 0, 0, 1, 1,
                     era % 2 == 0 ? new Color32(18, 36, 31, 255) : new Color32(22, 41, 36, 255));
-                Box("Technology Era Rule " + era, treeContent, left + 12, 42, width - 24, 1, Edge);
-                Label("Technology Era Band " + era, treeContent, TechCatalog.EraName((TechEra)era), left + 14, 16, width - 28, 24, 16, EraColors[era], FontStyles.Bold);
-                columnBase += farthest + 1;
+                treeEraRules[era] = Box("Technology Era Rule " + era, treeContent, 0, 0, 1, 1, Edge);
+                treeEraBands[era] = Label("Technology Era Band " + era, treeContent, TechCatalog.EraName((TechEra)era),
+                    0, 0, 1, 24, 16, EraColors[era], FontStyles.Bold);
             }
-            float contentWidth = Mathf.Max(TreeWidth, columnBase * TreeColumn + 82);
-            float contentHeight = Mathf.Max(TreeHeight, TreeTop + 4 * TreeRow + NodeHeight + 64);
-            Place(treeContent, 0, 0, contentWidth, contentHeight);
             RectTransform wires = NewRect("Technology Tree Connections", treeContent);
-            Place(wires, 0, 0, contentWidth, contentHeight);
             if (wires.GetComponent<CanvasRenderer>() == null) wires.gameObject.AddComponent<CanvasRenderer>();
             treeLines = wires.gameObject.AddComponent<TechnologyTreeLines>();
             treeLines.raycastTarget = false;
-            int crossLane = 0;
             foreach (var node in TechnologyTreeModel.All)
             {
-                Vector2 to = positions[node.key];
-                foreach (int parentKey in node.parents)
-                {
-                    var parent = TechnologyTreeModel.Find(parentKey);
-                    if (parent == null || !positions.TryGetValue(parentKey, out Vector2 from)) continue;
-                    bool cross = parent.era != node.era;
-                    var line = new TechnologyTreeLines.Path
-                    {
-                        from = new Vector2(from.x + NodeWidth, -from.y - NodeHeight * .5f),
-                        to = new Vector2(to.x - 1, -to.y - NodeHeight * .5f),
-                        acrossEra = cross,
-                        laneY = -(cross && node.IsEra ? 62 + (crossLane % 5) * 9 : 501 + (crossLane % 8) * 9),
-                        color = TreeWire
-                    };
-                    if (cross) crossLane++;
-                    treeLinks.Add((parentKey, node.key, line));
-                    treeLines.paths.Add(line);
-                }
-            }
-            treeContent.localScale = new Vector3(treeZoom, treeZoom, 1f);
-            foreach (var node in TechnologyTreeModel.All)
-            {
-                Vector2 pos = positions[node.key];
                 int key = node.key;
-                string objectName = node.IsEra ? "Era Node " + node.era : TreeResearchNames[node.era] + node.researchId;
-                UiButton button = Button(objectName, treeContent, "", pos.x, pos.y, NodeWidth, NodeHeight, () => SelectTreeNode(key));
+                UiButton button = Button(TechnologyNodeName(node), treeContent, "", 0, 0, NodeWidth, NodeHeight, () => SelectTreeNode(key));
                 button.label.gameObject.SetActive(false);
                 Transform panel = button.button.transform;
                 var stripe = Box("Status Stripe", panel, 0, 0, 3, NodeHeight, EraColors[node.era]).GetComponent<UnityEngine.UI.Image>();
@@ -230,26 +198,180 @@ namespace DeadCircuit
                 Label("Node Name", panel, node.IsEra ? node.name + "时代" : node.name, 45, 8, 94, 29, 16, Ink, FontStyles.Bold);
                 TextMeshProUGUI status = Label("Node Status", panel, "", 45, 36, 94, 24, 13, Muted);
                 var selection = Box("Selected Edge", panel, 0, NodeHeight - 3, NodeWidth, 3, Accent).GetComponent<UnityEngine.UI.Image>();
-                var entry = new TreeCard { node = node, position = pos, button = button, status = status, stripe = stripe, selection = selection };
+                var entry = new TreeCard { node = node, button = button, status = status, stripe = stripe, selection = selection };
                 treeCards.Add(key, entry);
                 orderedTreeCards.Add(entry);
+                if (!node.IsEra) treeEraCounts[node.era]++;
             }
+            LayoutTechnologyTree();
         }
 
-        static int TreeDepth(TechnologyTreeNode node, Dictionary<int, int> depths)
+        bool TreeNodeVisible(TechnologyTreeNode node) => node.IsEra || treeDomainFilter < 0 || (int)node.domain == treeDomainFilter;
+
+        void LayoutTechnologyTree()
+        {
+            var depths = new Dictionary<int, int>();
+            var slots = new Dictionary<int, int>();
+            int columnBase = 0;
+            float bottom = TreeTop + NodeHeight;
+            for (int era = 0; era < eraButtons.Length; era++)
+            {
+                int farthest = 0;
+                float eraBottom = TreeTop + NodeHeight;
+                foreach (var entry in orderedTreeCards)
+                {
+                    var node = entry.node;
+                    if (node.era != era) continue;
+                    bool visible = TreeNodeVisible(node);
+                    entry.button.button.gameObject.SetActive(visible);
+                    if (!visible) continue;
+                    int depth = VisibleTreeDepth(node, depths);
+                    farthest = Mathf.Max(farthest, depth);
+                    int column = columnBase + depth;
+                    slots.TryGetValue(column, out int slot);
+                    slots[column] = slot + 1;
+                    entry.position = new Vector2(26 + column * TreeColumn, TreeTop + slot * TreeRow);
+                    Place((RectTransform)entry.button.button.transform, entry.position.x, entry.position.y, NodeWidth, NodeHeight);
+                    eraBottom = Mathf.Max(eraBottom, entry.position.y + NodeHeight);
+                }
+                float left = 12 + columnBase * TreeColumn;
+                float width = (farthest + 1) * TreeColumn - 8;
+                Place(treeEraRegions[era], left, 10, width, eraBottom + 28 - 10);
+                Place(treeEraRules[era], left + 12, 42, width - 24, 1);
+                Place(treeEraBands[era].rectTransform, left + 14, 16, width - 28, 24);
+                bottom = Mathf.Max(bottom, eraBottom + 28);
+                columnBase += farthest + 1;
+            }
+            treeLinks.Clear();
+            treeLines.paths.Clear();
+            float lowerLane = bottom + 24;
+            int crossLane = 0;
+            foreach (var entry in orderedTreeCards)
+            {
+                var node = entry.node;
+                if (!TreeNodeVisible(node)) continue;
+                foreach (int parentKey in node.parents)
+                {
+                    if (!treeCards.TryGetValue(parentKey, out var parent) || !TreeNodeVisible(parent.node)) continue;
+                    Vector2 from = parent.position, to = entry.position;
+                    bool cross = parent.node.era != node.era;
+                    float lane = cross && node.IsEra ? 62 + (crossLane % 5) * 9 : lowerLane + (crossLane % 8) * 9;
+                    var line = new TechnologyTreeLines.Path
+                    {
+                        from = new Vector2(from.x + NodeWidth, -from.y - NodeHeight * .5f),
+                        to = new Vector2(to.x - 1, -to.y - NodeHeight * .5f),
+                        acrossEra = cross, laneY = -lane, color = TreeWire
+                    };
+                    if (cross) { crossLane++; bottom = Mathf.Max(bottom, lane + 24); }
+                    treeLinks.Add((parentKey, node.key, line));
+                    treeLines.paths.Add(line);
+                }
+            }
+            float widthTotal = Mathf.Max(TreeWidth, columnBase * TreeColumn + 82);
+            float heightTotal = Mathf.Max(TreeHeight, bottom + 32);
+            Place(treeContent, 0, 0, widthTotal, heightTotal);
+            Place(treeLines.rectTransform, 0, 0, widthTotal, heightTotal);
+            treeContent.localScale = new Vector3(treeZoom, treeZoom, 1f);
+            treeLines.SetVerticesDirty();
+        }
+
+        int VisibleTreeDepth(TechnologyTreeNode node, Dictionary<int, int> depths)
         {
             if (depths.TryGetValue(node.key, out int depth)) return depth;
+            // Hidden prerequisites stay accessible in details; they do not reserve empty columns.
             foreach (int key in node.parents)
             {
                 var parent = TechnologyTreeModel.Find(key);
-                if (parent != null && parent.era == node.era) depth = Mathf.Max(depth, TreeDepth(parent, depths) + 1);
+                if (parent != null && parent.era == node.era && TreeNodeVisible(parent))
+                    depth = Mathf.Max(depth, VisibleTreeDepth(parent, depths) + 1);
             }
+            if (!node.IsEra) depth = Mathf.Max(1, depth);
             depths.Add(node.key, depth);
             return depth;
         }
 
+        public static string TechnologyNodeName(TechnologyTreeNode node) => node.IsEra ? "Era Node " + node.era :
+            node.domain == ResearchDomain.Weapon ? "Weapon Research " + node.researchId :
+            node.domain == ResearchDomain.Tool ? "Tool Research " + node.researchId : TreeResearchNames[node.era] + node.researchId;
+
+        static string ResearchDomainName(ResearchDomain domain) => domain == ResearchDomain.Weapon ? "武器" :
+            domain == ResearchDomain.Tool ? "工具" : "工业";
+
+        void BrowseTechnologyDomain(int filter)
+        {
+            if (treeDomainFilter == filter) return;
+            treeDomainFilter = filter;
+            LayoutTechnologyTree();
+            var selected = TechnologyTreeModel.Find(selectedTreeKey);
+            if (selected == null || !TreeNodeVisible(selected)) selectedTreeKey = selectedEra * 100;
+            RefreshAll();
+            FocusTreeNode(selectedTreeKey);
+        }
+
+        void OpenResearch(ResearchRef reference)
+        {
+            if (reference == null) return;
+            TechnologyTreeNode node = null;
+            foreach (var candidate in TechnologyTreeModel.All)
+                if (!candidate.IsEra && candidate.domain == reference.domain && candidate.researchId == reference.id)
+                {
+                    node = candidate;
+                    break;
+                }
+            if (node == null) return;
+            SetPanel(technology, true);
+            treeDomainFilter = (int)reference.domain;
+            LayoutTechnologyTree();
+            selectedEra = node.era;
+            selectedTreeKey = node.key;
+            RefreshAll();
+            FocusTreeNode(node.key);
+        }
+
+        void SelectTreePrerequisite(int key)
+        {
+            var parent = TechnologyTreeModel.Find(key);
+            if (parent == null) return;
+            if (!parent.IsEra && !TreeNodeVisible(parent))
+            {
+                treeDomainFilter = (int)parent.domain;
+                LayoutTechnologyTree();
+            }
+            if (selectedEra != parent.era) ResetScroll(technologyScroll);
+            selectedEra = parent.era;
+            selectedTreeKey = parent.key;
+            ResetScroll(treeDetailsScroll);
+            RefreshAll();
+            FocusTreeNode(parent.key);
+        }
+
         static string TechnologyIcon(TechnologyTreeNode node) => node.IsEra ? "machine_" + (int)TreeEraIcons[node.era] :
-            node.researchId < TreeProcessIcons[node.era].Length ? TreeProcessIcons[node.era][node.researchId] : "ui_research";
+            EquipmentTechnologyIcon(node) ?? (node.era >= 0 && node.era < TreeProcessIcons.Length &&
+                node.researchId >= 0 && node.researchId < TreeProcessIcons[node.era].Length
+                    ? TreeProcessIcons[node.era][node.researchId] : "ui_research");
+
+        static string EquipmentTechnologyIcon(TechnologyTreeNode node)
+        {
+            if (node.domain == ResearchDomain.Tool)
+                return node.researchId == (int)ToolTech.SteelTools ? "gear_2" : "gear_4";
+            if (node.domain != ResearchDomain.Weapon) return null;
+            switch ((WeaponTech)node.researchId)
+            {
+                case WeaponTech.BasicAmmunition: return "item_" + (int)ItemKind.Ammo;
+                case WeaponTech.Sidearms: return "gear_" + (int)GearKind.Pistol;
+                case WeaponTech.Shotguns: return "gear_" + (int)GearKind.Shotgun;
+                case WeaponTech.BasicFittings: return "part_" + (int)PartKind.MuzzleBrake;
+                case WeaponTech.ReflexOptics: return "part_" + (int)PartKind.RedDot;
+                case WeaponTech.AutomaticWeapons: return "gear_" + (int)GearKind.AssaultRifle;
+                case WeaponTech.TacticalFittings: return "part_" + (int)PartKind.Suppressor;
+                case WeaponTech.MagnifiedOptics: return "part_" + (int)PartKind.Scope4x;
+                case WeaponTech.PrecisionAmmunition: return "item_" + (int)ItemKind.PrecisionAmmo;
+                case WeaponTech.PrecisionWeapons: return "gear_" + (int)GearKind.PrecisionRifle;
+                case WeaponTech.MatchBarrels: return "part_" + (int)PartKind.MatchBarrel;
+                case WeaponTech.ArmorPiercing: return "item_" + (int)ItemKind.ArmorPiercingAmmo;
+                default: return "ui_research";
+            }
+        }
 
         void SelectTreeNode(int key)
         {
@@ -278,7 +400,7 @@ namespace DeadCircuit
             TechnologyTreeNode candidate = null;
             foreach (var node in TechnologyTreeModel.All)
             {
-                if (node.era != era || node.IsEra || TechnologyTreeModel.Known(world, node) ||
+                if (node.era != era || node.IsEra || !TreeNodeVisible(node) || TechnologyTreeModel.Known(world, node) ||
                     !TechnologyTreeModel.PrerequisitesMet(world, node)) continue;
                 if (candidate == null) candidate = node;
                 if (TechnologyTreeModel.CanResearch(world, player, node)) { candidate = node; break; }
@@ -311,12 +433,14 @@ namespace DeadCircuit
         void FocusTreeNode(int key)
         {
             if (!treeCards.TryGetValue(key, out var entry)) return;
-            Vector2 topLeft = new Vector2(entry.position.x * treeZoom - 26, entry.position.y * treeZoom - 106);
-            if (!entry.node.IsEra) topLeft.x -= TreeWidth * .30f;
-            SetTreeOffset(new Vector2(-topLeft.x, topLeft.y));
+            float width = treeViewport.viewport.rect.width;
+            float height = treeViewport.viewport.rect.height;
+            SetTreeOffset(new Vector2(width * .5f - (entry.position.x + NodeWidth * .5f) * treeZoom,
+                (entry.position.y + NodeHeight * .5f) * treeZoom - height * .5f));
         }
 
-        void ZoomTechnologyTreeAtCenter(float steps) => SetTreeZoom(steps, new Vector2(TreeWidth * .5f, -TreeHeight * .5f));
+        void ZoomTechnologyTreeAtCenter(float steps) => SetTreeZoom(steps,
+            new Vector2(treeViewport.viewport.rect.width * .5f, -treeViewport.viewport.rect.height * .5f));
 
         void ZoomTechnologyTree(float steps, Vector2 screen, Camera eventCamera)
         {
@@ -341,8 +465,8 @@ namespace DeadCircuit
         {
             treeViewport.StopMovement();
             treeContent.anchoredPosition = new Vector2(
-                Mathf.Clamp(offset.x, -Mathf.Max(0, treeContent.rect.width * treeZoom - TreeWidth), 0),
-                Mathf.Clamp(offset.y, 0, Mathf.Max(0, treeContent.rect.height * treeZoom - TreeHeight)));
+                Mathf.Clamp(offset.x, -Mathf.Max(0, treeContent.rect.width * treeZoom - treeViewport.viewport.rect.width), 0),
+                Mathf.Clamp(offset.y, 0, Mathf.Max(0, treeContent.rect.height * treeZoom - treeViewport.viewport.rect.height)));
         }
 
         void RefreshTechnology(WorldState world, PlayerState player)
@@ -350,6 +474,7 @@ namespace DeadCircuit
             var selected = TechnologyTreeModel.Find(selectedTreeKey);
             if (selected == null) return;
             System.Array.Clear(treeEraCompleted, 0, treeEraCompleted.Length);
+            System.Array.Clear(treeEraCounts, 0, treeEraCounts.Length);
             int complete = 0, total = 0;
             foreach (var entry in orderedTreeCards)
             {
@@ -357,9 +482,10 @@ namespace DeadCircuit
                 bool known = TechnologyTreeModel.Known(world, node);
                 bool ready = !known && TechnologyTreeModel.CanResearch(world, player, node);
                 bool active = node.key == selectedTreeKey;
-                if (!node.IsEra)
+                if (!node.IsEra && (treeDomainFilter < 0 || (int)node.domain == treeDomainFilter))
                 {
                     total++;
+                    treeEraCounts[node.era]++;
                     if (known) { complete++; treeEraCompleted[node.era]++; }
                 }
                 Color state = known ? Accent : ready ? Amber : Muted;
@@ -382,6 +508,12 @@ namespace DeadCircuit
             }
             if (recolor) treeLines.SetVerticesDirty();
             Set(treeHeading, "当前时代  " + TechCatalog.EraName(world.era) + "     ·     工艺 " + complete + " / " + total);
+            for (int i = 0; i < treeDomainButtons.Length; i++)
+            {
+                bool active = treeDomainFilter == i - 1;
+                Tint(treeDomainButtons[i], active ? Selected : Raised);
+                treeDomainButtons[i].label.color = active ? Accent : Ink;
+            }
             for (int i = 0; i < eraButtons.Length; i++)
             {
                 string count = treeEraCounts[i] > 0 ? "  " + treeEraCompleted[i] + "/" + treeEraCounts[i] : "";
@@ -404,22 +536,42 @@ namespace DeadCircuit
             bool ready = bridge.IsRunning && TechnologyTreeModel.CanResearch(world, player, node);
             bool sending = !known && node.key == treeResearchSentKey && Time.unscaledTime < treeResearchSentAt;
             Color state = known ? Accent : ready ? Amber : Muted;
-            Set(treeTabTitle, TechCatalog.EraName((TechEra)node.era) + (node.IsEra ? "  /  时代研究" : "  /  工艺研究"));
+            Set(treeTabTitle, TechCatalog.EraName((TechEra)node.era) +
+                (node.IsEra ? "  /  时代入口" : "  /  " + ResearchDomainName(node.domain) + "研究"));
             treeTabTitle.color = EraColors[node.era];
             Set(treeTitle, node.IsEra ? node.name + "时代" : node.name);
             Set(treeState, TechnologyStatus(world, node, known, ready));
             treeState.color = state;
             SetFlowText(treeDescription, node.description, 48);
-            var parents = new StringBuilder(96);
-            foreach (int key in node.parents)
+            SetFlowText(treeParents, node.parents.Length == 0 ? "直接前置研究\n无" : "直接前置研究 · 点击跳转", 30);
+            int parentCount = node.parents.Length;
+            while (treeParentButtons.Count < parentCount)
             {
-                var prerequisite = TechnologyTreeModel.Find(key);
-                if (prerequisite == null) continue;
-                if (parents.Length > 0) parents.Append(" · ");
-                parents.Append(TechnologyTreeModel.Known(world, prerequisite) ? "<color=#A6D9BB>" : "<color=#F2BB62>")
-                    .Append(prerequisite.name).Append(prerequisite.IsEra ? "时代" : "").Append("</color>");
+                int index = treeParentButtons.Count;
+                UiButton link = Button("Technology Prerequisite Link " + index, treeParentLinks, "", 0, 0, 282, 32, () => { });
+                link.label.fontSizeMax = 13;
+                var linkLayout = link.button.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
+                linkLayout.preferredWidth = 282;
+                linkLayout.preferredHeight = 32;
+                treeParentButtons.Add(link);
             }
-            SetFlowText(treeParents, "前置研究\n" + (parents.Length == 0 ? "无" : parents.ToString()), 37);
+            for (int i = 0; i < treeParentButtons.Count; i++)
+            {
+                bool visible = i < parentCount;
+                treeParentButtons[i].button.gameObject.SetActive(visible);
+                if (!visible) continue;
+                var prerequisite = TechnologyTreeModel.Find(node.parents[i]);
+                if (prerequisite == null) continue;
+                int key = prerequisite.key;
+                treeParentButtons[i].button.onClick.RemoveAllListeners();
+                treeParentButtons[i].button.onClick.AddListener(() => { DemoAudio.UiClick(); SelectTreePrerequisite(key); });
+                Place((RectTransform)treeParentButtons[i].button.transform, 0, i * 36, 282, 32);
+                treeParentButtons[i].button.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 32;
+                treeParentButtons[i].label.textWrappingMode = TextWrappingModes.NoWrap;
+                Set(treeParentButtons[i].label, (prerequisite.IsEra ? "时代 · " : ResearchDomainName(prerequisite.domain) + " · ") + prerequisite.name);
+                Tint(treeParentButtons[i], TechnologyTreeModel.Known(world, prerequisite) ? TreeComplete : TreeReady);
+            }
+            treeParentLinks.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = parentCount * 36f;
             SetFlowText(treeCost, "研究材料 · 持有 / 所需\n" + MaterialText(node.cost, player.items, true), 37);
             SetFlowText(treeRequirement, "研究条件\n" + (known ? "全队已完成" : sending ? "正在提交研究…" : ready ? "条件已满足" :
                 string.IsNullOrEmpty(requirement) ? "请等待角色恢复操作。" : requirement), 37);
@@ -437,6 +589,8 @@ namespace DeadCircuit
                 ? SteamProgress("高压装配控制模块", world.hvPowered, 4) + " · " +
                   SteamProgress("控制模块", Count(world.produced, (int)ItemKind.ControlModule), 4) + " · " +
                   SteamProgress("耐热合金", Count(world.produced, (int)ItemKind.HeatAlloy), 6) : "";
+            if (node.domain != ResearchDomain.Industry)
+                return EquipmentResearchCatalog.Evidence(world, TechnologyTreeModel.Reference(node));
             if ((int)world.era < node.era) return "";
             switch ((TechEra)node.era)
             {

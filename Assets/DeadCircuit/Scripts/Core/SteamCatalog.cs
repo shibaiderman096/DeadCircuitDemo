@@ -61,6 +61,7 @@ namespace DeadCircuit
             for(int i=0;i<d.cost.Length;i++) if(p.items[i]<d.cost[i]) return "研究材料不足："+DemoCatalog.ItemNames[i];
             return "";
         }
+        public static string ResearchEvidence(WorldState s,int id) => s==null || Definition(id)==null ? "无法识别这项蒸汽研究。" : ResearchMilestone(s,(SteamTech)id);
         static string ResearchMilestone(WorldState s, SteamTech id)
         {
             if(id==SteamTech.Coking && !PrimitiveCatalog.HasResearch(s,PrimitiveTech.Charcoal)) return "需要原始研究：木炭烧制。";

@@ -12,7 +12,7 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 17;
+        public const int SaveVersion = 18;
         public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = 999, BufferLimit = 200;
         public const int MaxCargo = 1024;
@@ -157,6 +157,8 @@ namespace DeadCircuit
                 case "mv": ResearchPetrochemical(p, cmd.arg); return;
                 case "hv": ResearchPrecision(p, cmd.arg); return;
                 case "nuclear": ResearchNuclear(p, cmd.arg); return;
+                case "weapontech": ResearchEquipment(p, ResearchDomain.Weapon, cmd.arg); return;
+                case "tooltech": ResearchEquipment(p, ResearchDomain.Tool, cmd.arg); return;
                 case "prospect": ProspectPetrochemical(p); return;
                 case "mill": Mill(p, cmd.x, cmd.y); return;
                 case "interact": case "build": case "repair": case "dismantle": case "recipe": case "configure":
@@ -325,6 +327,13 @@ namespace DeadCircuit
                 for(int i=0;i<DemoCatalog.ItemCount;i++) { p.items[i]+=r.outputs[i]; RecordProduced(i,r.outputs[i]); }
                 RecordLowVoltageProduction(null,r);
                 p.interactCooldown=.5f; Notice(p,"已制作："+r.name); return;
+            }
+            if(arg==1)
+            {
+                if(State.era<TechEra.LowVoltage) { Notice(p,"需要先进入："+TechCatalog.EraName(TechEra.LowVoltage)); return; }
+                if(!EquipmentResearchCatalog.IsAmmoUnlocked(State,ItemKind.Ammo))
+                { Notice(p,EquipmentResearchCatalog.Missing(EquipmentResearchCatalog.AmmoResearch(ItemKind.Ammo))); return; }
+                if(!EquipmentCatalog.HasWorkbench(State,p)) { Notice(p,"请靠近工作台，并确保中间没有障碍。"); return; }
             }
             int source = arg == 0 ? (int)ItemKind.Wood : (int)ItemKind.Iron;
             int target = arg == 0 ? (int)ItemKind.Fuel : (int)ItemKind.Ammo;

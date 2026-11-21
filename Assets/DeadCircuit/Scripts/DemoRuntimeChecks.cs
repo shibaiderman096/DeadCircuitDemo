@@ -191,6 +191,8 @@ namespace DeadCircuit
                     p.y = DemoCatalog.CenterY(workbench) + 1.1f;
                     foreach (SteamTech steamTech in SteamCatalog.All.Select(d => d.id))
                         yield return ResearchQaSteam(bridge, steamTech);
+                    foreach (ToolTech toolTech in ToolTechCatalog.All.Select(d => (ToolTech)d.id))
+                        yield return ResearchQaEquipment(bridge, ResearchDomain.Tool, (int)toolTech);
                 }
                 if (target == TechEra.LowVoltage)
                 {
@@ -201,6 +203,8 @@ namespace DeadCircuit
                     p.y = DemoCatalog.CenterY(workbench) + 1.1f;
                     foreach (LowVoltageTech lowVoltageTech in LowVoltageCatalog.All.Select(d => d.id))
                         yield return ResearchQaLowVoltage(bridge, lowVoltageTech);
+                    foreach (WeaponTech weaponTech in Enumerable.Range(0, 5).Select(id => (WeaponTech)id))
+                        yield return ResearchQaEquipment(bridge, ResearchDomain.Weapon, (int)weaponTech);
                 }
                 if (target == TechEra.MediumVoltage)
                 {
@@ -211,6 +215,8 @@ namespace DeadCircuit
                     p.y = DemoCatalog.CenterY(workbench) + 1.1f;
                     foreach (PetrochemicalTech petrochemicalTech in PetrochemicalCatalog.All.Select(d => d.id))
                         yield return ResearchQaPetrochemical(bridge, petrochemicalTech);
+                    foreach (WeaponTech weaponTech in Enumerable.Range(5, 4).Select(id => (WeaponTech)id))
+                        yield return ResearchQaEquipment(bridge, ResearchDomain.Weapon, (int)weaponTech);
                 }
                 if (target == TechEra.HighVoltage)
                 {
@@ -221,6 +227,11 @@ namespace DeadCircuit
                     p.y = DemoCatalog.CenterY(workbench) + 1.1f;
                     foreach (PrecisionTech precisionTech in PrecisionCatalog.All.Select(d => d.id))
                         yield return ResearchQaPrecision(bridge, precisionTech);
+                    foreach (WeaponTech weaponTech in Enumerable.Range(9, 3).Select(id => (WeaponTech)id))
+                        yield return ResearchQaEquipment(bridge, ResearchDomain.Weapon, (int)weaponTech);
+                    Require(bridge.World.weaponResearch == WeaponTechCatalog.AllResearch &&
+                        bridge.World.toolResearch == ToolTechCatalog.AllResearch,
+                        "all fourteen optional equipment studies completed through their real HUD commands");
                 }
                 if (target == TechEra.Nuclear) yield return CheckQaNuclearResearch(bridge);
                 if (Active("Technology Panel")) yield return Press(Key.T);
@@ -367,7 +378,7 @@ namespace DeadCircuit
                 PrimitiveCatalog.IsRecipeUnlocked(bridge.World, TechCatalog.Recipe(92)) &&
                 bridge.World.nuclearUraniumMined >= 4 && bridge.World.nuclearUraniumMined <= bridge.World.gathered,
                 "selected world restores fuel studies, recipe unlocks and real mining evidence");
-            Require(NuclearCatalog.All.Length == 11 && TechnologyTreeModel.All.Length == 66 &&
+            Require(NuclearCatalog.All.Length == 11 && TechnologyTreeModel.All.Length == 80 &&
                 NuclearCatalog.HasResearch(bridge.World, NuclearTech.RadiationMonitoring) &&
                 NuclearCatalog.HasResearch(bridge.World, NuclearTech.RadiationProtection),
                 "selected world restores radiation studies and the eleven-study nuclear catalog");
@@ -554,6 +565,21 @@ namespace DeadCircuit
             yield return Press(Key.T);
             Require(Active("Technology Panel"), "technology tree reopens");
             Require(RequireTechnologyTreeLayout() == lineCount, "reopening the technology tree preserves connection count");
+
+            Click("Technology Domain Weapon");
+            yield return null;
+            Require(FindButton("Technology Domain Weapon").colors.normalColor == new Color32(31, 77, 72, 255),
+                "weapon domain filter is visibly selected");
+            int visibleWeaponNodes = content.GetComponentsInChildren<Button>(false).Count(button =>
+                button.name.StartsWith("Weapon Research ", StringComparison.Ordinal) || button.name.StartsWith("Era Node ", StringComparison.Ordinal));
+            Require(visibleWeaponNodes == 19, "weapon filter shows twelve studies and seven era entries");
+            Click("Technology Domain Tool");
+            yield return null;
+            int visibleToolNodes = content.GetComponentsInChildren<Button>(false).Count(button =>
+                button.name.StartsWith("Tool Research ", StringComparison.Ordinal) || button.name.StartsWith("Era Node ", StringComparison.Ordinal));
+            Require(visibleToolNodes == 9, "tool filter shows two studies and seven era entries");
+            Click("Technology Domain All");
+            yield return null;
         }
 
         static int RequireTechnologyTreeLayout()
@@ -568,19 +594,45 @@ namespace DeadCircuit
             Require(content.GetComponent<LayoutGroup>() == null && content.GetComponent<ContentSizeFitter>() == null,
                 "technology tree content allows manual node placement");
 
-            string[] prefixes = { "Primitive Research ", "Water Research ", "Steam Research ",
-                "Low Voltage Research ", "Petrochemical Research ", "Precision Node ", "Nuclear Research " };
-            var expected = new HashSet<string>(TechnologyTreeModel.All.Select(node => node.IsEra
-                ? "Era Node " + node.era : prefixes[node.era] + node.researchId));
+            var expected = new HashSet<string>(TechnologyTreeModel.All.Select(DemoHud.TechnologyNodeName));
             var nodes = content.GetComponentsInChildren<Button>(true);
-            Require(nodes.Length == TechnologyTreeModel.All.Length && expected.SetEquals(nodes.Select(b => b.name)) &&
+            Require(TechnologyTreeModel.All.Length == 80 && TechnologyTreeModel.All.Count(node => !node.IsEra) == 73 &&
+                nodes.Length == TechnologyTreeModel.All.Length && expected.SetEquals(nodes.Select(b => b.name)) &&
                 nodes.All(b => b.gameObject.activeInHierarchy), "technology tree has one active button per model node");
+
+            foreach (TechnologyTreeNode node in TechnologyTreeModel.All.Where(value => !value.IsEra && value.domain != ResearchDomain.Industry))
+                Require(node.parents.Length == 0 || node.parents.All(parent => parent != node.era * 100),
+                    "equipment node uses direct parents without a redundant era edge: " + node.name);
 
             var lines = content.GetComponentsInChildren<TechnologyTreeLines>(true);
             Require(lines.Length == 1 && lines[0].isActiveAndEnabled &&
                 lines[0].GetComponent<CanvasRenderer>() != null && lines[0].paths.Count > 0,
                 "technology tree has one active renderer with dependency connections");
             return lines[0].paths.Count;
+        }
+
+        IEnumerator ResearchQaEquipment(GameBridge bridge, ResearchDomain domain, int id)
+        {
+            string filter = domain == ResearchDomain.Weapon ? "Weapon" : "Tool";
+            Click("Technology Domain " + filter);
+            yield return null;
+            var node = TechnologyTreeModel.All.Single(n => !n.IsEra && n.domain == domain && n.researchId == id);
+            var definition = domain == ResearchDomain.Weapon ? WeaponTechCatalog.All[id] : ToolTechCatalog.All[id];
+            for (int item = 0; item < definition.production.Length; item++)
+                bridge.World.produced[item] = Math.Max(bridge.World.produced[item], definition.production[item]);
+            GrantSamples(bridge.LocalPlayer, definition.cost);
+            yield return ClickScrolled(DemoHud.TechnologyNodeName(node));
+            yield return new WaitForSecondsRealtime(.2f);
+            string missing = EquipmentResearchCatalog.Requirement(bridge.World, bridge.LocalPlayer,
+                new ResearchRef { domain = domain, era = definition.era, id = id });
+            Require(FindButton("Research Button").interactable && string.IsNullOrEmpty(missing),
+                "equipment study shows the real research prerequisites: " + node.name + " / " + missing);
+            Click("Research Button");
+            yield return new WaitForSecondsRealtime(.7f);
+            int mask = domain == ResearchDomain.Weapon ? bridge.World.weaponResearch : bridge.World.toolResearch;
+            Require((mask & (1 << id)) != 0, "equipment research button did not update authoritative world state: " + node.name);
+            Click("Technology Domain All");
+            yield return null;
         }
 
         IEnumerator CheckQaNuclearResearch(GameBridge bridge)
@@ -600,8 +652,9 @@ namespace DeadCircuit
             yield return SelectQaTechnologyEra((int)TechEra.Nuclear);
             yield return new WaitForSecondsRealtime(.6f);
             Require(TechnologyTreeModel.All.Count(n => !n.IsEra && n.era == (int)TechEra.Nuclear) == NuclearCatalog.All.Length &&
-                NuclearCatalog.All.Length == 11 && TechnologyTreeModel.All.Count(n => !n.IsEra) == 59 &&
-                TechnologyTreeModel.All.Length == 66, "technology tree includes eleven nuclear studies, 59 studies and seven eras");
+                NuclearCatalog.All.Length == 11 && TechnologyTreeModel.All.Count(n => !n.IsEra && n.domain == ResearchDomain.Industry && n.era == (int)TechEra.Nuclear) == 11 &&
+                TechnologyTreeModel.All.Count(n => !n.IsEra) == 73 && TechnologyTreeModel.All.Length == 80,
+                "technology tree includes eleven nuclear industrial studies, 73 studies and seven eras");
             Click("Nuclear Research " + beneficiationId);
             yield return null;
             Require(world.nuclearUraniumMined == 0 && !FindButton("Research Button").interactable &&
@@ -967,9 +1020,14 @@ namespace DeadCircuit
         {
             var keyboard = Keyboard.current ?? InputSystem.AddDevice<Keyboard>("Demo QA Keyboard");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(key));
-            yield return null;
+            float deadline = Time.realtimeSinceStartup + 1f;
+            while (!keyboard[key].isPressed && Time.realtimeSinceStartup < deadline) yield return null;
+            Require(keyboard[key].isPressed, "QA key press reached Input System: " + key);
+            yield return new WaitForSecondsRealtime(.05f);
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
-            yield return null;
+            deadline = Time.realtimeSinceStartup + 1f;
+            while (keyboard[key].isPressed && Time.realtimeSinceStartup < deadline) yield return null;
+            Require(!keyboard[key].isPressed, "QA key release reached Input System: " + key);
             yield return new WaitForSecondsRealtime(.15f);
         }
         static IEnumerator PointAtWorld(float x, float y)

@@ -162,7 +162,7 @@ static partial class Checks
             sim.State.produced[(int)concentrate] = 3;
 
             var restored = new WorldSimulator(Saved(sim.State));
-            Require(restored.State.version == 17 && restored.State.produced[(int)concentrate] == 3 &&
+            Require(restored.State.version == WorldSimulator.SaveVersion && restored.State.produced[(int)concentrate] == 3 &&
                 restored.State.players[0].items[(int)concentrate] == 3 && Building(restored, plant.id).items[(int)concentrate] == 2,
                 "current-format save did not preserve uranium concentrate in world counters and inventories");
         });

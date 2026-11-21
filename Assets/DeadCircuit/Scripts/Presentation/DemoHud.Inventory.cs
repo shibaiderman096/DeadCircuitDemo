@@ -19,6 +19,7 @@ namespace DeadCircuit
             public int kind;
             public bool part;
             public UiButton craft;
+            public UiButton research;
             public TextMeshProUGUI details;
         }
 
@@ -47,7 +48,7 @@ namespace DeadCircuit
         TextMeshProUGUI equipmentSummary, inventorySummary, inventoryEmpty, inventorySelection;
         TextMeshProUGUI inventoryPreviewEmpty;
         TextMeshProUGUI itemTitle, itemMeta, itemUsage, itemStats, equipmentHint, armorSummary;
-        UiButton sortInventory, filterInventory, equipSelected, unequipSelected, repairGear, reloadGear, unloadGear, salvageGear;
+        UiButton sortInventory, filterInventory, equipSelected, unequipSelected, repairGear, reloadGear, unloadGear, salvageGear, itemResearch;
         int inventoryTab, inventorySort, inventoryFilter, selectedMaterial, selectedGear = -1, selectedPart;
         // Keep identities rather than indices or snapshot references, even when sorting and syncing.
         int inventoryDetailKind, inventorySelectionRevision, paintedSelectionRevision = -1;
@@ -194,7 +195,10 @@ namespace DeadCircuit
                 UiButton craft = Button(entry.id == 0 ? "Craft Fuel" : entry.id == 1 ? "Craft Ammo" : "Craft Recipe Button " + entry.id,
                     row, entry.name, 2, 6, 120, 66, () => CraftRecipe(entry.id));
                 SetButtonArt(craft, "ui_craft", 26);
-                manualRecipes.Add(new RecipeRow { recipe = entry, craft = craft, details = RecipeDetails(row, 166) });
+                UiButton research = Button("View Research Recipe " + entry.id, row, "查看研究", 2, 76, 120, 28,
+                    () => OpenResearch(RecipeResearch(entry)));
+                SetButtonArt(research, "ui_research", 16);
+                manualRecipes.Add(new RecipeRow { recipe = entry, craft = craft, research = research, details = RecipeDetails(row, 166) });
             }
             for (int i = 0; i < EquipmentCatalog.GearNames.Length; i++) MakeEquipmentRecipe(i, false);
             for (int i = 0; i < EquipmentCatalog.PartNames.Length; i++) MakeEquipmentRecipe(i, true);
@@ -214,7 +218,36 @@ namespace DeadCircuit
             RectTransform row = FlowRow(prefix + kind + " Row", inventoryRecipes, 302, 112);
             UiButton craft = Button(prefix + kind, row, "", 2, 6, 120, 66, () => CraftEquipment(kind, part));
             SetButtonArt(craft, part ? "ui_attach" : "ui_craft", 26);
-            equipmentRecipes.Add(new EquipmentRecipeRow { kind = kind, part = part, craft = craft, details = RecipeDetails(row, 166) });
+            ResearchRef research = part ? EquipmentResearchCatalog.PartResearch((PartKind)kind) : GearResearchReference((GearKind)kind);
+            UiButton view = Button("View Research " + prefix + kind, row, "查看研究", 2, 76, 120, 28,
+                () => OpenResearch(research));
+            SetButtonArt(view, "ui_research", 16);
+            view.button.gameObject.SetActive(research != null);
+            equipmentRecipes.Add(new EquipmentRecipeRow { kind = kind, part = part, craft = craft, research = view, details = RecipeDetails(row, 166) });
+        }
+
+        static ResearchRef RecipeResearch(RecipeDefinition recipe)
+        {
+            if (recipe?.outputs == null) return null;
+            for (int i = 0; i < recipe.outputs.Length; i++)
+                if (recipe.outputs[i] > 0)
+                {
+                    ResearchRef research = EquipmentResearchCatalog.AmmoResearch((ItemKind)i);
+                    if (research != null) return research;
+                }
+            return null;
+        }
+
+        static ResearchRef GearResearchReference(GearKind kind) => kind == GearKind.RadiationSuit
+            ? new ResearchRef { domain = ResearchDomain.Industry, era = (int)TechEra.Nuclear, id = (int)NuclearTech.RadiationProtection }
+            : EquipmentResearchCatalog.GearResearch(kind);
+
+        ResearchRef SelectedInventoryResearch()
+        {
+            if (inventoryDetailKind == 0) return EquipmentResearchCatalog.AmmoResearch((ItemKind)selectedMaterial);
+            if (inventoryDetailKind == 2) return EquipmentResearchCatalog.PartResearch((PartKind)selectedPart);
+            GearState gear = EquipmentCatalog.Find(bridge.LocalPlayer, selectedGear);
+            return gear == null ? null : GearResearchReference(gear.kind);
         }
 
         void MakeItemDetails(RectTransform card)
@@ -223,6 +256,9 @@ namespace DeadCircuit
             itemTitle = FlowLabel("Selected Item Name", content, "", 390, 36, 20, Accent);
             itemMeta = FlowLabel("Selected Item Quantity", content, "", 390, 54, 13, Muted);
             itemUsage = FlowLabel("Selected Item Usage", content, "", 390, 64, 13, Ink);
+            itemResearch = Button("View Selected Item Research", content, "查看制造研究", 0, 0, 180, 32,
+                () => OpenResearch(SelectedInventoryResearch()));
+            itemResearch.button.gameObject.AddComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 32;
             itemStats = FlowLabel("Selected Gear Stats", content, "", 390, 108, 14, Ink);
             gearDetailObjects.Add(itemStats.gameObject);
             RectTransform actions = FlowRow("Gear Actions", content, 390, 38);
@@ -563,6 +599,7 @@ namespace DeadCircuit
 
         void RefreshItemDetails(WorldState world, PlayerState player, GearState target, bool bench)
         {
+            itemResearch.button.gameObject.SetActive(false);
             bool hasGear = inventoryDetailKind != 0 && target != null;
             bool gun = hasGear && EquipmentCatalog.IsGun(target.kind);
             bool armor = hasGear && EquipmentCatalog.IsArmor(target.kind);
@@ -573,23 +610,34 @@ namespace DeadCircuit
             {
                 Set(itemTitle, DemoCatalog.ItemNames[selectedMaterial]);
                 SetFlowText(itemMeta, "数量：×" + Count(player.items, selectedMaterial) + " / " + WorldSimulator.InventoryLimit + " · " + MaterialCategoryName(MaterialCategory(selectedMaterial)));
-                SetFlowText(itemUsage, MaterialUsage(selectedMaterial));
+                ResearchRef research = EquipmentResearchCatalog.AmmoResearch((ItemKind)selectedMaterial);
+                string rule = research == null ? "" : EquipmentResearchCatalog.Known(world, research)
+                    ? "制造研究已解锁" : "制造缺少研究：" + EquipmentResearchCatalog.Missing(research);
+                SetFlowText(itemUsage, MaterialUsage(selectedMaterial) + (research == null ? "" : "\n弹药可正常使用与装填；" + rule));
+                itemResearch.button.gameObject.SetActive(research != null);
                 return;
             }
             if (inventoryDetailKind == 2)
             {
                 PartDefinition part = EquipmentCatalog.Part((PartKind)selectedPart);
+                ResearchRef research = EquipmentResearchCatalog.PartResearch((PartKind)selectedPart);
                 Set(itemTitle, part.name);
                 SetFlowText(itemMeta, "未安装配件：×" + Count(player.parts, selectedPart) + " · 插槽：" + EquipmentCatalog.SlotNames[(int)part.slot] + " · " + TechCatalog.EraName(part.era));
                 SetFlowText(itemUsage, part.description + "\n装配目标：" + (target == null ? "请先在装备页选择一件装备。" : EquipmentCatalog.GearNames[(int)target.kind] + " #" + target.id) +
-                    "\n先在装备页选中目标，再在此页点击对应安装按钮。");
+                    "\n持有后可正常安装；制作研究：" + (EquipmentResearchCatalog.Known(world, research) ? "已解锁" : "缺少" + EquipmentResearchCatalog.Missing(research)) +
+                    "。先选装备再安装。");
+                itemResearch.button.gameObject.SetActive(research != null);
             }
             else
             {
+                ResearchRef research = target == null ? null : GearResearchReference(target.kind);
                 Set(itemTitle, target == null ? "尚未选择装备" : EquipmentCatalog.GearNames[(int)target.kind] + "  #" + target.id);
                 SetFlowText(itemMeta, target == null ? "在左侧选择装备；「制作」页可查看全部装备及制作条件。" : "数量：×1 · 耐久：" + target.durability + " / " + EquipmentCatalog.Gear(target.kind).maxDurability +
                     " · " + (IsWorn(player, target) ? "防具已穿戴" : player.weaponId == target.id ? "已放入武器位" : player.toolId == target.id ? "已放入工具位" : "存放于背包"));
-                SetFlowText(itemUsage, target == null ? "在左侧选择装备；回收后需重新选择。" : GearUsage(target.kind));
+                SetFlowText(itemUsage, target == null ? "在左侧选择装备；回收后需重新选择。" : GearUsage(target.kind) +
+                    (research == null ? "" : "\n持有后可正常装备与使用；制造研究：" +
+                        (EquipmentResearchCatalog.Known(world, research) ? "已解锁" : "缺少" + EquipmentResearchCatalog.Missing(research))));
+                itemResearch.button.gameObject.SetActive(research != null);
             }
             if (!hasGear) return;
             WeaponStats stats = EquipmentCatalog.Stats(target);
@@ -626,11 +674,11 @@ namespace DeadCircuit
             Set(equipSelected.label, active ? armor ? "已穿戴" : "使用中" : armor ? "穿戴防具" : definition.tool ? "切换至此工具" : "切换至此武器");
             unequipSelected.button.interactable = alive && armor && active;
             bool stone = target.kind == GearKind.StoneAxe || target.kind == GearKind.StonePickaxe;
-            bool repairMaterials = stone ? Count(player.items, (int)ItemKind.Wood) >= 1 && Count(player.items, (int)ItemKind.Ore) >= 1 :
+            bool repairMaterials = stone ? Count(player.items, (int)ItemKind.Wood) >= 1 && Count(player.items, (int)ItemKind.Stone) >= 1 :
                 Count(player.items, (int)ItemKind.Iron) >= 2 && Count(player.items, (int)ItemKind.Scrap) >= 1;
             repairGear.button.interactable = ready && bench && target.durability < definition.maxDurability && repairMaterials;
             int repairAmount = Mathf.Clamp(definition.maxDurability - target.durability, 0, 25);
-            Set(repairGear.label, "维修 +" + repairAmount + (stone ? "\n木材×1 铁矿×1" : "\n铁锭×2 废料×1"));
+            Set(repairGear.label, "维修 +" + repairAmount + (stone ? "\n木材×1 石材×1" : "\n铁锭×2 废料×1"));
             bool salvageSpace = HasSalvageSpace(player, target);
             salvageGear.button.interactable = ready && bench && salvageSpace;
             Set(salvageGear.label, !salvageSpace ? "回收空间不足" : "回收装备");
@@ -701,8 +749,12 @@ namespace DeadCircuit
                 string state = !era ? PrimitiveCatalog.RecipeRequirement(world, recipe) : needsBench && !bench ? "请靠近工作台并保持视线畅通" : !materials ? "缺少材料" : !space ? "背包已满" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
                 row.craft.button.interactable = player.hp > 0f && player.connected && era && (!needsBench || bench) && materials && space && player.interactCooldown <= 0f;
                 Set(row.craft.label, recipe.name + "\n" + state);
+                ResearchRef research = RecipeResearch(recipe);
+                row.research.button.gameObject.SetActive(research != null);
+                string evidence = research == null ? "" : EquipmentResearchCatalog.Evidence(world, research);
                 SetRecipeText(row.details, "输入：" + MaterialText(recipe.inputs, player.items, true) + "\n产出：" + MaterialText(recipe.outputs) +
-                    "\n" + TechCatalog.EraName(recipe.era) + (needsBench ? " · 工作台" : " · 随身") + " · " + state);
+                    "\n" + TechCatalog.EraName(recipe.era) + (needsBench ? " · 工作台" : " · 随身") + " · " + state +
+                    (research == null ? "" : "\n研究实产：" + (string.IsNullOrEmpty(evidence) ? "已满足" : evidence)));
             }
             foreach (EquipmentRecipeRow row in equipmentRecipes)
             {
@@ -715,14 +767,18 @@ namespace DeadCircuit
                 string name = row.part ? part.name : gear.name;
                 TechEra era = row.part ? part.era : gear.era;
                 int[] cost = row.part ? part.cost : gear.cost;
-                string requirement = row.part ? "" : EquipmentCatalog.CraftRequirement(world, player, (GearKind)row.kind);
-                bool canCraft = row.part ? EquipmentCatalog.CanCraftPart(world, player, (PartKind)row.kind) : requirement.Length == 0;
-                string reason = row.part ? world.era < era ? "需" + TechCatalog.EraName(era) :
-                    !bench ? "请靠近工作台并保持视线畅通" : !CanAfford(player.items, cost) ? "缺少材料" : !canCraft ? "背包已满或角色无法制作" : "" : requirement;
+                ResearchRef research = row.part ? EquipmentResearchCatalog.PartResearch((PartKind)row.kind) : GearResearchReference((GearKind)row.kind);
+                string requirement = row.part ? EquipmentCatalog.PartCraftRequirement(world, player, (PartKind)row.kind) :
+                    EquipmentCatalog.CraftRequirement(world, player, (GearKind)row.kind);
+                bool canCraft = requirement.Length == 0;
+                string reason = requirement;
                 if (reason.Length == 0) reason = player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
                 row.craft.button.interactable = canCraft && player.interactCooldown <= 0f;
                 Set(row.craft.label, name + "\n" + reason);
+                row.research.button.gameObject.SetActive(research != null);
+                string evidence = research == null ? "" : EquipmentResearchCatalog.Evidence(world, research);
                 SetRecipeText(row.details, "成本：" + MaterialText(cost, player.items, true) + "\n" + TechCatalog.EraName(era) + " · 工作台 · " + reason +
+                    (research == null ? "" : "\n研究实产：" + (string.IsNullOrEmpty(evidence) ? "已满足" : evidence)) +
                     "\n" + (row.part ? EquipmentCatalog.SlotNames[(int)part.slot] + " · " + part.description : EquipmentCatalog.IsArmor(gear.kind) ? "防具位 · " + GearUsage(gear.kind) : gear.tool ? "工具位 · " + GearUsage(gear.kind) : "武器位 · " + GearUsage(gear.kind)));
             }
             Set(inventorySummary, "配方 " + count + " 项 · 持有 / 需求");

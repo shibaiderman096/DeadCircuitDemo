@@ -64,6 +64,7 @@ namespace DeadCircuit
             return "";
         }
         public static bool CanResearch(WorldState s, PlayerState p, int id) => ResearchRequirement(s,p,id).Length == 0;
+        public static string ResearchEvidence(WorldState s,int id) => s==null || Definition(id)==null ? "无法识别这项水力研究。" : ResearchMilestone(s,(WaterTech)id);
         static string ResearchMilestone(WorldState s, WaterTech id)
         {
             if ((id == WaterTech.Wheel || id == WaterTech.Shafts) && PrimitiveCatalog.WaterRequirement(s).Length != 0) return PrimitiveCatalog.WaterRequirement(s);

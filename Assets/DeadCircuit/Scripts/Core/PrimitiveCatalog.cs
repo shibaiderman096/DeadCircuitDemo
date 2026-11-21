@@ -83,6 +83,7 @@ namespace DeadCircuit
         }
         private static int Produced(WorldState s, ItemKind item) =>
             s.produced != null && (int)item < s.produced.Length ? s.produced[(int)item] : 0;
+        public static string ResearchEvidence(WorldState s,int id) => s==null || Definition(id)==null ? "无法识别这项原始研究。" : ResearchMilestone(s,(PrimitiveTech)id);
         private static string ResearchMilestone(WorldState s, PrimitiveTech id)
         {
             switch (id)
@@ -136,6 +137,8 @@ namespace DeadCircuit
         {
             if (s == null || recipe == null) return "无法识别这项配方。";
             if (s.era < recipe.era) return "需要先进入：" + TechCatalog.EraName(recipe.era);
+            string equipment=EquipmentResearchCatalog.RecipeRequirement(s,recipe);
+            if(equipment.Length>0) return equipment;
             int id = RecipeResearch(recipe.id);
             return id < 0 || HasResearch(s, id) ? WaterCatalog.RecipeRequirement(s, recipe) : "需要原始研究：" + Definition(id).name;
         }

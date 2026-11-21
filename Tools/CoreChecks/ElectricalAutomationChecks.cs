@@ -184,6 +184,7 @@ static partial class Checks
         Run("electrical breaker trips before production and refuses a persistently overloaded reset", () =>
         {
             var sim = ElectricalBreakerFixture(out int breakerId, out int[] machineIds);
+            EnableAmmoResearchForRecipe(sim.State, TechCatalog.Recipe(50));
             var breaker = Building(sim, breakerId);
             Require(!breaker.tripped, "nonconsuming constructor preview manufactured a trip");
             Near(sim.State.powerNetworks.Single(n => n.tier == 2).generation, 120, "fixture supply");
@@ -236,6 +237,7 @@ static partial class Checks
         Run("electrical protection never trips or credits an independent remote LV network", () =>
         {
             var sim = ElectricalBreakerFixture(out int breakerId, out int[] localIds);
+            EnableAmmoResearchForRecipe(sim.State, TechCatalog.Recipe(50));
             var state = Saved(sim.State);
             Add(state, BuildKind.Generator, 40, 7).fuel = 20;
             var remote = Add(state, BuildKind.Assembler, 42, 10); remote.items[(int)ItemKind.Iron] = 10;

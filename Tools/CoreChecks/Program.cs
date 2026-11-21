@@ -170,6 +170,7 @@ static partial class Checks
         PrecisionProgressionChecks();
         RadiationChecks();
         RadiationEquipmentChecks();
+        EquipmentResearchChecks();
         NuclearProgressionChecks();
         QuartzResourceChecks();
         ElectricalAutomationChecks();
@@ -378,7 +379,8 @@ static partial class Checks
         });
         Run("finite supply shares proportional power and slows observable production", () =>
         {
-            var state = Flat(); var gen = Add(state, BuildKind.Generator, 14, 12); gen.fuel = 20;
+            var state = Flat(); EnableAmmoResearchForRecipe(state, TechCatalog.Recipe(50));
+            var gen = Add(state, BuildKind.Generator, 14, 12); gen.fuel = 20;
             foreach (var (x,y) in new[] { (10,10), (10,13), (16,10), (16,13) }) Add(state, BuildKind.Assembler, x, y).items[(int)ItemKind.Iron] = 10;
             var full = Saved(state); full.buildings.RemoveAll(b => b.kind == BuildKind.Assembler && (b.x != 10 || b.y != 10));
             var limitedSim = new WorldSimulator(state); var fullSim = new WorldSimulator(full); Advance(limitedSim, 1); Advance(fullSim, 1);
@@ -541,7 +543,7 @@ static partial class Checks
         Run("starter chain respects direction and conserves recipe material in flight", () =>
         {
             // Recreate the old tutorial as an explicit LV fixture, rather than prebuilding it in a new game.
-            var state = Flat(); Ore(state,24,30,1600);
+            var state = Flat(); EnableAmmoResearchForRecipe(state, TechCatalog.Recipe(50)); Ore(state,24,30,1600);
             Add(state,BuildKind.Miner,25,30); Add(state,BuildKind.Belt,27,30); Add(state,BuildKind.Smelter,28,30);
             Add(state,BuildKind.Belt,30,30); Add(state,BuildKind.Assembler,31,30); Add(state,BuildKind.Chest,35,30);
             Add(state,BuildKind.Generator,27,26).items[(int)ItemKind.Fuel] = 8; Add(state,BuildKind.PowerPole,31,28);

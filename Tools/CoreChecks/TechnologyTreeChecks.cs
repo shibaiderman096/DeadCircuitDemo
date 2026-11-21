@@ -9,6 +9,7 @@ static partial class Checks
             var nodes = TechnologyTreeModel.All;
             Require(nodes.Select(node => node.key).Distinct().Count() == nodes.Length, "duplicate node key");
             var craftCount = 0;
+            var equipmentCount = 0;
             CheckCrafts(0, "primitive", PrimitiveCatalog.All.Select(d => ((int)d.id, d.name, d.description, d.prerequisites, d.cost)));
             CheckCrafts(1, "water", WaterCatalog.All.Select(d => ((int)d.id, d.name, d.description, d.prerequisites, d.cost)));
             CheckCrafts(2, "steam", SteamCatalog.All.Select(d => ((int)d.id, d.name, d.description, d.prerequisites, d.cost)));
@@ -16,7 +17,9 @@ static partial class Checks
             CheckCrafts(4, "mv", PetrochemicalCatalog.All.Select(d => ((int)d.id, d.name, d.description, d.prerequisites, d.cost)));
             CheckCrafts(5, "hv", PrecisionCatalog.All.Select(d => ((int)d.id, d.name, d.description, d.prerequisites, d.cost)));
             CheckCrafts(6, "nuclear", NuclearCatalog.All.Select(d => ((int)d.id, d.name, d.description, d.prerequisites, d.cost)));
-            Require(nodes.Length == craftCount + 7, "extra or missing technology nodes");
+            CheckEquipmentCatalog(WeaponTechCatalog.All, "weapontech");
+            CheckEquipmentCatalog(ToolTechCatalog.All, "tooltech");
+            Require(nodes.Length == craftCount + equipmentCount + 7 && nodes.Length == 80, "extra or missing technology nodes");
 
             for (int era = 0; era <= 6; era++)
             {
@@ -30,7 +33,9 @@ static partial class Checks
             var checkedKeys = new HashSet<int>();
             var active = new HashSet<int>();
             foreach (var node in nodes) Visit(node);
-            Require(TechnologyTreeModel.Find(-1) == null && TechnologyTreeModel.Find(612) == null, "unknown key resolved");
+            Require(TechnologyTreeModel.Find(-1) == null && TechnologyTreeModel.Find(612) == null &&
+                TechnologyTreeModel.Find(10001)?.domain == ResearchDomain.Weapon &&
+                TechnologyTreeModel.Find(20000)?.domain == ResearchDomain.Tool, "unknown or cross-domain key resolved");
 
             void CheckCrafts(int era, string command, IEnumerable<(int id, string name, string description, int mask, int[] cost)> catalog)
             {
@@ -47,6 +52,20 @@ static partial class Checks
                     if (d.mask == 0) sameEra = new[] { era * 100 };
                     Require(node.parents.Where(key => key / 100 == era).OrderBy(key => key).SequenceEqual(sameEra),
                         $"catalog prerequisites differ for {node.name}");
+                }
+            }
+
+            void CheckEquipmentCatalog(EquipmentTechnologyDefinition[] catalog, string command)
+            {
+                foreach (var definition in catalog)
+                {
+                    equipmentCount++;
+                    var node = TechnologyTreeModel.Find(definition.domain == ResearchDomain.Weapon ? 10000 + definition.id : 20000 + definition.id);
+                    Require(node != null && !node.IsEra && node.domain == definition.domain && node.era == definition.era &&
+                        node.researchId == definition.id && node.command == command && node.name == definition.name &&
+                        node.cost.SequenceEqual(definition.cost), "missing or incorrect equipment node " + definition.name);
+                    foreach (var parent in definition.prerequisites)
+                        Require(node.parents.Contains(parent.Key), "equipment node missing parent " + definition.name);
                 }
             }
 
@@ -78,12 +97,12 @@ static partial class Checks
             for (int era = 1; era <= 6; era++)
             {
                 var gate = TechnologyTreeModel.Find(era * 100);
-                var required = TechnologyTreeModel.All.Where(node => !node.IsEra && node.era == era - 1 &&
+                var required = TechnologyTreeModel.All.Where(node => node.domain == ResearchDomain.Industry && !node.IsEra && node.era == era - 1 &&
                     node.key != cooking && node.key != agriculture);
                 var ancestors = Ancestors(gate);
                 Require(required.All(node => ancestors.Contains(node.key)), $"era {era} omits a required craft");
                 Require(!ancestors.Contains(cooking) && !ancestors.Contains(agriculture), $"era {era} requires an optional craft");
-                var craftParents = gate.parents.Select(TechnologyTreeModel.Find).Where(parent => !parent.IsEra).ToArray();
+                var craftParents = gate.parents.Select(TechnologyTreeModel.Find).Where(parent => parent.domain == ResearchDomain.Industry && !parent.IsEra).ToArray();
                 Require(craftParents.All(parent => !craftParents.Any(other => other != parent && Ancestors(other).Contains(parent.key))),
                     $"era {era} draws a duplicate line to a craft ancestor");
             }

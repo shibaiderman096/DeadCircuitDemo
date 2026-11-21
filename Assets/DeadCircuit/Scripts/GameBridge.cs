@@ -477,7 +477,8 @@ namespace DeadCircuit
                         output.Write(buffer, 0, read);
                     }
                     var next = JsonUtility.FromJson<WorldState>(Encoding.UTF8.GetString(output.ToArray()));
-                    if (next == null || next.version != WorldSimulator.SaveVersion || next.tick < lastSnapshotTick) return;
+                    if (next == null || next.version != WorldSimulator.SaveVersion || next.tick < lastSnapshotTick ||
+                        !EquipmentResearchCatalog.ResearchStateValid(next)) return;
                     int extent=64;
                     if(next.width!=extent || next.height!=extent || next.ground?.Length!=extent*extent || next.biomes?.Length!=extent*extent ||
                         (ChunkStreaming.Enabled(next) && (next.chunks.records==null || next.chunks.records.Count>81))) return;

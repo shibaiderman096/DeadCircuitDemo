@@ -129,6 +129,7 @@ static partial class Checks
     static WorldState RecipeFixture(RecipeDefinition recipe)
     {
         var state=Flat(era:recipe.era);
+        EnableAmmoResearchForRecipe(state,recipe);
         if(recipe.id==92 || recipe.id==93)
         {
             state.nuclearUraniumMined=state.gathered=4;

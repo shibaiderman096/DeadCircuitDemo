@@ -146,7 +146,7 @@ namespace DeadCircuit
         {
             if(p.interactCooldown>0f || arg<0 || arg>=EquipmentCatalog.PartNames.Length) return;
             GearState g=EquipmentCatalog.Find(p,id); PartKind kind=(PartKind)arg; PartDefinition d=EquipmentCatalog.Part(kind);
-            if(g==null || !EquipmentCatalog.PartCompatible(g.kind,kind) || p.parts[arg]<=0 || State.era<d.era || !EquipmentCatalog.HasWorkbench(State,p))
+            if(g==null || !EquipmentCatalog.PartCompatible(g.kind,kind) || p.parts[arg]<=0 || !EquipmentCatalog.HasWorkbench(State,p))
             { Notice(p,"安装失败：请靠近工作台，并确认已解锁科技、拥有对应配件且配件适用。"); return; }
             int slot=(int)d.slot;
             if(g.attachments[slot]!=-1) { Notice(p,"此槽已有配件，请先卸下。"); return; }
@@ -173,8 +173,8 @@ namespace DeadCircuit
             GearState g=EquipmentCatalog.Find(p,id);
             if(g==null || g.durability>=EquipmentCatalog.Gear(g.kind).maxDurability || !EquipmentCatalog.HasWorkbench(State,p)) return;
             bool stone=g.kind==GearKind.StoneAxe || g.kind==GearKind.StonePickaxe;
-            int[] cost=stone ? DemoCatalog.Materials(ItemKind.Wood,1,ItemKind.Ore,1) : DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Scrap,1);
-            if(!CanPay(p.items,cost)) { Notice(p,stone ? "修理需1木材、1铁矿。" : "修理需2铁锭、1废料。"); return; }
+            int[] cost=stone ? DemoCatalog.Materials(ItemKind.Wood,1,ItemKind.Stone,1) : DemoCatalog.Materials(ItemKind.Iron,2,ItemKind.Scrap,1);
+            if(!CanPay(p.items,cost)) { Notice(p,stone ? "修理需1木材、1石材。" : "修理需2铁锭、1废料。"); return; }
             if(p.reloadingGearId==id) CancelReload(p);
             Pay(p.items,cost); g.durability=Math.Min(EquipmentCatalog.Gear(g.kind).maxDurability,g.durability+25); p.interactCooldown=.4f; Notice(p,"已修理装备。");
         }

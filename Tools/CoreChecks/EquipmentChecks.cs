@@ -14,6 +14,25 @@ static partial class Checks
             state.nuclearUraniumMined=state.gathered=4;
             state.nuclearResearch=NuclearBit(NuclearTech.UraniumBeneficiation)|NuclearBit(NuclearTech.RadiationMonitoring)|NuclearBit(NuclearTech.RadiationProtection);
         }
+        // Legacy equipment behavior fixtures represent an already established
+        // industrial branch. Dedicated research tests clear these masks again.
+        state.primitiveVersion=1; state.primitiveResearch=255;
+        if(era>=TechEra.Water)
+        {
+            state.waterVersion=1; state.waterResearch=255;
+            state.waterCrushed=4; state.waterSmelted=6; state.waterPressed=4;
+            state.waterGears=state.waterBearings=2; state.waterTransported=4;
+        }
+        state.weaponResearch=WeaponTechCatalog.All.Where(definition=>definition.era<=(int)era)
+            .Aggregate(0,(mask,definition)=>mask|(1<<definition.id));
+        state.toolResearch=ToolTechCatalog.All.Where(definition=>definition.era<=(int)era)
+            .Aggregate(0,(mask,definition)=>mask|(1<<definition.id));
+        foreach(var (item,amount) in new[]
+        {
+            (ItemKind.Steel,8),(ItemKind.SteelPlate,2),(ItemKind.Copper,4),(ItemKind.Polymer,4),
+            (ItemKind.Circuit,2),(ItemKind.Lubricant,2),(ItemKind.PrecisionPart,2),
+            (ItemKind.AdvancedCircuit,2),(ItemKind.HeatAlloy,2),(ItemKind.Gear,2),(ItemKind.Bearing,2)
+        }) state.produced[(int)item]=Math.Max(state.produced[(int)item],amount);
         var p = new PlayerState { id = "equipment", name = "Equipment", x = 32, y = 35,
             items = Enumerable.Repeat(300, DemoCatalog.ItemCount).ToArray() };
         p.items[(int)ItemKind.NuclearWaste] = 0;
@@ -349,7 +368,7 @@ static partial class Checks
             var sim = EquipmentFixture(out var p, GearKind.StoneAxe, arrange: (_, player) => player.gear[0].durability = 0);
             var before = Copy(p.items); int id = p.gear[0].id; sim.Apply(Command(p, "gearrepair", arg: id));
             Require(p.gear[0].durability == 25, "repair did not restore 25 durability");
-            before[(int)ItemKind.Wood]--; before[(int)ItemKind.Ore]--; Inventory(p.items, before, "stone gear repair");
+            before[(int)ItemKind.Wood]--; before[(int)ItemKind.Stone]--; Inventory(p.items, before, "stone gear repair");
             foreach (string condition in new[] { "materials", "workbench", "dead", "disconnected" })
             {
                 var reject = EquipmentFixture(out var q, GearKind.Pistol, arrange: (state, player) =>

@@ -56,8 +56,8 @@ namespace DeadCircuit
                 tool = kind <= GearKind.Wrench, ammo = ItemKind.Ammo, damage = 19f, range = 1.65f, interval = .62f, pellets = 1 };
             switch (kind)
             {
-                case GearKind.StoneAxe: d.cost = DemoCatalog.Materials(ItemKind.Wood,3,ItemKind.Ore,2); d.damage=23f; break;
-                case GearKind.StonePickaxe: d.cost = DemoCatalog.Materials(ItemKind.Wood,3,ItemKind.Ore,3); d.damage=21f; break;
+                case GearKind.StoneAxe: d.cost = DemoCatalog.Materials(ItemKind.Wood,3,ItemKind.Stone,2); d.damage=23f; break;
+                case GearKind.StonePickaxe: d.cost = DemoCatalog.Materials(ItemKind.Wood,3,ItemKind.Stone,3); d.damage=21f; break;
                 case GearKind.SteelAxe: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Wood,2,ItemKind.Scrap,1); d.damage=36f; d.interval=.55f; break;
                 case GearKind.SteelPickaxe: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Wood,2,ItemKind.Scrap,2); d.damage=32f; d.interval=.55f; break;
                 case GearKind.Wrench: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Iron,3,ItemKind.Bronze,2); d.damage=26f; break;
@@ -198,7 +198,7 @@ namespace DeadCircuit
             return true;
         }
         public static bool CanCraft(WorldState world, PlayerState player, GearKind kind) => CraftRequirement(world,player,kind).Length==0;
-        // Shared by the authoritative command and UI: Nuclear era alone never unlocks a suit.
+        // Shared by the authoritative command and UI for every equipment branch.
         // Keep CanCraft's existing signature for callers that only need a boolean.
         public static string CraftRequirement(WorldState world, PlayerState player, GearKind kind)
         {
@@ -208,15 +208,30 @@ namespace DeadCircuit
             if(world.era<d.era) return "需要科技时代："+TechCatalog.EraName(d.era);
             if(kind==GearKind.RadiationSuit && !NuclearCatalog.HasResearch(world,NuclearTech.RadiationProtection))
                 return "需要核工业研究："+NuclearCatalog.Definition((int)NuclearTech.RadiationProtection).name;
-            if(!PrimitiveCatalog.IsGearUnlocked(world,kind)) return "需要原始研究："+
-                PrimitiveCatalog.Definition(kind==GearKind.Knife ? PrimitiveTech.Bloomery : PrimitiveTech.Tools).name;
+            var research=EquipmentResearchCatalog.GearResearch(kind);
+            if(research!=null && !EquipmentResearchCatalog.Known(world,research)) return EquipmentResearchCatalog.Missing(research);
             if(!ValidCrafter(world,player)) return "请靠近工作台，并确认角色已连接、仍存活且工作台之间没有障碍。";
+            if(!(player.interactCooldown<=0f)) return "操作尚未结束，请稍候。";
             if(player.gear.Count>=MaxGear) return "装备栏已满（最多 24 件）。";
             if(!CanPay(player.items,d.cost)) return "制作材料不足。";
             return "";
         }
-        public static bool CanCraftPart(WorldState world, PlayerState player, PartKind kind) =>
-            (int)kind>=0 && (int)kind<PartNames.Length && ValidCrafter(world,player) && player.parts!=null && player.parts.Length==PartNames.Length && player.parts[(int)kind]<WorldSimulator.InventoryLimit && CanPay(player.items,Part(kind).cost) && world.era>=Part(kind).era;
+        public static bool CanCraftPart(WorldState world, PlayerState player, PartKind kind) => PartCraftRequirement(world,player,kind).Length==0;
+        public static string PartCraftRequirement(WorldState world,PlayerState player,PartKind kind)
+        {
+            if((int)kind<0 || (int)kind>=PartNames.Length) return "无法识别这件配件。";
+            if(world==null) return "世界尚未就绪。";
+            var definition=Part(kind);
+            if(world.era<definition.era) return "需要科技时代："+TechCatalog.EraName(definition.era);
+            var research=EquipmentResearchCatalog.PartResearch(kind);
+            if(!EquipmentResearchCatalog.Known(world,research)) return EquipmentResearchCatalog.Missing(research);
+            if(!ValidCrafter(world,player)) return "请靠近工作台，并确认角色已连接、仍存活且工作台之间没有障碍。";
+            if(!(player.interactCooldown<=0f)) return "操作尚未结束，请稍候。";
+            if(player.parts==null || player.parts.Length!=PartNames.Length) return "配件库存无效。";
+            if(player.parts[(int)kind]>=WorldSimulator.InventoryLimit) return "配件库存已满。";
+            if(!CanPay(player.items,definition.cost)) return "制作材料不足。";
+            return "";
+        }
         private static bool CanPay(int[] items,int[] cost)
         {
             if(items==null || items.Length!=DemoCatalog.ItemCount) return false;
