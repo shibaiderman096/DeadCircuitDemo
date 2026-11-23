@@ -20,3 +20,11 @@
 !/Tools/CoreChecks/CoreChecks.csproj
 /Tools/CoreChecks/bin/
 /Tools/CoreChecks/obj/
+
+# Local editor and task artifacts
+.vscode/
+SESSION_EXPORT_*.md
+Tools/DeadCircuitIconWork/
+Tools/ExpansionArt/SvgBatch/Reports/
+Tools/scene-art/
+
