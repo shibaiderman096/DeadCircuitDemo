@@ -630,9 +630,9 @@ namespace DeadCircuit
             Set(sortInventory.label, "排序：" + (inventorySort == 0 ? "分类" : inventorySort == 1 ? "名称" : "数量"));
             Set(filterInventory.label, "分类：" + InventoryFilterName());
             bool bench = EquipmentCatalog.HasWorkbench(world, player);
-            Set(workbenchHint, bench ? "工作台可用。制作、维修、装配与回收还需满足科技、材料和库存空间要求。" :
-                 PrimitiveCatalog.Enabled(world) ? "草绳背包可随身制作。其他配方请查看左侧条件，工作台需在 2.4 格内且视线畅通。" :
-                "制作、维修、装配与回收需靠近工作台（2.4格、视线畅通）；燃料与弹药可随身制作。");
+            Set(workbenchHint, bench ? "工作台可用；制作还需科技、材料与库存空间。" :
+                 PrimitiveCatalog.Enabled(world) ? "石斧、石镐、草绳背包与燃料可随身制作；其余需靠近工作台。" :
+                "制作、维修、装配与回收需工作台；燃料可随身制作。");
             workbenchHint.color = bench ? Accent : Muted;
             RefreshInventoryCells(player);
             RefreshInventoryRecipes(world, player, bench);
@@ -1158,15 +1158,15 @@ namespace DeadCircuit
                 RecipeDefinition recipe = row.recipe;
                 bool era = PrimitiveCatalog.IsRecipeUnlocked(world, recipe), needsBench = recipe.id > 0;
                 bool materials = CanAfford(player.items, recipe.inputs), space = HasRecipeSpace(player, recipe);
-                string state = !era ? PrimitiveCatalog.RecipeRequirement(world, recipe) : needsBench && !bench ? "请靠近工作台并保持视线畅通" : !materials ? "缺少材料" : !space ? "剩余负重不足" : player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
+                string state = !era ? PrimitiveCatalog.RecipeRequirement(world, recipe) : needsBench && !bench ? "需工作台" : !materials ? "缺材料" : !space ? "负重不足" : player.interactCooldown > 0f ? "冷却中" : "可制作";
                 row.craft.button.interactable = player.hp > 0f && player.connected && era && (!needsBench || bench) && materials && space && player.interactCooldown <= 0f;
                 Set(row.craft.label, recipe.name);
                 ResearchRef research = RecipeResearch(recipe);
                 row.research.button.gameObject.SetActive(research != null);
                 string evidence = research == null ? "" : EquipmentResearchCatalog.Evidence(world, research);
-                SetRecipeText(row.details, "输入：" + MaterialText(recipe.inputs, player.items, true) + "\n产出：" + MaterialText(recipe.outputs) +
+                SetRecipeText(row.details, MaterialText(recipe.inputs, player.items, true) + " → " + MaterialText(recipe.outputs) +
                     "\n" + TechCatalog.EraName(recipe.era) + (needsBench ? " · 工作台" : " · 随身") + " · " + state +
-                    (research == null ? "" : "\n研究实产：" + (string.IsNullOrEmpty(evidence) ? "已满足" : evidence)));
+                    (string.IsNullOrEmpty(evidence) || evidence == "已满足" ? "" : "\n实产 " + evidence));
             }
             foreach (EquipmentRecipeRow row in equipmentRecipes)
             {
@@ -1185,19 +1185,19 @@ namespace DeadCircuit
                     EquipmentCatalog.CraftRequirement(world, player, (GearKind)row.kind);
                 bool canCraft = requirement.Length == 0;
                 string reason = requirement;
-                if (reason.Length == 0) reason = player.interactCooldown > 0f ? "操作冷却中" : "点击制作";
+                if (reason.Length == 0) reason = player.interactCooldown > 0f ? "冷却中" : "可制作";
                 row.craft.button.interactable = canCraft && player.interactCooldown <= 0f;
                 Set(row.craft.label, name);
                 row.research.button.gameObject.SetActive(research != null);
                 string evidence = research == null ? "" : EquipmentResearchCatalog.Evidence(world, research);
                 string station = portable ? "随身" : "工作台";
                 string purpose = row.part ? EquipmentCatalog.SlotNames[(int)part.slot] + " · " + part.description : GearRecipePurpose(gear);
-                SetRecipeText(row.details, "成本：" + MaterialText(cost, player.items, true) + "\n" + TechCatalog.EraName(era) + " · " + station + " · " + reason +
-                    (research == null ? "" : "\n研究实产：" + (string.IsNullOrEmpty(evidence) ? "已满足" : evidence)) +
+                SetRecipeText(row.details, MaterialText(cost, player.items, true) + "\n" + TechCatalog.EraName(era) + " · " + station + " · " + reason +
+                    (string.IsNullOrEmpty(evidence) || evidence == "已满足" ? "" : "\n实产 " + evidence) +
                     "\n" + purpose);
             }
             Set(craftFilterButton.label, "配方：" + (craftFilter == 0 ? "全部" : craftFilter == 1 ? "手工" : craftFilter == 2 ? "装备" : "配件"));
-            Set(craftSummary, count + " 项 · 持有 / 需求");
+            Set(craftSummary, count + " 项 · 持有/需求");
         }
 
         static void SetRecipeText(TextMeshProUGUI details, string value)
@@ -1294,15 +1294,15 @@ namespace DeadCircuit
             if (EquipmentCatalog.IsBackpack(kind)) return EquipmentCatalog.Gear(kind).description;
             if (kind == GearKind.RadiationSuit)
                 return "躯干防具 · 需核作业防护研究；耐久有效时辐射暴露−80%，耗尽即失效。";
-            if (EquipmentCatalog.IsArmor(kind)) return "防具 · 独立装备格；耐久耗尽后无防御。可在工作台维修或回收。";
+            if (EquipmentCatalog.IsArmor(kind)) return "防具 · 耐久耗尽即失效。";
             string usage;
             switch (kind)
             {
-                case GearKind.StoneAxe: case GearKind.SteelAxe: return "工具 · 装备后可采集树木和补给箱，也可近战。使用消耗耐久。";
-                case GearKind.StonePickaxe: case GearKind.SteelPickaxe: return "工具 · 装备后可采集矿石、石材和黏土，也可近战。使用消耗耐久。";
-                case GearKind.Wrench: return "工具 · 装备后可采集废料堆，也可用于设备维护和近战。使用消耗耐久。";
-                case GearKind.Knife: usage = "近战武器 · 不消耗弹药；使用消耗耐久。"; break;
-                default: usage = "远程武器 · 装备并装填后射击；Alt 精确瞄准，R 装填。"; break;
+                case GearKind.StoneAxe: case GearKind.SteelAxe: return "工具 · 采树木与补给箱，也可近战。";
+                case GearKind.StonePickaxe: case GearKind.SteelPickaxe: return "工具 · 采矿石、石材与黏土，也可近战。";
+                case GearKind.Wrench: return "工具 · 采废料堆，也可维护设备与近战。";
+                case GearKind.Knife: usage = "近战武器 · 不耗弹药。"; break;
+                default: usage = "远程武器 · 装填后射击；Alt 精确瞄准，R 装填。"; break;
             }
             string description = EquipmentCatalog.Gear(kind).description;
             return description.Length == 0 ? usage : description + "\n" + usage;

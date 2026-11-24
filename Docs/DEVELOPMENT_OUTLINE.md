@@ -31,7 +31,9 @@ Unity 俯视角 2D 生存、自动化与合作游戏。玩家从废土中的工�
 
 主要位置：`DemoState.BuildDescriptions`、`DemoHud` 的键位／时代／帮助文案、`DemoHud.Survival` 手册、`DemoHud.Rooms`／`Modular`／`Inventory`／`Steam` 的设备提示，以及 Water／Steam／LV／MV／Precision／Nuclear 研究描述。百科条目随生成脚本刷新。
 
-验证：`python Tools/generate_wiki.py` 生成与 `--check` 同步通过（67 设备、396 词条）；完整核心检查 806/809 通过，3 项 WorldArchive 临时目录写入仍为沙箱环境限制（主分支基线相同）；Unity Editor 6000.6.8f1 脚本重编译完成且无错误。未进行 Play 界面目视、构建和联机复测。
+背包制作栏单独整理：配方行由“输入：…／产出：…”改为“材料 → 产出”，装备行直接列成本；第二行固定为“时代 · 工位 · 状态”，状态词统一为可制作、缺材料、负重不足、需工作台、冷却中；研究实产满足时不再显示，仅未满足时追加“实产 …”；用途行与工作台提示各压到一句。装备／配件制作与维修提示同步收短，保留工作台、核工业研究、防护等被检查依赖的关键词。
+
+验证：`python Tools/generate_wiki.py` 生成与 `--check` 同步通过（67 设备、396 词条）；完整核心检查 806/809 通过，3 项 WorldArchive 临时目录写入仍为沙箱环境限制（主分支基线相同）；Assembly-CSharp 使用 Unity 程序集离线编译 0 错误（37 条既有警告）。制作栏改动后 Unity Editor 已断开连接，未能重跑编辑器重编译或 Play 目视；未做构建和联机复测。
 
 ## 2026-11-24 原始随身配方调整
 

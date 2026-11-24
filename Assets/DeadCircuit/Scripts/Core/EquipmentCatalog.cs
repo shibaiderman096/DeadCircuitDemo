@@ -252,13 +252,13 @@ namespace DeadCircuit
                 return "需要核工业研究："+NuclearCatalog.Definition((int)NuclearTech.RadiationProtection).name;
             var research=EquipmentResearchCatalog.GearResearch(kind);
             if(research!=null && !EquipmentResearchCatalog.Known(world,research)) return EquipmentResearchCatalog.Missing(research);
-            if (!ValidCrafter(world, player)) return "请确认角色已连接且仍存活。";
-            if (!IsHandcraftedTool(kind) && kind != GearKind.GrassBackpack && !HasWorkbench(world, player)) return "请靠近工作台，并确保中间没有障碍。";
-            if(!(player.interactCooldown<=0f)) return "操作尚未结束，请稍候。";
-            if(!CanPay(player.items,d.cost)) return "制作材料不足。";
-            if (player.gear.Count >= InventoryWeight.MaxSavedGear) return "请先整理已持有的装备。";
+            if (!ValidCrafter(world, player)) return "角色不可用。";
+            if (!IsHandcraftedTool(kind) && kind != GearKind.GrassBackpack && !HasWorkbench(world, player)) return "需靠近工作台（2.4格、视线畅通）。";
+            if(!(player.interactCooldown<=0f)) return "操作冷却中。";
+            if(!CanPay(player.items,d.cost)) return "材料不足。";
+            if (player.gear.Count >= InventoryWeight.MaxSavedGear) return "装备已达上限。";
             long deltaGrams = InventoryWeight.Grams(kind) - InventoryWeight.MaterialsGrams(d.cost);
-            if(!InventoryWeight.CanFit(player,deltaGrams)) return "背包剩余负重不足。";
+            if(!InventoryWeight.CanFit(player,deltaGrams)) return "负重不足。";
             return "";
         }
         public static bool CanCraftPart(WorldState world, PlayerState player, PartKind kind) => PartCraftRequirement(world,player,kind).Length==0;
@@ -270,13 +270,13 @@ namespace DeadCircuit
             if(world.era<definition.era) return "需要科技时代："+TechCatalog.EraName(definition.era);
             var research=EquipmentResearchCatalog.PartResearch(kind);
             if(!EquipmentResearchCatalog.Known(world,research)) return EquipmentResearchCatalog.Missing(research);
-            if(!ValidCrafter(world,player) || !HasWorkbench(world,player)) return "请靠近工作台，并确认角色已连接、仍存活且工作台之间没有障碍。";
-            if(!(player.interactCooldown<=0f)) return "操作尚未结束，请稍候。";
+            if(!ValidCrafter(world,player) || !HasWorkbench(world,player)) return "需靠近工作台（2.4格、视线畅通）。";
+            if(!(player.interactCooldown<=0f)) return "操作冷却中。";
             if(player.parts==null || player.parts.Length!=PartNames.Length) return "配件库存无效。";
             if(player.parts[(int)kind]>=WorldSimulator.InventoryLimit) return "配件库存已满。";
-            if(!CanPay(player.items,definition.cost)) return "制作材料不足。";
+            if(!CanPay(player.items,definition.cost)) return "材料不足。";
             long deltaGrams = InventoryWeight.Grams(kind) - InventoryWeight.MaterialsGrams(definition.cost);
-            if(!InventoryWeight.CanFit(player,deltaGrams)) return "背包剩余负重不足。";
+            if(!InventoryWeight.CanFit(player,deltaGrams)) return "负重不足。";
             return "";
         }
         private static bool CanPay(int[] items,int[] cost)
