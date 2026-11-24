@@ -209,7 +209,7 @@ namespace DeadCircuit
                 };
                 if(source.version>=4) CopyEquipment(p,clone,entityIds,ref highestId);
                 CopyNeeds(p, clone, source.version);
-                if (source.version >= 21)
+                if (source.version >= 22)
                 {
                     clone.backpackId = p.backpackId;
                     GearState wornPack = InventoryWeight.EquippedPack(clone);
@@ -218,7 +218,11 @@ namespace DeadCircuit
                     {
                         var contents = p.gear[i].backpackInventory;
                         if (contents == null) continue;
-                        SaveCheck(clone.gear[i] == wornPack, "unexpected backpack contents");
+                        if (clone.gear[i] != wornPack)
+                        {
+                            SaveCheck(IsEmptyBackpackInventory(contents), "unexpected backpack contents");
+                            continue;
+                        }
                         wornPack.backpackInventory = CopyBackpackInventory(contents, clone.gear,
                             EquipmentCatalog.BackpackCapacityGrams(wornPack.kind), clone);
                     }
@@ -340,6 +344,20 @@ namespace DeadCircuit
             return new GearState { id=g.id,kind=g.kind,durability=g.durability,magazine=g.magazine,loadedAmmo=g.loadedAmmo,attachments=(int[])g.attachments.Clone() };
         }
 
+        private static bool IsEmptyBackpackInventory(BackpackInventoryState inventory)
+        {
+            if (inventory == null || inventory.items == null || inventory.parts == null || inventory.foods == null ||
+                inventory.seeds == null || inventory.gearIds == null || inventory.items.Length != DemoCatalog.ItemCount ||
+                inventory.parts.Length != EquipmentCatalog.PartNames.Length || inventory.foods.Length != SurvivalCatalog.FoodCount ||
+                inventory.seeds.Length != SurvivalCatalog.CropCount || inventory.waterRaw != 0 || inventory.waterClean != 0 ||
+                inventory.gearIds.Count != 0) return false;
+            foreach (int amount in inventory.items) if (amount != 0) return false;
+            foreach (int amount in inventory.parts) if (amount != 0) return false;
+            foreach (int amount in inventory.foods) if (amount != 0) return false;
+            foreach (int amount in inventory.seeds) if (amount != 0) return false;
+            return true;
+        }
+
         private static BackpackInventoryState CopyBackpackInventory(BackpackInventoryState source,
             List<GearState> contents, int capacity, PlayerState owner = null)
         {
@@ -380,7 +398,7 @@ namespace DeadCircuit
 
         private static void CopyDroppedBackpacks(WorldState source, WorldState target, HashSet<long> occupied, HashSet<int> ids, ref int highestId)
         {
-            if (source.version < 21) return;
+            if (source.version < 22) return;
             SaveCheck(source.droppedBackpacks != null && source.droppedBackpacks.Count <= MaxDroppedBackpacks, "ground backpack list");
             var cells = new HashSet<long>();
             foreach (var drop in source.droppedBackpacks)
@@ -395,7 +413,8 @@ namespace DeadCircuit
                 var copy = new DroppedBackpackState { x = drop.x, y = drop.y, gear = CopyGear(drop.gear, ids, ref highestId) };
                 foreach (var gear in drop.packedGear)
                 {
-                    SaveCheck(gear != null && gear.backpackInventory == null, "nested backpack storage");
+                    SaveCheck(gear != null && (gear.backpackInventory == null || IsEmptyBackpackInventory(gear.backpackInventory)),
+                        "nested backpack storage");
                     copy.packedGear.Add(CopyGear(gear, ids, ref highestId));
                 }
                 copy.gear.backpackInventory = CopyBackpackInventory(drop.gear.backpackInventory, copy.packedGear,

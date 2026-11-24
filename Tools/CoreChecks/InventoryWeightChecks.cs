@@ -124,6 +124,57 @@ static partial class Checks
             corrupt.droppedBackpacks[0].gear.backpackInventory.items[(int)ItemKind.Wood] = 1000;
             Reject(corrupt, "overweight ground pack accepted");
         });
+        Run("v21 research bench saves remain valid and do not import v22 backpack state", () =>
+        {
+            var world = Flat(era: TechEra.Water);
+            Add(world, BuildKind.Workbench, 10, 10);
+            var bench = Add(world, BuildKind.ResearchBench, 9, 12);
+            var sim = new WorldSimulator(world);
+            var p = sim.AddPlayer("v21-pack", "V21 Pack");
+            var pack = new GearState { id = sim.State.nextId++, kind = GearKind.GrassBackpack };
+            p.gear.Add(pack); p.backpackId = pack.id;
+            sim.State.droppedBackpacks.Add(new DroppedBackpackState
+            {
+                x = 8, y = 9, gear = new GearState { id = sim.State.nextId++, kind = GearKind.ReinforcedBackpack }
+            });
+            var source = Saved(sim.State); source.version = 21;
+            var restored = new WorldSimulator(source);
+            var restoredPlayer = restored.State.players.Single();
+            Require(restored.State.version == WorldSimulator.SaveVersion &&
+                restored.State.buildings.Any(b => b.id == bench.id && b.kind == BuildKind.ResearchBench) &&
+                restoredPlayer.backpackId == 0 && restoredPlayer.gear.Single(g => g.kind == GearKind.GrassBackpack).backpackInventory == null &&
+                restored.State.droppedBackpacks.Count == 0,
+                "v21 research bench save imported v22 backpack state or lost its facilities");
+        });
+        Run("v22 accepts Unity empty backpack placeholders but rejects hidden contents", () =>
+        {
+            var sim = new WorldSimulator(Flat());
+            var owner = sim.AddPlayer("unity-empty-pack", "Empty Pack");
+            var spare = new GearState { id = sim.State.nextId++, kind = GearKind.GrassBackpack,
+                backpackInventory = new BackpackInventoryState() };
+            owner.gear.Add(spare);
+            var droppedGear = new GearState { id = sim.State.nextId++, kind = GearKind.StoneAxe,
+                backpackInventory = new BackpackInventoryState() };
+            var droppedPack = new GearState { id = sim.State.nextId++, kind = GearKind.ReinforcedBackpack,
+                backpackInventory = new BackpackInventoryState() };
+            droppedPack.backpackInventory.gearIds.Add(droppedGear.id);
+            sim.State.droppedBackpacks.Add(new DroppedBackpackState
+            {
+                x = 8, y = 9, gear = droppedPack,
+                packedGear = { droppedGear }
+            });
+            var restored = new WorldSimulator(Saved(sim.State));
+            Require(restored.State.players.Single().gear.Single(g => g.id == spare.id).backpackInventory == null &&
+                restored.State.droppedBackpacks.Single().packedGear.Single().backpackInventory == null,
+                "Unity empty placeholder was not discarded");
+
+            var corrupt = Saved(sim.State);
+            corrupt.players.Single().gear.Single(g => g.id == spare.id).backpackInventory.items[(int)ItemKind.Wood] = 1;
+            Reject(corrupt, "non-worn gear accepted hidden backpack contents");
+            corrupt = Saved(sim.State);
+            corrupt.droppedBackpacks.Single().packedGear.Single().backpackInventory.items[(int)ItemKind.Wood] = 1;
+            Reject(corrupt, "ground packed gear accepted nested backpack contents");
+        });
         Run("inventory weight gives every collectible a positive distinct-by-purpose unit", () =>
         {
             Require(Enum.GetValues<ItemKind>().All(i => InventoryWeight.Grams(i) >= 10) &&

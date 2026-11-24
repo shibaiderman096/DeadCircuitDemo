@@ -180,6 +180,7 @@ namespace DeadCircuit
                 var target = (TechEra)era;
                 foreach (BuildKind required in QaPrerequisites(target))
                     if (!bridge.World.buildings.Any(b => b.kind == required)) yield return BuildQaAtFreePlot(bridge, required);
+                PositionQaAtResearchBench(bridge);
                 if (target == TechEra.Nuclear) PrepareQaNuclearProgression(bridge.World);
                 GrantSamples(p, TechCatalog.ResearchCost(target));
                 yield return ClickHudTool("Technology Button");
@@ -379,7 +380,8 @@ namespace DeadCircuit
             // qaRun writes qa-world-v1.json, outside the regular Worlds archive. The
             // bridge exposes ONLY that validated QA save as saveId=qa in this mode.
             // Never fall back to the first real save or call StartHost(load:true).
-            Require(bridge.Worlds != null && bridge.Worlds.Count == 1, "QA bridge must list only its isolated save, never regular worlds");
+            Require(bridge.Worlds != null && bridge.Worlds.Count == 1,
+                "QA bridge must list only its isolated save, never regular worlds; count=" + (bridge.Worlds?.Count ?? -1) + " status=" + bridge.Status);
             var qaWorld = bridge.Worlds.SingleOrDefault(w => w != null && w.name == qaWorldName && w.seed == 73149);
             Require(qaWorld != null && qaWorld.saveId == "qa", "only this run's isolated QA save is selectable as saveId=qa");
             Require(!FindButton("Load Selected World").interactable, "loading requires an explicit world selection");
@@ -418,13 +420,27 @@ namespace DeadCircuit
         {
             switch(era)
             {
-                case TechEra.Water: return new[]{BuildKind.Workbench};
-                case TechEra.Steam: return new[]{BuildKind.Waterwheel,BuildKind.Shaft,BuildKind.MechanicalCrusher};
-                case TechEra.LowVoltage: return new[]{BuildKind.Boiler,BuildKind.SteamFurnace};
-                case TechEra.MediumVoltage: return new[]{BuildKind.CircuitAssembler};
-                case TechEra.HighVoltage: return new[]{BuildKind.ChemicalPlant};
-                default: return new[]{BuildKind.PrecisionAssembler};
+                case TechEra.Water: return new[]{BuildKind.Workbench,BuildKind.ResearchBench};
+                case TechEra.Steam: return new[]{BuildKind.Waterwheel,BuildKind.Shaft,BuildKind.MechanicalCrusher,BuildKind.ResearchBench};
+                case TechEra.LowVoltage: return new[]{BuildKind.Boiler,BuildKind.SteamFurnace,BuildKind.ResearchBench};
+                case TechEra.MediumVoltage: return new[]{BuildKind.CircuitAssembler,BuildKind.ResearchBench};
+                case TechEra.HighVoltage: return new[]{BuildKind.ChemicalPlant,BuildKind.ResearchBench};
+                default: return new[]{BuildKind.PrecisionAssembler,BuildKind.ResearchBench};
             }
+        }
+        static void PositionQaAtResearchBench(GameBridge bridge)
+        {
+            var player=bridge.LocalPlayer;
+            var bench=bridge.World.buildings.FirstOrDefault(b=>b.kind==BuildKind.ResearchBench);
+            Require(bench!=null,"QA research bench");
+            for(int radius=1;radius<=2;radius++)
+                for(int dy=-radius;dy<=radius;dy++) for(int dx=-radius;dx<=radius;dx++)
+                {
+                    if(Math.Abs(dx)!=radius && Math.Abs(dy)!=radius) continue;
+                    player.x=bench.x+dx;player.y=bench.y+dy;
+                    if(EquipmentCatalog.HasResearchBench(bridge.World,player)) return;
+                }
+            Require(false,"QA cannot approach research bench");
         }
         static void GrantSamples(PlayerState player,int[] cost)
         {
