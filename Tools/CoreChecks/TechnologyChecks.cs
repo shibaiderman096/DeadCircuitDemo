@@ -86,7 +86,7 @@ static partial class Checks
                     return;
                 }
                 b.items = DemoCatalog.BuildCost(NewlyUnlocked[index]);
-                Require(TechCatalog.IsUnlocked(sim.State,NewlyUnlocked[index]),"teammate did not see shared unlock");b.x=target==TechEra.Steam?9:8;b.y=target==TechEra.Steam?14:15;Ready(b);int buildings=sim.State.buildings.Count;sim.Apply(Command(b,"build",10,15,(int)NewlyUnlocked[index]));
+                Require(TechCatalog.IsUnlocked(sim.State,NewlyUnlocked[index]),"teammate did not see shared unlock");b.x=target==TechEra.Steam?9:8;b.y=target==TechEra.Steam?14:15;Ready(b);int buildings=sim.State.buildings.Count;BuildNow(sim,b,10,15,(int)NewlyUnlocked[index]);
                 Require(sim.State.buildings.Count==buildings+1 && sim.State.buildings.Any(m=>m.x==10 && m.y==15 && m.kind==NewlyUnlocked[index]),"teammate cannot use shared research");
             });
         }
@@ -119,7 +119,7 @@ static partial class Checks
             Advance(sim,.55f);
             sim.Apply(Command(p,"primitive",arg:construction));
             Require(PrimitiveCatalog.HasResearch(sim.State,construction),"primitive research required a research bench: "+p.notice);
-            p.x=8;p.y=10;Ready(p);sim.Apply(Command(p,"build",10,10,(int)BuildKind.ResearchBench));
+            p.x=8;p.y=10;Ready(p);BuildNow(sim,p,10,10,(int)BuildKind.ResearchBench);
             Require(sim.State.buildings.Any(b=>b.kind==BuildKind.ResearchBench && b.x==10 && b.y==10),"research bench was not built: "+p.notice);
         });
         Run("research rejects dead disconnected foreign and invalid target commands", () =>
@@ -145,7 +145,7 @@ static partial class Checks
                 if(kind==BuildKind.OilPump)state.nodes.Add(new NodeState{id=state.nextId++,kind=NodeKind.Oil,x=10+w,y=10,stock=100});
                 var sim=new WorldSimulator(state);var p=Builder(sim);p.items=DemoCatalog.BuildCost(kind);p.x=8;p.y=10;var before=Copy(p.items);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==0,$"locked {kind} built");Inventory(p.items,before,$"locked {kind} paid");
                 if(ModularMachineCatalog.IsModular(kind)) HoldModularWrench(sim,p);
-                sim.State.era=TechCatalog.RequiredEra(kind);sim.State.steamResearch=255;sim.State.lvResearch=255;sim.State.mvResearch=255;sim.State.hvResearch=PrecisionCatalog.AllResearch;Ready(p);sim.Apply(Command(p,"build",10,10,(int)kind));Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{kind} negative control was invalid even when unlocked");if(ModularMachineCatalog.IsModular(kind))
+                sim.State.era=TechCatalog.RequiredEra(kind);sim.State.steamResearch=255;sim.State.lvResearch=255;sim.State.mvResearch=255;sim.State.hvResearch=PrecisionCatalog.AllResearch;Ready(p);BuildNow(sim,p,10,10,(int)kind);Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{kind} negative control was invalid even when unlocked");if(ModularMachineCatalog.IsModular(kind))
                 {
                     Require(p.items.SequenceEqual(before),"free controller plan charged materials");
                     var machine=sim.State.buildings[0];
@@ -164,7 +164,7 @@ static partial class Checks
                 {
                     var state=Flat(era:era);Water(state,10,10+DemoCatalog.Height(kind));if(kind==BuildKind.Miner || kind==BuildKind.SteamMiner)Ore(state,10+DemoCatalog.Width(kind),10);
                     if(kind==BuildKind.OilPump)state.nodes.Add(new NodeState{id=state.nextId++,kind=NodeKind.Oil,x=10+DemoCatalog.Width(kind),y=10,stock=100});
-                    Require(TechCatalog.IsUnlocked(state,kind),$"{era} hotbar offers locked {kind}");var sim=new WorldSimulator(state);var p=Builder(sim);p.items=DemoCatalog.BuildCost(kind);p.x=8;p.y=10;var before=Copy(p.items);sim.Apply(Command(p,"build",10,10,(int)kind));
+                    Require(TechCatalog.IsUnlocked(state,kind),$"{era} hotbar offers locked {kind}");var sim=new WorldSimulator(state);var p=Builder(sim);p.items=DemoCatalog.BuildCost(kind);p.x=8;p.y=10;var before=Copy(p.items);BuildNow(sim,p,10,10,(int)kind);
                     Require(sim.State.buildings.Count==1 && sim.State.buildings[0].kind==kind,$"{era} hotbar {kind} cannot actually build");Paid(p.items,before,DemoCatalog.BuildCost(kind),"hotbar construction");
                 }
             }

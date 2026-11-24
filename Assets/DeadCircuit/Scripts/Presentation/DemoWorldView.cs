@@ -703,6 +703,7 @@ namespace DeadCircuit
         {
             occupied.Clear(); solidBuildings.Clear(); buildingStates.Clear(); powerNodes.Clear(); networks.Clear();
             if (world.powerNetworks != null) foreach (var network in world.powerNetworks) networks[network.id] = network;
+            if (world.blueprints != null) foreach (var plan in world.blueprints) DrawBlueprint(plan);
             if (world.buildings == null) return;
             foreach (var state in world.buildings)
             {
@@ -816,6 +817,26 @@ namespace DeadCircuit
         { return kind != BuildKind.Wall && kind != BuildKind.Door && kind != BuildKind.Workbench && kind != BuildKind.ResearchBench &&
             kind != BuildKind.CombustionChamber && kind != BuildKind.Chimney && kind != BuildKind.FeedwaterPump &&
             (!DemoCatalog.IsPowerNode(kind) || kind == BuildKind.Reactor) && kind != BuildKind.Turret; }
+
+        // Construction plans render as translucent ghosts; the finished building
+        // reuses the same view id, so the sprite simply solidifies.
+        void DrawBlueprint(BlueprintState plan)
+        {
+            var ghost = new BuildingState { id = plan.id, x = plan.x, y = plan.y, rotation = plan.rotation, kind = plan.kind, footprintVersion = 1 };
+            int w = DemoCatalog.Width(ghost), h = DemoCatalog.Height(ghost);
+            Vector2 center = BuildingCenter(ghost);
+            if (center.x + w * .5f < viewMin.x || center.x - w * .5f > viewMax.x ||
+                center.y + h * .5f < viewMin.y || center.y - h * .5f > viewMax.y) return;
+            var v = Get(buildings, plan.id, center, 1f, 1f);
+            v.position = v.previous = center; v.root.transform.position = center;
+            SetOrder(v, plan.y);
+            ConfigureMachine(v.body, ghost);
+            v.root.name = DemoCatalog.BuildName(plan.kind) + "（蓝图）";
+            v.body.color = new Color(.55f, .78f, 1f, .40f);
+            v.shadow.transform.localPosition = new Vector3(0, -.20f * h, 0);
+            v.shadow.transform.localScale = new Vector3(w * .94f, h * .72f, 1);
+            v.lamp.enabled = false; v.arrow.enabled = false; v.detail.enabled = false;
+        }
 
         void ConfigureMachine(SpriteRenderer renderer, BuildingState b)
         {

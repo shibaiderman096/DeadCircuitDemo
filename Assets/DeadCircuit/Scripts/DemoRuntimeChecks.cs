@@ -974,7 +974,11 @@ namespace DeadCircuit
             // Ambient zombies spawn even with waves disabled. Keep the construction fixture deterministic.
             bridge.World.zombies.Clear();
             bridge.Send(new PlayerCommand { action="build",arg=(int)kind,x=x,y=y,rotation=rotation });
-            Require(bridge.World.buildings.Any(b=>b.kind==kind && b.x==x && b.y==y),"actual build command: "+kind+" "+player.notice);
+            yield return new WaitForSecondsRealtime(.3f);
+            // Buildings are blueprints now: hand-deliver the cost from the QA stock.
+            player.interactCooldown = 0f;
+            bridge.Send(new PlayerCommand { action="interact",x=x,y=y });
+            Require(bridge.World.buildings.Any(b=>b.kind==kind && b.x==x && b.y==y),"actual build command and delivery: "+kind+" "+player.notice);
             yield return new WaitForSecondsRealtime(.3f);
         }
         static Button FindButton(string name) => FindObjectsByType<Button>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Single(b=>b.name==name);

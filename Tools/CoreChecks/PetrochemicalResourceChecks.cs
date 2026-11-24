@@ -43,7 +43,7 @@ static partial class Checks
                 sim.State.mvSurvey = 1;
                 Array.Copy(DemoCatalog.BuildCost(BuildKind.OilPump), p.items, p.items.Length);
                 p.x = oil.x - 3; p.y = oil.y;
-                sim.Apply(Command(p, "build", oil.x - 2, oil.y, (int)BuildKind.OilPump));
+                BuildNow(sim, p, oil.x - 2, oil.y, (int)BuildKind.OilPump);
                 Require(sim.State.buildings.Any(b => b.kind == BuildKind.OilPump && b.x == oil.x - 2 && b.y == oil.y),
                     $"real oil pump build failed: chunked={chunked}: {p.notice}");
                 Require(p.items.All(n => n == 0), "real pump build did not pay exact cost");

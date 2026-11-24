@@ -81,7 +81,7 @@ static partial class Checks
         RestockPriorEra(p, DemoCatalog.BuildCost(kind), supplies ?? MvPriorMaterials);
         Advance(sim, .55f); p.x = x; p.y = y - 1;
         int count = sim.State.buildings.Count; var before = Copy(p.items);
-        sim.Apply(Command(p, "build", x, y, (int)kind, rotation));
+        BuildNow(sim, p, x, y, (int)kind, rotation);
         Require(sim.State.buildings.Count == count + 1, $"MV player cannot build {kind} at {x},{y}: {p.notice}");
         Paid(p.items, before, DemoCatalog.BuildCost(kind), "MV player build " + kind);
         return sim.State.buildings.Single(b => b.x == x && b.y == y && b.kind == kind);

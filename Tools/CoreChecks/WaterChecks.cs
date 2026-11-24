@@ -45,7 +45,7 @@ static partial class Checks
     {
         if (supplies != null) RestockPriorEra(p, DemoCatalog.BuildCost(kind), supplies);
         Advance(sim,.55f);p.x=x;p.y=y-1;int count=sim.State.buildings.Count;
-        sim.Apply(Command(p,"build",x,y,(int)kind));
+        BuildNow(sim,p,x,y,(int)kind);
         Require(sim.State.buildings.Count==count+1,"water chain cannot build "+kind+": "+p.notice);
         return sim.State.buildings.Single(b=>b.kind==kind && b.x==x && b.y==y);
     }

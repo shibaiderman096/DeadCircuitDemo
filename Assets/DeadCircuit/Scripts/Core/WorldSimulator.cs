@@ -12,8 +12,8 @@ namespace DeadCircuit
     public sealed partial class WorldSimulator
     {
         public const float FixedStep = 0.05f;
-        public const int SaveVersion = 22;
-        public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768;
+        public const int SaveVersion = 23;
+        public const int MaxPlayers = 8, MaxNodes = 1000000, MaxBuildings = 16384, MaxSites = 32768, MaxBlueprints = 4096;
         public const int MaxZombies = 160, MaxTraces = 192, InventoryLimit = InventoryWeight.MaxCapacityGrams / 10, BufferLimit = 200;
         public const int MaxCargo = 1024;
         private const float Reach = 2.4f;
@@ -127,7 +127,7 @@ namespace DeadCircuit
             }
             // Bound discrete work even if a client floods the host between ticks.
             if (input.commandTick != State.tick) { input.commandTick = State.tick; input.commands = 0; }
-            if (input.commands >= 6) return;
+            if (input.commands >= 10) return;
             input.commands++;
             if (ApplyPlayerControl(p, input, cmd)) return;
             ClearPlayerControl(p, input);
@@ -280,34 +280,38 @@ namespace DeadCircuit
             if (cmd.arg < 0 || cmd.arg >= DemoCatalog.BuildNames.Length || cmd.rotation < 0 || cmd.rotation > 3) return;
             BuildKind kind = (BuildKind)cmd.arg;
             if (!TechCatalog.IsUnlocked(State, kind)) { Notice(p, PrimitiveCatalog.BuildRequirement(State,kind)); return; }
-            var b = new BuildingState { x = cmd.x, y = cmd.y, rotation = cmd.rotation, kind = kind, footprintVersion = 1, modularBoiler = kind == BuildKind.Boiler };
-            if(ModularMachineCatalog.IsModular(kind)) b.modularModules.Add(new MachineModuleState { role=MachineModuleRole.Controller,x=cmd.x,y=cmd.y,rotation=cmd.rotation });
-            if (State.buildings.Count >= MaxBuildings) { Notice(p, "设备数量已达上限。"); return; }
-            for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++) for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++)
+            if (State.buildings.Count >= MaxBuildings || State.blueprints.Count >= MaxBlueprints) { Notice(p, "设备或蓝图数量已达上限。"); return; }
+            int width = DemoCatalog.Width(kind, cmd.rotation), height = DemoCatalog.Height(kind, cmd.rotation);
+            for (int y = cmd.y; y < cmd.y + height; y++) for (int x = cmd.x; x < cmd.x + width; x++)
             {
                 if (DroppedBackpackAt(x, y) != null) { Notice(p, "请先拾取地上的背包。"); return; }
                 if (FloorWorld.IsProtectedCell(State, x, y)) { Notice(p, "无法建造：请保持楼梯及其出入口畅通。"); return; }
                 if (SurvivalOccupiesCell(x, y)) { Notice(p, "无法建造：占地范围内有农田或生物。"); return; }
-                if (BlockedAt(x, y) || NodeAt(x, y) != null || BuildingAt(x, y) != null) { Notice(p, "无法建造：占地范围内有资源、障碍、水面或其他设备。"); return; }
+                if (BlockedAt(x, y) || NodeAt(x, y) != null || BuildingAt(x, y) != null || BlueprintAt(x, y) != null) { Notice(p, "无法建造：占地范围内有资源、障碍、水面、设备或蓝图。"); return; }
                 if (NearSpawn(x, y)) { Notice(p, "无法建造：救援区须保持畅通。"); return; }
                 if (kind != BuildKind.Belt && OccupiedByActor(x, y)) { Notice(p, "无法建造：占地范围内有人物。"); return; }
             }
-            if ((kind == BuildKind.Miner || kind == BuildKind.SteamMiner) && NearbyOre(b) == null)
+            var probe = new BuildingState { x = cmd.x, y = cmd.y, rotation = cmd.rotation, kind = kind, footprintVersion = 1 };
+            if ((kind == BuildKind.Miner || kind == BuildKind.SteamMiner) && NearbyOre(probe) == null)
             { Notice(p, "采矿机需紧邻未耗尽矿脉（含斜邻格）。"); return; }
-            if(kind==BuildKind.OilPump && NearbyPetroleum(b)==null)
-            { Notice(p,"抽油机需紧邻未耗尽油藏（含斜邻格）。"); return; }
-            if (TechCatalog.RequiresWater(kind) && !NearWater(b))
-            { Notice(p, "无法建造：设备须紧邻水面，且占地全部位于陆地。"); return; }
-            bool modular=ModularMachineCatalog.IsModular(kind);
-            if(modular && !ModularMachineCatalog.HasWrench(p)) { Notice(p,"放置大型蓝图需要手持耐久正常的扳手。"); return; }
-            int[] cost = modular ? new int[DemoCatalog.ItemCount] : DemoCatalog.BuildCost(kind);
-            if (!CanPay(p.items, cost)) { Notice(p, "建材不足：" + DemoCatalog.CostText(kind)); return; }
-            int id = AllocateId();
-            Pay(p.items, cost);
-            b.id = id; b.hp = BuildingMaxHealth(kind);
-            State.buildings.Add(b); RefreshSpatial(); RefreshPower(false);
+            if (kind == BuildKind.OilPump && NearbyPetroleum(probe) == null)
+            { Notice(p, "抽油机需紧邻未耗尽油藏（含斜邻格）。"); return; }
+            if (TechCatalog.RequiresWater(kind) && !NearWater(probe))
+            { Notice(p, "设备须紧邻水面，且占地全部位于陆地。"); return; }
+            if (ModularMachineCatalog.IsModular(kind))
+            {
+                if (!ModularMachineCatalog.HasWrench(p)) { Notice(p, "放置大型蓝图需要手持耐久正常的扳手。"); return; }
+                var machine = new BuildingState { id = AllocateId(), x = cmd.x, y = cmd.y, rotation = cmd.rotation, kind = kind,
+                    footprintVersion = 1, modularBoiler = kind == BuildKind.Boiler, hp = BuildingMaxHealth(kind) };
+                machine.modularModules.Add(new MachineModuleState { role = MachineModuleRole.Controller, x = cmd.x, y = cmd.y, rotation = cmd.rotation });
+                State.buildings.Add(machine); RefreshSpatial(); RefreshPower(false); flowRevision = -1;
+                Notice(p, "已放置控制器蓝图：" + DemoCatalog.BuildName(kind) + "，从模块菜单继续绘制并投料。");
+                return;
+            }
+            // Ordinary buildings start as free plans; the full build cost is delivered by hand.
+            State.blueprints.Add(new BlueprintState { id = AllocateId(), x = cmd.x, y = cmd.y, rotation = cmd.rotation, kind = kind });
             flowRevision = -1;
-            Notice(p, modular ? "已放置控制器蓝图：" + DemoCatalog.BuildName(kind) + "，从模块菜单继续绘制。" : "已建造" + DemoCatalog.BuildName(kind));
+            Notice(p, "已放置蓝图：" + DemoCatalog.BuildName(kind) + "，走近按 E 投料。");
         }
 
         private void Repair(PlayerState p, int x, int y)
@@ -327,6 +331,8 @@ namespace DeadCircuit
 
         private void Dismantle(PlayerState p, int x, int y)
         {
+            BlueprintState plan = BlueprintAt(x, y);
+            if (plan != null) { CancelBlueprint(p, plan); return; }
             BuildingState b = BuildingAt(x, y);
             if (b == null) return;
             if(ModularMachineCatalog.IsModular(b.kind)) { DismantleModular(p,b); return; }
@@ -501,6 +507,15 @@ namespace DeadCircuit
         private bool Inside(int x, int y) { return WorldTiles.Inside(State,x,y); }
         private long Cell(int x, int y) { return WorldTiles.Key(x,y); }
         private BuildingState BuildingAt(int x, int y) { return Inside(x, y) ? buildingGrid[Cell(x, y)] : null; }
+
+        private BlueprintState BlueprintAt(int x, int y)
+        {
+            if (!Inside(x, y)) return null;
+            foreach (BlueprintState plan in State.blueprints)
+                if (x >= plan.x && x < plan.x + DemoCatalog.Width(plan.kind, plan.rotation) &&
+                    y >= plan.y && y < plan.y + DemoCatalog.Height(plan.kind, plan.rotation)) return plan;
+            return null;
+        }
         private NodeState NodeAt(int x, int y) { return Inside(x, y) ? nodeGrid[Cell(x, y)] : null; }
         private static bool Finite(float v) { return !float.IsNaN(v) && !float.IsInfinity(v); }
         private static float Clamp(float v, float lo, float hi) { return Math.Max(lo, Math.Min(hi, v)); }

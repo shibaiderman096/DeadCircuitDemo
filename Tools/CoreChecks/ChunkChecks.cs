@@ -79,7 +79,7 @@ static partial class Checks
             world.ground = new string('0', 4096);
             var sim = new WorldSimulator(world);
             var p = Builder(sim); p.x = 30; p.y = 35;
-            sim.Apply(Command(p, "build", 32, 35, (int)BuildKind.Workbench));
+            BuildNow(sim, p, 32, 35, (int)BuildKind.Workbench);
             Require(sim.State.buildings.Any(b => b.kind == BuildKind.Workbench && b.x == 32 && b.y == 35),
                 "clear land still has fixed rescue-zone protection");
         });

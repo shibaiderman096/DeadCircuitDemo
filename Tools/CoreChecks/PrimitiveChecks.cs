@@ -26,7 +26,7 @@ static partial class Checks
     {
         Advance(sim, .55f); p.x = x - 1; p.y = y;
         int count = sim.State.buildings.Count; var before = Copy(p.items);
-        sim.Apply(Command(p, "build", x, y, (int)kind));
+        BuildNow(sim, p, x, y, (int)kind);
         Require(sim.State.buildings.Count == count + 1, "production chain could not build " + kind + "; " + p.notice);
         Paid(p.items, before, DemoCatalog.BuildCost(kind), "chain building cost");
         return sim.State.buildings.Single(b => b.kind == kind && b.x == x && b.y == y);
@@ -142,7 +142,7 @@ static partial class Checks
             foreach (BuildKind kind in new[] { BuildKind.CharcoalKiln, BuildKind.ClayKiln, BuildKind.Wall, BuildKind.Door, BuildKind.Chest, BuildKind.Belt })
             {
                 var sim = PrimitiveFixture(out var p); p.x = 8; p.y = 12; var before = Copy(p.items);
-                sim.Apply(Command(p, "build", 10, 12, (int)kind));
+                BuildNow(sim, p, 10, 12, (int)kind);
                 Require(sim.State.buildings.Count == 1, "funded locked building constructed: " + kind);
                 Inventory(p.items, before, "locked building paid: " + kind);
             }
@@ -160,7 +160,7 @@ static partial class Checks
             foreach (BuildKind kind in new[] { BuildKind.Workbench, BuildKind.StoneFurnace })
             {
                 var sim = PrimitiveFixture(out var p); p.x = 8; p.y = 12; var before = Copy(p.items);
-                sim.Apply(Command(p, "build", 10, 12, (int)kind));
+                BuildNow(sim, p, 10, 12, (int)kind);
                 Require(sim.State.buildings.Count == 2 && sim.State.buildings.Last().kind == kind, "primitive starter station cannot be built: " + kind);
                 Paid(p.items, before, DemoCatalog.BuildCost(kind), "starter station construction");
             }
@@ -351,7 +351,7 @@ static partial class Checks
             Inventory(p.items, before, "rejected water research charged");
             PrimitiveUnlock(sim, p, PrimitiveTech.Construction, DemoCatalog.Materials(ItemKind.Wood, 4, ItemKind.Stone, 4));
             Advance(sim, .55f);
-            sim.Apply(Command(p, "build", 9, 12, (int)BuildKind.ResearchBench));
+            BuildNow(sim, p, 9, 12, (int)BuildKind.ResearchBench);
             Require(sim.State.buildings.Any(building => building.kind == BuildKind.ResearchBench), "Construction research did not unlock the research bench");
             p.items[(int)ItemKind.Wood] = Math.Max(p.items[(int)ItemKind.Wood], 12);
             Advance(sim, .55f); before = Copy(p.items);

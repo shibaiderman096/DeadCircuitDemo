@@ -442,7 +442,7 @@ static partial class Checks
             for (int refresh = 0; refresh < 3; refresh++)
             {
                 Ready(player);
-                sim.Apply(Command(player, "build", 21, 20, (int)BuildKind.Wall));
+                BuildNow(sim, player, 21, 20, (int)BuildKind.Wall);
                 Require(sim.State.buildings.Any(b => b.kind == BuildKind.Wall && b.x == 21 && b.y == 20), "preview fixture did not build");
                 var chamber = Building(sim, parts.chamber.id);
                 Require(chamber.items[(int)ItemKind.Fuel] == 1, "build preview consumed item");

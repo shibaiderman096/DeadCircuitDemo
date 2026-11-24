@@ -183,7 +183,7 @@ static partial class Checks
             var sim = new WorldSimulator(world);
             var p = sim.AddPlayer("primitive-builder", "Builder"); p.x = 10; p.y = 10;
             Array.Copy(DemoCatalog.BuildCost(BuildKind.StoneFurnace), p.items, p.items.Length);
-            sim.Apply(Command(p, "build", 11, 10, (int)BuildKind.StoneFurnace));
+            BuildNow(sim, p, 11, 10, (int)BuildKind.StoneFurnace);
             var furnace = sim.State.buildings.Single(b => b.kind == BuildKind.StoneFurnace);
             Require(TechCatalog.SelectedRecipe(furnace).id == 10, "new furnace lost default recipe10");
             var restored = new WorldSimulator(Saved(sim.State)).State;

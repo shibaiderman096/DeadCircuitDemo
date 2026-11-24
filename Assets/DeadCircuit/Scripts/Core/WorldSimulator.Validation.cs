@@ -38,6 +38,7 @@ namespace DeadCircuit
             SaveCheck(source.players != null && source.players.Count <= MaxPlayers, "player list");
             SaveCheck(source.nodes != null && source.nodes.Count <= MaxNodes, "node list");
             SaveCheck(source.buildings != null && source.buildings.Count <= MaxBuildings, "building list");
+            SaveCheck(source.blueprints == null || source.blueprints.Count <= MaxBlueprints, "blueprint list");
             SaveCheck(source.zombies != null && source.zombies.Count <= MaxZombies, "zombie list");
             SaveCheck(source.traces != null && source.traces.Count <= MaxTraces, "trace list");
             SaveCheck((source.cargo != null && source.cargo.Count <= MaxCargo) || (source.version == 1 && source.cargo == null), "cargo list");
@@ -124,6 +125,22 @@ namespace DeadCircuit
                     if(b.kind==BuildKind.SolarPanel) s.era=TechEra.MediumVoltage;
                     else if(TechCatalog.RequiredEra(b.kind)>=TechEra.LowVoltage && s.era<TechEra.LowVoltage) s.era=TechEra.LowVoltage;
                 }
+            }
+            if (source.blueprints != null) foreach (BlueprintState plan in source.blueprints)
+            {
+                SaveCheck(plan != null, "null blueprint"); CheckEntityId(plan.id, entityIds, ref highestId);
+                CheckCell(plan.x, plan.y, source);
+                SaveCheck((int)plan.kind >= 0 && (int)plan.kind < DemoCatalog.BuildNames.Length && plan.rotation >= 0 && plan.rotation <= 3, "blueprint kind/rotation");
+                int[] cost = DemoCatalog.BuildCost(plan.kind);
+                int[] delivered = CopyItems(plan.delivered, int.MaxValue, "blueprint materials", itemCount);
+                for (int i = 0; i < itemCount; i++) SaveCheck(delivered[i] <= cost[i], "blueprint overpaid material");
+                for (int y = plan.y; y < plan.y + DemoCatalog.Height(plan.kind, plan.rotation); y++)
+                    for (int x = plan.x; x < plan.x + DemoCatalog.Width(plan.kind, plan.rotation); x++)
+                    {
+                        CheckCell(x, y, source); char terrain = WorldTiles.Ground(source, x, y);
+                        SaveCheck(occupied.Add(WorldTiles.Key(x, y)) && terrain != '2' && terrain != '?', "overlapping/water blueprint");
+                    }
+                s.blueprints.Add(new BlueprintState { id = plan.id, x = plan.x, y = plan.y, rotation = plan.rotation, kind = plan.kind, delivered = delivered });
             }
             var byId = new Dictionary<int, BuildingState>();
             foreach (BuildingState b in s.buildings) byId.Add(b.id, b);

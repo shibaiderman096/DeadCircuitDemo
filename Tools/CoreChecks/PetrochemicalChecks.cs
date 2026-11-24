@@ -16,7 +16,7 @@ static partial class Checks
             var before=Copy(p.items);
             foreach(var kind in new[] {BuildKind.OilPump,BuildKind.DistillationUnit,BuildKind.ChemicalReactor,BuildKind.DieselGenerator,BuildKind.CoolingTower})
             {
-                Ready(p);sim.Apply(Command(p,"build",10,10,(int)kind));sim.Step(WorldSimulator.FixedStep);
+                Ready(p);BuildNow(sim,p,10,10,(int)kind);sim.Step(WorldSimulator.FixedStep);
             }
             Require(sim.State.buildings.Count==0 && sim.State.mvResearch==0,"MV era granted industrial processes");
             Inventory(p.items,before,"locked MV construction charged");

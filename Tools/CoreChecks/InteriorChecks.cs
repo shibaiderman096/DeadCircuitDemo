@@ -42,7 +42,7 @@ static partial class Checks
             sim.Apply(Command(player, "dismantle", 12, 10));
             Require(!sim.State.buildings.Any(b => b.kind == BuildKind.Door) && sim.Interiors.rooms.Count == 0 && RoomLayout.Build(sim.State).rooms.Count == 0, "public door removal did not expose room");
             Advance(sim, .3f);
-            sim.Apply(Command(player, "build", 12, 10, (int)BuildKind.Door));
+            BuildNow(sim, player, 12, 10, (int)BuildKind.Door);
             Require(sim.State.buildings.Any(b => b.kind == BuildKind.Door && b.hp == 220f) && sim.Interiors.rooms.Count == 1 && RoomLayout.Build(sim.State).rooms.Count == 1, "public door rebuilding did not restore room");
         });
         Run("interior broken node walls building walls and doors expose their room", () =>

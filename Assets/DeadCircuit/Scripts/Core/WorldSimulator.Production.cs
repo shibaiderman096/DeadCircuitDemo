@@ -37,6 +37,8 @@ namespace DeadCircuit
             if (DroppedBackpackAt(x, y) is DroppedBackpackState backpack)
             { ChangeBackpack(p, backpack.gear, backpack); return; }
             if (TryFloorInteraction(p, x, y)) return;
+            BlueprintState plan = BlueprintAt(x, y);
+            if (plan != null) { FeedBlueprint(p, plan); return; }
             BuildingState b = BuildingAt(x, y);
             if (b == null)
             {
@@ -848,6 +850,82 @@ namespace DeadCircuit
             if(kind==BuildKind.Reactor) return item==(int)ItemKind.NuclearFuel || item==(int)ItemKind.Coolant;
             foreach(var r in TechCatalog.Recipes) if(r.building==kind && kind!=BuildKind.Workbench && r.inputs[item]>0) return true;
             return false;
+        }
+
+        // Blueprints are funded by hand: one interact delivers every missing item the
+        // player carries, and the real building appears the moment the cost is complete.
+        private void FeedBlueprint(PlayerState p, BlueprintState plan)
+        {
+            int[] cost = DemoCatalog.BuildCost(plan.kind);
+            int moved = 0;
+            for (int i = 0; i < DemoCatalog.ItemCount; i++)
+            {
+                int need = cost[i] - plan.delivered[i];
+                if (need <= 0) continue;
+                int take = Math.Min(p.items[i], need);
+                if (take <= 0) continue;
+                p.items[i] -= take; plan.delivered[i] += take; moved += take;
+            }
+            if (!BlueprintComplete(plan))
+            {
+                Notice(p, (moved > 0 ? "已投料 " + moved + "；" : "") + "蓝图还缺：" + BlueprintMissingText(cost, plan.delivered) + "。");
+                return;
+            }
+            string blocked = BlueprintBlocked(plan);
+            if (blocked != null) { Notice(p, blocked); return; }
+            // The finished building keeps the plan id so existing views and remote
+            // snapshots morph from the ghost into the real building without a gap.
+            var built = new BuildingState { id = plan.id, x = plan.x, y = plan.y, rotation = plan.rotation, kind = plan.kind,
+                footprintVersion = 1, modularBoiler = plan.kind == BuildKind.Boiler, hp = BuildingMaxHealth(plan.kind) };
+            State.blueprints.Remove(plan);
+            State.buildings.Add(built); RefreshSpatial(); RefreshPower(false); flowRevision = -1;
+            Notice(p, "已建成" + DemoCatalog.BuildName(plan.kind) + "。");
+        }
+
+        private void CancelBlueprint(PlayerState p, BlueprintState plan)
+        {
+            if (!InventoryWeight.CanFit(p, InventoryWeight.MaterialsGrams(plan.delivered)))
+            { Notice(p, "背包负重不足，无法收回已投建材。"); return; }
+            for (int i = 0; i < DemoCatalog.ItemCount; i++) { p.items[i] += plan.delivered[i]; plan.delivered[i] = 0; }
+            State.blueprints.Remove(plan); flowRevision = -1;
+            Notice(p, "已取消蓝图，退回已投建材。");
+        }
+
+        private static bool BlueprintComplete(BlueprintState plan)
+        {
+            int[] cost = DemoCatalog.BuildCost(plan.kind);
+            for (int i = 0; i < cost.Length; i++) if (plan.delivered[i] < cost[i]) return false;
+            return true;
+        }
+
+        private static string BlueprintMissingText(int[] cost, int[] delivered)
+        {
+            var text = new System.Text.StringBuilder();
+            for (int i = 0; i < cost.Length; i++)
+            {
+                int need = cost[i] - delivered[i];
+                if (need <= 0) continue;
+                if (text.Length > 0) text.Append("、");
+                text.Append(DemoCatalog.ItemNames[i]).Append('×').Append(need);
+            }
+            return text.Length == 0 ? "无" : text.ToString();
+        }
+
+        private string BlueprintBlocked(BlueprintState plan)
+        {
+            var probe = new BuildingState { x = plan.x, y = plan.y, rotation = plan.rotation, kind = plan.kind, footprintVersion = 1 };
+            if ((plan.kind == BuildKind.Miner || plan.kind == BuildKind.SteamMiner) && NearbyOre(probe) == null) return "矿脉已耗尽，蓝图无法完工。";
+            if (plan.kind == BuildKind.OilPump && NearbyPetroleum(probe) == null) return "油藏已耗尽，蓝图无法完工。";
+            if (TechCatalog.RequiresWater(plan.kind) && !NearWater(probe)) return "蓝图不再紧邻水面，无法完工。";
+            for (int y = plan.y; y < plan.y + DemoCatalog.Height(plan.kind, plan.rotation); y++)
+                for (int x = plan.x; x < plan.x + DemoCatalog.Width(plan.kind, plan.rotation); x++)
+                {
+                    if (!Inside(x, y)) return "蓝图位置已超出可建造区域。";
+                    BlueprintState other = BlueprintAt(x, y);
+                    if (BlockedAt(x, y) || NodeAt(x, y) != null || BuildingAt(x, y) != null || (other != null && other != plan) || OccupiedByActor(x, y))
+                        return "蓝图位置被占用，无法完工。";
+                }
+            return null;
         }
     }
 }

@@ -31,7 +31,7 @@ static partial class Checks
             Require(Building(sim,d.id).setting==0,"invalid configure opened door");
             var invalid=Saved(sim.State); invalid.buildings.Single().setting=2; Reject(invalid,"invalid door setting restored");
             var builder=new WorldSimulator(Flat(era:TechEra.Primitive)); var actor=Builder(builder); actor.x=8;actor.y=10;
-            var before=actor.items.ToArray(); builder.Apply(Command(actor,"build",10,10,(int)BuildKind.Door));
+            var before=actor.items.ToArray(); BuildNow(builder, actor, 10, 10, (int)BuildKind.Door);
             Require(builder.State.buildings.Count==1,"primitive door not buildable");
             Require(actor.items[(int)ItemKind.Wood]<before[(int)ItemKind.Wood],"door was free");
         });
@@ -54,7 +54,7 @@ static partial class Checks
             var sim=new WorldSimulator(Flat(era:TechEra.Steam));var p=Builder(sim);p.x=8;p.y=10;
             p.items = DemoCatalog.BuildCost(BuildKind.Boiler);
             p.items[(int)ItemKind.Fuel] = 2;
-            sim.Apply(Command(p,"build",10,10,(int)BuildKind.Boiler));
+            BuildNow(sim, p, 10, 10, (int)BuildKind.Boiler);
             var boiler=sim.State.buildings.Single();Require(boiler.modularBoiler,"new boiler silently retained old integrated burner");
             Advance(sim,.3f);int fuel=p.items[(int)ItemKind.Fuel];sim.Apply(Command(p,"interact",10,10));
             Require(p.items[(int)ItemKind.Fuel]==fuel && boiler.items[(int)ItemKind.Fuel]==0,"module boiler accepted firebox fuel");

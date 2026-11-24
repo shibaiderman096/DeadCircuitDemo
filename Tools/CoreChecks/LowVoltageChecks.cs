@@ -9,7 +9,7 @@ static partial class Checks
             var state = Flat(era: TechEra.Steam); state.era = TechEra.LowVoltage;
             var sim = new WorldSimulator(state); var p = Builder(sim);
             p.x = 8; p.y = 10; var before = Copy(p.items);
-            sim.Apply(Command(p, "build", 10, 10, (int)BuildKind.Generator));
+            BuildNow(sim, p, 10, 10, (int)BuildKind.Generator);
             Require(sim.State.buildings.Count == 0, "entering LV immediately granted generator manufacturing");
             Inventory(p.items, before, "locked electrical equipment charged materials");
         });

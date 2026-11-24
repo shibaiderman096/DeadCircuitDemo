@@ -107,6 +107,14 @@ static partial class Checks
             footprintVersion = footprintVersion, hp = WorldSimulator.BuildingMaxHealth(kind) };
         state.buildings.Add(b); return b;
     }
+    // Buildings are blueprints now: place the plan, then deliver the cost by hand.
+    static void BuildNow(WorldSimulator sim, PlayerState p, int x, int y, int kind, int rotation = 0)
+    {
+        sim.Apply(Command(p, "build", x, y, kind, rotation));
+        if (!sim.State.blueprints.Exists(b => b.x == x && b.y == y && (int)b.kind == kind)) return;
+        p.interactCooldown = 0f;
+        sim.Apply(Command(p, "interact", x, y));
+    }
     static NodeState Ore(WorldState state, int x, int y, int stock = 100)
     {
         var n = new NodeState { id = state.nextId++, kind = NodeKind.Ore, x = x, y = y, stock = stock };
@@ -201,7 +209,7 @@ static partial class Checks
         ElectricalAutomationChecks();
         RunLowVoltageProgressionChecks();
         TechnologyTreeChecks();
-        CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); CargoChecks(); SaveAndCombatChecks();
+        CatalogAndWorldChecks(); CommandAndSpatialChecks(); PowerChecks(); BlueprintChecks(); CargoChecks(); SaveAndCombatChecks();
         TechnologyChecks(); EraEnergyChecks(); EraProductionChecks(); VersionThreeSaveChecks(); EquipmentChecks(); WorldGenerationChecks(); WorldArchiveChecks(); SurvivalChecks(); EnemyChecks(); ExpansionIntegrationChecks(); ForagingChecks();
         if (selected == 0) { Console.Error.WriteLine("No check names matched the supplied filters."); return 2; }
         Console.WriteLine($"CORE_CHECKS_{(failed == 0 ? "PASS" : "FAIL")} suites={selected} passed={passed} failed={failed} historicalSkipped={historicalSkipped}");
@@ -286,29 +294,42 @@ static partial class Checks
             p.skillPoints = 1; sim.Apply(Command(p, "skill", arg: 0)); Require(p.skills[0] == 1 && p.skillPoints == 1, "level prerequisite bypass");
             sim.Apply(Command(p, "attribute", arg: 99)); Require(p.attributePoints == 1, "invalid attribute charged");
         });
-        Run("building is atomic across two players", () =>
+        Run("blueprint placement is atomic across two players and charges only on delivery", () =>
         {
             var sim = new WorldSimulator(Flat()); var a = Builder(sim, "first", "A"); var b = Builder(sim, "second", "B"); a.x = 29; a.y = 34; b.x = 29; b.y = 35;
-            int before = a.items.Sum() + b.items.Sum(); int count = sim.State.buildings.Count;
-            sim.Apply(Command(a, "build", 28, 34, (int)BuildKind.Wall)); sim.Apply(Command(b, "build", 28, 34, (int)BuildKind.Wall));
-            Require(sim.State.buildings.Count == count + 1, "duplicate placement"); Require(a.items.Sum() + b.items.Sum() == before - 3, "double cost or free build");
+            int before = a.items.Sum() + b.items.Sum();
+            sim.Apply(Command(a, "build", 28, 34, (int)BuildKind.Wall));
+            Advance(sim, .3f);
+            sim.Apply(Command(b, "build", 28, 34, (int)BuildKind.Wall));
+            Require(sim.State.blueprints.Count == 1 && sim.State.buildings.Count == 0, "duplicate blueprint or premature building");
+            Require(a.items.Sum() + b.items.Sum() == before, "blueprint placement charged materials");
+            Advance(sim, .3f);
+            sim.Apply(Command(a, "interact", 28, 34));
+            Require(sim.State.buildings.Count == 1 && sim.State.blueprints.Count == 0, "delivered blueprint did not build");
+            Require(a.items.Sum() + b.items.Sum() == before - DemoCatalog.BuildCost(BuildKind.Wall).Sum(), "delivery charged the wrong total");
         });
-        Run("new multi-cell building blocks every cell and rejects subcell overlap", () =>
+        Run("multi-cell blueprint builds its whole footprint and rejects subcell overlap", () =>
         {
-            var sim = new WorldSimulator(Flat()); var p = Builder(sim); p.items = DemoCatalog.BuildCost(BuildKind.Assembler); p.x = 8; p.y = 10; sim.Apply(Command(p, "build", 10, 10, (int)BuildKind.Assembler));
+            var sim = new WorldSimulator(Flat()); var p = Builder(sim); p.items = DemoCatalog.BuildCost(BuildKind.Assembler); p.x = 8; p.y = 10;
+            sim.Apply(Command(p, "build", 10, 10, (int)BuildKind.Assembler));
+            Require(sim.State.blueprints.Count == 1 && sim.State.buildings.Count == 0, "assembler skipped its blueprint");
+            Require(!sim.IsBlocked(10, 10), "unbuilt blueprint blocked walking");
+            Advance(sim, .3f);
+            sim.Apply(Command(p, "interact", 10, 10));
             var machine = sim.State.buildings.Single(); Require(machine.footprintVersion == 1, "new construction kept legacy footprint");
             for (int y = 10; y <= 11; y++) for (int x = 10; x <= 12; x++) Require(sim.IsBlocked(x, y), "free machine subcell");
             Require(!sim.IsBlocked(13, 10) && !sim.IsBlocked(12, 12), "footprint blocks outside cells");
             Advance(sim, .3f); p.x = 13; p.y = 11; int before = p.items.Sum(); sim.Apply(Command(p, "build", 12, 11, (int)BuildKind.Wall));
-            Require(sim.State.buildings.Count == 1 && p.items.Sum() == before, "overlapping subcell build spent resources");
+            Require(sim.State.buildings.Count == 1 && sim.State.blueprints.Count == 0 && p.items.Sum() == before, "overlapping subcell build spent resources");
         });
         Run("rotated footprints reject map-edge overflow without spending", () =>
         {
             foreach (var (x,y,r,legal) in new[] { (62,10,0,false), (62,10,1,true), (10,62,1,false), (10,62,0,true), (63,10,1,false), (10,63,0,false) })
             {
                 var sim = new WorldSimulator(Flat()); var p = Builder(sim); p.items = DemoCatalog.BuildCost(BuildKind.Assembler); p.x = x - 2; p.y = y;
-                int before = p.items.Sum(); sim.Apply(Command(p, "build", x, y, (int)BuildKind.Assembler, r));
+                int before = p.items.Sum(); BuildNow(sim, p, x, y, (int)BuildKind.Assembler, r);
                 Require((sim.State.buildings.Count == 1) == legal, $"edge placement ({x},{y}) rotation {r}");
+                Require(sim.State.blueprints.Count == 0, $"edge placement ({x},{y}) rotation {r} left a stray blueprint");
                 Require(p.items.Sum() == before - (legal ? DemoCatalog.BuildCost(BuildKind.Assembler).Sum() : 0), "edge placement charged incorrect cost");
             }
         });
@@ -338,7 +359,7 @@ static partial class Checks
         Run("miner searches the expanded whole footprint for ore", () =>
         {
             var state = Flat(); var ore = Ore(state, 12, 11); var gen = Add(state, BuildKind.Generator, 7, 7); gen.fuel = 20;
-            var sim = new WorldSimulator(state); var p = Builder(sim); p.items = DemoCatalog.BuildCost(BuildKind.Miner); p.x = 8; p.y = 10; sim.Apply(Command(p, "build", 10, 10, (int)BuildKind.Miner));
+            var sim = new WorldSimulator(state); var p = Builder(sim); p.items = DemoCatalog.BuildCost(BuildKind.Miner); p.x = 8; p.y = 10; BuildNow(sim, p, 10, 10, (int)BuildKind.Miner);
             Require(sim.State.buildings.Any(b => b.kind == BuildKind.Miner), "ore beside far footprint edge rejected"); Advance(sim, 4);
             Require(sim.State.nodes.Single(n => n.id == ore.id).stock < ore.stock && sim.State.gathered > 0, "far-edge ore was not mined");
         });
@@ -369,7 +390,7 @@ static partial class Checks
             var state = Flat(); var gen = Add(state, BuildKind.Generator, 4, 4); gen.fuel = 20; var target = Add(state, BuildKind.Smelter, 15, 4); target.items[(int)ItemKind.Ore] = 10;
             var sim = new WorldSimulator(state); var p = Builder(sim); p.items = DemoCatalog.BuildCost(BuildKind.PowerPole); p.x = 11; p.y = 6; Advance(sim, 3); var machine = Building(sim,target.id);
             Require(!machine.powered && machine.items[(int)ItemKind.Iron] == 0 && machine.progress == 0, "remote machine ran without pole");
-            sim.Apply(Command(p, "build", 11, 4, (int)BuildKind.PowerPole)); Require(sim.State.buildings.Any(b => b.kind == BuildKind.PowerPole), "new pole enum cannot be built");
+            BuildNow(sim, p, 11, 4, (int)BuildKind.PowerPole); Require(sim.State.buildings.Any(b => b.kind == BuildKind.PowerPole), "new pole enum cannot be built");
             Advance(sim, 3); Require(machine.powered && machine.items[(int)ItemKind.Iron] > 0, "pole did not supply remote machine");
             sim.Apply(Command(p, "dismantle", 11, 4)); Require(!sim.State.buildings.Any(b => b.kind == BuildKind.PowerPole), "pole not dismantled");
             int iron = machine.items[(int)ItemKind.Iron]; float progress = machine.progress; Advance(sim, 3);
@@ -572,7 +593,7 @@ static partial class Checks
             Add(state,BuildKind.Miner,25,30); Add(state,BuildKind.Belt,27,30); Add(state,BuildKind.Smelter,28,30);
             Add(state,BuildKind.Belt,30,30); Add(state,BuildKind.Assembler,31,30); Add(state,BuildKind.Chest,35,30);
             Add(state,BuildKind.Generator,27,26).items[(int)ItemKind.Fuel] = 8; Add(state,BuildKind.PowerPole,31,28);
-            var sim = new WorldSimulator(state); var p = Builder(sim); p.x = 34; p.y = 32; sim.Apply(Command(p,"build",34,30,(int)BuildKind.Belt));
+            var sim = new WorldSimulator(state); var p = Builder(sim); p.x = 34; p.y = 32; BuildNow(sim,p,34,30,(int)BuildKind.Belt);
             var belt = sim.State.buildings.Single(b => b.kind == BuildKind.Belt && b.x == 34 && b.y == 30); belt.rotation = 2; Advance(sim,15); var chest = sim.State.buildings.Single(b => b.kind == BuildKind.Chest);
             Require(chest.items[(int)ItemKind.Ammo] == 0, "wrong-direction belt delivered ammo"); belt.rotation = 0; int initialOre = sim.State.nodes.Single(n => n.x == 24 && n.y == 30).stock + sim.State.gathered;
             for (int n = 0; n < 900; n++)
@@ -615,7 +636,7 @@ static partial class Checks
             foreach (var node in root["buildings"].AsArray()) foreach (string field in new[] { "footprintVersion","networkId","powerRatio","powerDemand","powerGeneration" }) node.AsObject().Remove(field);
             var legacy = JsonSerializer.Deserialize<WorldState>(root.ToJsonString(),Json); var sim = new WorldSimulator(legacy);
             Require(sim.State.version == WorldSimulator.SaveVersion && sim.State.buildings.All(b => b.footprintVersion == 0), "v1 migration expanded buildings or did not upgrade version"); Require(sim.IsBlocked(10,10) && !sim.IsBlocked(10,11), "legacy assembler does not remain one cell");
-            var p = Builder(sim); p.items = DemoCatalog.BuildCost(BuildKind.Generator); p.x = 8; p.y = 11; sim.Apply(Command(p,"build",10,11,(int)BuildKind.Generator)); var built = sim.State.buildings.Single(b => b.kind == BuildKind.Generator);
+            var p = Builder(sim); p.items = DemoCatalog.BuildCost(BuildKind.Generator); p.x = 8; p.y = 11; BuildNow(sim,p,10,11,(int)BuildKind.Generator); var built = sim.State.buildings.Single(b => b.kind == BuildKind.Generator);
             Require(built.footprintVersion == 1 && sim.IsBlocked(11,12), "new building in migrated save is not multi-cell"); var restored = new WorldSimulator(Saved(sim.State));
             Require(restored.State.buildings.Count == 3 && restored.State.buildings.Count(b => b.footprintVersion == 0) == 2 && DemoCatalog.Width(Building(restored,built.id)) == 2, "mixed-footprint roundtrip changed dimensions");
         });

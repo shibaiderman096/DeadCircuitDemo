@@ -71,6 +71,8 @@ namespace DeadCircuit
         public List<NodeState> nodes = new List<NodeState>();
         public List<DroppedBackpackState> droppedBackpacks = new List<DroppedBackpackState>();
         public List<BuildingState> buildings = new List<BuildingState>();
+        // Placed construction plans: free to place, funded by hand, inert until built.
+        public List<BlueprintState> blueprints = new List<BlueprintState>();
         public List<ZombieState> zombies = new List<ZombieState>();
         public List<TraceState> traces = new List<TraceState>();
         public List<CargoState> cargo = new List<CargoState>();
@@ -135,6 +137,14 @@ namespace DeadCircuit
         public bool powered;
         public float powerRatio, powerDemand, powerGeneration;
         public int[] items = new int[DemoCatalog.ItemCount];
+    }
+
+    [Serializable] public sealed class BlueprintState
+    {
+        public int id, x, y, rotation;
+        public BuildKind kind;
+        // Materials delivered by players so far; completion needs the full build cost.
+        public int[] delivered = new int[DemoCatalog.ItemCount];
     }
 
     [Serializable] public sealed class SteamClusterState

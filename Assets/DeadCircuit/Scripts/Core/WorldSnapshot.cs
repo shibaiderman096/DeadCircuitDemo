@@ -29,6 +29,7 @@ namespace DeadCircuit
                 ? b.modularModules.Exists(m=>nearby(m.x,m.y))
                 : WorldTiles.FloorDiv(b.x,16)<=cx+radius && WorldTiles.FloorDiv(b.x+DemoCatalog.Width(b)-1,16)>=cx-radius &&
                   WorldTiles.FloorDiv(b.y,16)<=cy+radius && WorldTiles.FloorDiv(b.y+DemoCatalog.Height(b)-1,16)>=cy-radius).ConvertAll(SnapshotBuilding);
+            result.blueprints=source.blueprints.FindAll(p=>nearby(p.x,p.y));
             result.sites=source.sites.FindAll(s=>nearby(s.x,s.y));
             // A floor snapshot carries its ground identity for labels and stairs,
             // without sending that remote location's terrain or live entities.

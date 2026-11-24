@@ -13,7 +13,7 @@ static partial class Checks
             var poleCost = DemoCatalog.BuildCost(BuildKind.HighPole);
             for (int i = 0; i < p.items.Length; i++) p.items[i] += poleCost[i];
             var before=Copy(p.items);
-            sim.Apply(Command(p,"build",10,14,(int)BuildKind.HighPole));
+            BuildNow(sim,p,10,14,(int)BuildKind.HighPole);
             Require(sim.State.buildings.All(building=>building.kind!=BuildKind.HighPole),"HV era alone unlocked the high grid");
             Inventory(p.items,before,"locked HV construction");
             Ready(p); sim.Apply(Command(p,"hv",arg:0));

@@ -117,7 +117,7 @@ static partial class Checks
             actor.x=11;actor.y=12; world.Apply(Command(actor,"move",0,0));
             world.Apply(new PlayerCommand {playerId=actor.id,action="move",moveX=1}); Advance(world,.25f); Require(actor.x>11.5f,"player could not walk through U hole");
             SupplyModularMaterials(actor, DemoCatalog.BuildCost(BuildKind.Chest));
-            world.Apply(Command(actor,"move")); actor.x=11;actor.y=13; actor.interactCooldown=0; world.Apply(Command(actor,"build",12,12,(int)BuildKind.Chest));
+            world.Apply(Command(actor,"move")); actor.x=11;actor.y=13; actor.interactCooldown=0; BuildNow(world, actor, 12, 12, (int)BuildKind.Chest);
             Require(world.State.buildings.Any(v=>v.kind==BuildKind.Chest && v.x==12 && v.y==12),"U hole could not contain another building");
             _=new WorldSimulator(Saved(world.State));
             PlanModule(world,actor,machine,MachineModuleRole.Casing,14,13); Require(machine.modularModules.Count==11 && !ModularMachineCatalog.IsComplete(machine),"extra free casing not planned");
