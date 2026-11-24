@@ -5,7 +5,7 @@ static partial class Checks
     // Main must invoke this alongside the existing suites in Program.cs.
     static void WorldGenerationChecks()
     {
-        Run("world generation opening pickups cover both stone tools from the actual spawn", () =>
+        Run("world generation opening pickups cover the full primitive handcraft kit from the actual spawn", () =>
         {
             foreach (bool chunked in new[] { false, true })
             foreach (WorldPreset preset in Enum.GetValues<WorldPreset>())
@@ -35,7 +35,7 @@ static partial class Checks
                     Require(!oil.Any(n => Math.Abs(n.x - node.x) <= 2 && Math.Abs(n.y - node.y) <= 2),
                         "pickup occupies a possible oil pump cell: " + scenario);
                 }
-                foreach (var (kind, minimum) in new[] { (NodeKind.Branch, 4), (NodeKind.LooseStone, 5), (NodeKind.DryGrass, 3) })
+                foreach (var (kind, minimum) in new[] { (NodeKind.Branch, 4), (NodeKind.LooseStone, 5), (NodeKind.DryGrass, 5) })
                     Require(pickups.Where(n => n.kind == kind && reached.Contains(n.x + n.y * 64)).Sum(n => n.stock) >= minimum,
                         $"starting player cannot reach enough {kind}: {scenario} spawn ({spawn.x},{spawn.y}), " +
                         $"{reached.Count} reachable cells, pickups " + string.Join(", ", pickups.Select(n => $"{n.kind}@{n.x}/{n.y}:{n.stock}")));

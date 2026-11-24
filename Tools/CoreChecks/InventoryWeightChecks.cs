@@ -54,11 +54,14 @@ static partial class Checks
             var p = sim.AddPlayer("pack-owner", "Owner");
             var partner = sim.AddPlayer("pack-picker", "Partner");
             p.x = 10; p.y = 10; partner.x = 11; partner.y = 11;
-            p.items[(int)ItemKind.DryGrass] = 1;
+            p.items[(int)ItemKind.DryGrass] = 3;
+            p.items[(int)ItemKind.Branch] = 2;
+            p.items[(int)ItemKind.Wood] = 9;
             Require(InventoryWeight.CapacityGrams(p) == 50000, "unworn capacity");
             sim.Apply(Command(p, "gearcraft", arg: (int)GearKind.GrassBackpack));
             GearState pack = p.gear.Single();
-            Require(p.items[(int)ItemKind.DryGrass] == 0 && p.items[(int)ItemKind.Wood] == 9, "grass pack recipe was not paid");
+            Require(p.items[(int)ItemKind.DryGrass] == 0 && p.items[(int)ItemKind.Branch] == 0 && p.items[(int)ItemKind.Wood] == 9,
+                "grass pack recipe was not paid");
             sim.Apply(Command(p, "equip", arg: pack.id));
             Require(p.backpackId == pack.id && p.weaponId == 0 && p.armorIds.All(id => id == 0) &&
                 InventoryWeight.CapacityGrams(p) == 100000, "backpack changed other slots or capacity is wrong");

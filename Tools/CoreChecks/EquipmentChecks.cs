@@ -765,11 +765,11 @@ static partial class Checks
         {
             var sim = EquipmentFixture(out var p, arrange: (_, player) =>
             {
-                // The axe weighs 1,200 g; the recipe costs 690 g.
+                // The axe weighs 1,200 g; the recipe costs 610 g (one haft, two ground stones, lashing).
                 Array.Clear(player.items);
                 player.items[(int)ItemKind.Wood] = 97;
                 player.items[(int)ItemKind.Ammo] = 21;
-                player.items[(int)ItemKind.Branch] = 2;
+                player.items[(int)ItemKind.Branch] = 1;
                 player.items[(int)ItemKind.LooseStone] = 2;
                 player.items[(int)ItemKind.DryGrass] = 1;
             });

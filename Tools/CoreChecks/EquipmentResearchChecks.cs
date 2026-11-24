@@ -130,7 +130,7 @@ static partial class Checks
                 Array.Clear(player.items); player.items[(int)ItemKind.Wood] = 1;
                 int stoneCost = kind == GearKind.StoneAxe ? 2 : 3;
                 player.items[(int)ItemKind.Stone] = 1;
-                player.items[(int)ItemKind.Branch] = 2;
+                player.items[(int)ItemKind.Branch] = 1;
                 player.items[(int)ItemKind.LooseStone] = stoneCost;
                 player.items[(int)ItemKind.DryGrass] = 1;
                 sim.Apply(Command(player, "gearcraft", arg: (int)kind));

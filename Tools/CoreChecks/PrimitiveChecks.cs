@@ -61,6 +61,38 @@ static partial class Checks
             Require(TechCatalog.Recipe(2)?.era == TechEra.Primitive,
                 "bronze recipe must be Primitive so primitive research can unlock it before Water");
         });
+        Run("primitive handcraft recipes use one haft and only ground pickups", () =>
+        {
+            var axe = EquipmentCatalog.Gear(GearKind.StoneAxe);
+            var pick = EquipmentCatalog.Gear(GearKind.StonePickaxe);
+            var pack = EquipmentCatalog.Gear(GearKind.GrassBackpack);
+            Require(axe.cost[(int)ItemKind.Branch] == 1 && axe.cost[(int)ItemKind.LooseStone] == 2 && axe.cost[(int)ItemKind.DryGrass] == 1,
+                "stone axe is not one haft, two ground stones and lashing");
+            Require(pick.cost[(int)ItemKind.Branch] == 1 && pick.cost[(int)ItemKind.LooseStone] == 3 && pick.cost[(int)ItemKind.DryGrass] == 1,
+                "stone pickaxe is not one haft, three ground stones and lashing");
+            Require(pack.cost[(int)ItemKind.DryGrass] == 3 && pack.cost[(int)ItemKind.Branch] == 2,
+                "grass pack is not braided grass on a branch frame");
+            foreach (var gear in new[] { axe, pick, pack })
+                for (int i = 0; i < gear.cost.Length; i++)
+                    Require(gear.cost[i] == 0 || i == (int)ItemKind.Branch || i == (int)ItemKind.LooseStone || i == (int)ItemKind.DryGrass,
+                        "handcraft recipe needs something other than a ground pickup: " + gear.name);
+
+            var state = Flat(era: TechEra.Primitive);
+            state.version = WorldSimulator.SaveVersion; state.primitiveVersion = 1;
+            var sim = new WorldSimulator(state);
+            var p = sim.AddPlayer("handcraft-kit", "Handcraft"); p.x = 20; p.y = 20;
+            foreach (var (item, amount) in new[] { (ItemKind.Branch, 4), (ItemKind.LooseStone, 5), (ItemKind.DryGrass, 5) })
+                p.items[(int)item] = amount;
+            foreach (var kind in new[] { GearKind.StoneAxe, GearKind.StonePickaxe, GearKind.GrassBackpack })
+            {
+                int before = p.gear.Count; Advance(sim, .6f);
+                sim.Apply(Command(p, "gearcraft", arg: (int)kind));
+                Require(p.gear.Count == before + 1 && p.gear.Last().kind == kind && sim.State.buildings.Count == 0,
+                    "ground pickups could not handcraft " + kind + " away from a workbench: " + p.notice);
+            }
+            Require(p.items[(int)ItemKind.Branch] == 0 && p.items[(int)ItemKind.LooseStone] == 0 && p.items[(int)ItemKind.DryGrass] == 0,
+                "full primitive handcraft kit did not consume exactly the ground pickup budget");
+        });
         Run("primitive tools research pays personal materials and shares team knowledge", () =>
         {
             var sim = PrimitiveFixture(out var p);

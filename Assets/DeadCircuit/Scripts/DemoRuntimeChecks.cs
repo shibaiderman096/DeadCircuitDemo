@@ -1103,7 +1103,8 @@ namespace DeadCircuit
             bridge.StartHost(73149, false);
             Require(bridge.IsRunning, "backpack QA starts a world");
             PlayerState player = bridge.LocalPlayer;
-            player.items[(int)ItemKind.DryGrass] = 1;
+            player.items[(int)ItemKind.DryGrass] = 3;
+            player.items[(int)ItemKind.Branch] = 2;
             yield return new WaitForSecondsRealtime(.5f);
             yield return ClickHudTool("Open Inventory");
             RequireInventoryLayout();

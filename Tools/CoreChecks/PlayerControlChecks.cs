@@ -26,7 +26,7 @@ static partial class Checks
             sim.State.nodes.Add(tree);
             foreach (var (kind, item, x, stock, action) in new[]
             {
-                (NodeKind.Branch, ItemKind.Branch, 10, 4, "interact"),
+                (NodeKind.Branch, ItemKind.Branch, 10, 2, "interact"),
                 (NodeKind.LooseStone, ItemKind.LooseStone, 9, 5, "primary"),
                 (NodeKind.DryGrass, ItemKind.DryGrass, 8, 2, "work")
             })

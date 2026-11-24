@@ -55,8 +55,9 @@ namespace DeadCircuit
                 tool = kind <= GearKind.Wrench, ammo = ItemKind.Ammo, damage = 19f, range = 1.65f, interval = .62f, pellets = 1 };
             switch (kind)
             {
-                case GearKind.StoneAxe: d.cost = DemoCatalog.Materials(ItemKind.Branch,2,ItemKind.LooseStone,2,ItemKind.DryGrass,1); d.damage=23f; break;
-                case GearKind.StonePickaxe: d.cost = DemoCatalog.Materials(ItemKind.Branch,2,ItemKind.LooseStone,3,ItemKind.DryGrass,1); d.damage=21f; break;
+                // One branch is the haft; the extra stones are the knapped head and its wedge.
+                case GearKind.StoneAxe: d.cost = DemoCatalog.Materials(ItemKind.Branch,1,ItemKind.LooseStone,2,ItemKind.DryGrass,1); d.damage=23f; break;
+                case GearKind.StonePickaxe: d.cost = DemoCatalog.Materials(ItemKind.Branch,1,ItemKind.LooseStone,3,ItemKind.DryGrass,1); d.damage=21f; break;
                 case GearKind.SteelAxe: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Wood,2,ItemKind.Scrap,1); d.damage=36f; d.interval=.55f; break;
                 case GearKind.SteelPickaxe: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Steel,3,ItemKind.Wood,2,ItemKind.Scrap,2); d.damage=32f; d.interval=.55f; break;
                 case GearKind.Wrench: d.era=TechEra.Steam; d.cost=DemoCatalog.Materials(ItemKind.Iron,3,ItemKind.Bronze,2); d.damage=26f; break;
@@ -100,8 +101,9 @@ namespace DeadCircuit
                     d.era=TechEra.Nuclear; d.maxDurability=150; d.radiationProtection=.8f;
                     d.cost=DemoCatalog.Materials(ItemKind.Polymer,6,ItemKind.SteelPlate,2,ItemKind.RefractoryBrick,2); SetArmor(d,8f,.06f); break;
                 case GearKind.GrassBackpack:
-                    d.cost = DemoCatalog.Materials(ItemKind.Wood, 3, ItemKind.DryGrass, 1);
-                    d.description = "用干草和木条随身扎成，装备后总携带容量100千克。"; break;
+                    // Braided grass rope over a branch frame: no felled timber needed.
+                    d.cost = DemoCatalog.Materials(ItemKind.DryGrass, 3, ItemKind.Branch, 2);
+                    d.description = "用干草编绳、树枝做框随身扎成，装备后总携带容量100千克。"; break;
                 case GearKind.ReinforcedBackpack:
                     d.era = TechEra.Water;
                     d.cost = DemoCatalog.Materials(ItemKind.Wood, 4, ItemKind.Scrap, 4, ItemKind.Bronze, 2);
