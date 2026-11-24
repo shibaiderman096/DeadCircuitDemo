@@ -229,7 +229,8 @@ static partial class Checks
         Require(sim.State.lvResearch == 255 && LowVoltageCatalog.MediumVoltageRequirement(sim.State).Length == 0,
             "full player LV chain cannot satisfy MV: " + LowVoltageCatalog.MediumVoltageRequirement(sim.State));
         p.x=8;p.y=10;Ready(p);
-        Require(TechCatalog.ResearchRequirement(sim.State, p, TechEra.MediumVoltage).Length == 0, "MV gate rejected earned LV acceptance");
+        p.items[(int)ItemKind.Steel]+=TechCatalog.ResearchCost(TechEra.MediumVoltage)[(int)ItemKind.Steel];
+        Require(TechCatalog.ResearchRequirement(sim.State, p, TechEra.MediumVoltage).Length == 0, "MV gate rejected earned LV acceptance: "+TechCatalog.ResearchRequirement(sim.State,p,TechEra.MediumVoltage));
         Require(LvProgressionItems.All(item => sim.State.produced[(int)item] > 0), "one LV component was never genuinely produced");
         LvProgressionAwait(sim, () => sim.State.cargo.Any(c => c.fromId == splitter.id) &&
             sim.State.buildings.Any(b => b.progress > 0 && TechCatalog.EnergyTier(b) == 2),

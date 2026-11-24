@@ -49,7 +49,7 @@ static partial class Checks
             Run($"research {target} requires materials and a live built prerequisite and charges once for both players", () =>
             {
                 var entry=Flat(era:previous); if(target==TechEra.Nuclear) { entry.hvPowered=4; entry.produced=PrecisionEvidence(TechEra.Nuclear); }
-                var sim=new WorldSimulator(entry);var a=Builder(sim,"a","A");var b=Builder(sim,"b","B");a.x=8;a.y=10;b.x=8;b.y=10;
+                var sim=new WorldSimulator(entry);var a=Builder(sim,"a","A");var b=Builder(sim,"b","B");a.x=8;a.y=10;b.x=8;b.y=10;Add(sim.State,BuildKind.ResearchBench,9,12);
                 var cost=TechCatalog.ResearchCost(target);Require(cost.Length==DemoCatalog.ItemCount && cost.Any(v=>v>0),"research has no material cost");
                 a.items = Copy(cost); b.items = Copy(cost);
                 var before=Copy(a.items);var partner=Copy(b.items);
@@ -68,7 +68,7 @@ static partial class Checks
                 {
                     Require(!TechCatalog.IsUnlocked(sim.State,BuildKind.CokeOven),"era entry skipped coking research");
                     b.items = Copy(SteamCatalog.Definition((int)SteamTech.Coking).cost);
-                    Add(sim.State,BuildKind.Workbench,10,13);b.x=8;b.y=13;Ready(b);sim.Apply(Command(b,"steam",arg:0));
+                    Add(sim.State,BuildKind.Workbench,10,13);b.x=8;b.y=13;Ready(b);sim.Apply(Command(b,"steam",arg:0));Require(SteamCatalog.HasResearch(sim.State,SteamTech.Coking),"teammate could not research by a research bench: "+b.notice);
                 }
                 if(target==TechEra.LowVoltage)
                 {
@@ -92,15 +92,16 @@ static partial class Checks
         }
         Run("non-primitive research requires an intact nearby unobstructed research bench", () =>
         {
-            var state=Flat();Add(state,BuildKind.Workbench,10,10);var bench=Add(state,BuildKind.ResearchBench,9,12);
-            var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;Ready(p);
-            Require(TechCatalog.CanResearch(sim.State,p,TechEra.Water),"valid research bench rejected");
+            var state=Flat();Add(state,BuildKind.Workbench,12,10);Add(state,BuildKind.ResearchBench,9,12);
+            var sim=new WorldSimulator(state);var bench=sim.State.buildings.Single(b=>b.kind==BuildKind.ResearchBench);var p=Builder(sim);p.x=8;p.y=10;Ready(p);
+            sim.State.era=TechEra.Water;sim.State.waterResearch=127;Add(sim.State,BuildKind.MechanicalCrusher,16,16);p.items=Copy(TechCatalog.ResearchCost(TechEra.Steam));
+            Require(TechCatalog.CanResearch(sim.State,p,TechEra.Steam),"valid research bench rejected: "+TechCatalog.ResearchRequirement(sim.State,p,TechEra.Steam)+" station="+EquipmentCatalog.HasResearchBench(sim.State,p));
             void Rejected(string reason)
             {
-                Ready(p);int[] before=Copy(p.items);
-                Require(!TechCatalog.CanResearch(sim.State,p,TechEra.Water),"invalid research station accepted: "+reason);
-                sim.Apply(Command(p,"research",arg:(int)TechEra.Water));
-                Require(sim.State.era==TechEra.Primitive && !WaterCatalog.HasResearch(sim.State,WaterTech.Crushing),"research bypassed station: "+reason);
+                Ready(p);int[] before=Copy(p.items);int researchBefore=sim.State.steamResearch;
+                Require(!TechCatalog.CanResearch(sim.State,p,TechEra.Steam),"invalid research station accepted: "+reason);
+                sim.Apply(Command(p,"research",arg:(int)TechEra.Steam));
+                Require(sim.State.era==TechEra.Water && sim.State.steamResearch==researchBefore,"research bypassed station: "+reason);
                 Inventory(p.items,before,"failed research charged materials: "+reason);
             }
             p.x=30;Rejected("too far");p.x=8;p.y=10;
@@ -111,7 +112,12 @@ static partial class Checks
         Run("primitive research and construction unlock a research bench without requiring one", () =>
         {
             var sim=New(out var p);int construction=(int)PrimitiveTech.Construction;Require((sim.State.primitiveResearch&(1<<construction))==0,"new world skipped primitive construction research");
-            Array.Fill(p.items,0);p.x=32;p.y=35;sim.Apply(Command(p,"primitive",arg:construction));
+            Array.Fill(p.items,100);
+            var workbench=Add(sim.State,BuildKind.Workbench,30,34);p.x=workbench.x-1;p.y=workbench.y;
+            sim.Apply(Command(p,"primitive",arg:(int)PrimitiveTech.Tools));
+            Require(PrimitiveCatalog.HasResearch(sim.State,PrimitiveTech.Tools),"primitive tools could not be researched at "+p.x+","+p.y+": "+p.notice);
+            Advance(sim,.55f);
+            sim.Apply(Command(p,"primitive",arg:construction));
             Require(PrimitiveCatalog.HasResearch(sim.State,construction),"primitive research required a research bench: "+p.notice);
             p.x=8;p.y=10;Ready(p);sim.Apply(Command(p,"build",10,10,(int)BuildKind.ResearchBench));
             Require(sim.State.buildings.Any(b=>b.kind==BuildKind.ResearchBench && b.x==10 && b.y==10),"research bench was not built: "+p.notice);
@@ -125,7 +131,7 @@ static partial class Checks
             }
             foreach(bool dead in new[] { true,false })
             {
-                var state=Flat(era:TechEra.Primitive);Add(state,BuildKind.Workbench,10,10);Add(state,BuildKind.ResearchBench,9,12);var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var before=Copy(p.items);if(dead)p.hp=0;else sim.SetConnected(p.id,false);
+                var state=Flat(era:TechEra.Primitive);Add(state,BuildKind.Workbench,12,10);Add(state,BuildKind.ResearchBench,9,12);var sim=new WorldSimulator(state);var p=Builder(sim);p.x=8;p.y=10;var before=Copy(p.items);if(dead)p.hp=0;else sim.SetConnected(p.id,false);
                 Require(!TechCatalog.CanResearch(sim.State,p,TechEra.Water),"ineligible actor accepted by research query");sim.Apply(Command(p,"research",arg:1));Require(sim.State.era==TechEra.Primitive,"ineligible actor researched");Inventory(p.items,before,"ineligible actor paid");
             }
             var valid=Flat(era:TechEra.Primitive);Add(valid,BuildKind.Workbench,10,10);var owner=new WorldSimulator(valid);var stranger=new PlayerState { id="forged" };Array.Fill(stranger.items,100);

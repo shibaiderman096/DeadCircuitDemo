@@ -52,6 +52,7 @@ static partial class Checks
         s.ground = new string(ground);
         s.nodes.Add(new NodeState { id = s.nextId++, kind = NodeKind.Oil, x = 13, y = 10, stock = 2000 });
         Add(s, BuildKind.Workbench, 10, 10);
+        Add(s, BuildKind.ResearchBench, 7, 14);
         foreach (var (x,y) in new[] { (14,7), (20,7), (26,7), (14,17) }) Add(s, BuildKind.Generator, x, y);
         var sim = new WorldSimulator(s); p = sim.AddPlayer("mv-builder", "MV builder");
         Array.Clear(p.items);
@@ -94,7 +95,7 @@ static partial class Checks
     }
     static void MvPlayerUnlock(WorldSimulator sim, PlayerState p, PetrochemicalTech id)
     {
-        Advance(sim, .55f); p.x = 8; p.y = 10;
+        Advance(sim, .55f); p.x = 6; p.y = 14;
         RestockPriorEra(p, PetrochemicalCatalog.Definition((int)id).cost, MvPriorMaterials);
         var peer = sim.State.players.Single(q => q.id == "mv-peer");
         var before = Copy(p.items); var peerBefore = Copy(peer.items); int mask = sim.State.mvResearch;
@@ -269,7 +270,7 @@ static partial class Checks
         Require(PetrochemicalCatalog.HighVoltageRequirement(sim.State).Length == 0 &&
             TechCatalog.ResearchRequirement(sim.State, TechEra.HighVoltage).Length == 0, "earned MV chain cannot reach HV");
         RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.HighVoltage), MvPriorMaterials);
-        Advance(sim, .55f); p.x = 8; p.y = 10; var before = Copy(p.items);
+        Advance(sim, .55f); p.x = 6; p.y = 14; var before = Copy(p.items);
         sim.Apply(Command(p, "research", arg: (int)TechEra.HighVoltage));
         Require(sim.State.era == TechEra.HighVoltage, "earned MV player cannot enter HV: " + p.notice);
         Paid(p.items, before, TechCatalog.ResearchCost(TechEra.HighVoltage), "earned HV samples");

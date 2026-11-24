@@ -29,6 +29,7 @@ static partial class Checks
         state.ground = new string(ground);
         state.nodes.Add(new NodeState { id = state.nextId++, kind = NodeKind.Quartz, x = 14, y = 10, stock = 95, hp = 35 });
         Add(state, BuildKind.Workbench, 10, 10);
+        Add(state, BuildKind.ResearchBench, 7, 14);
         Add(state, BuildKind.Boiler, 8, 22);
         Add(state, BuildKind.SteamPipe, 10, 22);
         Add(state, BuildKind.SteamFurnace, 11, 22);
@@ -71,7 +72,7 @@ static partial class Checks
 
     static void HvProgressionUnlock(WorldSimulator sim, PlayerState p, PrecisionTech tech)
     {
-        Advance(sim, .55f); p.x = 8; p.y = 10;
+        Advance(sim, .55f); p.x = 6; p.y = 14;
         RestockPriorEra(p, PrecisionCatalog.Definition((int)tech).cost, HvPriorMaterials);
         int mask = sim.State.hvResearch; var before = Copy(p.items);
         sim.Apply(Command(p, "hv", arg: (int)tech));
@@ -142,6 +143,7 @@ static partial class Checks
         Run("HV progression finite quartz to eight studies and paid nuclear entry through actual HV production", () =>
         {
             var sim = HvProgressionStart(out var p);
+            p.x=6;p.y=14;
             var before = Copy(p.items);
             sim.Apply(Command(p, "research", arg: (int)TechEra.HighVoltage));
             Require(sim.State.era == TechEra.HighVoltage && sim.State.hvResearch == 0 && sim.State.hvPowered == 0,
@@ -236,7 +238,7 @@ static partial class Checks
             MvPlayerAct(sim, p, "interact", assembler);
             Require(p.items[module] == heldModules + 4, "player did not collect the four HV modules");
             RestockPriorEra(p, TechCatalog.ResearchCost(TechEra.Nuclear), HvPriorMaterials);
-            Advance(sim, .55f); before = Copy(p.items);
+            Advance(sim, .55f); p.x=6;p.y=14;before = Copy(p.items);
             sim.Apply(Command(p, "research", arg: (int)TechEra.Nuclear));
             Require(sim.State.era == TechEra.Nuclear && sim.State.hvPowered == 4,
                 "earned HV route failed to enter nuclear: " + p.notice);

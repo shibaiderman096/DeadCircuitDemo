@@ -278,7 +278,7 @@ static partial class Checks
         Run("primitive real kiln copper tin bronze iron chain unlocks water", () =>
         {
             var sim = PrimitiveFixture(out var p); Array.Clear(p.items);
-            p.items[(int)ItemKind.Wood] = 55; p.items[(int)ItemKind.Stone] = 24; p.items[(int)ItemKind.Clay] = 28;
+            p.items[(int)ItemKind.Wood] = 75; p.items[(int)ItemKind.Stone] = 24; p.items[(int)ItemKind.Clay] = 28;
             p.items[(int)ItemKind.Ore] = 20; p.items[(int)ItemKind.CopperOre] = 20; p.items[(int)ItemKind.TinOre] = 20;
             PrimitiveUnlock(sim, p, PrimitiveTech.Tools, DemoCatalog.Materials(ItemKind.Wood, 2, ItemKind.Stone, 2));
             PrimitiveUnlock(sim, p, PrimitiveTech.Charcoal, DemoCatalog.Materials(ItemKind.Wood, 4, ItemKind.Stone, 2));
@@ -319,6 +319,7 @@ static partial class Checks
             Advance(sim, .55f);
             sim.Apply(Command(p, "build", 9, 12, (int)BuildKind.ResearchBench));
             Require(sim.State.buildings.Any(building => building.kind == BuildKind.ResearchBench), "Construction research did not unlock the research bench");
+            p.items[(int)ItemKind.Wood] = Math.Max(p.items[(int)ItemKind.Wood], 12);
             Advance(sim, .55f); before = Copy(p.items);
             sim.Apply(Command(p, "research", arg: (int)TechEra.Water));
             Require(sim.State.era == TechEra.Water, "actual primitive production chain could not unlock Water: " + p.notice);

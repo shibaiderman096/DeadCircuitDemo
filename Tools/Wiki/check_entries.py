@@ -55,9 +55,9 @@ class EntryChecks(unittest.TestCase):
 
     def test_integrated_catalogs_and_ground_pickups(self):
         self.assertEqual(66,len(self.renderer.items))
-        self.assertEqual(66,len(self.renderer.buildings))
+        self.assertEqual(67,len(self.renderer.buildings))
         self.assertEqual(66,len(self.catalog.item_ids))
-        self.assertEqual(66,len(self.catalog.build_ids))
+        self.assertEqual(67,len(self.catalog.build_ids))
         for name,index,title in (('Branch',63,'树枝'),('LooseStone',64,'石头'),('DryGrass',65,'干草')):
             with self.subTest(item=name):
                 self.assertEqual(index,self.catalog.item_ids[name])

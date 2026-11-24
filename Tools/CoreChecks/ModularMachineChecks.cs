@@ -349,10 +349,11 @@ static partial class Checks
             var researchCost = TechCatalog.ResearchCost(TechEra.LowVoltage);
             var constructionCost = ModularMachineCatalog.RequiredItems(b);
             SupplyModularMaterials(p, researchCost.Zip(constructionCost, (research, construction) => research + construction).ToArray());
+            Add(sim.State,BuildKind.ResearchBench,14,15);
             Require(!TechCatalog.CanResearch(sim.State,p,TechEra.LowVoltage),"unfinished blueprint impersonated facility");
-            CompleteModular(sim,p,b);Require(TechCatalog.CanResearch(sim.State,p,TechEra.LowVoltage),"completed large furnace could not substitute small furnace facility");
+            CompleteModular(sim,p,b);p.x=14;p.y=14;Require(TechCatalog.CanResearch(sim.State,p,TechEra.LowVoltage),"completed large furnace could not substitute small furnace facility: "+TechCatalog.ResearchRequirement(sim.State,p,TechEra.LowVoltage));
             b.hp-=1;Require(!TechCatalog.CanResearch(sim.State,p,TechEra.LowVoltage),"damaged large furnace impersonated intact facility");b.hp=WorldSimulator.BuildingMaxHealth(b.kind);
-            PlanModule(sim,p,b,MachineModuleRole.Casing,15,14);Require(!TechCatalog.CanResearch(sim.State,p,TechEra.LowVoltage),"disconnected drawing impersonated facility");EraseModule(sim,p,b,b.modularModules.Count-1);
+            PlanModule(sim,p,b,MachineModuleRole.Casing,15,14);p.x=14;p.y=14;Require(!TechCatalog.CanResearch(sim.State,p,TechEra.LowVoltage),"disconnected drawing impersonated facility");EraseModule(sim,p,b,b.modularModules.Count-1);p.x=14;p.y=14;
             sim.State.steamDriven=3;Require(!TechCatalog.CanResearch(sim.State,p,TechEra.LowVoltage),"large facility bypassed genuine production evidence");sim.State.steamDriven=4;
             var before=Copy(p.items);p.interactCooldown=0;sim.Apply(Command(p,"research",arg:(int)TechEra.LowVoltage));
             Require(sim.State.era==TechEra.LowVoltage,"valid large steam factory could not unlock LV");Paid(p.items,before,TechCatalog.ResearchCost(TechEra.LowVoltage),"large facility LV research");

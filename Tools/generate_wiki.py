@@ -97,7 +97,7 @@ class ArtBank:
         elif key.startswith("build_"):
             number = int(key[6:])
             candidates = [f"machine_{number}", f"build_{number}", f"module_{number}"]
-            aliases = {0: "build_wall_0", 1: "build_generator_0", 2: "build_miner_0", 3: "build_belt_0", 4: "build_smelter_0", 5: "build_assembler_0", 6: "build_turret_0", 7: "build_chest_0"}
+            aliases = {0: "build_wall_0", 1: "build_generator_0", 2: "build_miner_0", 3: "build_belt_0", 4: "build_smelter_0", 5: "build_assembler_0", 6: "build_turret_0", 7: "build_chest_0", 66: "machine_10"}
             if number in aliases:
                 candidates.append(aliases[number])
         elif key.startswith("enemy_"):
@@ -337,7 +337,7 @@ class WikiRenderer:
             facts.append(('所属时代', entry['era']))
         facts += entry['facts']
         visual = self.art.img(entry['icon'], entry['name'], 'infobox-art') if entry['icon'] else '<span class="infobox-symbol" aria-hidden="true">◇</span>'
-        art_note = '<p class="art-note">沿用游戏中的防具复用图</p>' if slug == 'gear-19' else ''
+        art_note = '<p class="art-note">沿用游戏中的复用图</p>' if slug in ('gear-19', 'building-66') else ''
         info = f'<aside class="entity-infobox" aria-label="{esc(entry["title"])}基本资料"><p class="infobox-caption">{esc(entry["title"])}</p>{visual}{art_note}<dl class="infobox-facts">' + ''.join(f'<dt>{esc(label)}</dt><dd>{esc(value)}</dd>' for label,value in facts) + '</dl></aside>'
         body = [info, '<p class="entity-overview">' + self.inline(entry['summary'],slug) + '</p>']
         if entry.get('parents'):
