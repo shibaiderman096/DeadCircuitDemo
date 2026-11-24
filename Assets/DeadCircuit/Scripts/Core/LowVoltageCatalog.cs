@@ -17,7 +17,7 @@ namespace DeadCircuit
             new LowVoltageTechnologyDefinition { id=id,name=name,description=description,prerequisites=prerequisites,cost=cost };
         public static readonly LowVoltageTechnologyDefinition[] All =
         {
-            T(LowVoltageTech.Generation,"发电配电","解锁燃料发电机、电线杆、蒸汽轮机和机械绕线台；先用陶窑烧制陶瓷绝缘件，再用机床拉制铜线，绕成发电线圈。",0,
+            T(LowVoltageTech.Generation,"发电配电","解锁燃料发电机、电线杆、蒸汽轮机与绕线台；需陶瓷绝缘件与铜线。",0,
                 DemoCatalog.Materials(ItemKind.CopperWire,4,ItemKind.Insulator,2,ItemKind.Steel,2)),
             T(LowVoltageTech.Cabling,"绝缘电缆","解锁绝缘电缆制作，以铜线和陶瓷绝缘件包覆导体，无需聚合物。",0,
                 DemoCatalog.Materials(ItemKind.CopperWire,4,ItemKind.Insulator,2)),
@@ -27,11 +27,11 @@ namespace DeadCircuit
                 DemoCatalog.Materials(ItemKind.Motor,1,ItemKind.Cable,2)),
             T(LowVoltageTech.Relays,"继电电路","解锁继电器和电路装配机；先手工制作继电器，再供给装配机生产电路。",Bit(LowVoltageTech.Generation)|Bit(LowVoltageTech.Cabling),
                 DemoCatalog.Materials(ItemKind.Coil,1,ItemKind.CopperWire,2,ItemKind.Insulator,1)),
-            T(LowVoltageTech.Assembly,"自动装配","完成电力生产和电路制造后，可研究装配机与机枪塔，批量装配部件和弹药，建立自动防御。",Bit(LowVoltageTech.Processing)|Bit(LowVoltageTech.Relays),
+            T(LowVoltageTech.Assembly,"自动装配","完成电力与电路后研究装配机、机枪塔，批量装配部件与弹药。",Bit(LowVoltageTech.Processing)|Bit(LowVoltageTech.Relays),
                 DemoCatalog.Materials(ItemKind.Circuit,2,ItemKind.Motor,1)),
-            T(LowVoltageTech.Sorting,"分流过滤","解锁过滤分流器，通电后将选定物品送往前方，其余送往左侧；出口堵塞时暂停对应运输。",Bit(LowVoltageTech.Relays),
+            T(LowVoltageTech.Sorting,"分流过滤","解锁过滤分流器；选定物品送前方，其余送左侧。",Bit(LowVoltageTech.Relays),
                 DemoCatalog.Materials(ItemKind.Circuit,2,ItemKind.Cable,2)),
-            T(LowVoltageTech.Protection,"断路保护","解锁低压断路器；相连的低压(LV)电网过载时自动跳闸，降低负载后需手动复位，各电网独立保护。",Bit(LowVoltageTech.Generation)|Bit(LowVoltageTech.Cabling)|Bit(LowVoltageTech.Relays),
+            T(LowVoltageTech.Protection,"断路保护","解锁低压断路器；电网过载自动跳闸，降载后手动复位。",Bit(LowVoltageTech.Generation)|Bit(LowVoltageTech.Cabling)|Bit(LowVoltageTech.Relays),
                 DemoCatalog.Materials(ItemKind.Relay,2,ItemKind.Cable,2))
         };
         public static LowVoltageTechnologyDefinition Definition(int id) => id>=0 && id<All.Length ? All[id] : null;

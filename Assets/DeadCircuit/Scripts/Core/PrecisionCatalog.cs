@@ -22,21 +22,21 @@ namespace DeadCircuit
 
         public static readonly PrecisionTechnologyDefinition[] All =
         {
-            T(PrecisionTech.Silicon,"硅材制备","将石英送入蒸汽高炉冶炼工业硅，再用中压(MV)硅材精炼机消耗工艺水提纯。",0,
+            T(PrecisionTech.Silicon,"硅材制备","石英入蒸汽高炉炼工业硅，再用硅材精炼机耗工艺水提纯。",0,
                 DemoCatalog.Materials(ItemKind.Quartz,4,ItemKind.Circuit,2,ItemKind.RefractoryBrick,2)),
             T(PrecisionTech.Wafers,"晶圆制造","硅材精炼机消耗冷却液切制晶圆，排出热冷却液。",Bit(PrecisionTech.Silicon),
                 DemoCatalog.Materials(ItemKind.PureSilicon,2,ItemKind.Coolant,2)),
-            T(PrecisionTech.Devices,"半导体器件","解锁半导体器件制造，由中压(MV)电子工台消耗晶圆、聚合物和铜线封装。",Bit(PrecisionTech.Wafers),
+            T(PrecisionTech.Devices,"半导体器件","解锁半导体器件：电子工台耗晶圆、聚合物、铜线封装。",Bit(PrecisionTech.Wafers),
                 DemoCatalog.Materials(ItemKind.Wafer,2,ItemKind.Polymer,2)),
             T(PrecisionTech.Circuits,"多层电路","将半导体器件与电路叠层，制成高级电路。",Bit(PrecisionTech.Devices),
                 DemoCatalog.Materials(ItemKind.Semiconductor,2,ItemKind.Relay,2)),
-            T(PrecisionTech.Assembly,"精密装配","解锁中压(MV)电子工台的精密部件加工；高压(HV)精密装配机还需完成高压电网研究。",Bit(PrecisionTech.Circuits),
+            T(PrecisionTech.Assembly,"精密装配","解锁电子工台精密部件加工；高压精密装配机另需高压电网。",Bit(PrecisionTech.Circuits),
                 DemoCatalog.Materials(ItemKind.AdvancedCircuit,1,ItemKind.Lubricant,2)),
             T(PrecisionTech.Alloys,"耐热合金","蒸汽高炉消耗钢、铜锭和焦炭，冶炼耐热合金，用于高压设备制造。",Bit(PrecisionTech.Silicon),
                 DemoCatalog.Materials(ItemKind.SteelPlate,3,ItemKind.RefractoryBrick,2)),
-            T(PrecisionTech.Control,"自动控制","解锁中压(MV)电子工台的控制模块装配，以及精密装配机的满料停机控制。",Bit(PrecisionTech.Assembly),
+            T(PrecisionTech.Control,"自动控制","解锁电子工台控制模块装配与精密装配机满料停机。",Bit(PrecisionTech.Assembly),
                 DemoCatalog.Materials(ItemKind.PrecisionPart,2,ItemKind.AdvancedCircuit,1)),
-            T(PrecisionTech.Grid,"高压电网","解锁高压发电机、高压电杆、精密装配机，以及变压器的高压(HV)转中压(MV)模式。",Bit(PrecisionTech.Alloys)|Bit(PrecisionTech.Control),
+            T(PrecisionTech.Grid,"高压电网","解锁高压发电机、高压电杆、精密装配机与变压器高压档。",Bit(PrecisionTech.Alloys)|Bit(PrecisionTech.Control),
                 DemoCatalog.Materials(ItemKind.ControlModule,2,ItemKind.HeatAlloy,2,ItemKind.Cable,4))
         };
 

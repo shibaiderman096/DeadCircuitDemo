@@ -21,7 +21,7 @@ namespace DeadCircuit
         {
             T(WaterTech.Wheel, "水车动力", "解锁水车，在岸边提供机械动力：40；使用原始时代材料即可建造。", 0,
                 DemoCatalog.Materials(ItemKind.Wood,4,ItemKind.Bronze,2)),
-            T(WaterTech.Shafts, "轴系传动", "解锁传动轴，沿边相接传递机械动力；研究进度只计入同一动力网内水车与传动轴共同驱动的生产。", Bit(WaterTech.Wheel),
+            T(WaterTech.Shafts, "轴系传动", "解锁传动轴；沿边相接传动力，进度只计同一动力网内生产。", Bit(WaterTech.Wheel),
                 DemoCatalog.Materials(ItemKind.Wood,4,ItemKind.Iron,2)),
             T(WaterTech.Crushing, "机械破碎", "解锁机械粉碎机和碎铁矿冶炼；将铁矿×1粉碎后冶炼，可提高铁锭产量。", Bit(WaterTech.Shafts),
                 DemoCatalog.Materials(ItemKind.Iron,3,ItemKind.Stone,4)),
@@ -29,11 +29,11 @@ namespace DeadCircuit
                 DemoCatalog.Materials(ItemKind.Brick,4,ItemKind.Bronze,2)),
             T(WaterTech.Pressing, "锻造压板", "解锁机械压机，将铁锭×1压成铁板×1，用于机械零件生产。", Bit(WaterTech.Shafts),
                 DemoCatalog.Materials(ItemKind.Iron,4,ItemKind.Bronze,2)),
-            T(WaterTech.Components, "齿轮轴承", "解锁机械工坊，用铁板、青铜和铁锭制造齿轮、轴承；需先完成水车驱动的铁板压制。", Bit(WaterTech.Pressing),
+            T(WaterTech.Components, "齿轮轴承", "解锁机械工坊，用铁板、青铜、铁锭制造齿轮与轴承。", Bit(WaterTech.Pressing),
                 DemoCatalog.Materials(ItemKind.IronPlate,2,ItemKind.Bronze,2)),
-            T(WaterTech.Transport, "基础运输", "解锁机械装卸器，以齿轮和轴承等材料建造；接入传动轴后，以双倍基础速度运送物品。", Bit(WaterTech.Shafts)|Bit(WaterTech.Components),
+            T(WaterTech.Transport, "基础运输", "解锁机械装卸器，用齿轮与轴承建造；接传动轴后双倍速运物。", Bit(WaterTech.Shafts)|Bit(WaterTech.Components),
                 DemoCatalog.Materials(ItemKind.Gear,1,ItemKind.Bearing,1,ItemKind.Wood,4)),
-            T(WaterTech.Agriculture, "灌溉磨粉", "解锁灌溉泵和水力磨坊，利用机械动力灌溉、磨粉；也可继续手工磨粉，此项研究不影响时代晋升。", Bit(WaterTech.Wheel)|Bit(WaterTech.Shafts),
+            T(WaterTech.Agriculture, "灌溉磨粉", "解锁灌溉泵与水力磨坊，用机械动力灌溉、磨粉。", Bit(WaterTech.Wheel)|Bit(WaterTech.Shafts),
                 DemoCatalog.Materials(ItemKind.Bronze,2,ItemKind.Brick,2))
         };
         public static WaterTechnologyDefinition Definition(int id) => id >= 0 && id < All.Length ? All[id] : null;

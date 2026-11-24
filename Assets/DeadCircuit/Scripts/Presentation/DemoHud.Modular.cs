@@ -596,11 +596,11 @@ namespace DeadCircuit
             {
                 case MachineModuleRole.Input: return "输入总线：左键 / E 投入当前配方原料；从此格外侧接入物流。";
                 case MachineModuleRole.Output: return "输出总线：左键 / E 取出产物；单出口，最多 1 件在途，沿此格箭头输出物流。";
-                case MachineModuleRole.Maintenance: return "维护舱：左键 / E 优先修复受损结构（钢板×1），完好时手动补维护耗材；需可用扳手，每份支持 8 批。输入总线仅按配方收料，同名维护料若为配方原料除外。";
+                case MachineModuleRole.Maintenance: return "维护舱：左键/E 优先修复结构（钢板×1），完好时补维护料；需扳手，每份8批。输入总线只按配方收料。";
                 case MachineModuleRole.Energy: return "能源舱：匹配蒸汽管 / 电杆放在能源箭头外格，电杆覆盖范围不能替代；不接收原料。";
                 case MachineModuleRole.Controller: return "控制器：可显式停机清空后继续画图；查看或切换配方。生产原料请投输入总线。";
                 case MachineModuleRole.Process: return "工艺核心：显示加工状态；生产原料请投输入总线。";
-                case MachineModuleRole.Exhaust: return "排气 / 通风舱：不是生产投料口。蒸汽炉的排气箭头外格须保持净空；电气机器为被动通风。";
+                case MachineModuleRole.Exhaust: return "排气舱：不是投料口；蒸汽炉排气箭头外格须保持净空，电气机器为被动通风。";
                 default: return "机壳：结构模块，不是输入口；请对准输入、输出或维护舱操作。";
             }
         }

@@ -179,7 +179,7 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[0];
             var guide = FlowLabel("Survival Guide", content,
-                "左键/E 或 Space 可空手拾取地面材料。装备斧可采集树木与补给箱，获得食材和种子。按住 Space 持续就近工作，松开即停。右键水域取水、成熟农田收获、尸体分解。种植：翻土→播种→浇水→成熟→收获。原料可在工作台或石炉加工。背包食物可按 V 食用。",
+                "空手或按住 Space 拾取地面材料；斧采树木与补给箱，得食材和种子。右键取水、收获成熟农田或分解尸体；按 V 进食。种植：翻土→播种→浇水→收获。",
                 680, 106, 14, Muted);
             guide.overflowMode = TextOverflowModes.Overflow;
             survivalWaterText = FlowLabel("Survival Water Inventory", content, "", 680, 52, 15, Accent);
@@ -202,7 +202,7 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[1];
             FlowLabel("Survival Cooking Guide", content,
-                "自动使用 2.4 格内、视线畅通且已解锁的工作台或石炉，消耗随身原料。距离、原料或库存空间不满足时无法加工；操作后可在本页继续。", 1048, 50, 14, Muted);
+                "自动使用 2.4 格内可用的工作台或石炉，消耗随身原料；条件不足时无法加工。", 1048, 50, 14, Muted);
             SurvivalRow boil = MakeSurvivalRow("Survival Boil Water", content, -1, 1048, 100, true);
             Set(boil.action.label, "煮水 ×1");
             SetButtonArt(boil.action, "ui_water", 24);
@@ -247,7 +247,7 @@ namespace DeadCircuit
             survivalSow = sow.button;
             survivalPlotText = FlowLabel("Survival Selected Plot", content, "", 680, 100, 14, Accent);
             FlowLabel("Survival Farming Guide", content,
-                "在左侧选地后可连续操作。翻土消耗木材×1，需选择未被占用的草地或泥土。每次浇水增加40湿度；湿度至少12且温度适宜时，作物才会生长。枯死后可重新播种。点击下方农田可选中地块；距离过远时，先关闭面板走近。",
+                "选地后连续操作：翻土耗木材×1；每次浇水 +40 湿度，湿度≥12 且温度适宜才生长。距离过远时先走近。",
                 680, 108, 14, Muted);
             for (int i = 0; i < SurvivalCatalog.MaxPlots; i++)
             {
@@ -274,7 +274,7 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[3];
             FlowLabel("Survival Wildlife Guide", content,
-                "右键尸体或按住 Space 就近分解，也可用下方按钮；需在 2.4 格内且视线畅通，一次取走剩余肉，库存不足时无法分解。左键/E 点动物追击；按住 F 自动战斗，Ctrl+F 允许中立动物，松开即停。图鉴列出所有物种，当前地区不一定都有。", 1048, 54, 14, Muted);
+                "右键尸体或按住 Space 分解，需 2.4 格内且视线畅通。左键点动物追击，按住 F 自动战斗，Ctrl+F 允许中立动物。图鉴含全部物种。", 1048, 54, 14, Muted);
             survivalCorpseHeading = FlowLabel("Survival Corpse Heading", content, "", 1048, 32, 16, Accent);
             for (int i = 0; i < SurvivalCatalog.MaxCreatures; i++)
             {

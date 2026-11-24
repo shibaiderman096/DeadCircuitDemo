@@ -412,7 +412,7 @@ namespace DeadCircuit
             itemStats = FlowLabel("Selected Gear Stats", content, "", 382, 108, 14, Ink);
             gearDetailObjects.Add(itemStats.gameObject);
             salvageWarning = FlowLabel("Salvage Gear Warning", content,
-                "回收会永久拆解装备，返还一半制作材料、全部配件和弹匣内弹药。任一库存空间不足时，整次回收取消。", 382, 50, 12, Amber);
+                "回收永久拆解，返还半数材料、全部配件与弹匣弹药；空间不足则取消。", 382, 50, 12, Amber);
             gearDetailObjects.Add(salvageWarning.gameObject);
             TextMeshProUGUI heading = FlowLabel("Ammo Selection Heading", content, "装填弹种 · 更换前先卸下现有弹药", 382, 32, 13, Accent);
             gunDetailObjects.Add(heading.gameObject);
@@ -632,7 +632,7 @@ namespace DeadCircuit
             bool bench = EquipmentCatalog.HasWorkbench(world, player);
             Set(workbenchHint, bench ? "工作台可用。制作、维修、装配与回收还需满足科技、材料和库存空间要求。" :
                  PrimitiveCatalog.Enabled(world) ? "草绳背包可随身制作。其他配方请查看左侧条件，工作台需在 2.4 格内且视线畅通。" :
-                "制作、维修、装配与回收需在工作台 2.4 格内，且视线畅通。燃料和普通弹药可随身制作。");
+                "制作、维修、装配与回收需靠近工作台（2.4格、视线畅通）；燃料与弹药可随身制作。");
             workbenchHint.color = bench ? Accent : Muted;
             RefreshInventoryCells(player);
             RefreshInventoryRecipes(world, player, bench);
@@ -1293,7 +1293,7 @@ namespace DeadCircuit
         {
             if (EquipmentCatalog.IsBackpack(kind)) return EquipmentCatalog.Gear(kind).description;
             if (kind == GearKind.RadiationSuit)
-                return "躯干防具 · 研究核作业防护后制作；穿戴且耐久有效时减少80%辐射暴露。持续作业磨损，耐久耗尽后防护失效；不能清除已有暴露。";
+                return "躯干防具 · 需核作业防护研究；耐久有效时辐射暴露−80%，耗尽即失效。";
             if (EquipmentCatalog.IsArmor(kind)) return "防具 · 独立装备格；耐久耗尽后无防御。可在工作台维修或回收。";
             string usage;
             switch (kind)
@@ -1302,7 +1302,7 @@ namespace DeadCircuit
                 case GearKind.StonePickaxe: case GearKind.SteelPickaxe: return "工具 · 装备后可采集矿石、石材和黏土，也可近战。使用消耗耐久。";
                 case GearKind.Wrench: return "工具 · 装备后可采集废料堆，也可用于设备维护和近战。使用消耗耐久。";
                 case GearKind.Knife: usage = "近战武器 · 不消耗弹药；使用消耗耐久。"; break;
-                default: usage = "远程武器 · 先装备、选择兼容弹种并装填；Alt 精确瞄准，按住左键持续手动攻击；R 装填。"; break;
+                default: usage = "远程武器 · 装备并装填后射击；Alt 精确瞄准，R 装填。"; break;
             }
             string description = EquipmentCatalog.Gear(kind).description;
             return description.Length == 0 ? usage : description + "\n" + usage;

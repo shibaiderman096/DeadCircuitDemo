@@ -84,7 +84,7 @@ namespace DeadCircuit
                 case SteamTech.Piping: return SteamProgress("钢板", world.steamPlates, 2);
                 case SteamTech.Boiler:
                     return SteamProgress("钢板", world.steamPlates, 2) + " · " + SteamProgress("耐压管件", world.steamFittings, 2);
-                default: return "本项需完成前置研究并备齐材料。研究后，使设备与传动轴、由模块锅炉供汽的蒸汽引擎同网，累计加工4件，满足低压(LV)时代的蒸汽加工条件。";
+                default: return "完成前置研究并备齐材料；设备接入传动轴与锅炉供汽的蒸汽引擎同网，累计加工4件即可进入低压。";
             }
         }
 

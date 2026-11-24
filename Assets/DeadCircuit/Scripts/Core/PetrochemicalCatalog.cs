@@ -17,21 +17,21 @@ namespace DeadCircuit
             new PetrochemicalTechnologyDefinition {id=id,name=name,description=description,prerequisites=parents,cost=cost};
         public static readonly PetrochemicalTechnologyDefinition[] All =
         {
-            T(PetrochemicalTech.Prospecting,"石油勘探","勘探周围48格内的油藏，标出坐标与方位；荒漠、湿地、沼泽和河谷的油藏较丰富。",0,
+            T(PetrochemicalTech.Prospecting,"石油勘探","勘探48格内油藏，标出坐标与方位；荒漠、湿地、沼泽、河谷较多。",0,
                 DemoCatalog.Materials(ItemKind.Circuit,2,ItemKind.Motor,1,ItemKind.PipeFitting,2)),
-            T(PetrochemicalTech.Extraction,"抽油输液","解锁低压(LV)抽油机、工艺取水泵、液体管道和储液罐，采集原油与工艺水；油藏会耗尽，管道和储罐只接收选定液体。",Bit(PetrochemicalTech.Prospecting),
+            T(PetrochemicalTech.Extraction,"抽油输液","解锁抽油机、工艺取水泵、液体管道与储液罐；油藏有限，管道只走选定液体。",Bit(PetrochemicalTech.Prospecting),
                 DemoCatalog.Materials(ItemKind.Motor,1,ItemKind.PipeFitting,2)),
-            T(PetrochemicalTech.Distillation,"原油分馏","解锁低压(LV)分馏装置，靠近水源并消耗燃料分离原油；所有产物都有储存空间时才开始加工。",Bit(PetrochemicalTech.Extraction),
+            T(PetrochemicalTech.Distillation,"原油分馏","解锁分馏装置；靠水源烧燃料分离原油，产物满仓即停。",Bit(PetrochemicalTech.Extraction),
                 DemoCatalog.Materials(ItemKind.CrudeOil,4,ItemKind.RefractoryBrick,2)),
-            T(PetrochemicalTech.Refining,"燃料精制","解锁柴油精制，使用基础化学反应器将轻质馏分转化为柴油；柴油发电机仅消耗柴油。",Bit(PetrochemicalTech.Distillation),
+            T(PetrochemicalTech.Refining,"燃料精制","解锁柴油精制：基础化学反应器把轻质馏分转为柴油。",Bit(PetrochemicalTech.Distillation),
                 DemoCatalog.Materials(ItemKind.LightFraction,2)),
-            T(PetrochemicalTech.Polymerization,"聚合反应","使用低压(LV)基础化学反应器，将轻质馏分和工艺水转化为化工原料，再聚合成聚合物。",Bit(PetrochemicalTech.Distillation),
+            T(PetrochemicalTech.Polymerization,"聚合反应","轻质馏分＋工艺水→化工原料，再聚合为聚合物。",Bit(PetrochemicalTech.Distillation),
                 DemoCatalog.Materials(ItemKind.ChemicalFeedstock,1,ItemKind.ProcessWater,2)),
-            T(PetrochemicalTech.Lubrication,"工业润滑","解锁润滑油与燃料生产：将重质馏分加工为润滑油，或与煤混合制成分馏所需的燃料。",Bit(PetrochemicalTech.Distillation)|Bit(PetrochemicalTech.Refining),
+            T(PetrochemicalTech.Lubrication,"工业润滑","重质馏分炼润滑油；与煤混合制成分馏用燃料。",Bit(PetrochemicalTech.Distillation)|Bit(PetrochemicalTech.Refining),
                 DemoCatalog.Materials(ItemKind.HeavyFraction,1,ItemKind.Diesel,1)),
-            T(PetrochemicalTech.Transformation,"中压变电","解锁柴油发电机、中压电杆、化工厂和变压器；以聚合物绝缘和润滑油支持中压(MV)供能，并可降压接入低压(LV)电网。",Bit(PetrochemicalTech.Polymerization)|Bit(PetrochemicalTech.Lubrication),
+            T(PetrochemicalTech.Transformation,"中压变电","解锁柴油发电机、中压电杆、化工厂与变压器；中压供电，可降压接低压网。",Bit(PetrochemicalTech.Polymerization)|Bit(PetrochemicalTech.Lubrication),
                 DemoCatalog.Materials(ItemKind.Polymer,2,ItemKind.Lubricant,1,ItemKind.Cable,2)),
-            T(PetrochemicalTech.Cooling,"化工冷却","在低压(LV)基础化学反应器中制造冷却液，供中压(MV)化工生产使用；排出的热冷却液可在冷却塔消耗工艺水回收。",Bit(PetrochemicalTech.Extraction)|Bit(PetrochemicalTech.Polymerization),
+            T(PetrochemicalTech.Cooling,"化工冷却","基础化学反应器制冷却液供中压化工；热冷却液在冷却塔回收。",Bit(PetrochemicalTech.Extraction)|Bit(PetrochemicalTech.Polymerization),
                 DemoCatalog.Materials(ItemKind.Motor,1,ItemKind.Coolant,2))
         };
         public static PetrochemicalTechnologyDefinition Definition(int id) => id>=0 && id<All.Length ? All[id] : null;

@@ -35,13 +35,13 @@ namespace DeadCircuit
         };
         static readonly string[] EraDescriptions =
         {
-            "先拾取树枝、石头和干草，制作并装备石斧、石镐，再采集木材、石材与黏土。完成冶金与建造任务后，即可研究水力。",
-            "在岸边建造水车，用传动轴连接机械设备。加工矿石、青铜与机械零件，为蒸汽工业准备材料。",
-            "将燃烧室、锅炉、取水泵与烟囱相邻建造，用蒸汽管为设备供能。蒸汽引擎可将蒸汽转为机械动力。",
-            "低压电气化：建立低压发电与输电网络，制造电路，让采矿、冶炼与装配自动运行。",
-            "勘探油藏，搭建采油、炼油与化工产线。生产柴油、聚合物与润滑油，用变压器向低压电网供电。",
-            "提纯硅材，制造电子器件、控制模块与耐热合金。建立高压电网，逐级降压为其他产线供电。",
-            "实际开采铀矿并研究铀矿选冶，在中压化工厂生产铀精矿，再用高压核燃料处理机制造核燃料。启用反应堆控制台，接通冷却循环和核废料专用仓，留意温度与停堆状态。"
+            "制作石斧、石镐采集木材、石材与黏土；完成冶金与建造研究后进入水力。",
+            "岸边建水车，用传动轴驱动机械，加工矿石、青铜与机械零件。",
+            "燃烧室、锅炉、取水泵、烟囱相邻成组，蒸汽管供能，蒸汽引擎转机械动力。",
+            "建立低压电网并制造电路，让采矿、冶炼与装配自动运行。",
+            "勘探油藏，建采油、炼制与化工产线，用变压器向低压网供电。",
+            "提纯硅材，制造电子器件与控制模块；高压电网逐级降压供电。",
+            "采铀并选冶成铀精矿，制核燃料；启用控制台、冷却与废料仓，关注温度与停堆。"
         };
 
         // One dynamic asset for every label, also available to the world view.
@@ -394,7 +394,7 @@ namespace DeadCircuit
                 "按住 Space：就近拾取、采集、收获或分解尸体，不受鼠标位置影响\n" +
                 "按住 F：自动寻找丧尸与敌意动物；Ctrl+F 允许攻击中立动物\n" +
                 "松开 Space / F 即停止对应动作；WASD 可随时打断\n" +
-                "右键：开关门、修理受损设备、取水、收获成熟农田或分解尸体；空地取消动作\n" +
+                "右键：开关门、修理设备、取水、收获或分解尸体；空地取消\n" +
                 "Alt 精确瞄准 + 按住左键持续手动攻击\n" +
                 "建造：左键放置 · 右键只取消 · R 旋转 · 1–0 建造快捷栏\n" +
                 "R 装填 · Q 切换武器 / 工具 · V 进食 · X 拆除 · G 修理（右键不会拆除）\n" +
@@ -402,10 +402,10 @@ namespace DeadCircuit
                 "Tab 成长 · J 生存 · H 帮助 · Esc 关闭界面 / 游戏菜单 · F5 保存");
             FlowLabel("Tutorial Title", content, "从原始到核工业", 816, 30, 20, Accent);
             FlowLabel("Production Tutorial", content,
-                "拾取树枝、石头和干草后，按 T → 原始 → 工艺与建造，随身制作并装备石斧、石镐。\n斧采树木和补给箱，镐采矿石、石材和黏土，扳手采废料堆。节点耐久归零才结算产出。\n研究烧炭、制陶和冶金，再依次进入水力、蒸汽、低压、中压、高压和核工业。\n传动轴传机械动力，管道传蒸汽。电网匹配电压，核反应堆需冷却。", 816, 124, 18, Ink);
+                "拾取树枝、石头和干草，按 T → 原始 → 工艺与建造制作石斧、石镐。\n斧砍树木与补给箱，镐采矿石、石材、黏土，扳手拆废料。\n依次研究烧炭、制陶、冶金，再进入水力、蒸汽、低压、中压、高压与核工业。\n传动轴传机械动力，管道传蒸汽；电网须匹配电压，反应堆需冷却。", 816, 124, 18, Ink);
             helpProgress = FlowLabel("Tutorial Progress", content, "", 816, 76, 16, Muted);
-            FlowLabel("HUD Expansion Help", content, "点击底部展开建造栏。右下角菜单可打开其他界面，也可开启设备详情。", 816, 62, 17, Ink);
-            FlowLabel("Panel Hint", content, "打开界面时游戏不会暂停。按 Esc 关闭当前界面；再次按下可取消建造或打开游戏菜单。", 816, 56, 16, Amber);
+            FlowLabel("HUD Expansion Help", content, "点击底部展开建造栏；右下角菜单可打开其他界面与设备详情。", 816, 62, 17, Ink);
+            FlowLabel("Panel Hint", content, "打开界面不暂停游戏；Esc 关闭界面，再按一次取消建造或打开菜单。", 816, 56, 16, Amber);
             helpNotice = Label("Help Feedback", card, "", 28, 530, 844, 56, 15, Amber);
             help.gameObject.SetActive(false);
         }
@@ -485,7 +485,7 @@ namespace DeadCircuit
                     skillButtons[branch, tier].label.fontSize = 14;
                 }
             }
-            Label("Growth Rules", card, "每项属性上限为10，提升1点消耗1属性点。技能须依次学习，另需技能点；第1、2、3阶分别需要角色等级1、3、5。",
+            Label("Growth Rules", card, "属性上限10，每点耗1属性点；技能按阶学习，需技能点与角色等级1/3/5。",
                 24, 529, 1032, 24, 13, Muted);
             growthNotice = Label("Growth Feedback", card, "", 24, 559, 1032, 36, 15, Amber);
         }
@@ -1070,7 +1070,7 @@ namespace DeadCircuit
         {
             string value = ipField.text.Trim();
             if (!IPAddress.TryParse(value, out IPAddress address) || address.AddressFamily != AddressFamily.InterNetwork || value.Split('.').Length != 4)
-            { Notify("请输入完整主机 IPv4，例如 192.168.1.8；端口固定为 UDP 7777。", true); return; }
+            { Notify("输入主机 IPv4，如 192.168.1.8；端口固定 UDP 7777。", true); return; }
             bridge.PlayerName = ReadName();
             CallBridge(() => bridge.Join(address.ToString(), bridge.PlayerName));
         }
@@ -1309,7 +1309,7 @@ namespace DeadCircuit
 
         static string MachineFlow(BuildingState building)
         {
-            if (ModularMachineCatalog.IsModular(building.kind)) return "按角色分口操作：原料 → 输入总线；产物 → 输出总线；维护料 → 手动投入维护舱。";
+            if (ModularMachineCatalog.IsModular(building.kind)) return "原料→输入总线，产物→输出总线，维护料→维护舱。";
             switch (building.kind)
             {
                 case BuildKind.Generator: case BuildKind.DieselGenerator: case BuildKind.HighGenerator:

@@ -40,11 +40,11 @@ namespace DeadCircuit
                 DemoCatalog.Materials(ItemKind.ControlModule,2,ItemKind.HeatAlloy,2)),
             T(NuclearTech.WasteTransfer, "专用废料转运", "允许核废料在相邻专用仓之间自动转运，仍禁止普通物流和背包收发。", Bit(NuclearTech.ShieldedStorage),
                 DemoCatalog.Materials(ItemKind.SteelPlate,6,ItemKind.RefractoryBrick,4,ItemKind.ControlModule,1)),
-            T(NuclearTech.UraniumBeneficiation, "铀矿选冶", "先采集至少4份铀矿，再研究化学浸取；在化工厂将铀矿处理为铀精矿，后续核燃料配方须使用精矿。", 0,
+            T(NuclearTech.UraniumBeneficiation, "铀矿选冶", "先采铀矿≥4并研究化学浸取，在化工厂制成铀精矿；核燃料须用精矿。", 0,
                 DemoCatalog.Materials(ItemKind.UraniumOre,2,ItemKind.SteelPlate,2)),
-            T(NuclearTech.RadiationMonitoring, "辐射监测", "开放核设施附近的环境暴露率、个人累计暴露值与防护读数；可在首次装料前完成。", Bit(NuclearTech.UraniumBeneficiation),
+            T(NuclearTech.RadiationMonitoring, "辐射监测", "开放环境与个人辐射读数，可在首次装料前完成。", Bit(NuclearTech.UraniumBeneficiation),
                 DemoCatalog.Materials(ItemKind.ControlModule,1,ItemKind.AdvancedCircuit,2,ItemKind.CopperWire,4)),
-            T(NuclearTech.RadiationProtection, "核作业防护", "解锁核作业防护服制作；正确穿戴且耐久有效时减少80%辐射暴露，持续作业会磨损。", Bit(NuclearTech.RadiationMonitoring),
+            T(NuclearTech.RadiationProtection, "核作业防护", "解锁核作业防护服；穿戴且耐久有效时辐射暴露−80%。", Bit(NuclearTech.RadiationMonitoring),
                 DemoCatalog.Materials(ItemKind.Polymer,4,ItemKind.SteelPlate,2,ItemKind.Insulator,2))
         };
 

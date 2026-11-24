@@ -123,9 +123,9 @@ namespace DeadCircuit
             if (building.kind == BuildKind.Door)
                 return "左键/E 走近后开关门一次，或右键开关门；开启后可通行。开门不会移除屋顶，室内默认以剖面显示。";
             if (building.kind == BuildKind.FilterSplitter)
-                return "需低压(LV)供电。在设备详情中选择过滤物品：匹配物品送往前方，其余送往左侧。出口堵塞时不会改道；在途物品全部到达后，才能更换过滤物品。";
+                return "需低压供电；选定物品送前方，其余送左侧。出口堵塞不改道；在途物品送达后才可更换。";
             if (building.kind == BuildKind.CircuitBreaker)
-                return "保护所在的低压(LV)电网。过载跳闸后，整张电网停电，独立电网不受影响。先减少用电或增加发电，再在设备详情中复位接通；也可手动断开。";
+                return "保护所在低压电网；过载跳闸整网停电，其他电网不受影响。降载后在设备详情复位。";
             return DemoCatalog.BuildDescriptions[(int)building.kind];
         }
 

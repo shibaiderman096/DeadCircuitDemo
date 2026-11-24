@@ -23,7 +23,7 @@ namespace DeadCircuit
                 DemoCatalog.Materials(ItemKind.Coal,4,ItemKind.Brick,2)),
             T(SteamTech.Refractories,"耐火建材","解锁耐火窑，将耐火黏土烧成耐火砖，用作高温炉衬。",0,
                 DemoCatalog.Materials(ItemKind.FireClay,3,ItemKind.Brick,2)),
-            T(SteamTech.PigIron,"生铁冶炼","解锁炼铁高炉，由水车经传动轴驱动鼓风，消耗碎铁矿、焦炭和石灰石冶炼生铁。",Bit(SteamTech.Coking)|Bit(SteamTech.Refractories),
+            T(SteamTech.PigIron,"生铁冶炼","解锁炼铁高炉；水车经传动轴鼓风，碎铁矿＋焦炭＋石灰石炼生铁。",Bit(SteamTech.Coking)|Bit(SteamTech.Refractories),
                 DemoCatalog.Materials(ItemKind.Coke,2,ItemKind.RefractoryBrick,2,ItemKind.Limestone,1)),
             T(SteamTech.Refining,"钢铁精炼","解锁精炼炉，由水车驱动搅炼，消耗生铁、石灰石和木炭生产钢。",Bit(SteamTech.PigIron),
                 DemoCatalog.Materials(ItemKind.PigIron,2,ItemKind.Limestone,1)),
@@ -31,9 +31,9 @@ namespace DeadCircuit
                 DemoCatalog.Materials(ItemKind.Steel,2,ItemKind.Gear,1,ItemKind.Bearing,1)),
             T(SteamTech.Piping,"耐压管道","解锁耐压管件加工，使用机床将钢板和青铜制成蒸汽管道所需的连接件。",Bit(SteamTech.Machining),
                 DemoCatalog.Materials(ItemKind.SteelPlate,2,ItemKind.Bronze,2)),
-            T(SteamTech.Boiler,"模块锅炉","解锁锅炉、燃烧室、取水泵和烟囱；使用耐火砖、钢板和耐压管件建造，并沿边相接以供热、给水和排烟。",Bit(SteamTech.Refractories)|Bit(SteamTech.Refining)|Bit(SteamTech.Piping),
+            T(SteamTech.Boiler,"模块锅炉","解锁锅炉、燃烧室、取水泵与烟囱；用耐火砖、钢板和耐压管件建造。",Bit(SteamTech.Refractories)|Bit(SteamTech.Refining)|Bit(SteamTech.Piping),
                 DemoCatalog.Materials(ItemKind.SteelPlate,2,ItemKind.RefractoryBrick,2)),
-            T(SteamTech.Drive,"蒸汽驱动","解锁蒸汽引擎，将蒸汽动力转为机械动力，经传动轴驱动设备，可替代或补充水车。",Bit(SteamTech.Boiler)|Bit(SteamTech.Piping),
+            T(SteamTech.Drive,"蒸汽驱动","解锁蒸汽引擎，把蒸汽转为机械动力，可替代或补充水车。",Bit(SteamTech.Boiler)|Bit(SteamTech.Piping),
                 DemoCatalog.Materials(ItemKind.PipeFitting,2,ItemKind.Gear,1,ItemKind.Bearing,1))
         };
         public static SteamTechnologyDefinition Definition(int id) => id>=0 && id<All.Length ? All[id] : null;
