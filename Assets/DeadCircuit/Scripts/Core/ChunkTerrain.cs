@@ -7,6 +7,13 @@ namespace DeadCircuit
     {
         private const int Size = ChunkStreaming.ChunkSize;
         public const int MaxNodesPerChunk = 75, MaxResourcesPerChunk = 40;
+        // Version 12 thins dense chunks further so no single chunk becomes a
+        // mine field; older generator versions keep their recorded cap.
+        private const int ThinnedResourcesPerChunk = 30;
+
+        internal static int ResourceCap(WorldState world) =>
+            world != null && world.generatorVersion >= WorldGeneration.ResourceThinningVersion
+                ? ThinnedResourcesPerChunk : MaxResourcesPerChunk;
 
         private sealed class Region
         {
@@ -176,10 +183,10 @@ namespace DeadCircuit
             var candidates = new List<int>();
             for (int y = 2; y < 14; y++) for (int x = 2; x < 14; x++) candidates.Add(x + y * Size);
             SortCells(candidates, r, 0x2e50u);
-            int count = 0;
+            int count = 0, cap = ResourceCap(r.world);
             foreach (int cell in candidates)
             {
-                if (count == MaxResourcesPerChunk || r.nodes.Count >= MaxNodesPerChunk) break;
+                if (count == cap || r.nodes.Count >= MaxNodesPerChunk) break;
                 if (r.reserved[cell] || r.occupied[cell] || r.ground[cell] == '2') continue;
                 NodeKind kind; int stock;
                 if (!Resource(r, cell, out kind, out stock)) continue;

@@ -64,7 +64,7 @@ static partial class Checks
                 for (int y = cy * 16 + 2; y < cy * 16 + 14; y++)
                 for (int x = cx * 16 + 2; x < cx * 16 + 14; x++)
                     if (WorldTiles.Ground(world, x, y) != '2') area[WorldTiles.Biome(world, x, y) - '0']++;
-                var blocked = world.nodes.Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
+                var blocked = world.nodes.Where(n => !DemoCatalog.IsGroundPickup(n.kind)).Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
                 foreach (var b in world.buildings.Where(b => b.kind != BuildKind.Door))
                     for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
                         for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) blocked.Add(WorldTiles.Key(x, y));
@@ -238,7 +238,7 @@ static partial class Checks
 
     static HashSet<long> PetrochemicalReachable(WorldState world)
     {
-        var blocked = world.nodes.Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
+        var blocked = world.nodes.Where(n => !DemoCatalog.IsGroundPickup(n.kind)).Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
         foreach (var b in world.buildings.Where(b => b.kind != BuildKind.Door))
             for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
                 for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) blocked.Add(WorldTiles.Key(x, y));

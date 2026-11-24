@@ -144,9 +144,13 @@ namespace DeadCircuit
 
     public static class WorldGeneration
     {
-        public const int CurrentGeneratorVersion = 11;
+        public const int CurrentGeneratorVersion = 12;
         internal const int NaturalOpeningVersion = 10;
         internal const int GroundPickupVersion = 11;
+        // Version 12 thins every natural deposit and raises the hand-collectable
+        // ground supplies, so early play leans on direct pickups instead of dense fields.
+        internal const int ResourceThinningVersion = 12;
+        internal const int ResourceDensityPermille = 620;
         public const int BiomeCount = 10;
         public const int AllBiomeMask = (1 << BiomeCount) - 1;
         public const int LegacySiteCount = 12;
@@ -257,9 +261,12 @@ namespace DeadCircuit
                 return order != 0 ? order : a.cell.CompareTo(b.cell);
             });
 
-            // The first five piles cover both recipes. The sixth provides extra grass.
+            // The first five piles cover both recipes. Later piles stock the opening
+            // with spare hand-collectable material instead of relying on deposits.
             var supplies = new[] { (NodeKind.Branch, 3), (NodeKind.LooseStone, 3), (NodeKind.DryGrass, 3),
-                (NodeKind.Branch, 3), (NodeKind.LooseStone, 3), (NodeKind.DryGrass, 2) };
+                (NodeKind.Branch, 3), (NodeKind.LooseStone, 3), (NodeKind.DryGrass, 3),
+                (NodeKind.Branch, 2), (NodeKind.LooseStone, 3), (NodeKind.DryGrass, 2),
+                (NodeKind.Branch, 2), (NodeKind.LooseStone, 2), (NodeKind.DryGrass, 2) };
             int added = 0;
             foreach (var candidate in candidates)
             {

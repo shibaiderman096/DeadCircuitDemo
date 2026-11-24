@@ -42,7 +42,7 @@ static partial class Checks
                 if (world.sites.Count == 0) continue;
                 var site = world.sites.Single(); kinds.Add(site.kind); rotations.Add(site.rotation); checkedSites++;
                 Require(site.layoutVersion == 1 && SiteBlueprintCatalog.ValidMetadata(site), "generated metadata is invalid");
-                var blocked = world.nodes.Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
+                var blocked = world.nodes.Where(n => !DemoCatalog.IsGroundPickup(n.kind)).Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
                 var reachable = TerrainFlood(world, cx, cy, blocked);
                 Require(world.nodes.Count <= 75 && world.buildings.Count <= 5, "blueprint exceeds chunk budgets");
                 for (int y = site.y; y < site.y + site.height; y++) for (int x = site.x; x < site.x + site.width; x++)

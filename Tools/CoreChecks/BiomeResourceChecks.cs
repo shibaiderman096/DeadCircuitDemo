@@ -109,6 +109,42 @@ static partial class Checks
                 Require(Dump(source) == frozen, "restore or future generation mutated caller save");
             }
         });
+        Run("biome resources version twelve thins natural deposits and raises ground supplies", () =>
+        {
+            long land = 0, oldNatural = 0, newNatural = 0, oldPiles = 0, newPiles = 0, oldUnits = 0, newUnits = 0;
+            const int current = WorldGeneration.CurrentGeneratorVersion;
+            foreach (int seed in new[] { -991, 11, 73149 })
+            for (int cy = -3; cy <= 3; cy++) for (int cx = -3; cx <= 3; cx++)
+            {
+                var oldWorld = TerrainBlank(seed); oldWorld.generatorVersion = 11;
+                var newWorld = TerrainBlank(seed); newWorld.generatorVersion = current;
+                if (!ChunkTerrain.Generate(oldWorld, cx, cy) || !ChunkTerrain.Generate(newWorld, cx, cy)) continue;
+                bool isLand = false;
+                for (int y = cy * 16 + 2; y < cy * 16 + 14 && !isLand; y++)
+                    for (int x = cx * 16 + 2; x < cx * 16 + 14; x++)
+                        if (WorldTiles.Ground(newWorld, x, y) != '2') { isLand = true; break; }
+                if (!isLand) continue;
+                land++;
+                Require(TerrainMapDump(oldWorld) == TerrainMapDump(newWorld), "thinning changed natural terrain");
+                oldNatural += oldWorld.nodes.Count(n => n.kind != NodeKind.Wall && n.kind != NodeKind.Crate && !DemoCatalog.IsGroundPickup(n.kind));
+                newNatural += newWorld.nodes.Count(n => n.kind != NodeKind.Wall && n.kind != NodeKind.Crate && !DemoCatalog.IsGroundPickup(n.kind));
+                oldPiles += oldWorld.nodes.Count(n => DemoCatalog.IsGroundPickup(n.kind));
+                newPiles += newWorld.nodes.Count(n => DemoCatalog.IsGroundPickup(n.kind));
+                oldUnits += oldWorld.nodes.Where(n => DemoCatalog.IsGroundPickup(n.kind)).Sum(n => n.stock);
+                newUnits += newWorld.nodes.Where(n => DemoCatalog.IsGroundPickup(n.kind)).Sum(n => n.stock);
+                foreach (var pile in newWorld.nodes.Where(n => DemoCatalog.IsGroundPickup(n.kind)))
+                {
+                    Require(pile.hp == 1 && pile.stock is >= 2 and <= 4, "boosted pile has unexpected health or stock");
+                    Require(WorldTiles.Ground(newWorld, pile.x, pile.y) is '0' or '1', "boosted pile sits on invalid ground");
+                    Require(!newWorld.nodes.Any(n => n.kind == NodeKind.Oil && Math.Abs(n.x - pile.x) <= 2 && Math.Abs(n.y - pile.y) <= 2),
+                        "boosted pile occupies a possible oil pump cell");
+                }
+            }
+            Require(land >= 60, "thinning survey lacked land chunks");
+            Require(newNatural * 100 <= oldNatural * 85, $"version twelve did not thin deposits: {newNatural} vs {oldNatural} over {land} chunks");
+            Require(newPiles >= oldPiles * 2 && newUnits >= oldUnits * 2,
+                $"version twelve did not raise ground supplies: piles {newPiles} vs {oldPiles}, units {newUnits} vs {oldUnits}");
+        });
         Run("biome resources keep signed chunk geometry independent of discovery order and accessible", () =>
         {
             var first = TerrainBlank(-491); first.generatorVersion = 7;

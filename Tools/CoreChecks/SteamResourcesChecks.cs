@@ -187,7 +187,7 @@ static partial class Checks
             {
                 var node = sim.State.nodes.First(n => Future(n) && n.kind == resource.Item1);
                 int cx = WorldTiles.FloorDiv(node.x, 16), cy = WorldTiles.FloorDiv(node.y, 16);
-                var blocked = sim.State.nodes.Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
+                var blocked = sim.State.nodes.Where(n => !DemoCatalog.IsGroundPickup(n.kind)).Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
                 foreach (var b in sim.State.buildings.Where(b => b.kind != BuildKind.Door))
                     for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
                         for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) blocked.Add(WorldTiles.Key(x, y));
@@ -254,7 +254,7 @@ static partial class Checks
         var nodes = world.nodes.Where(n => WorldTiles.FloorDiv(n.x, 16) == cx && WorldTiles.FloorDiv(n.y, 16) == cy).ToArray();
         Require(nodes.Length <= ChunkTerrain.MaxNodesPerChunk && nodes.Count(n => n.kind != NodeKind.Wall && n.kind != NodeKind.Crate) <= ChunkTerrain.MaxResourcesPerChunk,
             "steam resources exceeded chunk entity budgets");
-        var blocked = nodes.Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
+        var blocked = nodes.Where(n => !DemoCatalog.IsGroundPickup(n.kind)).Select(n => WorldTiles.Key(n.x, n.y)).ToHashSet();
         foreach (var b in world.buildings.Where(b => b.kind != BuildKind.Door))
             for (int y = b.y; y < b.y + DemoCatalog.Height(b); y++)
                 for (int x = b.x; x < b.x + DemoCatalog.Width(b); x++) blocked.Add(WorldTiles.Key(x, y));

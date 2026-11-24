@@ -110,7 +110,7 @@ static partial class Checks
                 Require(world.version == WorldSimulator.SaveVersion && world.generatorVersion == WorldGeneration.CurrentGeneratorVersion && world.generation.chunked && world.chunks.enabled, "new world version contract");
                 Require(world.players.Count == 0 && world.chunks.records.Count == 16 && world.chunks.generated == "", "expected exactly sixteen initial sparse records and no survivors");
                 var streamed = TerrainBlank(world.seed, options.preset, options.cityDensity);
-                streamed.generatorVersion = 10;
+                streamed.generatorVersion = WorldGeneration.CurrentGeneratorVersion;
                 TerrainPopulate(streamed, reverse: true, minX: 0, maxX: 4, minY: 0, maxY: 4);
                 var normalQuartz = streamed.nodes.Where(n => n.kind == NodeKind.Quartz).Select(n => (n.x, n.y)).ToHashSet();
                 var openingQuartz = world.nodes.Where(n => n.kind == NodeKind.Quartz && !normalQuartz.Contains((n.x, n.y))).ToArray();
@@ -128,8 +128,9 @@ static partial class Checks
                     }
                     streamed.nodes.Add(n);
                 }
+                // Creation defers ground pickups to the opening pass, so both dumps exclude them.
                 Require(TerrainMapDump(world) == TerrainMapDump(streamed) &&
-                    TerrainEntityDump(world, includeGroundPickups: false) == TerrainEntityDump(streamed),
+                    TerrainEntityDump(world, includeGroundPickups: false) == TerrainEntityDump(streamed, includeGroundPickups: false),
                     $"seed {world.seed} initial chunks differ from normally streamed terrain or entities");
                 Require(!ChunkStreaming.IsGenerated(world, -1, 35) && !ChunkStreaming.IsGenerated(world, 64, 35), "creation eagerly generated outside the initial region");
             }
