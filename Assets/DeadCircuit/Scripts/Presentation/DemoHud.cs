@@ -102,7 +102,7 @@ namespace DeadCircuit
         TextMeshProUGUI droppedBackpackHintText;
         GearKind? hintedBackpackKind;
         TMP_InputField nameField, seedField, ipField;
-        TextMeshProUGUI menuStatus, menuAddress, menuSave, playerTitle, clockText, waveText;
+        TextMeshProUGUI menuStatus, menuAddress, playerTitle, clockText, waveText;
         TextMeshProUGUI networkText, feedback, gameStatus, objectives, buildTitle, buildCost, buildHelp;
         TextMeshProUGUI radiationStatus;
         TextMeshProUGUI machineTitle, machineInfo, machineContents, machineHint;
@@ -125,7 +125,7 @@ namespace DeadCircuit
         UnityEngine.UI.ScrollRect technologyScroll, machineScroll;
         UiButton researchButton, recipeButton;
         int selectedEra = 1, observedEra = -1;
-        UiButton loadButton, saveButton, growthButton, respawnButton;
+        UiButton saveButton, growthButton, respawnButton;
         UiButton eatButton, interactButton, repairButton, dismantleButton;
         float refreshAt, saveCheckAt, feedbackUntil, statusUntil, playerFeedbackUntil, worldFeedbackUntil;
         float lastPlayerNoticeExpiry = -1f, lastWorldNoticeExpiry = -1f;
@@ -216,8 +216,8 @@ namespace DeadCircuit
             if (!running && keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
                 if (deleteWorldDialog.gameObject.activeSelf) CloseDeleteWorldDialog();
-                else if (settingsPanel.gameObject.activeSelf) CloseSettings();
                 else if (appearancePanel != null && appearancePanel.gameObject.activeSelf) CloseAppearance();
+                else if (settingsPanel.gameObject.activeSelf) CloseSettings();
                 else ShowMenuPage(MenuPage.Home);
             }
             if (running && player != null && player.hp > 0f && keyboard != null)
