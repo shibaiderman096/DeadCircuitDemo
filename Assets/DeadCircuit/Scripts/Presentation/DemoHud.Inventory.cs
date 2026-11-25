@@ -94,10 +94,8 @@ namespace DeadCircuit
             Center(card, 1216, 688);
             PanelRule(card, 1216, 58);
             Label("Inventory Heading", card, "背包与装备", 24, 12, 350, 36, 25, Ink, FontStyles.Bold);
-            backpackSlot = Button("Backpack Equipment Slot", card, "背包位 · 空", 394, 10, 244, 40, BrowseBackpackSlot);
-            SetButtonArt(backpackSlot, "ui_inventory", 28);
-            backpackSlot.label.fontSizeMax = 14;
-            backpackSlot.label.fontSizeMin = 12;
+            backpackSlot = Button("Backpack Equipment Slot", card, "", 558, 10, 80, 40, BrowseBackpackSlot);
+            SetInventorySocketArt(backpackSlot, "gear_" + (int)GearKind.GrassBackpack, 32);
             inventoryWeightValue = Label("Inventory Weight Value", card, "", 650, 10, 392, 28, 17, InventoryCyan, FontStyles.Bold);
             RectTransform track = Box("Inventory Weight Track", card, 650, 43, 392, 6, InventoryInset);
             RectTransform fill = Box("Inventory Weight Fill", track, 0, 0, 392, 6, InventoryCyan);
@@ -124,6 +122,7 @@ namespace DeadCircuit
             SetButtonArt(eatButton, "ui_eat", 22);
             workbenchHint = Label("Workbench Requirement", card, "", 170, 626, 1020, 23, 13, Muted);
             inventoryNotice = Label("Inventory Feedback", card, "", 170, 650, 1020, 26, 14, Amber);
+            MakeInventoryDragAndDrop(card);
             inventory.gameObject.SetActive(false);
         }
 
@@ -175,8 +174,7 @@ namespace DeadCircuit
             {
                 int slot = i;
                 armorSlots[i] = Button("Armor Slot " + i, preview, "", i < 2 ? 14 : 318, 55 + i % 2 * 119, 98, 106, () => BrowseArmorSlot(slot));
-                armorSlots[i].label.fontSizeMax = 14;
-                armorSlots[i].label.fontSizeMin = 12;
+                SetInventorySocketArt(armorSlots[i], "gear_" + (int)EmptyArmorIcon(i), 64);
             }
             armorSummary = Label("Armor Summary", preview, "", 14, 303, 402, 24, 13, InventoryRed);
         }
@@ -184,16 +182,12 @@ namespace DeadCircuit
         void MakeInventoryEquipmentSlots(RectTransform card)
         {
             Label("Equipment Slots Heading", card, "随身装备", 794, 78, 142, 24, 17, InventoryBlue, FontStyles.Bold);
-            inventorySelection = Label("Equipment Selection", card, "", 940, 76, 250, 28, 13, Muted);
-            inventorySelection.alignment = TextAlignmentOptions.MidlineRight;
-            equipmentSlots[0] = Button("Weapon Equipment Slot", card, "主武器", 794, 108, 292, 38, () => BrowseEquipmentSlot(0));
-            equipmentSlots[1] = Button("Tool Equipment Slot", card, "副手工具", 794, 152, 292, 38, () => BrowseEquipmentSlot(1));
-            equipmentSlots[2] = Button("Unarmed Equipment Slot", card, "徒手", 1094, 108, 96, 82, () => InventoryCommand("switch", 2));
-            for (int i = 0; i < 2; i++)
-            {
-                equipmentSlots[i].label.fontSizeMax = 14;
-                equipmentSlots[i].label.fontSizeMin = 12;
-            }
+            equipmentSlots[0] = Button("Weapon Equipment Slot", card, "", 794, 108, 126, 82, () => BrowseEquipmentSlot(0));
+            equipmentSlots[1] = Button("Tool Equipment Slot", card, "", 929, 108, 126, 82, () => BrowseEquipmentSlot(1));
+            equipmentSlots[2] = Button("Unarmed Equipment Slot", card, "", 1064, 108, 126, 82, () => InventoryCommand("switch", 2));
+            SetInventorySocketArt(equipmentSlots[0], "gear_" + (int)GearKind.Pistol, 54);
+            SetInventorySocketArt(equipmentSlots[1], "gear_" + (int)GearKind.StoneAxe, 54);
+            SetInventorySocketArt(equipmentSlots[2], "ui_equip", 54);
         }
 
         void MakeInventoryBackpack(RectTransform card)
@@ -211,7 +205,7 @@ namespace DeadCircuit
                 SetButtonArt(inventoryTabs[i], icons[i], 20);
             }
             sortInventory = Button("Inventory Sort", card, "排序：分类", 794, 281, 161, 31,
-                () => { inventorySort = (inventorySort + 1) % 3; RefreshAll(); });
+                () => { CancelInventoryDrag(); inventoryManualOrder[inventoryTab].Clear(); inventorySort = (inventorySort + 1) % 3; RefreshAll(); });
             SetButtonArt(sortInventory, "ui_refresh", 20);
             Tint(sortInventory, InventoryCellIdle);
             filterInventory = Button("Inventory Category Filter", card, "分类：全部", 963, 281, 227, 31, CycleInventoryFilter);
@@ -237,6 +231,7 @@ namespace DeadCircuit
                     () => { selectedPart = part; SelectInventoryDetail(2); });
                 SetInventoryCellArt(cell, "part_" + i);
                 partCells.Add(cell);
+                BindInventoryCellDrag(cell, 2);
             }
         }
 
@@ -249,7 +244,7 @@ namespace DeadCircuit
         RectTransform MakeInventoryGrid(string name, Transform parent, out UnityEngine.UI.ScrollRect scroll)
         {
             const float width = 396f;
-            RectTransform content = ScrollContent(name, parent, 794, 319, width, 289, out scroll, true);
+            RectTransform content = ScrollContent(name, parent, 794, 319, width, 249, out scroll, true);
             var layout = content.GetComponent<UnityEngine.UI.GridLayoutGroup>();
             layout.cellSize = new Vector2((width - 16 - 12 - 16) / 3f, 84);
             layout.constraintCount = 3;
@@ -268,12 +263,13 @@ namespace DeadCircuit
                 id == (int)ItemKind.Clay ? new Color(1f, .55f, .32f) : id == (int)ItemKind.Charcoal ? new Color(.38f, .42f, .39f) :
                 id == (int)ItemKind.Brick ? new Color(1f, .48f, .30f) : Color.white;
             materialCells.Add(cell);
+            BindInventoryCellDrag(cell, 0);
         }
 
         InventoryCell MakeInventoryCell(string name, Transform parent, int id, string title, int category, Action select)
         {
             UiButton widget = Button(name, parent, "", 0, 0, 117, 84, select);
-            widget.label.alignment = TextAlignmentOptions.TopLeft;
+            widget.label.alignment = TextAlignmentOptions.BottomRight;
             widget.label.fontSizeMax = 14;
             widget.label.fontSizeMin = 12;
             return new InventoryCell { id = id, title = title, category = category, widget = widget };
@@ -281,12 +277,12 @@ namespace DeadCircuit
 
         void SetInventoryCellArt(InventoryCell cell, string icon)
         {
-            SetButtonArt(cell.widget, icon, 28);
+            SetButtonArt(cell.widget, icon, 54);
             RectTransform rect = cell.widget.icon.rectTransform;
-            rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
-            rect.pivot = new Vector2(0, 1);
-            rect.anchoredPosition = new Vector2(6, -5);
-            Stretch(cell.widget.label.rectTransform, 8, 35, 5, 3);
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
+            rect.anchoredPosition = new Vector2(0, 4);
+            rect.sizeDelta = new Vector2(54, 54);
+            Stretch(cell.widget.label.rectTransform, 6, 4, 7, 5);
         }
 
         void MakeInventoryRecipes()
@@ -468,6 +464,7 @@ namespace DeadCircuit
 
         void BrowseInventoryTab(int tab)
         {
+            CancelInventoryDrag();
             if (tab == 3)
             {
                 craftFilter = 0;
@@ -488,6 +485,7 @@ namespace DeadCircuit
 
         void CycleInventoryFilter()
         {
+            CancelInventoryDrag();
             int count = inventoryTab == 0 ? 6 : inventoryTab == 1 ? BackpackFilter + 1 : EquipmentCatalog.SlotNames.Length + 1;
             inventoryFilter = (inventoryFilter + 1) % count;
             ResetScroll(ActiveInventoryScroll());
@@ -552,6 +550,7 @@ namespace DeadCircuit
 
         void BrowseBackpackSlot()
         {
+            CancelInventoryDrag();
             PlayerState player = bridge.LocalPlayer;
             if (player == null) return;
             inventoryTab = inventoryDetailKind = 1;
@@ -578,6 +577,8 @@ namespace DeadCircuit
         {
             if (inventoryPlayer != player.id)
             {
+                CancelInventoryDrag();
+                foreach (List<string> order in inventoryManualOrder) order.Clear();
                 inventoryPlayer = player.id;
                 selectedGear = EquipmentCatalog.Equipped(player)?.id ?? -1;
                 selectedMaterial = selectedPart = -1;
@@ -591,22 +592,17 @@ namespace DeadCircuit
             bool ready = player.hp > 0f && player.connected;
             RefreshInventoryWeight(player);
             GearState backpack = InventoryWeight.EquippedPack(player);
-            Set(backpackSlot.label, "背包位 · " + (backpack == null ? "空" : EquipmentCatalog.GearNames[(int)backpack.kind]));
-            backpackSlot.icon.enabled = backpack == null;
+            PaintInventorySocket(backpackSlot, backpack, "gear_" + (int)GearKind.GrassBackpack);
             backpackSlot.button.interactable = ready;
-            backpackSlot.label.color = backpack == null ? InventoryCyan : Ink;
             bool packSelected = backpack == null ? inventoryTab == 1 && inventoryFilter == BackpackFilter && target == null : backpack.id == selectedGear;
             Tint(backpackSlot, inventoryDetailKind == 1 && packSelected ? InventoryCellSelected : InventoryCellIdle);
             for (int i = 0; i < armorSlots.Length; i++)
             {
                 GearState armor = EquipmentCatalog.Find(player, Count(player.armorIds, i));
                 UiButton socket = armorSlots[i];
-                string details = armor == null ? "选择防具" : EquipmentCatalog.GearNames[(int)armor.kind] + "\n耐久 " + GearDurability(armor);
-                Set(socket.label, InventoryArmorNames[i] + "\n" + details);
-                Stretch(socket.label.rectTransform, 4, armor == null ? 5 : 41, 4, 4);
+                PaintInventorySocket(socket, armor, "gear_" + (int)EmptyArmorIcon(i));
                 socket.button.interactable = ready;
                 Tint(socket, armor != null && armor.id == selectedGear ? InventoryArmorSelected : InventoryArmorIdle);
-                socket.label.color = armor == null ? InventoryRed : armor.durability <= 0 ? Danger : Ink;
             }
             Set(armorSummary, "总护甲 " + EquipmentCatalog.ArmorRating(player).ToString("0.#") + "  ·  移速 -" + (EquipmentCatalog.MovementPenalty(player) * 100f).ToString("0.#") + "%");
             int activeSlot = EquipmentCatalog.Equipped(player) == null ? 2 : player.activeSlot;
@@ -614,20 +610,17 @@ namespace DeadCircuit
             {
                 GearState gear = i == 2 ? null : EquipmentCatalog.Find(player, i == 0 ? player.weaponId : player.toolId);
                 UiButton socket = equipmentSlots[i];
-                string name = i == 2 ? "徒手" : (i == 0 ? "主武器" : "副手工具") + " · " + (gear == null ? "空" : EquipmentCatalog.GearNames[(int)gear.kind]);
-                if (activeSlot == i) name += i == 2 ? "\n使用中" : "  [当前]";
-                Set(socket.label, name);
-                Stretch(socket.label.rectTransform, gear == null ? 8 : 50, 0, 8, 0);
-                socket.label.color = gear == null ? InventoryBlue : gear.durability <= 0 ? Danger : Ink;
+                PaintInventorySocket(socket, gear, i == 2 ? "ui_equip" : "gear_" + (int)(i == 0 ? GearKind.Pistol : GearKind.StoneAxe), i == 2);
                 socket.button.interactable = ready;
                 Tint(socket, activeSlot == i ? InventorySocketSelected : InventorySocketIdle);
+                SetInventorySocketActive(socket, activeSlot == i);
             }
-            Set(inventorySelection, "当前：" + (activeSlot == 0 ? "武器" : activeSlot == 1 ? "工具" : "徒手"));
+            Set(inventorySelection, "取回随身");
             for (int i = 0; i < 3; i++) Tint(inventoryTabs[i], inventoryTab == i ? InventoryCellSelected : InventoryCellIdle);
             materialScroll.gameObject.SetActive(inventoryTab == 0);
             gearScroll.gameObject.SetActive(inventoryTab == 1);
             partScroll.gameObject.SetActive(inventoryTab == 2);
-            Set(sortInventory.label, "排序：" + (inventorySort == 0 ? "分类" : inventorySort == 1 ? "名称" : "数量"));
+            Set(sortInventory.label, "排序：" + (inventoryManualOrder[inventoryTab].Count > 0 ? "手动" : inventorySort == 0 ? "分类" : inventorySort == 1 ? "名称" : "数量"));
             Set(filterInventory.label, "分类：" + InventoryFilterName());
             bool bench = EquipmentCatalog.HasWorkbench(world, player);
             Set(workbenchHint, bench ? "工作台可用；制作还需科技、材料与库存空间。" :
@@ -643,6 +636,7 @@ namespace DeadCircuit
                 ResetScroll(itemDetailScroll);
             }
             PaintInventoryPreview(player);
+            ValidateInventoryDrag();
         }
 
         void PaintInventoryPreview(PlayerState player)
@@ -830,30 +824,6 @@ namespace DeadCircuit
             SelectInventoryDetail(1);
         }
 
-        UiButton GearInventorySocket(PlayerState player, GearState gear)
-        {
-            if (gear.id == player.weaponId) return equipmentSlots[0];
-            if (gear.id == player.toolId) return equipmentSlots[1];
-            if (gear.id == player.backpackId) return backpackSlot;
-            int slot = EquipmentCatalog.ArmorSlot(gear.kind);
-            return slot >= 0 && Count(player.armorIds, slot) == gear.id ? armorSlots[slot] : null;
-        }
-
-        void MountGearInventoryCell(InventoryCell cell, UiButton socket, bool armor)
-        {
-            // Move the existing button into the slot as its icon. This keeps gear IDs unique and selectable after equipping.
-            var rect = (RectTransform)cell.widget.button.transform;
-            Transform parent = socket == null ? gearGrid : socket.button.transform;
-            if (rect.parent != parent)
-            {
-                rect.SetParent(parent, false);
-                cell.widget.label.gameObject.SetActive(socket == null);
-                if (socket == null) Place(rect, 0, 0, 117, 84);
-                else Place(rect, armor ? 31 : 8, armor ? 6 : socket == backpackSlot ? 4 : 3, 36, 32);
-            }
-            cell.widget.icon.rectTransform.anchoredPosition = socket == null ? new Vector2(6, -5) : new Vector2(4, -2);
-        }
-
         void RefreshInventoryCells(PlayerState player)
         {
             foreach (InventoryCell cell in gearCells) cell.quantity = 0;
@@ -867,6 +837,7 @@ namespace DeadCircuit
                     cell = MakeInventoryCell("Gear Slot " + id, gearGrid, id, EquipmentCatalog.GearNames[(int)gear.kind],
                         GearCategory(gear.kind), () => SelectInventoryGear(id));
                     gearCells.Add(cell);
+                    BindInventoryCellDrag(cell, 1);
                 }
                 if (cell.gearKind != gear.kind)
                 {
@@ -877,18 +848,11 @@ namespace DeadCircuit
                     TintBackpackIcon(cell.widget, gear.kind);
                 }
                 bool equipped = InventoryWeight.IsEquipped(player, gear);
-                UiButton socket = equipped ? GearInventorySocket(player, gear) : null;
-                MountGearInventoryCell(cell, socket, EquipmentCatalog.IsArmor(gear.kind));
-                if (socket != null)
-                {
-                    cell.widget.button.gameObject.SetActive(true);
-                    cell.widget.button.interactable = socket.button.interactable;
-                    Tint(cell.widget, socket.button.colors.normalColor);
-                }
                 cell.quantity = equipped ? 0 : 1;
                 bool bag = EquipmentCatalog.IsBackpack(gear.kind);
-                Set(cell.widget.label, cell.title + "\n" + (bag ? BackpackCapacityText(gear.kind) : "耐久 " + GearDurability(gear)));
+                Set(cell.widget.label, "×1");
                 cell.widget.label.color = !bag && gear.durability <= 0 ? Danger : Ink;
+                PaintInventoryDurability(cell.widget, gear);
             }
             foreach (InventoryCell cell in gearCells)
                 if (cell.quantity == 0 && EquipmentCatalog.Find(player, cell.id) == null)
@@ -899,7 +863,6 @@ namespace DeadCircuit
             int owned = 0;
             foreach (InventoryCell cell in cells)
             {
-                if (inventoryTab == 1 && cell.widget.button.transform.parent != gearGrid) continue;
                 if (inventoryTab == 0) cell.quantity = InventorySupplyQuantity(player, cell);
                 if (inventoryTab == 2) cell.quantity = Count(player.parts, cell.id);
                 bool visible = cell.quantity > 0 && (inventoryFilter == 0 || cell.category == inventoryFilter);
@@ -907,13 +870,15 @@ namespace DeadCircuit
                 if (cell.quantity > 0) owned++;
                 if (!visible) continue;
                 visibleCells.Add(cell);
-                if (inventoryTab != 1) Set(cell.widget.label, cell.title + "\n×" + cell.quantity);
+                if (inventoryTab != 1) Set(cell.widget.label, "×" + cell.quantity);
                 cell.widget.button.interactable = true;
                 bool selected = inventoryDetailKind == inventoryTab && (inventoryTab == 0 ? cell == SelectedInventoryMaterial : cell.id == (inventoryTab == 1 ? selectedGear : selectedPart));
                 Tint(cell.widget, selected ? InventoryCellSelected : InventoryCellIdle);
             }
             visibleCells.Sort((a, b) =>
             {
+                int manual = CompareInventoryManualOrder(a, b);
+                if (manual != 0) return manual;
                 int comparison = inventorySort == 0 ? a.category.CompareTo(b.category) : inventorySort == 1 ? string.Compare(a.title, b.title, StringComparison.Ordinal) : b.quantity.CompareTo(a.quantity);
                 if (comparison == 0) comparison = a.supply.CompareTo(b.supply);
                 return comparison != 0 ? comparison : a.id.CompareTo(b.id);
