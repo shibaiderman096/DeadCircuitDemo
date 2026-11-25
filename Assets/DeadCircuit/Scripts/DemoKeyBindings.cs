@@ -96,11 +96,40 @@ namespace DeadCircuit
             return Enum.IsDefined(typeof(Key), value) && IsBindable((Key)value) ? (Key)value : Default(binding);
         }
 
-        public static bool IsPressed(Keyboard keyboard, DemoBinding binding) =>
-            keyboard != null && keyboard[Get(binding)].isPressed;
+        public static bool IsPressed(Keyboard keyboard, DemoBinding binding) => IsPressed(keyboard, Get(binding));
 
-        public static bool WasPressed(Keyboard keyboard, DemoBinding binding) =>
-            keyboard != null && keyboard[Get(binding)].wasPressedThisFrame;
+        public static bool IsPressed(Keyboard keyboard, Key key)
+        {
+            if (keyboard == null) return false;
+            Key paired = PairedModifier(key);
+            return keyboard[key].isPressed || (paired != Key.None && keyboard[paired].isPressed);
+        }
+
+        public static bool WasPressed(Keyboard keyboard, DemoBinding binding) => WasPressed(keyboard, Get(binding));
+
+        public static bool WasPressed(Keyboard keyboard, Key key)
+        {
+            if (keyboard == null) return false;
+            Key paired = PairedModifier(key);
+            return keyboard[key].wasPressedThisFrame || (paired != Key.None && keyboard[paired].wasPressedThisFrame);
+        }
+
+        static Key PairedModifier(Key key)
+        {
+            switch (key)
+            {
+                case Key.LeftShift: return Key.RightShift;
+                case Key.RightShift: return Key.LeftShift;
+                case Key.LeftAlt: return Key.RightAlt;
+                case Key.RightAlt: return Key.LeftAlt;
+                case Key.LeftCtrl: return Key.RightCtrl;
+                case Key.RightCtrl: return Key.LeftCtrl;
+                default: return Key.None;
+            }
+        }
+
+        internal static bool KeysOverlap(Key first, Key second) =>
+            first == second || PairedModifier(first) == second || PairedModifier(second) == first;
 
         public static string Display(Key key)
         {
@@ -116,7 +145,7 @@ namespace DeadCircuit
             if (!IsBindable(key)) return false;
             foreach (DemoBinding other in All)
             {
-                if (other == binding || Get(other) != key) continue;
+                if (other == binding || !KeysOverlap(Get(other), key)) continue;
                 conflict = other;
                 return false;
             }

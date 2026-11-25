@@ -181,7 +181,11 @@ namespace DeadCircuit
                     " 秒内确认；超时将自动恢复。");
                 return true;
             }
-            if (DemoKeyBindings.WasPressed(keyboard, DemoBinding.Back)) CloseSettings();
+            if (DemoKeyBindings.WasPressed(keyboard, DemoBinding.Back))
+            {
+                if (appearancePanel != null && appearancePanel.gameObject.activeSelf) CloseAppearance();
+                else CloseSettings();
+            }
             return true;
         }
 
@@ -221,6 +225,7 @@ namespace DeadCircuit
                 awaitingBinding = null;
                 PlayerPrefs.Save();
                 UpdateBindingButton(binding);
+                RefreshKeyBindingHints();
                 RefreshControlsHelp();
                 Set(bindingNotice, DemoKeyBindings.Name(binding) + " 已设置为 " + DemoKeyBindings.Display(key) + "。");
                 return;
@@ -235,6 +240,24 @@ namespace DeadCircuit
         }
 
         string KeyHint(DemoBinding binding) => DemoKeyBindings.Hint(binding);
+
+        void RefreshKeyBindingHints()
+        {
+            if (saveButton != null)
+                Set(saveButton.label, bridge != null && bridge.IsRunning && !bridge.IsHost ? "仅房主可保存" : "保存 " + KeyHint(DemoBinding.Save));
+            if (technologyShortcut != null) Set(technologyShortcut.label, "科技 " + KeyHint(DemoBinding.Technology));
+            if (inventoryShortcut != null) Set(inventoryShortcut.label, "背包 " + KeyHint(DemoBinding.Inventory));
+            if (growthButton != null)
+            {
+                PlayerState player = bridge == null ? null : bridge.LocalPlayer;
+                int points = player == null ? 0 : player.attributePoints + player.skillPoints;
+                Set(growthButton.label, "成长 " + KeyHint(DemoBinding.Growth) + (points > 0 ? " ·" + points : ""));
+            }
+            if (helpShortcut != null) Set(helpShortcut.label, "帮助 " + KeyHint(DemoBinding.Help));
+            if (sessionShortcut != null) Set(sessionShortcut.label, "菜单 " + KeyHint(DemoBinding.Back));
+            if (helpPanelHint != null)
+                SetFlowText(helpPanelHint, "打开界面不暂停游戏；" + KeyHint(DemoBinding.Back) + " 关闭界面，再按一次取消建造或打开菜单。", 56);
+        }
 
         string BuildControlsHelpText()
         {
@@ -279,6 +302,7 @@ namespace DeadCircuit
             qualityIndex = Mathf.Clamp(QualitySettings.GetQualityLevel(), 0, Mathf.Max(0, QualitySettings.names.Length - 1));
             frameRateIndex = FindFrameRate(60);
             foreach (DemoBinding binding in bindingButtons.Keys) UpdateBindingButton(binding);
+            RefreshKeyBindingHints();
             RefreshGraphicsLabels();
             Set(bindingNotice, "全部设置已恢复默认。");
         }

@@ -317,4 +317,4 @@ P0阶段的石斧配方为木材3、石材2，石镐配方为木材3、石材3�
 
 实现依据：`Presentation/DemoHud.Inventory.cs`、`Presentation/DemoHud.InventoryDrag.cs`与`Presentation/InventoryDragHandle.cs`；核心边界核对`Core/InventoryWeight.cs`及现有装备、实物背包指令。
 
-验证：主智能体本轮从源码运行完整CoreChecks，815/815通过，`historicalSkipped=20`。Unity导入连接已建立；图标与悬停、装备／卸装、同页重排、放入／取回、容量不足和取消／错槽的专项待本轮确认。本文本轮仅做源码与文档核对，未据此宣称Play、构建、人工拖放或双进程联机通过；Wiki HTML由主智能体统一生成并检查。
+验证：2026-11-26整合验证：从源码重建CoreChecks，815/815通过（historicalSkipped=20）；Unity 6000.6.8f1 Windows开发版构建成功；菜单、设置改键、背包拖放与角色输入专项均通过，玩家进程退出码均为0。Wiki生成、同步检查及17项词条检查通过。专项关闭截图输出。未覆盖人工试玩、设置页显示预览确认及15秒回退、双进程局域网联机和设备测试。背包专项覆盖图标与悬停、错槽拒绝、武器／工具／防具／背包穿戴、卸装、同页重排、材料／配件双向转移、关闭／切页取消及1600×900与1280×720布局。

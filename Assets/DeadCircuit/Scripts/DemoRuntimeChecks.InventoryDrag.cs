@@ -15,6 +15,35 @@ namespace DeadCircuit
     {
         IEnumerator CheckInventoryDrag(GameBridge bridge)
         {
+            InputDevice[] physicalDevices = InputSystem.devices.Where(device => device is Keyboard || device is Mouse).ToArray();
+            bool[] wasEnabled = physicalDevices.Select(device => device.enabled).ToArray();
+            var backgroundBehavior = InputSystem.settings.backgroundBehavior;
+            int width = Screen.width, height = Screen.height;
+            FullScreenMode displayMode = Screen.fullScreenMode;
+            Mouse previousQaMouse = qaMouse;
+            qaMouse = null;
+            try
+            {
+                yield return CheckInventoryDragScenario(bridge);
+            }
+            finally
+            {
+                if (qaMouse != null && qaMouse.added) InputSystem.RemoveDevice(qaMouse);
+                qaMouse = previousQaMouse != null && previousQaMouse.added ? previousQaMouse : null;
+                for (int i = 0; i < physicalDevices.Length; i++)
+                {
+                    if (!physicalDevices[i].added || physicalDevices[i].enabled == wasEnabled[i]) continue;
+                    if (wasEnabled[i]) InputSystem.EnableDevice(physicalDevices[i]);
+                    else InputSystem.DisableDevice(physicalDevices[i]);
+                }
+                InputSystem.settings.backgroundBehavior = backgroundBehavior;
+                if (Screen.width != width || Screen.height != height || Screen.fullScreenMode != displayMode)
+                    Screen.SetResolution(width, height, displayMode);
+            }
+        }
+
+        IEnumerator CheckInventoryDragScenario(GameBridge bridge)
+        {
             bridge.StartHost(73149, false);
             Require(bridge.IsRunning, "inventory drag QA starts an isolated world");
             var player = bridge.LocalPlayer;
@@ -37,7 +66,6 @@ namespace DeadCircuit
             var pack = Give(GearKind.GrassBackpack);
             var physicalDevices = InputSystem.devices.Where(device => device is Keyboard || device is Mouse).ToArray();
             foreach (var device in physicalDevices) InputSystem.DisableDevice(device);
-            var backgroundBehavior = InputSystem.settings.backgroundBehavior;
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
             qaMouse = InputSystem.AddDevice<Mouse>("Inventory drag QA Mouse");
             yield return new WaitForSecondsRealtime(.5f);
@@ -115,10 +143,6 @@ namespace DeadCircuit
                 "inventory card remains inside the smaller screen");
             yield return Capture("inventory-icons-1280");
             Click("Close Inventory");
-            InputSystem.RemoveDevice(qaMouse);
-            qaMouse = null;
-            foreach (var device in physicalDevices) InputSystem.EnableDevice(device);
-            InputSystem.settings.backgroundBehavior = backgroundBehavior;
             Debug.Log("DEMO_INVENTORY_DRAG_QA_PASS icon-only wrong-slot equip armor backpack cancel reorder stack part unequip close tab resolutions");
         }
 

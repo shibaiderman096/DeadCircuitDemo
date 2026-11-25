@@ -39,6 +39,7 @@ namespace DeadCircuit
                 "QA path parser rejects saves outside its output directory");
             Require(!GameBridge.TryResolveQaPaths(validArguments.Concat(new[] { "--demo-smoke-host" }).ToArray(), out _, out _, out _),
                 "QA path parser rejects smoke mode combinations");
+            yield return CheckModifierBindingAliases();
             output = bridge.QaOutputDirectory;
             Directory.CreateDirectory(output);
             string qaSavePath = Path.GetFullPath(bridge.QaSavePath);
@@ -64,7 +65,16 @@ namespace DeadCircuit
             }
             if (Environment.GetCommandLineArgs().Contains("--demo-controls-qa"))
             {
-                yield return CheckPlayerControls(bridge);
+                var backgroundBehavior = InputSystem.settings.backgroundBehavior;
+                try
+                {
+                    InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+                    yield return CheckPlayerControls(bridge);
+                }
+                finally
+                {
+                    InputSystem.settings.backgroundBehavior = backgroundBehavior;
+                }
                 Application.Quit(0);
                 yield break;
             }
@@ -78,9 +88,12 @@ namespace DeadCircuit
             RequireButtonIcon("Single Player", "ui_load_world");
             RequireButtonIcon("Multiplayer", "ui_network");
             RequireButtonIcon("Open Settings", "ui_settings");
+            Require(PointerTargetsButton(FindButton("Single Player")) && PointerTargetsButton(FindButton("Multiplayer")) &&
+                PointerTargetsButton(FindButton("Open Settings")), "home menu buttons receive pointer hits");
             Require(!Active("Connection Status"), "home page hides status copy below the menu buttons");
             Click("Open Settings");
             yield return null;
+            yield return CheckSettingsControls();
             yield return Capture("settings");
             Button appearanceEntry = FindButton("Open Appearance");
             Require(Active("Settings Panel") && appearanceEntry.interactable && PointerTargetsButton(appearanceEntry), "appearance entry is available inside settings");
@@ -88,8 +101,9 @@ namespace DeadCircuit
             yield return null;
             yield return Capture("appearance");
             Require(Active("Appearance Panel") && Active("Settings Panel") && !Active("Settings Card") && !bridge.IsRunning, "appearance editor opens as a settings page before entering a world");
-            yield return Press(Key.Escape);
+            yield return Press(DemoKeyBindings.Get(DemoBinding.Back));
             Require(!Active("Appearance Panel") && Active("Settings Panel") && Active("Settings Card") && Active("Start Page"), "Escape returns from appearance to settings");
+            Require(PointerTargetsButton(FindButton("Close Settings")), "settings return button receives pointer hits");
             Click("Close Settings");
             yield return null;
             Require(!Active("Settings Panel") && Active("Start Page"), "settings returns to the start page");
@@ -97,9 +111,12 @@ namespace DeadCircuit
             Click("Single Player");
             yield return null;
             Require(Active("Load World Page") && !bridge.IsRunning, "Single Player opens the local world list");
+            Require(PointerTargetsButton(FindButton("New Game")) && PointerTargetsButton(FindButton("Load World Page Back")),
+                "world list actions receive pointer hits");
             Click("New Game");
             yield return null;
             Require(Active("Create World Page") && !bridge.IsRunning, "New World opens configuration without starting a session");
+            Require(PointerTargetsButton(FindButton("Create World Page Back")), "world creation back button receives pointer hits");
             Click("Create World Page Back");
             yield return null;
             Require(Active("Load World Page"), "world creation returns to the local world list");
@@ -108,10 +125,13 @@ namespace DeadCircuit
             Click("Multiplayer");
             yield return null;
             Require(Active("LAN Page") && FindButton("Start Host").interactable && !bridge.IsRunning, "Multiplayer opens the existing LAN page");
+            Require(PointerTargetsButton(FindButton("Start Host")) && PointerTargetsButton(FindButton("LAN Page Back")),
+                "LAN actions receive pointer hits");
             yield return Capture("lan");
             Click("Start Host");
             yield return null;
             Require(Active("Create World Page") && !bridge.IsRunning, "Start Host also requires world configuration confirmation");
+            Require(PointerTargetsButton(FindButton("Create World Page Back")), "host world creation back button receives pointer hits");
             Click("Create World Page Back");
             yield return null;
             Click("LAN Page Back");
@@ -143,6 +163,21 @@ namespace DeadCircuit
             Require(!Active("Appearance Panel") && !bridge.CanEditAppearance &&
                 !bridge.TrySetAppearance(currentAppearance) && bridge.AppearanceCode == currentAppearance,
                 "appearance editor and preset changes stay disabled in a running world");
+            if (Environment.GetCommandLineArgs().Contains("--demo-menu-settings-qa"))
+            {
+                yield return ClickHudTool("Open Session");
+                Click("Session Settings");
+                yield return null;
+                Require(Active("Settings Panel") && !appearanceEntry.gameObject.activeInHierarchy,
+                    "in-game settings hide the appearance entry");
+                Click("Close Settings");
+                yield return null;
+                Require(!Active("Settings Panel") && Active("Session Modal") && bridge.IsRunning,
+                    "in-game settings return to the session menu");
+                Debug.Log("DEMO_MENU_SETTINGS_QA_PASS home single multiplayer appearance return paths in-game settings");
+                Application.Quit(0);
+                yield break;
+            }
             var hotbar = Rect("Build Hotbar");
             Require(hotbar.rect.width <= 660f && hotbar.rect.height <= 76f, "compact hotbar");
             Click("HUD Build Toggle");
@@ -1008,6 +1043,31 @@ namespace DeadCircuit
             Require(bridge.World.buildings.Any(b=>b.kind==kind && b.x==x && b.y==y),"actual build command and delivery: "+kind+" "+player.notice);
             yield return new WaitForSecondsRealtime(.3f);
         }
+        static IEnumerator CheckModifierBindingAliases()
+        {
+            Keyboard previousKeyboard = Keyboard.current;
+            var backgroundBehavior = InputSystem.settings.backgroundBehavior;
+            InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+            var keyboard = InputSystem.AddDevice<Keyboard>("Demo QA Modifier Keyboard");
+            try
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.RightShift, Key.RightAlt, Key.RightCtrl));
+                yield return null;
+                Require(DemoKeyBindings.IsPressed(keyboard, Key.LeftShift) && DemoKeyBindings.IsPressed(keyboard, Key.LeftAlt) &&
+                    DemoKeyBindings.IsPressed(keyboard, Key.LeftCtrl), "right modifier keys preserve left-side modifier actions");
+                Require(DemoKeyBindings.KeysOverlap(Key.LeftShift, Key.RightShift) && DemoKeyBindings.KeysOverlap(Key.LeftAlt, Key.RightAlt) &&
+                    DemoKeyBindings.KeysOverlap(Key.LeftCtrl, Key.RightCtrl), "paired modifier keys cannot be assigned to separate actions");
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
+            }
+            finally
+            {
+                if (keyboard.added) InputSystem.RemoveDevice(keyboard);
+                InputSystem.settings.backgroundBehavior = backgroundBehavior;
+                if (previousKeyboard != null && previousKeyboard.added) previousKeyboard.MakeCurrent();
+            }
+        }
+
         static Button FindButton(string name) => FindObjectsByType<Button>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Single(b=>b.name==name);
         static bool PointerTargetsButton(Button button)
         {
@@ -1088,17 +1148,32 @@ namespace DeadCircuit
         }
         static IEnumerator Press(Key key)
         {
-            var keyboard = Keyboard.current ?? InputSystem.AddDevice<Keyboard>("Demo QA Keyboard");
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState(key));
-            float deadline = Time.realtimeSinceStartup + 1f;
-            while (!keyboard[key].isPressed && Time.realtimeSinceStartup < deadline) yield return null;
-            Require(keyboard[key].isPressed, "QA key press reached Input System: " + key);
-            yield return new WaitForSecondsRealtime(.05f);
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
-            deadline = Time.realtimeSinceStartup + 1f;
-            while (keyboard[key].isPressed && Time.realtimeSinceStartup < deadline) yield return null;
-            Require(!keyboard[key].isPressed, "QA key release reached Input System: " + key);
-            yield return new WaitForSecondsRealtime(.15f);
+            Keyboard previousKeyboard = Keyboard.current;
+            var backgroundBehavior = InputSystem.settings.backgroundBehavior;
+            Keyboard keyboard = null;
+            try
+            {
+                InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+                keyboard = InputSystem.AddDevice<Keyboard>("Demo QA Keyboard");
+                if (!keyboard.enabled) InputSystem.EnableDevice(keyboard);
+                keyboard.MakeCurrent();
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(key));
+                float deadline = Time.realtimeSinceStartup + 1f;
+                while (!keyboard[key].isPressed && Time.realtimeSinceStartup < deadline) yield return null;
+                Require(keyboard[key].isPressed, "QA key press reached Input System: " + key);
+                yield return new WaitForSecondsRealtime(.05f);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                deadline = Time.realtimeSinceStartup + 1f;
+                while (keyboard[key].isPressed && Time.realtimeSinceStartup < deadline) yield return null;
+                Require(!keyboard[key].isPressed, "QA key release reached Input System: " + key);
+                yield return new WaitForSecondsRealtime(.15f);
+            }
+            finally
+            {
+                if (keyboard != null && keyboard.added) InputSystem.RemoveDevice(keyboard);
+                InputSystem.settings.backgroundBehavior = backgroundBehavior;
+                if (previousKeyboard != null && previousKeyboard.added) previousKeyboard.MakeCurrent();
+            }
         }
         static IEnumerator PointAtWorld(float x, float y)
         {
@@ -1237,7 +1312,8 @@ namespace DeadCircuit
                 text.ForceMeshUpdate();
                 Require(text.textInfo.characterInfo.Take(text.textInfo.characterCount).Any(c => c.isVisible), "invisible UI label: " + text.name + " text=" + text.text);
             }
-            ScreenCapture.CaptureScreenshot(Path.Combine(output, label + ".png"));
+            if (!Environment.GetCommandLineArgs().Contains("--demo-qa-no-captures"))
+                ScreenCapture.CaptureScreenshot(Path.Combine(output, label + ".png"));
             yield return new WaitForSecondsRealtime(.2f);
         }
         static void Require(bool condition, string message)

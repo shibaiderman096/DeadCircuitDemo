@@ -107,7 +107,7 @@ namespace DeadCircuit
         TextMeshProUGUI radiationStatus;
         TextMeshProUGUI machineTitle, machineInfo, machineContents, machineHint;
         TextMeshProUGUI growthSummary, attributeHeading, skillHeading, growthNotice, deathInfo;
-        TextMeshProUGUI inventoryNotice, sessionNotice, helpNotice, helpProgress;
+        TextMeshProUGUI inventoryNotice, sessionNotice, helpNotice, helpProgress, helpPanelHint;
         TextMeshProUGUI eraText, technologyTitle, technologyDescription, technologyNotice, workbenchHint;
         TextMeshProUGUI machineRecipe, machineRecipeFlow, machineSafety;
         readonly TextMeshProUGUI[] vitalTexts = new TextMeshProUGUI[3];
@@ -367,7 +367,7 @@ namespace DeadCircuit
             eraText = FlowLabel("Current Technology Era", content, "", 656, 28, 17, Accent);
             objectives = FlowLabel("Objectives Text", content, "", 656, 80, 17, Ink);
             gameStatus = FlowLabel("Session Status", content, "", 656, 72, 16, Muted);
-            saveButton = Button("Save World", card, "保存 F5", 28, 404, 330, 46, () => CallBridge(bridge.Save), true);
+            saveButton = Button("Save World", card, "保存 " + KeyHint(DemoBinding.Save), 28, 404, 330, 46, () => CallBridge(bridge.Save), true);
             SetButtonArt(saveButton, "ui_save", 28);
             UiButton sessionSettings = Button("Session Settings", card, "设置", 382, 404, 330, 46, OpenSettings);
             SetButtonArt(sessionSettings, "ui_settings", 28);
@@ -397,7 +397,7 @@ namespace DeadCircuit
                 " → 原始 → 工艺与建造制作石斧、石镐。\n斧砍树木与补给箱，镐采矿石、石材、黏土，扳手拆废料。\n依次研究烧炭、制陶、冶金，再进入水力、蒸汽、低压、中压、高压与核工业。\n传动轴传机械动力，管道传蒸汽；电网须匹配电压，反应堆需冷却。", 816, 124, 18, Ink);
             helpProgress = FlowLabel("Tutorial Progress", content, "", 816, 76, 16, Muted);
             FlowLabel("HUD Expansion Help", content, "点击底部展开建造栏；右下角菜单可打开其他界面与设备详情。", 816, 62, 17, Ink);
-            FlowLabel("Panel Hint", content, "打开界面不暂停游戏；Esc 关闭界面，再按一次取消建造或打开菜单。", 816, 56, 16, Amber);
+            helpPanelHint = FlowLabel("Panel Hint", content, "打开界面不暂停游戏；" + KeyHint(DemoBinding.Back) + " 关闭界面，再按一次取消建造或打开菜单。", 816, 56, 16, Amber);
             helpNotice = Label("Help Feedback", card, "", 28, 530, 844, 56, 15, Amber);
             help.gameObject.SetActive(false);
         }
@@ -575,7 +575,7 @@ namespace DeadCircuit
             SetVital(1, "饱食", player.hunger, 100f);
             SetVital(2, "体力", player.stamina, WorldSimulator.PlayerMaxStamina(player));
             int points = player.attributePoints + player.skillPoints;
-            Set(growthButton.label, "成长 Tab" + (points > 0 ? " ·" + points : ""));
+            Set(growthButton.label, "成长 " + KeyHint(DemoBinding.Growth) + (points > 0 ? " ·" + points : ""));
             growthButton.label.color = player.attributePoints + player.skillPoints > 0 ? Accent : Ink;
             growthButton.button.interactable = player.hp > 0f;
             RefreshEquipmentSummary(player);
@@ -638,7 +638,7 @@ namespace DeadCircuit
             SetFlowText(networkText, (bridge.IsHost ? "房主" : "队员") + " · " + connected + "/" + WorldSimulator.MaxPlayers + " 人 · 丧尸 " + world.zombies.Count +
                 "\n本机 IPv4：" + Clean(bridge.HostIP) + "  ·  UDP 7777");
             saveButton.button.interactable = bridge.IsHost;
-            Set(saveButton.label, bridge.IsHost ? "保存 F5" : "仅房主可保存");
+            Set(saveButton.label, bridge.IsHost ? "保存 " + KeyHint(DemoBinding.Save) : "仅房主可保存");
             SetFlowText(gameStatus, Clean(bridge.Status) + RoomLocation(world, bridge.LocalPlayer));
             gameStatus.color = StatusColor(bridge.Status);
             if (lastBridgeStatus != bridge.Status)

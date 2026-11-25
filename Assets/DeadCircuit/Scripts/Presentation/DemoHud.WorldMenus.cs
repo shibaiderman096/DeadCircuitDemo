@@ -36,6 +36,7 @@ namespace DeadCircuit
         WorldTerrainPreviewImage worldPreview;
         TextMeshProUGUI volumeValue, effectsValue, scaleValue, lanStatus;
         UiButton createWorldButton, loadSelectedWorld, inspectToggle, toolsToggle, buildToggle;
+        UiButton technologyShortcut, inventoryShortcut, helpShortcut, sessionShortcut;
         UiButton settingsAppearanceButton;
         TextMeshProUGUI deleteWorldDetails;
         UiButton deleteSelectedWorld, cancelDeleteWorld;
@@ -520,6 +521,7 @@ namespace DeadCircuit
             if (settingsCard != null) settingsCard.gameObject.SetActive(true);
             SetSettingsPage(0);
             if (settingsAppearanceButton != null) settingsAppearanceButton.button.gameObject.SetActive(!bridge.IsRunning);
+            RefreshKeyBindingHints();
             if (bridge.IsRunning) SetPanel(settingsPanel, true);
             else if (!settingsPanel.gameObject.activeSelf)
             {
@@ -567,11 +569,11 @@ namespace DeadCircuit
             });
             SetButtonArt(toolsToggle, "ui_settings", 26);
             toolsTray = Box("HUD Tools Tray", dock, 0, -278, 220, 268, Panel, true);
-            UiButton technologyShortcut = Button("Technology Button", toolsTray, "科技 T", 8, 8, 204, 36, () => SetPanel(technology, true));
+            technologyShortcut = Button("Technology Button", toolsTray, "科技 " + KeyHint(DemoBinding.Technology), 8, 8, 204, 36, () => SetPanel(technology, true));
             SetButtonArt(technologyShortcut, "ui_technology", 24);
-            UiButton inventoryShortcut = Button("Open Inventory", toolsTray, "背包 B", 8, 50, 204, 36, () => SetPanel(inventory, true));
+            inventoryShortcut = Button("Open Inventory", toolsTray, "背包 " + KeyHint(DemoBinding.Inventory), 8, 50, 204, 36, () => SetPanel(inventory, true));
             SetButtonArt(inventoryShortcut, "ui_inventory", 24);
-            growthButton = Button("Open Growth", toolsTray, "成长 Tab", 8, 92, 204, 36, () => SetGrowth(true));
+            growthButton = Button("Open Growth", toolsTray, "成长 " + KeyHint(DemoBinding.Growth), 8, 92, 204, 36, () => SetGrowth(true));
             SetButtonArt(growthButton, "ui_growth", 24);
             inspectToggle = Button("Inspect Toggle", toolsTray, "检查：关", 8, 134, 204, 36, () =>
             {
@@ -582,9 +584,9 @@ namespace DeadCircuit
                 Set(toolsToggle.label, "工具");
             });
             SetButtonArt(inspectToggle, "ui_inspect", 24);
-            UiButton helpShortcut = Button("Open Help", toolsTray, "帮助 H", 8, 176, 98, 36, () => SetPanel(help, true));
+            helpShortcut = Button("Open Help", toolsTray, "帮助 " + KeyHint(DemoBinding.Help), 8, 176, 98, 36, () => SetPanel(help, true));
             SetButtonArt(helpShortcut, "ui_help", 20);
-            UiButton sessionShortcut = Button("Open Session", toolsTray, "菜单 Esc", 114, 176, 98, 36, () => SetPanel(session, true));
+            sessionShortcut = Button("Open Session", toolsTray, "菜单 " + KeyHint(DemoBinding.Back), 114, 176, 98, 36, () => SetPanel(session, true));
             SetButtonArt(sessionShortcut, "ui_session", 20);
             Label("HUD Tools Hint", toolsTray, "开启设备详情后，指向设备查看", 8, 222, 204, 32, 12, Muted);
             toolsTray.gameObject.SetActive(false);
