@@ -27,13 +27,13 @@ namespace DeadCircuit
 
         void MakeAppearance(RectTransform root)
         {
-            if (root == null || appearancePanel != null) return;
-            appearancePanel = Backdrop("Appearance Panel", root, new Color32(4, 12, 8, 225));
+            if (root == null || settingsPanel == null || appearancePanel != null) return;
+            appearancePanel = Backdrop("Appearance Panel", settingsPanel, new Color32(4, 12, 8, 225));
             RectTransform card = Box("Appearance Card", appearancePanel, 0, 0, 1120, 680, Panel, true);
             Center(card, 1120, 680);
             PanelRule(card, 1120, 66);
             Label("Appearance Heading", card, "角色外观", 22, 16, 760, 36, 25, Ink, FontStyles.Bold);
-            appearanceBackButton = Button("Close Appearance", card, "返回菜单", 948, 18, 150, 32, CloseAppearance);
+            appearanceBackButton = Button("Close Appearance", card, "返回设置", 948, 18, 150, 32, CloseAppearance);
             SetButtonArt(appearanceBackButton, "ui_back", 20);
 
             RectTransform preview = Box("Appearance Preview Surface", card, 22, 80, 350, 468, Recessed);
@@ -119,7 +119,7 @@ namespace DeadCircuit
             });
             SetButtonArt(reset, "ui_refresh", 20);
             appearanceStatus = Label("Appearance Draft Status", card, "", 220, 618, 490, 44, 14, Amber);
-            UiButton cancel = Button("Cancel Appearance", card, "返回菜单", 730, 622, 178, 38, CloseAppearance);
+            UiButton cancel = Button("Cancel Appearance", card, "返回设置", 730, 622, 178, 38, CloseAppearance);
             SetButtonArt(cancel, "ui_back", 20);
             appearanceApplyButton = Button("Save Appearance", card, "保存外观", 920, 622, 178, 38, ApplyAppearance, true);
             SetButtonArt(appearanceApplyButton, "ui_equip", 20);
@@ -131,9 +131,8 @@ namespace DeadCircuit
 
         void OpenAppearance()
         {
-            if (appearancePanel == null || bridge == null || bridge.IsRunning || menu == null ||
-                !menu.gameObject.activeInHierarchy || menuPages == null || menuPages.Length == 0 ||
-                !menuPages[0].gameObject.activeInHierarchy) return;
+            if (appearancePanel == null || bridge == null || bridge.IsRunning || settingsPanel == null ||
+                !settingsPanel.gameObject.activeInHierarchy || settingsCard == null || !settingsCard.gameObject.activeSelf) return;
 
             appearanceSavedCode = AppearanceCatalog.IsValid(bridge.AppearanceCode) ? bridge.AppearanceCode : AppearanceCatalog.DefaultCode;
             appearanceDraftCode = appearanceSavedCode;
@@ -143,21 +142,22 @@ namespace DeadCircuit
             appearancePhase = 0f;
             RefreshAppearanceOptions();
             RefreshAppearancePreviewControls();
+            settingsCard.gameObject.SetActive(false);
             appearancePanel.gameObject.SetActive(true);
             if (!appearancePanel.gameObject.activeInHierarchy) return;
             appearancePanel.SetAsLastSibling();
             RefreshAppearance();
             PaintAppearancePreview(bridge.LocalPlayer);
             if (eventSystem != null) eventSystem.SetSelectedGameObject(appearanceBackButton.button.gameObject);
-            DemoAudio.UiOpen();
         }
 
         void CloseAppearance()
         {
             if (appearancePanel == null || !appearancePanel.gameObject.activeSelf) return;
             appearancePanel.gameObject.SetActive(false);
-            if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
-            DemoAudio.UiClose();
+            settingsCard.gameObject.SetActive(true);
+            if (eventSystem != null && settingsAppearanceButton != null)
+                eventSystem.SetSelectedGameObject(settingsAppearanceButton.button.gameObject);
         }
 
         void CycleAppearance(int field, int delta)

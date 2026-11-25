@@ -26,7 +26,7 @@ namespace DeadCircuit
         readonly UiButton[] presetButtons = new UiButton[3];
         readonly UiButton[] densityButtons = new UiButton[3];
         readonly RectTransform[] menuPages = new RectTransform[4];
-        RectTransform menuFrame, worldListContent, settingsPanel, toolsTray, buildTray;
+        RectTransform menuFrame, worldListContent, settingsPanel, settingsCard, toolsTray, buildTray;
         RectTransform deleteWorldDialog;
         CanvasGroup menuInteraction;
         UnityEngine.UI.ScrollRect worldListScroll;
@@ -36,9 +36,10 @@ namespace DeadCircuit
         WorldTerrainPreviewImage worldPreview;
         TextMeshProUGUI volumeValue, effectsValue, scaleValue, lanStatus;
         UiButton createWorldButton, loadSelectedWorld, inspectToggle, toolsToggle, buildToggle;
+        UiButton settingsAppearanceButton;
         TextMeshProUGUI deleteWorldDetails;
         UiButton deleteSelectedWorld, cancelDeleteWorld;
-        MenuPage menuPage;
+        MenuPage menuPage, createReturnPage = MenuPage.Home;
         WorldPreset worldPreset = WorldPreset.Balanced;
         int cityDensity = 1;
         int? emptyWorldSeed;
@@ -83,7 +84,7 @@ namespace DeadCircuit
 
         void MakeCreatePage(RectTransform page)
         {
-            MenuHeading(page, "Create World Heading", "新建世界");
+            MenuHeading(page, "Create World Heading", "新建世界", MenuPage.Create);
             Label("World Name Label", page, "世界名称", 28, 88, 620, 24, 16, Muted);
             worldNameField = Input("World Name", page, "新的世界", "为这个世界命名", 28, 118, 620, 44, 40);
             Label("Seed Label", page, "种子 · 留空随机，也可输入数字或文字", 28, 178, 620, 24, 16, Muted);
@@ -146,12 +147,12 @@ namespace DeadCircuit
 
         void MakeLoadPage(RectTransform page)
         {
-            MenuHeading(page, "Load World Heading", "读取世界");
+            MenuHeading(page, "Load World Heading", "单人游戏", MenuPage.Load);
             Label("World List Heading", page, "本地存档", 28, 82, 460, 32, 20, Ink, FontStyles.Bold);
             UiButton refreshWorlds = Button("Refresh Worlds", page, "刷新", 486, 82, 156, 34, RequestWorldList);
             SetButtonArt(refreshWorlds, "ui_refresh", 22);
-            worldListContent = ScrollContent("World List Scroll View", page, 28, 128, 614, 388, out worldListScroll);
-            worldListEmpty = FlowLabel("World List Empty", worldListContent, "暂无本地存档。返回开始菜单，选择「新建世界」。", 580, 80, 17, Muted);
+            worldListContent = ScrollContent("World List Scroll View", page, 28, 128, 614, 310, out worldListScroll);
+            worldListEmpty = FlowLabel("World List Empty", worldListContent, "暂无本地存档。点击「新建世界」创建。", 580, 80, 17, Muted);
             RectTransform details = Box("Selected World Card", page, 668, 82, 424, 352, Recessed);
             Label("Selected World Heading", details, "存档详情", 20, 16, 384, 32, 22, Accent);
             RectTransform content = ScrollContent("Selected World Scroll View", details, 14, 64, 396, 274, out _);
@@ -162,6 +163,8 @@ namespace DeadCircuit
             deleteSelectedWorld = Button("Delete Selected World", page, "删除存档", 938, 454, 154, 48, OpenDeleteWorldDialog);
             deleteSelectedWorld.label.color = Danger;
             deleteSelectedWorld.button.interactable = false;
+            UiButton newWorld = Button("New Game", page, "新建世界", 28, 454, 614, 48, StartNew);
+            SetButtonArt(newWorld, "ui_new_world", 28);
         }
 
         void MakeDeleteWorldDialog(RectTransform root)
@@ -225,7 +228,7 @@ namespace DeadCircuit
 
         void MakeLanPage(RectTransform page)
         {
-            MenuHeading(page, "LAN Heading", "局域网联机");
+            MenuHeading(page, "LAN Heading", "局域网联机", MenuPage.Lan);
             Label("Name Label", page, "角色名", 28, 92, 596, 26, 16, Muted);
             nameField = Input("Player Name", page, bridge.PlayerName, "幸存者", 28, 126, 596, 46, 12);
             Label("IP Label", page, "房主 IPv4 地址 · UDP 7777", 28, 194, 596, 26, 16, Muted);
@@ -245,10 +248,11 @@ namespace DeadCircuit
             menuAddress.alignment = TextAlignmentOptions.TopLeft;
         }
 
-        void MenuHeading(RectTransform page, string name, string title)
+        void MenuHeading(RectTransform page, string name, string title, MenuPage currentPage)
         {
             Label(name, page, title, 28, 14, 824, 38, 27, Ink, FontStyles.Bold);
-            UiButton back = Button(page.name + " Back", page, "返回", 944, 16, 148, 36, () => ShowMenuPage(MenuPage.Home));
+            UiButton back = Button(page.name + " Back", page, "返回", 944, 16, 148, 36,
+                () => ShowMenuPage(currentPage == MenuPage.Create ? createReturnPage : MenuPage.Home));
             SetButtonArt(back, "ui_back", 22);
         }
 
@@ -257,16 +261,21 @@ namespace DeadCircuit
             CloseDeleteWorldDialog();
             menuPage = page;
             for (int i = 0; i < menuPages.Length; i++) menuPages[i].gameObject.SetActive(i == (int)page);
-            menuStatus.alignment = page == MenuPage.Home ? TextAlignmentOptions.Center : TextAlignmentOptions.TopLeft;
+            menuStatus.alignment = TextAlignmentOptions.TopLeft;
+            menuStatus.gameObject.SetActive(page != MenuPage.Home);
             menuInteraction.interactable = !settingsPanel.gameObject.activeSelf;
             if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
             guardThroughFrame = Time.frameCount + 1;
             if (page == MenuPage.Create) RefreshWorldTerrainPreview(seedField.text.Trim());
             else worldPreviewAt = float.PositiveInfinity;
-            if (refresh && (page == MenuPage.Home || page == MenuPage.Load)) RequestWorldList();
+            if (refresh && page == MenuPage.Load) RequestWorldList();
         }
 
-        void StartNew() => ShowMenuPage(MenuPage.Create);
+        void StartNew()
+        {
+            createReturnPage = menuPage;
+            ShowMenuPage(MenuPage.Create);
+        }
         void Load() => ShowMenuPage(MenuPage.Load);
 
         void RefreshCreationOptions()
@@ -355,7 +364,6 @@ namespace DeadCircuit
                 SetFlowText(worldListEmpty, "无法读取存档列表，请点击刷新重试。", 80);
                 loadSelectedWorld.button.interactable = false;
                 deleteSelectedWorld.button.interactable = false;
-                Set(menuSave, "存档列表读取失败。打开「读取世界」后刷新重试。");
                 Notify("读取存档列表失败：" + error.Message, true);
             }
         }
@@ -396,8 +404,7 @@ namespace DeadCircuit
             }
             for (int i = count; i < worldRows.Count; i++) worldRows[i].widget.button.transform.parent.gameObject.SetActive(false);
             worldListEmpty.gameObject.SetActive(count == 0);
-            SetFlowText(worldListEmpty, "暂无可读取的本地存档。返回开始菜单，选择「新建世界」。", 80);
-            Set(menuSave, count == 0 ? "暂无本地存档" : "本地世界 " + count + " 个 · 选择「读取世界」继续");
+            SetFlowText(worldListEmpty, "暂无可读取的本地存档。点击「新建世界」创建。", 80);
             // Never silently switch the requested save when refresh removes a selection.
             if (selected == null) selectedSaveId = "";
             loadSelectedWorld.button.interactable = selected != null;
@@ -432,7 +439,7 @@ namespace DeadCircuit
 
         void RefreshMenu()
         {
-            if (Time.unscaledTime >= saveCheckAt && (menuPage == MenuPage.Home || menuPage == MenuPage.Load)) RequestWorldList();
+            if (Time.unscaledTime >= saveCheckAt && menuPage == MenuPage.Load) RequestWorldList();
             if (menuPage == MenuPage.Create && Time.unscaledTime >= worldPreviewAt)
                 RefreshWorldTerrainPreview(seedField.text.Trim());
             string status = CurrentLocalFeedback() ? Clean(localFeedback) : Clean(bridge.Status);
@@ -449,6 +456,7 @@ namespace DeadCircuit
         {
             settingsPanel = Backdrop("Settings Panel", root, new Color32(4, 12, 8, 230));
             RectTransform card = Box("Settings Card", settingsPanel, 0, 0, 1000, 660, Panel, true);
+            settingsCard = card;
             Center(card, 1000, 660);
             PanelRule(card, 1000, 68);
             Label("Settings Heading", card, "游戏设置", 28, 16, 720, 38, 28, Ink, FontStyles.Bold);
@@ -456,6 +464,8 @@ namespace DeadCircuit
             SetButtonArt(closeSettings, "ui_back", 20);
             settingsCloseButton = closeSettings.button;
             BuildSettingsPages(card);
+            settingsAppearanceButton = Button("Open Appearance", settingsPages[0], "角色外观", 8, 432, 220, 44, OpenAppearance);
+            SetButtonArt(settingsAppearanceButton, "ui_equip", 24);
             settingsPanel.gameObject.SetActive(false);
         }
 
@@ -506,7 +516,10 @@ namespace DeadCircuit
 
         void OpenSettings()
         {
+            if (appearancePanel != null) appearancePanel.gameObject.SetActive(false);
+            if (settingsCard != null) settingsCard.gameObject.SetActive(true);
             SetSettingsPage(0);
+            if (settingsAppearanceButton != null) settingsAppearanceButton.button.gameObject.SetActive(!bridge.IsRunning);
             if (bridge.IsRunning) SetPanel(settingsPanel, true);
             else if (!settingsPanel.gameObject.activeSelf)
             {
@@ -524,6 +537,8 @@ namespace DeadCircuit
             CancelBindingCapture();
             RevertDisplayPreview();
             PlayerPrefs.Save();
+            if (appearancePanel != null) appearancePanel.gameObject.SetActive(false);
+            if (settingsCard != null) settingsCard.gameObject.SetActive(true);
             bool wasOpen = settingsPanel.gameObject.activeSelf;
             settingsPanel.gameObject.SetActive(false);
             menuInteraction.interactable = true;
