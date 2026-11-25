@@ -448,33 +448,14 @@ namespace DeadCircuit
         void MakeSettings(RectTransform root)
         {
             settingsPanel = Backdrop("Settings Panel", root, new Color32(4, 12, 8, 230));
-            RectTransform card = Box("Settings Card", settingsPanel, 0, 0, 720, 540, Panel, true);
-            Center(card, 720, 540);
-            PanelRule(card, 720, 68);
-            Label("Settings Heading", card, "设置", 28, 16, 500, 38, 28, Ink, FontStyles.Bold);
-            UiButton closeSettings = Button("Close Settings", card, "返回", 574, 20, 118, 34, CloseSettings);
+            RectTransform card = Box("Settings Card", settingsPanel, 0, 0, 1000, 660, Panel, true);
+            Center(card, 1000, 660);
+            PanelRule(card, 1000, 68);
+            Label("Settings Heading", card, "游戏设置", 28, 16, 720, 38, 28, Ink, FontStyles.Bold);
+            UiButton closeSettings = Button("Close Settings", card, "返回", 858, 20, 114, 34, CloseSettings);
             SetButtonArt(closeSettings, "ui_back", 20);
             settingsCloseButton = closeSettings.button;
-            Label("Master Volume Label", card, "主音量", 28, 96, 450, 30, 19, Ink);
-            volumeValue = Label("Master Volume Value", card, "", 580, 96, 112, 30, 18, Accent);
-            volumeSlider = PreferenceSlider("Master Volume", card, 28, 140, 664, 0f, 1f,
-                Mathf.Clamp01(PlayerPrefs.GetFloat(VolumePreference, .7f)), ApplyVolume);
-            Label("Effects Volume Label", card, "音效音量", 28, 202, 450, 30, 19, Ink);
-            effectsValue = Label("Effects Volume Value", card, "", 580, 202, 112, 30, 18, Accent);
-            effectsSlider = PreferenceSlider("Effects Volume", card, 28, 246, 664, 0f, 1f,
-                Mathf.Clamp01(PlayerPrefs.GetFloat(EffectsPreference, .8f)), ApplyEffectsVolume);
-            Label("UI Scale Label", card, "界面缩放", 28, 308, 450, 30, 19, Ink);
-            scaleValue = Label("UI Scale Value", card, "", 580, 308, 112, 30, 18, Accent);
-            scaleSlider = PreferenceSlider("UI Scale", card, 28, 352, 664, .8f, 1f,
-                Mathf.Clamp(PlayerPrefs.GetFloat(ScalePreference, 1f), .8f, 1f), ApplyUiScale);
-            Label("UI Scale Hint", card, "80–100% · 调整文字与按钮的大小", 28, 404, 664, 30, 15, Muted);
-            UiButton resetSettings = Button("Reset UI Settings", card, "恢复默认", 28, 466, 220, 44, () =>
-            { volumeSlider.value = .7f; effectsSlider.value = .8f; scaleSlider.value = 1f; });
-            SetButtonArt(resetSettings, "ui_refresh", 24);
-            Label("Settings Persistence", card, "设置自动保存在本机", 356, 470, 336, 32, 15, Muted);
-            ApplyVolume(volumeSlider.value);
-            ApplyEffectsVolume(effectsSlider.value);
-            ApplyUiScale(scaleSlider.value);
+            BuildSettingsPages(card);
             settingsPanel.gameObject.SetActive(false);
         }
 
@@ -525,6 +506,7 @@ namespace DeadCircuit
 
         void OpenSettings()
         {
+            SetSettingsPage(0);
             if (bridge.IsRunning) SetPanel(settingsPanel, true);
             else if (!settingsPanel.gameObject.activeSelf)
             {
@@ -539,6 +521,7 @@ namespace DeadCircuit
 
         void CloseSettings()
         {
+            RevertDisplayPreview();
             PlayerPrefs.Save();
             bool wasOpen = settingsPanel.gameObject.activeSelf;
             settingsPanel.gameObject.SetActive(false);

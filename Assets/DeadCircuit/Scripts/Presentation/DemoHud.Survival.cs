@@ -179,7 +179,8 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[0];
             var guide = FlowLabel("Survival Guide", content,
-                "空手或按住 Space 拾取地面材料；斧采树木与补给箱，得食材和种子。右键取水、收获成熟农田或分解尸体；按 V 进食。种植：翻土→播种→浇水→收获。",
+                "空手或按住 " + KeyHint(DemoBinding.Work) + " 拾取地面材料；斧采树木与补给箱，得食材和种子。右键取水、收获成熟农田或分解尸体；按 " +
+                KeyHint(DemoBinding.Eat) + " 进食。种植：翻土→播种→浇水→收获。",
                 680, 106, 14, Muted);
             guide.overflowMode = TextOverflowModes.Overflow;
             survivalWaterText = FlowLabel("Survival Water Inventory", content, "", 680, 52, 15, Accent);
@@ -274,7 +275,8 @@ namespace DeadCircuit
         {
             RectTransform content = survivalPages[3];
             FlowLabel("Survival Wildlife Guide", content,
-                "右键尸体或按住 Space 分解，需 2.4 格内且视线畅通。左键点动物追击，按住 F 自动战斗，Ctrl+F 允许中立动物。图鉴含全部物种。", 1048, 54, 14, Muted);
+                "右键尸体或按住 " + KeyHint(DemoBinding.Work) + " 分解，需 2.4 格内且视线畅通。左键点动物追击，按住 " +
+                KeyHint(DemoBinding.Fight) + " 自动战斗，" + KeyHint(DemoBinding.Force) + " + 战斗允许中立动物。图鉴含全部物种。", 1048, 54, 14, Muted);
             survivalCorpseHeading = FlowLabel("Survival Corpse Heading", content, "", 1048, 32, 16, Accent);
             for (int i = 0; i < SurvivalCatalog.MaxCreatures; i++)
             {
@@ -362,7 +364,8 @@ namespace DeadCircuit
             Set(survivalFeedback, CurrentLocalFeedback() && localFeedbackError ? Clean(localFeedback) :
                 newHostNotice ? Clean(player.notice) : CurrentLocalFeedback() ? Clean(localFeedback) : player.noticeUntil > world.elapsed ? Clean(player.notice) :
                 !enabled ? "此世界未启用生存需求，无法进行生存操作。请在启用生存需求的世界中使用。" :
-                player.interactCooldown > 0 || Time.unscaledTime < survivalSendAt ? "操作冷却中，请稍候…" : "世界仍在运行。可在此页连续操作，按 J / Esc 返回。");
+                player.interactCooldown > 0 || Time.unscaledTime < survivalSendAt ? "操作冷却中，请稍候…" :
+                "世界仍在运行。可在此页连续操作，按 " + KeyHint(DemoBinding.Survival) + " / " + KeyHint(DemoBinding.Back) + " 返回。");
         }
 
         void RefreshSurvivalTargets(WorldState world, PlayerState player)
@@ -497,7 +500,7 @@ namespace DeadCircuit
             else if (p.interactCooldown > 0 || Time.unscaledTime < survivalSendAt) reason = "操作冷却中，请稍候";
             if (reason.Length > 0) return false;
             if ((action == "cook" || action == "boilwater") && !PrimitiveCatalog.IsCookingUnlocked(w))
-            { reason = "需先研究" + PrimitiveCatalog.Definition(7).name + "，按 T 查看"; return false; }
+            { reason = "需先研究" + PrimitiveCatalog.Definition(7).name + "，按 " + DemoKeyBindings.Hint(DemoBinding.Technology) + " 查看"; return false; }
             bool cellAction = action == "collectwater" || action == "boilwater" || action == "cook" ||
                 action == "till" || action == "sow" || action == "watercrop" || action == "harvest";
             if (cellAction && !SurvivalInReach(w, p, x, y)) { reason = "请靠近至 2.4 格内，并保持视线畅通"; return false; }
@@ -519,13 +522,13 @@ namespace DeadCircuit
                     else if (!InventoryWeight.CanFit(p, InventoryWeight.WaterGrams)) reason = "背包剩余负重不足";
                     break;
                 case "boilwater":
-                    if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需先研究" + PrimitiveCatalog.Definition(7).name + "，按 T 查看";
+                    if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需先研究" + PrimitiveCatalog.Definition(7).name + "，按 " + DemoKeyBindings.Hint(DemoBinding.Technology) + " 查看";
                     else if (!SurvivalStationAt(w, p, x, y, BuildKind.StoneFurnace)) reason = "需已解锁的石炉，距离 2.4 格内且视线畅通";
                     else if (arg != 0 || n.waterRaw < 1 || Count(p.items, (int)ItemKind.Fuel) < 1) reason = "需要原水×1、燃料×1";
                     break;
                 case "cook":
                     var recipe = SurvivalCatalog.Recipe(arg);
-                    if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需先研究" + PrimitiveCatalog.Definition(7).name + "，按 T 查看";
+                    if (!PrimitiveCatalog.IsCookingUnlocked(w)) reason = "需先研究" + PrimitiveCatalog.Definition(7).name + "，按 " + DemoKeyBindings.Hint(DemoBinding.Technology) + " 查看";
                     else if (recipe == null) reason = "配方不存在";
                     else if (!SurvivalStationAt(w, p, x, y, recipe.station)) reason = "需已解锁的工作站，距离 2.4 格内且视线畅通";
                     else if (n.waterClean < recipe.cleanWater || Count(p.items, (int)ItemKind.Fuel) < recipe.fuel) reason = "净水或燃料不足";

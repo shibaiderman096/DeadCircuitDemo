@@ -1382,7 +1382,7 @@ namespace DeadCircuit
             var mouse = Mouse.current;
             Vector2 pointerPosition = mouse?.position.ReadValue() ?? Vector2.zero;
             var keyboard = Keyboard.current;
-            bool aiming = keyboard != null && (keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed);
+            bool aiming = DemoKeyBindings.IsPressed(keyboard, DemoBinding.Aim);
             if (droppedBackpacks.Count > 0 && local != null && local.hp > 0 && !bridge.BuildSelection.HasValue &&
                 !aiming && mouse != null && WorldCamera.pixelRect.Contains(pointerPosition) && !bridge.WorldInputBlocked)
             {

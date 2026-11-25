@@ -99,7 +99,9 @@ namespace DeadCircuit
             bool hasAxe = BestPrimitiveTool(player, GearKind.StoneAxe) != null;
             bool hasPickaxe = BestPrimitiveTool(player, GearKind.StonePickaxe) != null;
             if (hasAxe && hasPickaxe) return null;
-            return "左键/E 或 Space 拾取树枝、石头、干草\nT → 原始 → 工艺与建造，制作并装备" +
+            return "左键 / " + DemoKeyBindings.Hint(DemoBinding.Interact) + " 或 " +
+                DemoKeyBindings.Hint(DemoBinding.Work) + " 拾取树枝、石头、干草\n" +
+                DemoKeyBindings.Hint(DemoBinding.Technology) + " → 原始 → 工艺与建造，制作并装备" +
                 (!hasAxe && !hasPickaxe ? "石斧、石镐" : !hasAxe ? "石斧" : "石镐");
         }
 
@@ -113,10 +115,11 @@ namespace DeadCircuit
                 if (definition.id == PrimitiveTech.Cooking) continue; // Optional survival branch, not a Water gate.
                 if (PrimitiveCatalog.HasResearch(world, id)) continue;
                 string requirement = PrimitiveCatalog.ResearchRequirement(world, player, id);
-                return "按 T → 原始工艺：" + definition.name + (string.IsNullOrEmpty(requirement) ? " · 条件已满足，点击研究" : " · " + requirement);
+                return "按 " + DemoKeyBindings.Hint(DemoBinding.Technology) + " → 原始工艺：" + definition.name +
+                    (string.IsNullOrEmpty(requirement) ? " · 条件已满足，点击研究" : " · " + requirement);
             }
             string water = PrimitiveCatalog.WaterRequirement(world);
-            return string.IsNullOrEmpty(water) ? null : "按 T 查看水力时代条件：" + water;
+            return string.IsNullOrEmpty(water) ? null : "按 " + DemoKeyBindings.Hint(DemoBinding.Technology) + " 查看水力时代条件：" + water;
         }
     }
 }

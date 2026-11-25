@@ -83,8 +83,7 @@ namespace DeadCircuit
             qaRun = Array.IndexOf(Environment.GetCommandLineArgs(), "--demo-qa") >= 0;
             ConfigureQaSavePath();
             Application.runInBackground = true;
-            Application.targetFrameRate = 60;
-            QualitySettings.vSyncCount = 0;
+            DemoGraphicsSettings.ApplySaved();
             profileId = qaRun ? "00000000000000000000000000000001" : PlayerPrefs.GetString("DeadCircuit.Profile", "");
             if (!qaRun && !Guid.TryParse(profileId, out _))
             {
@@ -262,9 +261,12 @@ namespace DeadCircuit
             RefreshModularDrawing();
             bool blocked = keyboard == null || !focused || (hud != null && hud.CapturesKeyboard);
             // The bridge runs before the HUD; consume panel-opening keys in this frame too.
-            if (!blocked && (keyboard.bKey.wasPressedThisFrame || keyboard.tKey.wasPressedThisFrame ||
-                keyboard.tabKey.wasPressedThisFrame || keyboard.hKey.wasPressedThisFrame ||
-                keyboard.jKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame)) blocked = true;
+            if (!blocked && (DemoKeyBindings.WasPressed(keyboard, DemoBinding.Inventory) ||
+                DemoKeyBindings.WasPressed(keyboard, DemoBinding.Technology) ||
+                DemoKeyBindings.WasPressed(keyboard, DemoBinding.Growth) ||
+                DemoKeyBindings.WasPressed(keyboard, DemoBinding.Help) ||
+                DemoKeyBindings.WasPressed(keyboard, DemoBinding.Survival) ||
+                DemoKeyBindings.WasPressed(keyboard, DemoBinding.Back))) blocked = true;
             if (blocked)
             {
                 if (!controlBlocked) Send(new PlayerCommand { action = "cancel" });
@@ -273,41 +275,46 @@ namespace DeadCircuit
                 return;
             }
             controlBlocked = false;
-            if (keyboard.f5Key.wasPressedThisFrame) Save();
+            if (DemoKeyBindings.WasPressed(keyboard, DemoBinding.Save)) Save();
             bool pointerBlocked = mouse == null || (hud != null && hud.CapturesInput);
             Vector2 move;
             var aim = new Vector2(player.aimX, player.aimY);
-            bool precisionAim = !BuildSelection.HasValue && (keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed);
-            bool force = keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed;
-            move = new Vector2((keyboard.dKey.isPressed ? 1 : 0) - (keyboard.aKey.isPressed ? 1 : 0),
-                (keyboard.wKey.isPressed ? 1 : 0) - (keyboard.sKey.isPressed ? 1 : 0)).normalized;
+            bool precisionAim = !BuildSelection.HasValue && DemoKeyBindings.IsPressed(keyboard, DemoBinding.Aim);
+            bool force = DemoKeyBindings.IsPressed(keyboard, DemoBinding.Force);
+            move = new Vector2((DemoKeyBindings.IsPressed(keyboard, DemoBinding.MoveRight) ? 1 : 0) -
+                (DemoKeyBindings.IsPressed(keyboard, DemoBinding.MoveLeft) ? 1 : 0),
+                (DemoKeyBindings.IsPressed(keyboard, DemoBinding.MoveUp) ? 1 : 0) -
+                (DemoKeyBindings.IsPressed(keyboard, DemoBinding.MoveDown) ? 1 : 0)).normalized;
             if (precisionAim && !pointerBlocked) aim = (MouseWorld - new Vector2(player.x, player.y)).normalized;
             else if (move != Vector2.zero) aim = move;
             string control = !BuildSelection.HasValue && move == Vector2.zero && !precisionAim ?
-                (keyboard.fKey.isPressed ? "fight" : keyboard.spaceKey.isPressed ? "work" : "") : "";
+                (DemoKeyBindings.IsPressed(keyboard, DemoBinding.Fight) ? "fight" :
+                DemoKeyBindings.IsPressed(keyboard, DemoBinding.Work) ? "work" : "") : "";
             if ((heldControl.Length > 0 && control != heldControl) || (precisionAim && !wasPrecisionAiming))
                 CancelPlayerControl();
             heldControl = control;
             wasPrecisionAiming = precisionAim;
-            var keys = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key, keyboard.digit7Key, keyboard.digit8Key, keyboard.digit9Key, keyboard.digit0Key };
+            var bindings = new[] { DemoBinding.Hotbar1, DemoBinding.Hotbar2, DemoBinding.Hotbar3,
+                DemoBinding.Hotbar4, DemoBinding.Hotbar5, DemoBinding.Hotbar6, DemoBinding.Hotbar7,
+                DemoBinding.Hotbar8, DemoBinding.Hotbar9, DemoBinding.Hotbar0 };
             var hotbar = TechCatalog.Hotbar(World.era);
-            for (int i = 0; i < keys.Length && i < hotbar.Length; i++)
-                if (keys[i].wasPressedThisFrame && TechCatalog.IsUnlocked(World, hotbar[i]))
+            for (int i = 0; i < bindings.Length && i < hotbar.Length; i++)
+                if (DemoKeyBindings.WasPressed(keyboard, bindings[i]) && TechCatalog.IsUnlocked(World, hotbar[i]))
                 { CancelPlayerControl(); BuildSelection = hotbar[i]; }
-            if (keyboard.rKey.wasPressedThisFrame)
+            if (DemoKeyBindings.WasPressed(keyboard, DemoBinding.ReloadRotate))
             {
                 if (BuildSelection.HasValue) BuildRotation = (BuildRotation + 1) % 4;
                 else Action("reload");
             }
-            if (keyboard.qKey.wasPressedThisFrame && !BuildSelection.HasValue)
+            if (DemoKeyBindings.WasPressed(keyboard, DemoBinding.SwitchGear) && !BuildSelection.HasValue)
                 Action("switch", player.activeSlot == 0 ? 1 : 0);
-            if (keyboard.vKey.wasPressedThisFrame) Action("eat");
-            if (keyboard.cKey.wasPressedThisFrame) Action("craft", force ? 1 : 0);
+            if (DemoKeyBindings.WasPressed(keyboard, DemoBinding.Eat)) Action("eat");
+            if (DemoKeyBindings.WasPressed(keyboard, DemoBinding.Craft)) Action("craft", force ? 1 : 0);
             if (!pointerBlocked)
             {
-                if (keyboard.eKey.wasPressedThisFrame && !BuildSelection.HasValue) Action("primary");
-                if (keyboard.xKey.wasPressedThisFrame) Action("dismantle");
-                if (keyboard.gKey.wasPressedThisFrame) Action("repair");
+                if (DemoKeyBindings.WasPressed(keyboard, DemoBinding.Interact) && !BuildSelection.HasValue) Action("primary");
+                if (DemoKeyBindings.WasPressed(keyboard, DemoBinding.Dismantle)) Action("dismantle");
+                if (DemoKeyBindings.WasPressed(keyboard, DemoBinding.Repair)) Action("repair");
                 if (mouse.rightButton.wasPressedThisFrame)
                 {
                     if (BuildSelection.HasValue)
@@ -329,7 +336,7 @@ namespace DeadCircuit
             if (inputClock >= StepSeconds)
             {
                 Send(new PlayerCommand { moveX = move.x, moveY = move.y, aimX = aim.x, aimY = aim.y,
-                    sprint = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed, aiming = precisionAim });
+                    sprint = DemoKeyBindings.IsPressed(keyboard, DemoBinding.Sprint), aiming = precisionAim });
                 if (control.Length > 0) Send(new PlayerCommand { action = control, arg = force ? 1 : 0 });
                 else if (precisionAim && !pointerBlocked && mouse.leftButton.isPressed) Action("attack");
                 inputClock = 0;
@@ -352,8 +359,7 @@ namespace DeadCircuit
             }
             Send(new PlayerCommand { action = action, x = Mathf.FloorToInt(point.x + .5f), y = Mathf.FloorToInt(point.y + .5f), arg = arg,
                 rotation = BuildRotation, aimX = point.x - (LocalPlayer?.x ?? 0), aimY = point.y - (LocalPlayer?.y ?? 0),
-                aiming = !BuildSelection.HasValue && Keyboard.current != null &&
-                    (Keyboard.current.leftAltKey.isPressed || Keyboard.current.rightAltKey.isPressed) });
+                aiming = !BuildSelection.HasValue && DemoKeyBindings.IsPressed(Keyboard.current, DemoBinding.Aim) });
         }
 
         public void Save() => SaveInternal(true);

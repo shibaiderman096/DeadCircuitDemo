@@ -1297,7 +1297,8 @@ namespace DeadCircuit
                 case GearKind.StonePickaxe: case GearKind.SteelPickaxe: return "工具 · 采矿石、石材与黏土，也可近战。";
                 case GearKind.Wrench: return "工具 · 采废料堆，也可维护设备与近战。";
                 case GearKind.Knife: usage = "近战武器 · 不耗弹药。"; break;
-                default: usage = "远程武器 · 装填后射击；Alt 精确瞄准，R 装填。"; break;
+                default: usage = "远程武器 · 装填后射击；" + DemoKeyBindings.Hint(DemoBinding.Aim) +
+                    " 精确瞄准，" + DemoKeyBindings.Hint(DemoBinding.ReloadRotate) + " 装填。"; break;
             }
             string description = EquipmentCatalog.Gear(kind).description;
             return description.Length == 0 ? usage : description + "\n" + usage;
@@ -1319,11 +1320,14 @@ namespace DeadCircuit
                 return "弹药用途：" + string.Join("、", compatible) + "。\n" + caliber +
                     "\n在装备详情中选择弹种并装填；切换已装弹种前先卸弹。";
             }
-            if (kind == ItemKind.Food) return "补充饱食度。点击下方「进食 V」，或关闭面板后按 V。";
+            if (kind == ItemKind.Food) return "补充饱食度。点击下方「进食 " + DemoKeyBindings.Hint(DemoBinding.Eat) +
+                "」，或关闭面板后按 " + DemoKeyBindings.Hint(DemoBinding.Eat) + "。";
             if (kind == ItemKind.Branch || kind == ItemKind.LooseStone || kind == ItemKind.DryGrass)
-                return "可空手从地面拾取。按 T → 原始 → 工艺与建造，可随身制作石斧和石镐。";
+                return "可空手从地面拾取。按 " + DemoKeyBindings.Hint(DemoBinding.Technology) +
+                    " → 原始 → 工艺与建造，可随身制作石斧和石镐。";
             if (kind == ItemKind.Fuel) return "供燃料发电、锅炉与石炉使用；也用于炼钢和化工。";
-            if (kind == ItemKind.Stone) return "采集石材堆获得。用于工具、窑炉与建造工艺；按 T 查看研究材料。";
+            if (kind == ItemKind.Stone) return "采集石材堆获得。用于工具、窑炉与建造工艺；按 " +
+                DemoKeyBindings.Hint(DemoBinding.Technology) + " 查看研究材料。";
             if (kind == ItemKind.Clay) return "采集黏土矿床获得。陶窑消耗黏土×4、木炭×1，产出陶砖×4。";
             if (kind == ItemKind.Charcoal) return "炭窑消耗木材×4，产出木炭×2。用于陶窑烧制陶砖与原始冶金。";
             if (kind == ItemKind.Brick) return "由陶窑消耗黏土和木炭烧制，用于建筑与工艺研究。研究要求的生产数量按累计产出计算。";
@@ -1335,7 +1339,8 @@ namespace DeadCircuit
             for (int i = 0; i < EquipmentCatalog.GearNames.Length; i++) if (Count(EquipmentCatalog.Gear((GearKind)i).cost, item) > 0) { equipment = true; break; }
             if (!equipment) for (int i = 0; i < EquipmentCatalog.PartNames.Length; i++) if (Count(EquipmentCatalog.Part((PartKind)i).cost, item) > 0) { equipment = true; break; }
             return (construction ? "建造材料。" : "工业材料。") + (equipment ? "可制作装备 / 配件。" : "") +
-                (uses.Count > 0 ? "\n配方：" + string.Join("、", uses) : "") + "\n在左侧快捷制作查看所需科技与材料；按 T 查看科技和建造。";
+                (uses.Count > 0 ? "\n配方：" + string.Join("、", uses) : "") +
+                "\n在左侧快捷制作查看所需科技与材料；按 " + DemoKeyBindings.Hint(DemoBinding.Technology) + " 查看科技和建造。";
         }
     }
 }

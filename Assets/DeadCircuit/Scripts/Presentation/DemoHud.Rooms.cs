@@ -52,8 +52,15 @@ namespace DeadCircuit
         {
             if (node.kind == NodeKind.Oil) return "紧邻油源建造抽油机并供电，自动抽取原油。油藏有限，耗尽后需另寻油源。";
             if (node.kind == NodeKind.Wall) return "障碍墙无法采集，请绕行。";
-            if (DemoCatalog.IsGroundPickup(node.kind)) return "左键/E 走近拾取，或按住 Space 就近拾取。背包需容纳全部数量。";
-            string hint = "装备匹配工具后，左键/E 走近采尽，或按住 Space 就近采集。节点耐久归零时一次结算，背包需容纳全部产出。WASD 可打断。";
+            string interact = DemoKeyBindings.Display(DemoKeyBindings.Get(DemoBinding.Interact));
+            string work = DemoKeyBindings.Display(DemoKeyBindings.Get(DemoBinding.Work));
+            string move = string.Join(" / ", DemoKeyBindings.Display(DemoKeyBindings.Get(DemoBinding.MoveUp)),
+                DemoKeyBindings.Display(DemoKeyBindings.Get(DemoBinding.MoveLeft)),
+                DemoKeyBindings.Display(DemoKeyBindings.Get(DemoBinding.MoveDown)),
+                DemoKeyBindings.Display(DemoKeyBindings.Get(DemoBinding.MoveRight)));
+            if (DemoCatalog.IsGroundPickup(node.kind)) return "左键 / " + interact + " 走近拾取，或按住 " + work + " 就近拾取。背包需容纳全部数量。";
+            string hint = "装备匹配工具后，左键 / " + interact + " 走近采尽，或按住 " + work +
+                " 就近采集。节点耐久归零时一次结算，背包需容纳全部产出。" + move + " 可打断。";
             switch (node.kind)
             {
                 case NodeKind.Coal: hint += "\n煤层多见于针叶林与冻原，可前往野外勘探。"; break;
@@ -119,9 +126,11 @@ namespace DeadCircuit
         static string InspectedMachineDescription(BuildingState building)
         {
             if (building.kind == BuildKind.Boiler && !building.modularBoiler)
-                return "自带燃烧室，靠近水域即可取水并产生蒸汽动力。左键/E 点设备，走近后补充一次燃料。";
+                return "自带燃烧室，靠近水域即可取水并产生蒸汽动力。左键 / " +
+                    DemoKeyBindings.Hint(DemoBinding.Interact) + " 点设备，走近后补充一次燃料。";
             if (building.kind == BuildKind.Door)
-                return "左键/E 走近后开关门一次，或右键开关门；开启后可通行。开门不会移除屋顶，室内默认以剖面显示。";
+                return "左键 / " + DemoKeyBindings.Hint(DemoBinding.Interact) +
+                    " 走近后开关门一次，或右键开关门；开启后可通行。开门不会移除屋顶，室内默认以剖面显示。";
             if (building.kind == BuildKind.FilterSplitter)
                 return "需低压供电；选定物品送前方，其余送左侧。出口堵塞不改道；在途物品送达后才可更换。";
             if (building.kind == BuildKind.CircuitBreaker)
