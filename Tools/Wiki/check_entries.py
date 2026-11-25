@@ -67,7 +67,7 @@ class EntryChecks(unittest.TestCase):
 
     def test_backpack_specs_and_material_links(self):
         cases = (
-            (20, 'GrassBackpack', '草绳背包', '原始', None, ('50', '100', '0.9'), {0:3,65:1}),
+            (20, 'GrassBackpack', '草绳背包', '原始', None, ('50', '100', '0.9'), {65:3,63:2}),
             (21, 'ReinforcedBackpack', '加固背包', '水力', 'building-10', ('70', '120', '1.7'), {0:4,3:4,9:2}),
             (22, 'EngineerBackpack', '工程背包', 'LV', 'building-10', ('110', '160', '2.8'), {38:2,42:2,3:4}),
         )
@@ -161,13 +161,19 @@ class EntryChecks(unittest.TestCase):
         self.assertIn('href="#/recipe-220"',self.renderer.inline('大型铁矿破碎','recipes'))
         self.assertIn('href="#/building-64"',self.renderer.entity_article(self.catalog.entries['research-lowvoltage-5']))
 
-    def test_modular_art_stays_a_truthful_placeholder(self):
-        for index in (63,64,65):
+    def test_completed_machine_art_uses_dedicated_thumbnails(self):
+        for index in range(36,67):
             with self.subTest(building=index):
                 rendered = self.renderer.art.img(f'build_{index}',self.renderer.buildings[index])
-                self.assertTrue(rendered.startswith('<span '))
-                self.assertNotIn('<img ',rendered)
-                self.assertIn('无整机缩略图',rendered)
+                self.assertTrue(rendered.startswith('<img '))
+                self.assertNotIn('missing-art',rendered)
+                self.assertEqual(self.renderer.art.resolve(f'build_{index}'), f'machine_{index}')
+
+    def test_items_and_new_gear_resolve_their_own_art(self):
+        for key in [f'item_{i}' for i in range(25,66)] + [f'gear_{i}' for i in range(19,23)]:
+            with self.subTest(key=key):
+                self.assertEqual(self.renderer.art.resolve(key), key)
+                self.assertTrue(self.renderer.art.uri(key).startswith('data:image/webp;base64,'))
 
     def test_known_relationships(self):
         for entry in self.catalog.entries.values():

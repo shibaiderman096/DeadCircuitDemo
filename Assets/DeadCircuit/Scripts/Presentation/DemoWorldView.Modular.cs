@@ -432,30 +432,32 @@ namespace DeadCircuit
 
         void ConfigureModularMechanism(ModularCellVisual cell, BuildKind kind, MachineModuleRole role, int rotation, float alpha, int order)
         {
-            BuildKind source;
+            string artKey;
             switch (role)
             {
-                case MachineModuleRole.Controller: source = BuildKind.CircuitAssembler; break;
-                case MachineModuleRole.Energy: source = kind == BuildKind.LargeSteamFurnace ? BuildKind.SteamPipe : BuildKind.CircuitBreaker; break;
-                case MachineModuleRole.Maintenance: source = BuildKind.MachineTool; break;
-                case MachineModuleRole.Input: case MachineModuleRole.Output: source = BuildKind.Belt; break;
-                case MachineModuleRole.Process: source = kind == BuildKind.LargeSteamFurnace ? BuildKind.SteamFurnace : kind == BuildKind.LargeAssemblyPlant ? BuildKind.PrecisionAssembler : BuildKind.ElectricCrusher; break;
-                case MachineModuleRole.Exhaust: source = BuildKind.Chimney; break;
-                default: source = BuildKind.Wall; break;
+                case MachineModuleRole.Controller: artKey = "module_controller"; break;
+                case MachineModuleRole.Energy:
+                    artKey = kind == BuildKind.LargeSteamFurnace ? "module_energy_steam" : "module_energy_electric";
+                    break;
+                case MachineModuleRole.Maintenance: artKey = "module_maintenance"; break;
+                case MachineModuleRole.Input: artKey = "module_input"; break;
+                case MachineModuleRole.Output: artKey = "module_output"; break;
+                case MachineModuleRole.Process:
+                    artKey = kind == BuildKind.LargeSteamFurnace ? "module_process_furnace" :
+                        kind == BuildKind.LargeAssemblyPlant ? "module_process_assembly" : "module_process_ore";
+                    break;
+                case MachineModuleRole.Exhaust: artKey = "module_exhaust"; break;
+                default: artKey = "module_casing"; break;
             }
-            cell.mechanism.sprite = Machine(source, 0);
-            cell.mechanism.enabled = role != MachineModuleRole.Casing;
+            Sprite moduleArt = Art(artKey);
+            cell.mechanism.sprite = moduleArt;
+            cell.mechanism.enabled = moduleArt != null;
             cell.mechanism.sortingOrder = order;
             cell.mechanism.transform.localScale = Vector3.one * .78f;
             cell.mechanism.transform.localRotation = Quaternion.Euler(0, 0, (rotation & 3) * 90);
             cell.mechanism.color = new Color(1,1,1,alpha);
-            bool port = role == MachineModuleRole.Input || role == MachineModuleRole.Output;
-            cell.inset.enabled = port || role == MachineModuleRole.Casing;
-            cell.inset.sprite = port ? Machine(BuildKind.Chest, 0) : Art("item_" + (int)ItemKind.SteelPlate);
-            cell.inset.sortingOrder = order + 1;
-            cell.inset.transform.localScale = Vector3.one * (port ? .38f : .30f);
-            cell.inset.transform.localPosition = new Vector3(0, .08f, 0);
-            cell.inset.color = new Color(1,1,1,alpha);
+            // Dedicated role art already includes its inlet or casing detail.
+            cell.inset.enabled = false;
         }
 
         static void SetModularLabel(TextMeshPro label, string value, Color color, int order)

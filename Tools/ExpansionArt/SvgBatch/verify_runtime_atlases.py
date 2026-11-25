@@ -19,7 +19,15 @@ from svg_machines_survivor import all_extended
 ROOT = Path(__file__).resolve().parent
 PROJECT = ROOT.parents[2]
 RUNTIME = PROJECT / "Assets/DeadCircuit/Resources/Art/Expansion"
+COMPLETION_CATALOG = PROJECT / "Tools/ArtCompletion/completion.catalog.json"
 NS = "{http://www.w3.org/2000/svg}"
+COMPLETION_MODULES = (
+    "module_controller", "module_casing", "module_input", "module_output",
+    "module_maintenance", "module_exhaust", "module_energy_steam",
+    "module_energy_electric", "module_process_furnace",
+    "module_process_assembly", "module_process_ore",
+)
+AVATAR_ARMOR_19_PARTS = ("head", "torso", "arm", "leg", "shoe")
 RETIRED_WORLD = ({f"site_{i}" for i in range(12)} |
                  {f"deco_{i}" for i in (0, 1, 2, 3, 4, 5, 7)} |
                  {"fx_" + name for name in ("lightning", "ember", "fire_large",
@@ -54,11 +62,24 @@ def registration(entry):
     return (entry["pixelsPerUnit"], entry.get("pivotX", 0), entry.get("pivotY", 0))
 
 
-def runtime_coverage(labels):
+def catalog_labels(path):
+    data = json.loads(path.read_text(encoding="utf-8-sig"))
+    rows = data if isinstance(data, list) else data.get("sprites")
+    assert isinstance(rows, list), f"{path} needs a sprite catalog list"
+    result = {}
+    for row in rows:
+        name, label = row.get("name"), row.get("label")
+        assert isinstance(name, str) and name and isinstance(label, str) and label, path
+        assert name not in result, ("duplicate catalog label", path, name)
+        result[name] = label
+    return result
+
+
+def runtime_coverage(source_labels):
     core = (PROJECT / "Assets/DeadCircuit/Scripts/Core/DemoState.cs").read_text(encoding="utf-8-sig")
     survival = (PROJECT / "Assets/DeadCircuit/Scripts/Core/SurvivalState.cs").read_text(encoding="utf-8-sig")
     art = (PROJECT / "Assets/DeadCircuit/Scripts/Presentation/DemoArt.cs").read_text(encoding="utf-8-sig")
-    keys = set()
+    keys, atlas_stats, completion_keys = set(), [], set()
     for path in sorted(RUNTIME.glob("*.json")):
         layout = json.loads(path.read_text(encoding="utf-8-sig"))
         if "sprites" not in layout:
@@ -69,79 +90,97 @@ def runtime_coverage(labels):
                 key = entry["name"]
                 assert key not in keys, "duplicate runtime atlas key: " + key
                 keys.add(key)
+                if path.stem == "completion":
+                    completion_keys.add(key)
                 x, y, w, h = (entry[f] for f in ("x", "y", "w", "h"))
                 assert 0 <= x < x + w <= png.width and 0 <= y < y + h <= png.height, key
+        atlas_stats.append({"atlas": path.stem, "sprites": len(layout["sprites"])})
     assert not (RETIRED_WORLD | RETIRED_ICONS) & keys
+    runtime_labels = dict(source_labels)
+    if completion_keys:
+        assert COMPLETION_CATALOG.exists(), COMPLETION_CATALOG
+        supplemental = catalog_labels(COMPLETION_CATALOG)
+        assert set(supplemental) == completion_keys, "completion catalog/runtime key drift"
+        assert not set(supplemental) & set(source_labels), "completion catalog duplicates source labels"
+        runtime_labels.update(supplemental)
     fallbacks = {}
     for match in re.finditer(r'((?:case\s+"[^"]+":\s*)+)fallback\s*=\s*"([^"]+)"', art):
         for key in re.findall(r'case\s+"([^"]+)"', match[1]):
             fallbacks[key] = match[2]
     aliases = dict(re.findall(r'if\s*\(key\s*==\s*"([^"]+)"\)\s*key\s*=\s*"([^"]+)"', art))
 
-    def resolve(key):
-        key = aliases.get(key, key)
-        if key in keys:
-            return key
-        target = fallbacks.get(key)
-        return target if target in keys else None
-
-    contracts = {}
-    for prefix, enum, text, direct_count in (
-            ("food", "FoodKind", survival, 31), ("gear", "GearKind", core, 19),
-            ("part", "PartKind", core, 7), ("item", "ItemKind", core, 25),
-            ("node", "NodeKind", core, 8)):
-        entries = enum_names(text, enum)
-        direct, borrowed, unresolved = [], [], []
-        for i, name in enumerate(entries):
-            key = f"{prefix}_{i}"
-            if key in labels:
-                assert labels[key].split()[0] == name, (enum, i, name)
-                direct.append(key)
-            elif resolve(key):
-                borrowed.append({"key": key, "enum": name, "uses": resolve(key)})
+    def direct_contract(prefix, enum_name, text, expected_total, label_mode):
+        entries = enum_names(text, enum_name)
+        expected = [f"{prefix}_{i}" for i in range(len(entries))]
+        missing = [key for key in expected if key not in keys]
+        assert len(entries) == expected_total, (enum_name, len(entries), expected_total)
+        assert not missing, (enum_name, "missing direct runtime key", missing)
+        for index, name in enumerate(entries):
+            key = expected[index]
+            if key not in runtime_labels and enum_name == "BuildKind":
+                # machine_31..35 come from modules.json, which has no world/icons/completion label.
+                continue
+            assert key in runtime_labels, (enum_name, "missing catalog label", key)
+            label = runtime_labels[key]
+            if label_mode == "suffix":
+                assert label.split(" / ")[-1] == name, (enum_name, index, name, label)
             else:
-                unresolved.append(key)
-        assert len(direct) == direct_count, (enum, direct)
-        if prefix == "node":
-            assert unresolved == ["node_15", "node_16", "node_17"]
-            view = (PROJECT / "Assets/DeadCircuit/Scripts/Presentation/DemoWorldView.cs").read_text(encoding="utf-8-sig")
-            assert "DrawGroundPickup(v, state.kind, state.id)" in view
-            pickup_rule = re.search(r"bool IsGroundPickup\(NodeKind kind\)\s*=>\s*([^;]+)", core).group(1)
-            assert re.findall(r"NodeKind\.(\w+)", pickup_rule) == entries[15:]
-            assert all(resolve(key) for key in ("item_63", "item_64", "item_65"))
-            procedural = unresolved
-            unresolved = []
-        else:
-            procedural = []
-        assert not unresolved, (enum, "unresolved icon", unresolved)
-        contracts[enum] = {"total": len(entries), "directFrames": len(direct),
-                           "fallbackOrAlias": borrowed, "groundPickupPresentation": procedural,
-                           "unresolved": unresolved}
-    assert len(contracts["ItemKind"]["fallbackOrAlias"]) == 41
-    assert aliases.get("gear_19") == "gear_17"
-    assert resolve("item_63") == "deco_6"
-    assert [row["key"] for row in contracts["NodeKind"]["fallbackOrAlias"]] == [f"node_{i}" for i in range(8, 15)]
-    for i, name in enumerate(enum_names(core, "BuildKind")[:31]):
-        assert labels[f"machine_{i}"].split(" / ")[-1] == name
-    buildings = enum_names(core, "BuildKind")
-    direct = [f"machine_{i}" for i in range(len(buildings)) if f"machine_{i}" in keys]
-    borrowed = [{"key": f"machine_{i}", "uses": resolve(f"machine_{i}")}
-                for i in range(len(buildings)) if f"machine_{i}" not in keys and resolve(f"machine_{i}")]
-    assert direct == [f"machine_{i}" for i in range(36)]
-    assert [row["key"] for row in borrowed] == [f"machine_{i}" for i in range(36, 61)]
-    missing = [f"machine_{i}" for i in range(len(buildings)) if resolve(f"machine_{i}") is None]
-    assert missing == [f"machine_{i}" for i in range(61, 66)]
-    modular = (PROJECT / "Assets/DeadCircuit/Scripts/Core/ModularMachineCatalog.cs").read_text(encoding="utf-8-sig")
-    assert all("BuildKind." + name in modular for name in buildings[63:66])
-    contracts["BuildKind"] = {"total": len(buildings), "directFrames": len(direct),
-                             "fallback": borrowed, "knownMissingStandalone": missing[:2],
-                             "compositeMachines": missing[2:]}
+                assert label.split()[0] == name, (enum_name, index, name, label)
+        return {"total": len(entries), "directFrames": len(expected), "missing": missing,
+                "labelMode": label_mode}
+
+    contracts = {
+        "FoodKind": direct_contract("food", "FoodKind", survival, 31, "prefix"),
+        "GearKind": direct_contract("gear", "GearKind", core, 23, "prefix"),
+        "PartKind": direct_contract("part", "PartKind", core, 7, "prefix"),
+        "ItemKind": direct_contract("item", "ItemKind", core, 66, "prefix"),
+        "NodeKind": direct_contract("node", "NodeKind", core, 18, "prefix"),
+        "BuildKind": direct_contract("machine", "BuildKind", core, 67, "suffix"),
+    }
+    expected_completion = (
+        {f"item_{i}" for i in range(25, 66)} |
+        {f"gear_{i}" for i in range(19, 23)} |
+        {f"machine_{i}" for i in range(36, 67)} |
+        {f"node_{i}" for i in range(8, 18)} |
+        set(COMPLETION_MODULES)
+        | {f"avatar_armor_19_{part}_{frame}" for part in AVATAR_ARMOR_19_PARTS
+           for frame in range(4)}
+    )
+    assert completion_keys == expected_completion, (
+        "completion keys differ from the 117-frame contract",
+        sorted(expected_completion - completion_keys),
+        sorted(completion_keys - expected_completion),
+    )
+    module_missing = [key for key in COMPLETION_MODULES if key not in keys]
+    assert not module_missing, ("module component art", module_missing)
+    contracts["ModuleComponent"] = {
+        "total": len(COMPLETION_MODULES), "directFrames": len(COMPLETION_MODULES),
+        "missing": module_missing,
+    }
+    avatar_armor_19 = [
+        f"avatar_armor_19_{part}_{frame}"
+        for part in AVATAR_ARMOR_19_PARTS for frame in range(4)
+    ]
+    avatar_missing = [key for key in avatar_armor_19 if key not in keys]
+    assert not avatar_missing, ("radiation suit wearable art", avatar_missing)
+    contracts["AvatarArmor19"] = {
+        "total": len(avatar_armor_19), "directFrames": len(avatar_armor_19),
+        "missing": avatar_missing,
+    }
     for prefix, enum in (("creature", "CreatureKind"), ("crop", "CropKind")):
         entries = enum_names(survival, enum)
         for i, name in enumerate(entries):
             for key in ([f"crop_{i}_0", f"crop_{i}_1"] if prefix == "crop" else [f"creature_{i}"]):
-                assert labels[key].split()[0] == name
+                assert key in keys, (enum, "missing direct runtime key", key)
+                assert runtime_labels[key].split()[0] == name, (enum, i, name, runtime_labels[key])
         contracts[enum] = {"total": len(entries), "directFrames": len(entries) * (2 if prefix == "crop" else 1)}
+    contracts["_atlasStats"] = atlas_stats
+    contracts["_fallbackPolicy"] = {
+        "mappingsRetained": len(fallbacks),
+        "aliasesRetained": len(aliases),
+        "fallbacksUsedAsDirect": [],
+        "countedAsDirectCoverage": False,
+    }
     return contracts
 
 
@@ -230,7 +269,12 @@ def verify(baseline_ref=None):
     result = {"status": "pass", "sprites": len(names), "uniqueFrames": len(hashes),
               "atlases": atlas_results, "runtimeCoverage": runtime_coverage(labels),
               "authoringEquality": True, "sourcePixelEquality": True, "transparentGutters": True,
-              "coverageNote": "Integrity passes with reported fallbacks and known missing art; this does not claim every enum has a dedicated image."}
+              "coverageNote": "Original world/icons remain 206 pixel-identical authored frames. "
+                              "Runtime completion supplies direct art for ItemKind 66, GearKind 23, "
+                              "BuildKind 67, NodeKind 18, and 11 named module components; retained "
+                              "fallbacks are backup-only and are never counted as direct coverage. "
+                              "The completion atlas also contains all 20 wearable frames for the "
+                              "radiation suit."}
     if baseline_ref:
         result["baseline"] = compare_baseline(baseline_ref)
     return result

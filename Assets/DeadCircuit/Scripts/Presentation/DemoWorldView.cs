@@ -119,7 +119,7 @@ namespace DeadCircuit
         GameObject ownedAudioListener;
         RawImage minimapImage;
         Image hurtOverlay;
-        Texture2D spriteTexture, terrainTexture, mapTexture, powerTexture, industryTexture;
+        Texture2D spriteTexture, terrainTexture, mapTexture, powerTexture;
         Color32[] mapPixels;
         Material spriteMaterial, terrainMaterial, effectMaterial;
         Volume volume;
@@ -194,12 +194,11 @@ namespace DeadCircuit
                 sprite.name = e.name;
                 sprites.Add(e.name, sprite);
             }
-            for (int i = 0; i < itemSprites.Length; i++) itemSprites[i] = Art("item_" + i);
+            LoadItemArt();
             backpackFallback = Art("ui_inventory");
             for (int i = 0; i < backpackSprites.Length; i++)
                 backpackSprites[i] = DemoArt.GetIcon("gear_" + ((int)GearKind.GrassBackpack + i)) ?? backpackFallback;
             CreatePowerArt();
-            CreateIndustryArt();
             var supplied = Resources.Load<Material>("Art/WorldMaterial");
             var pixelShader = Resources.Load<Shader>("Art/DeadCircuitPixel");
             if (supplied == null && pixelShader == null)
@@ -615,7 +614,8 @@ namespace DeadCircuit
                     v.body.transform.localPosition=new Vector3(0,state.kind==NodeKind.Tree ? .6f : .18f,0);
                 }
                 float canopy = state.kind == NodeKind.Tree && local != null && Mathf.Abs(local.x-state.x)<.8f && local.y > state.y && local.y < state.y+1.8f ? .52f : 1f;
-                Color mineral = state.kind == NodeKind.CopperOre ? new Color(1f,.62f,.35f) :
+                Color mineral = (int)state.kind >= (int)NodeKind.Stone ? Color.white :
+                    state.kind == NodeKind.CopperOre ? new Color(1f,.62f,.35f) :
                     state.kind == NodeKind.TinOre ? new Color(.68f,.84f,1f) :
                     state.kind == NodeKind.UraniumOre ? new Color(.72f,1f,.35f) :
                     state.kind == NodeKind.Stone ? new Color(.75f,.79f,.75f) :
@@ -628,7 +628,7 @@ namespace DeadCircuit
                 if (state.kind == NodeKind.Oil)
                 {
                     v.root.name = "油源 / Oil · 采油泵开采";
-                    v.body.transform.localScale = new Vector3(1.3f, .65f, 1f);
+                    v.body.transform.localScale = new Vector3(1.3f, 1.05f, 1f);
                     v.body.transform.localPosition = new Vector3(0, .05f, 0);
                 }
                 if (state.kind == NodeKind.Stone || state.kind == NodeKind.Clay)
@@ -650,9 +650,9 @@ namespace DeadCircuit
         {
             (string sprite, Vector3 scale, Color tint, float angle) = kind switch
             {
-                NodeKind.Branch => ("deco_6", new Vector3(.63f, .52f, 1), new Color(1f, .92f, .82f), 66f),
-                NodeKind.LooseStone => ("node_1", new Vector3(.42f, .33f, 1), new Color(.84f, .92f, 1f), 0f),
-                _ => ("crop_3_1", new Vector3(.59f, .48f, 1), new Color(1f, .96f, .76f), -28f)
+                NodeKind.Branch => ("node_15", new Vector3(.63f, .63f, 1), Color.white, 0f),
+                NodeKind.LooseStone => ("node_16", new Vector3(.42f, .42f, 1), Color.white, 0f),
+                _ => ("node_17", new Vector3(.59f, .59f, 1), Color.white, 0f)
             };
             visual.body.sprite = Art(sprite);
             visual.body.transform.localScale = scale;
@@ -735,10 +735,7 @@ namespace DeadCircuit
                 ConfigureMachine(v.body, state);
                 if (state.kind == BuildKind.Door)
                     v.body.sortingOrder = NaturalDoorOrder(state.x, state.y, v.body.sortingOrder);
-                Color primitiveTint = state.kind == BuildKind.ResearchBench ? new Color(.72f,.84f,.98f) :
-                    state.kind == BuildKind.CharcoalKiln ? new Color(.48f,.55f,.52f) :
-                    state.kind == BuildKind.ClayKiln ? new Color(1f,.57f,.36f) : Color.white;
-                v.body.color = DamageColor(v, primitiveTint);
+                v.body.color = DamageColor(v, Color.white);
                 if (state.kind == BuildKind.CharcoalKiln || state.kind == BuildKind.ClayKiln)
                     v.root.name = DemoCatalog.BuildName(state.kind);
                 if (state.kind == BuildKind.Wall || state.kind == BuildKind.Door)
@@ -1630,7 +1627,6 @@ namespace DeadCircuit
             if (expansionGroundMaterial!=null) Destroy(expansionGroundMaterial);
             if (mapTexture!=null) Destroy(mapTexture);
             if (powerTexture!=null) Destroy(powerTexture);
-            if (industryTexture!=null) Destroy(industryTexture);
             if (volumeProfile!=null)
             {
                 foreach (var component in volumeProfile.components) if (component!=null) Destroy(component);

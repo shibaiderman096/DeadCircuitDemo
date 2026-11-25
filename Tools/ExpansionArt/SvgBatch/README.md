@@ -39,13 +39,19 @@ SiteKind is not a 12-entry contract of this atlas.
 * FX: rain, snow, dust, fog, muzzle, spark, flame, ice, soil, poison, wave,
   muzzle_shotgun, muzzle_rifle, muzzle_sniper, explosion, smoke (all fx_ keys).
 
-Verification reports actual Core coverage rather than asserting that every
-enum value has a dedicated frame. In the current source: ItemKind has 66 values,
-25 direct frames and 41 fallback mappings; gear_19 aliases gear_17; node_8..14
-use fallback cells; node_15..17 use the special ground-pickup presentation.
-Across all runtime atlases machine_0..35 are direct, machine_36..60 use fallback,
-machine_61/62 still lack standalone frames, and machine_63..65 are composite
-machines. Integrity passing does **not** mean those art gaps have been filled.
+The original world/icons authoring set remains 206 frames. Since 2026-11-25,
+the independent Tools/ArtCompletion sources supply 117 dedicated replacement
+frames in completion.png/json: 41 items, 4 gear, 31 machine thumbnails,
+10 resource/pickup nodes, 11 module components and 20 wearable suit layers.
+Across all runtime atlases ItemKind 66, GearKind 23, PartKind 7, NodeKind 18
+and BuildKind 67 now have direct frames. RadiationSuit no longer aliases the
+tactical vest. Ground pickups and cargo use their authored item/node art.
+The three large machines still use composed modules in the world; their new
+whole-machine pictures are catalog/preview thumbnails, not fixed layouts.
+Verification preserves the strict original 206-frame source/pixel checks and
+also requires full direct runtime key coverage and the exact 117-key contract.
+Run python -B Tools/ArtCompletion/generate.py --check to additionally compare
+completion authoring code, SVG, PNG, palette, uniqueness and registration.
 Old gear_0..4 and part_0..3 still have normal world consumers. Old gear_5..18
 and part_4..6 still support fallback paths. UI skin now uses solid Images and
 programmatic borders; matching ui_ borders in DemoArt do not consume an icon.

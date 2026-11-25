@@ -17,11 +17,13 @@ namespace DeadCircuit
     /// <summary>One foot-registered, six-part rig shared by the world and dressing room.</summary>
     public static class SurvivorVisuals
     {
+        // Worst case: 12 body layers + 8 independent equipment layers + 5 suit
+        // extensions + weapon/attachments 3 = 28, leaving room below 40.
         public const int Capacity = 40;
         const float Pixel = 1f / 32f;
         static readonly Sprite[] heads = new Sprite[4], arms = new Sprite[4], legs = new Sprite[4], shoes = new Sprite[4];
         static readonly Sprite[,] faces = new Sprite[3,4], hair = new Sprite[5,4], tops = new Sprite[3,4], sleeves = new Sprite[3,4];
-        static readonly Sprite[,,] armor = new Sprite[19,5,4];
+        static readonly Sprite[,,] armor = new Sprite[20,5,4];
         static readonly Sprite[] held = new Sprite[10], parts = new Sprite[7];
         static bool loaded, available;
 
@@ -73,7 +75,7 @@ namespace DeadCircuit
                     available &= tops[s,f] != null && sleeves[s,f] != null;
                 }
                 for (int s = 0; s < 5; s++) hair[s,f] = DemoArt.Get("avatar_hair_" + s + "_" + f);
-                for (int g = 10; g <= 18; g++)
+                for (int g = 10; g <= 19; g++)
                 {
                     armor[g,0,f] = DemoArt.Get("avatar_armor_" + g + "_head_" + f);
                     armor[g,1,f] = DemoArt.Get("avatar_armor_" + g + "_torso_" + f);
@@ -189,12 +191,9 @@ namespace DeadCircuit
         static void AddArmor(SurvivorLayer[] layers, ref int count, GearState gear, int part, int facing, Vector2 at, float angle, int order)
         {
             if (gear == null) return;
-            // Reuse the registered tactical vest rig without indexing the new ID into the atlas.
-            bool radiationSuit = gear.kind == GearKind.RadiationSuit;
-            int artKind = radiationSuit ? (int)GearKind.TacticalVest : (int)gear.kind;
+            int artKind = (int)gear.kind;
             if (artKind < 10 || artKind >= armor.GetLength(0)) return;
-            Color tint = gear.durability <= 0 ? new Color(.48f,.45f,.42f) :
-                radiationSuit ? ColorFor(4, 3) : Color.white;
+            Color tint = gear.durability <= 0 ? new Color(.48f,.45f,.42f) : Color.white;
             Add(layers, ref count, armor[artKind,part,facing], tint, at, angle, order);
         }
 
@@ -216,6 +215,7 @@ namespace DeadCircuit
             var torsoGear = Worn(player, 1, equipment);
             var legGear = Worn(player, 2, equipment);
             var footGear = Worn(player, 3, equipment);
+            bool radiationSuit = torsoGear != null && torsoGear.kind == GearKind.RadiationSuit;
             int count = 0;
             for (int limb = 0; limb < 2; limb++)
             {
@@ -229,10 +229,12 @@ namespace DeadCircuit
                 float legAngle = right ? pose.rightLegAngle : pose.leftLegAngle;
                 Vector2 hip = pose.hip + Vector2.right * ((pose.side ? (right ? 1 : -1) : (right ? 3 : -3)) * Pixel);
                 Vector2 ankle = hip + (Vector2)(Quaternion.Euler(0,0,legAngle) * Vector3.down) * (8 * Pixel);
-                Add(layers, ref count, legs[facing], pants, hip, legAngle, -3);
+                Add(layers, ref count, legs[facing], pants, hip, legAngle, -4);
+                if (radiationSuit) AddArmor(layers, ref count, torsoGear, 3, facing, hip, legAngle, -3);
                 AddArmor(layers, ref count, legGear, 3, facing, hip, legAngle, -2);
                 Add(layers, ref count, shoes[facing], shoe, ankle, legAngle, -1);
-                AddArmor(layers, ref count, footGear, 4, facing, ankle, legAngle, 0);
+                if (radiationSuit) AddArmor(layers, ref count, torsoGear, 4, facing, ankle, legAngle, 0);
+                AddArmor(layers, ref count, footGear, 4, facing, ankle, legAngle, 1);
             }
             Add(layers, ref count, tops[top,facing], fabric, pose.head, 0, 1);
             AddArmor(layers, ref count, torsoGear, 1, facing, pose.head, 0, 2);
@@ -240,7 +242,8 @@ namespace DeadCircuit
             Add(layers, ref count, faces[AppearanceCatalog.Get(code,7),facing], Color.white, pose.head, 0, 8);
             if (headGear == null && style < 5)
                 Add(layers, ref count, hair[style,facing], ColorFor(2,AppearanceCatalog.Get(code,2)), pose.head, 0, 9);
-            AddArmor(layers, ref count, headGear, 0, facing, pose.head, 0, 10);
+            if (radiationSuit) AddArmor(layers, ref count, torsoGear, 0, facing, pose.head, 0, 10);
+            AddArmor(layers, ref count, headGear, 0, facing, pose.head, 0, 11);
             if (equipment && previewWeapon) PreviewWeapon(player,facing,pose,layers,ref count);
             for (int i = 1; i < count; i++)
             {

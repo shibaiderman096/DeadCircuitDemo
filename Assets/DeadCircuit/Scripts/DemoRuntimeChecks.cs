@@ -800,7 +800,7 @@ namespace DeadCircuit
             yield return new WaitForSecondsRealtime(.25f);
             yield return ClickScrolled("Gear Slot " + qaRadiationSuitId);
             yield return new WaitForSecondsRealtime(.2f);
-            RequireButtonIcon("Gear Slot " + qaRadiationSuitId, DemoArt.GetIcon("gear_17").name);
+            RequireButtonIcon("Gear Slot " + qaRadiationSuitId, DemoArt.GetIcon("gear_19").name);
             yield return ClickScrolled("Equip Selected Gear");
             yield return new WaitForSecondsRealtime(.4f);
             var player = bridge.LocalPlayer;

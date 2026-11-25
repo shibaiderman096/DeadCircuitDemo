@@ -78,7 +78,7 @@ class ArtBank:
             for name in re.findall(r'case\s+"([^"]+)"', cases):
                 self.game_fallbacks[name] = fallback
         sources = [(ART / "atlas.json", ART / "sprites.png")]
-        for name in ("world", "icons", "modules", "landmarks", "floors", "biomes", "weapons", "equipment-icons"):
+        for name in ("world", "icons", "modules", "landmarks", "floors", "biomes", "weapons", "equipment-icons", "completion"):
             sources.append((ART / "Expansion" / f"{name}.json", ART / "Expansion" / f"{name}.png"))
         for atlas_path, image_path in sources:
             data = json.loads(atlas_path.read_text(encoding="utf-8-sig"))
@@ -91,9 +91,8 @@ class ArtBank:
         candidates = [key]
         if key.startswith("gear_"):
             number = int(key[5:])
-            candidates = [f"weapon_icon_{number}", f"equipment_icon_gear_{number}", key]
-            if number == 19:
-                candidates += ["equipment_icon_gear_17", "gear_17"]
+            # Match DemoArt.GetIcon/Get: specialized equipment art, weapon arms, then direct gear.
+            candidates = [f"equipment_icon_gear_{number}", f"weapon_icon_{number}", key]
         elif key.startswith("part_"):
             candidates = ["equipment_icon_" + key, key]
         elif key.startswith("build_"):
@@ -106,13 +105,14 @@ class ArtBank:
             candidates = [key, "zombie_" + key[6:], "zombie_0_0"]
         elif key.startswith("creature_"):
             candidates = [key, "animal_" + key[9:]]
+        direct_candidates = set(candidates)
         for candidate in tuple(candidates):
             if candidate in self.game_fallbacks:
                 candidates.append(self.game_fallbacks[candidate])
         for candidate in candidates:
             if candidate in self.sprites:
                 self.resolved[key] = candidate
-                if candidate in self.game_fallbacks.values() and candidate != key:
+                if candidate not in direct_candidates:
                     self.fallbacks.add(key)
                 return candidate
         raise ValueError(f"No game artwork for {key}: {candidates}")
@@ -135,15 +135,6 @@ class ArtBank:
         return self.encoded[resolved]
 
     def img(self, key: str, label: str = "", cls: str = "entity-icon") -> str:
-        if key in ("build_63", "build_64", "build_65"):
-            return f'<span class="{cls} missing-art" role="img" aria-label="{esc(label)}：游戏内按格组合模块，无整机缩略图" title="游戏内按格组合模块，布局见蓝图预览">▦</span>'
-        if key in ("build_61", "build_62"):
-            return f'<span class="{cls} missing-art" aria-hidden="true" title="当前游戏没有专用图标">◇</span>'
-        if key in ("gear_20", "gear_21", "gear_22"):
-            try:
-                self.resolve(key)
-            except ValueError:
-                return f'<span class="{cls} missing-art" aria-hidden="true" title="游戏图集中暂无背包图标">◇</span>'
         return f'<img class="{cls}" src="{self.uri(key)}" alt="{esc(label)}" loading="lazy" decoding="async">'
 
     def hero(self) -> str:
@@ -288,8 +279,7 @@ class WikiRenderer:
             if era not in selected_eras:
                 selected_eras.append(era)
             kind = entry["category"]
-            note = '<span class="art-note">沿用游戏中的防具示意图</span>' if mode == "gear" and number == 19 else ''
-            cards.append(f'<article class="item-card" data-era="{era}" data-name="{esc(labels[number])}"><a class="item-entry" href="#/{slug}" data-entry="{slug}"><div class="item-art">{self.art.img(f"{mode}_{number}",labels[number],"catalog-art")}</div><span class="item-type">{kind} · {ERA_LABELS[era]}</span><h3>{esc(labels[number])}</h3>{note}</a></article>')
+            cards.append(f'<article class="item-card" data-era="{era}" data-name="{esc(labels[number])}"><a class="item-entry" href="#/{slug}" data-entry="{slug}"><div class="item-art">{self.art.img(f"{mode}_{number}",labels[number],"catalog-art")}</div><span class="item-type">{kind} · {ERA_LABELS[era]}</span><h3>{esc(labels[number])}</h3></a></article>')
         filters = '<button type="button" data-filter="all" aria-pressed="true">全部</button>' + ''.join(f'<button type="button" data-filter="{era}" aria-pressed="false">{ERA_LABELS[era]}</button>' for era in selected_eras)
         return f'<section class="gallery" data-gallery="{mode}-{indices[0]}"><div class="section-heading"><h2>{title}</h2><span>{len(indices):02d} 条目</span></div><div class="gallery-tools"><div class="filter-list" role="group" aria-label="按时代筛选">{filters}</div><label class="gallery-search"><span class="sr-only">搜索{title}</span><input type="search" data-gallery-search placeholder="搜索名称…"></label></div><div class="gallery-grid">{"".join(cards)}</div><p class="gallery-empty" hidden>没有符合条件的条目，试试其他名称或时代。</p></section>'
 
@@ -337,8 +327,7 @@ class WikiRenderer:
             facts.append(('所属时代', entry['era']))
         facts += entry['facts']
         visual = self.art.img(entry['icon'], entry['name'], 'infobox-art') if entry['icon'] else '<span class="infobox-symbol" aria-hidden="true">◇</span>'
-        art_note = '<p class="art-note">沿用游戏中的复用图</p>' if slug in ('gear-19', 'building-66') else ''
-        info = f'<aside class="entity-infobox" aria-label="{esc(entry["title"])}基本资料"><p class="infobox-caption">{esc(entry["title"])}</p>{visual}{art_note}<dl class="infobox-facts">' + ''.join(f'<dt>{esc(label)}</dt><dd>{esc(value)}</dd>' for label,value in facts) + '</dl></aside>'
+        info = f'<aside class="entity-infobox" aria-label="{esc(entry["title"])}基本资料"><p class="infobox-caption">{esc(entry["title"])}</p>{visual}<dl class="infobox-facts">' + ''.join(f'<dt>{esc(label)}</dt><dd>{esc(value)}</dd>' for label,value in facts) + '</dl></aside>'
         body = [info, '<p class="entity-overview">' + self.inline(entry['summary'],slug) + '</p>']
         if entry.get('parents'):
             body += [heading('前置研究'), '<p>' + '、'.join(self.entry_link(ref,current=slug) for ref in entry['parents']) + '</p>']

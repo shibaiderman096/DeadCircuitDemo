@@ -1,0 +1,1055 @@
+[
+  {
+    "name": "item_25",
+    "label": "Stone / 石材",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_26",
+    "label": "Clay / 黏土",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_27",
+    "label": "Charcoal / 木炭",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_28",
+    "label": "Brick / 陶砖",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_29",
+    "label": "IronPlate / 铁板",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_30",
+    "label": "Gear / 齿轮",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_31",
+    "label": "Bearing / 轴承",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_32",
+    "label": "Coal / 煤",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_33",
+    "label": "Limestone / 石灰石",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_34",
+    "label": "FireClay / 耐火黏土",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_35",
+    "label": "Coke / 焦炭",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_36",
+    "label": "RefractoryBrick / 耐火砖",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_37",
+    "label": "PigIron / 生铁",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_38",
+    "label": "SteelPlate / 钢板",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_39",
+    "label": "PipeFitting / 耐压管件",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_40",
+    "label": "CopperWire / 铜线",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_41",
+    "label": "Insulator / 陶瓷绝缘件",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_42",
+    "label": "Cable / 绝缘电缆",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_43",
+    "label": "Coil / 线圈",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_44",
+    "label": "Motor / 电机",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_45",
+    "label": "Relay / 继电器",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_46",
+    "label": "CrudeOil / 原油",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_47",
+    "label": "LightFraction / 轻质馏分",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_48",
+    "label": "ChemicalFeedstock / 化工原料",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_49",
+    "label": "HeavyFraction / 重质馏分",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_50",
+    "label": "Diesel / 柴油",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_51",
+    "label": "Lubricant / 润滑油",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_52",
+    "label": "ProcessWater / 工艺水",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_53",
+    "label": "HotCoolant / 热冷却液",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_54",
+    "label": "Quartz / 石英",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_55",
+    "label": "IndustrialSilicon / 工业硅",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_56",
+    "label": "PureSilicon / 高纯硅",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_57",
+    "label": "Wafer / 晶圆",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_58",
+    "label": "Semiconductor / 半导体器件",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_59",
+    "label": "PrecisionPart / 精密部件",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_60",
+    "label": "ControlModule / 控制模块",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_61",
+    "label": "HeatAlloy / 耐热合金",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_62",
+    "label": "UraniumConcentrate / 铀精矿",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_63",
+    "label": "Branch / 树枝",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_64",
+    "label": "LooseStone / 石头",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "item_65",
+    "label": "DryGrass / 干草",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_19",
+    "label": "RadiationSuit / 核作业防护服",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_20",
+    "label": "GrassBackpack / 草绳背包",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_21",
+    "label": "ReinforcedBackpack / 加固背包",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "gear_22",
+    "label": "EngineerBackpack / 工程背包",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_36",
+    "label": "炭窑 / CharcoalKiln",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_37",
+    "label": "陶窑 / ClayKiln",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_38",
+    "label": "鼓风炉 / BlastFurnace",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_39",
+    "label": "机械压机 / MechanicalPress",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_40",
+    "label": "机械工坊 / MechanicalWorkshop",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_41",
+    "label": "水力磨坊 / WaterMill",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_42",
+    "label": "灌溉泵 / IrrigationPump",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_43",
+    "label": "机械装卸器 / MechanicalHopper",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_44",
+    "label": "焦炉 / CokeOven",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_45",
+    "label": "耐火窑 / RefractoryKiln",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_46",
+    "label": "炼铁高炉 / IronBlastFurnace",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_47",
+    "label": "精炼炉 / RefiningForge",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_48",
+    "label": "机床 / MachineTool",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_49",
+    "label": "机械绕线台 / WindingBench",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_50",
+    "label": "过滤分流器 / FilterSplitter",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_51",
+    "label": "低压断路器 / CircuitBreaker",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_52",
+    "label": "电动破碎机 / ElectricCrusher",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_53",
+    "label": "抽油机 / OilPump",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_54",
+    "label": "液体管道 / LiquidPipe",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_55",
+    "label": "储液罐 / LiquidTank",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_56",
+    "label": "分馏装置 / DistillationUnit",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_57",
+    "label": "基础化学反应器 / ChemicalReactor",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_58",
+    "label": "工艺取水泵 / ProcessWaterPump",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_59",
+    "label": "硅材精炼机 / SiliconRefiner",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_60",
+    "label": "电子工台 / ElectronicsBench",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_61",
+    "label": "反应堆控制台 / ReactorControlConsole",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_62",
+    "label": "核废料专用仓 / NuclearWasteVault",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_63",
+    "label": "大型蒸汽高炉 / LargeSteamFurnace",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_64",
+    "label": "基础装配厂 / LargeAssemblyPlant",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_65",
+    "label": "矿物处理厂 / LargeOreProcessor",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "machine_66",
+    "label": "研究台 / ResearchBench",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_8",
+    "label": "Stone / 石料堆",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_9",
+    "label": "Clay / 黏土矿床",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_10",
+    "label": "Coal / 煤矿床",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_11",
+    "label": "Limestone / 石灰石矿床",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_12",
+    "label": "FireClay / 耐火黏土矿床",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_13",
+    "label": "Oil / 原油渗漏",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_14",
+    "label": "Quartz / 石英矿簇",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_15",
+    "label": "Branch / 地面树枝",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_16",
+    "label": "LooseStone / 地面石头",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "node_17",
+    "label": "DryGrass / 地面干草",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_controller",
+    "label": "Controller / 控制器",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_casing",
+    "label": "Casing / 机壳",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_input",
+    "label": "Input bus / 输入总线",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_output",
+    "label": "Output bus / 输出总线",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_maintenance",
+    "label": "Maintenance / 维护舱",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_exhaust",
+    "label": "Exhaust / 排气口",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_energy_steam",
+    "label": "Steam energy / 蒸汽能源舱",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_energy_electric",
+    "label": "Electric energy / 电力能源舱",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_process_furnace",
+    "label": "Furnace process / 炉膛工艺核心",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_process_assembly",
+    "label": "Assembly process / 装配工艺核心",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "module_process_ore",
+    "label": "Ore process / 矿石工艺核心",
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_head_0",
+    "label": "RadiationSuitHead / 核作业防护服头罩",
+    "pivot": [
+      0.5,
+      0.3125
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_head_1",
+    "label": "RadiationSuitHead / 核作业防护服头罩",
+    "pivot": [
+      0.5,
+      0.3125
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_head_2",
+    "label": "RadiationSuitHead / 核作业防护服头罩",
+    "pivot": [
+      0.5,
+      0.3125
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_head_3",
+    "label": "RadiationSuitHead / 核作业防护服头罩",
+    "pivot": [
+      0.5,
+      0.3125
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_torso_0",
+    "label": "RadiationSuitTorso / 核作业防护服躯干",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_torso_1",
+    "label": "RadiationSuitTorso / 核作业防护服躯干",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_torso_2",
+    "label": "RadiationSuitTorso / 核作业防护服躯干",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_torso_3",
+    "label": "RadiationSuitTorso / 核作业防护服躯干",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_arm_0",
+    "label": "RadiationSuitArm / 核作业防护服手臂",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_arm_1",
+    "label": "RadiationSuitArm / 核作业防护服手臂",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_arm_2",
+    "label": "RadiationSuitArm / 核作业防护服手臂",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_arm_3",
+    "label": "RadiationSuitArm / 核作业防护服手臂",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_leg_0",
+    "label": "RadiationSuitLeg / 核作业防护服腿部",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_leg_1",
+    "label": "RadiationSuitLeg / 核作业防护服腿部",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_leg_2",
+    "label": "RadiationSuitLeg / 核作业防护服腿部",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_leg_3",
+    "label": "RadiationSuitLeg / 核作业防护服腿部",
+    "pivot": [
+      0.5,
+      0.6875
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_shoe_0",
+    "label": "RadiationSuitShoe / 核作业防护服靴子",
+    "pivot": [
+      0.5,
+      0.5625
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_shoe_1",
+    "label": "RadiationSuitShoe / 核作业防护服靴子",
+    "pivot": [
+      0.5,
+      0.5625
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_shoe_2",
+    "label": "RadiationSuitShoe / 核作业防护服靴子",
+    "pivot": [
+      0.5,
+      0.5625
+    ],
+    "pixelsPerUnit": 32
+  },
+  {
+    "name": "avatar_armor_19_shoe_3",
+    "label": "RadiationSuitShoe / 核作业防护服靴子",
+    "pivot": [
+      0.5,
+      0.5625
+    ],
+    "pixelsPerUnit": 32
+  }
+]

@@ -529,6 +529,13 @@ def main(weapons_only=False, equipment_only=False, avatar_only=False, base_only=
         generate_weapons()
         generate_equipment()
         generate_avatar()
+        generate_completion()
+
+
+def generate_completion():
+    import subprocess
+    import sys
+    subprocess.run([sys.executable, '-B', str(Path(__file__).parent / 'ArtCompletion/generate.py')], check=True)
 
 
 if __name__ == '__main__':
@@ -540,9 +547,13 @@ if __name__ == '__main__':
     scope.add_argument('--weapons-only', action='store_true', help='Generate only the dedicated weapon atlas')
     scope.add_argument('--equipment-only', action='store_true', help='Generate only the equipment icon atlas')
     scope.add_argument('--avatar-only', action='store_true', help='Generate only the modular survivor atlas')
+    scope.add_argument('--completion-only', action='store_true', help='Generate only dedicated missing-art replacements')
     scope.add_argument('--exteriors-only', action='store_true',
                        help='Generate only the independent SVG exterior atlas')
     args = parser.parse_args()
+    if args.completion_only:
+        generate_completion()
+        raise SystemExit(0)
     if args.exteriors_only:
         import runpy
         runpy.run_path(str(Path(__file__).parent / 'ExpansionArt/ExteriorArt/export.py'),

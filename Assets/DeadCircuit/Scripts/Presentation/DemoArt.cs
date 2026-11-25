@@ -29,7 +29,6 @@ namespace DeadCircuit
         public static Sprite GetIcon(string key)
         {
             if (!loaded) Load();
-            if (key == "gear_19") key = "gear_17";
             Sprite icon;
             if (key != null && (key.StartsWith("gear_", StringComparison.Ordinal) || key.StartsWith("part_", StringComparison.Ordinal)) &&
                 sprites.TryGetValue("equipment_icon_" + key, out icon)) return icon;
@@ -39,15 +38,14 @@ namespace DeadCircuit
         public static Sprite Get(string key)
         {
             if (!loaded) Load();
-            if (key == "gear_19") key = "gear_17";
             Sprite sprite;
             if (key == null) return null;
             // Keep inventory, crafting and world-held art on the same weapon family.
             if ((key == "gear_5" || key == "gear_6" || key == "gear_7" || key == "gear_8" || key == "gear_9") &&
                 sprites.TryGetValue("weapon_icon_" + key.Substring(5), out sprite)) return sprite;
             if (sprites.TryGetValue(key, out sprite)) return sprite;
-            // Reuse known atlas cells until dedicated primitive and water art is supplied.
-            // Names and presentation tints keep resources and kilns distinct.
+            // Emergency fallbacks for a missing atlas; the complete shipped catalog
+            // resolves its own dedicated frame before reaching this switch.
             string fallback;
             switch (key)
             {

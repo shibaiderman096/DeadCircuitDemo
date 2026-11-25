@@ -1251,12 +1251,7 @@ namespace DeadCircuit
 
         static void TintBackpackIcon(UiButton button, GearKind kind)
         {
-            button.icon.color = kind switch
-            {
-                GearKind.ReinforcedBackpack => new Color32(183, 240, 172, 255),
-                GearKind.EngineerBackpack => new Color32(155, 209, 255, 255),
-                _ => Color.white
-            };
+            button.icon.color = Color.white;
         }
 
         static int GearCategory(GearKind kind)
