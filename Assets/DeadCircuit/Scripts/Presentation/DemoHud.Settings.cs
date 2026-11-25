@@ -146,6 +146,7 @@ namespace DeadCircuit
 
         void SetSettingsPage(int index)
         {
+            CancelBindingCapture();
             index = Mathf.Clamp(index, 0, settingsPages.Length - 1);
             for (int i = 0; i < settingsPages.Length; i++)
             {
@@ -167,8 +168,7 @@ namespace DeadCircuit
             {
                 if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
                 {
-                    awaitingBinding = null;
-                    Set(bindingNotice, "已取消改键。");
+                    CancelBindingCapture();
                 }
                 else if (keyboard != null) CaptureBindingKey(keyboard);
                 return true;
@@ -185,13 +185,20 @@ namespace DeadCircuit
             return true;
         }
 
+        void CancelBindingCapture()
+        {
+            if (!awaitingBinding.HasValue) return;
+            DemoBinding binding = awaitingBinding.Value;
+            awaitingBinding = null;
+            UpdateBindingButton(binding);
+            Set(bindingNotice, "已取消改键。");
+        }
+
         void BeginBindingCapture(DemoBinding binding)
         {
             if (awaitingBinding == binding)
             {
-                awaitingBinding = null;
-                UpdateBindingButton(binding);
-                Set(bindingNotice, "已取消改键。");
+                CancelBindingCapture();
                 return;
             }
             awaitingBinding = binding;

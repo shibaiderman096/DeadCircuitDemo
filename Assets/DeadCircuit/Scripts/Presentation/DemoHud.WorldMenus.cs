@@ -521,6 +521,7 @@ namespace DeadCircuit
 
         void CloseSettings()
         {
+            CancelBindingCapture();
             RevertDisplayPreview();
             PlayerPrefs.Save();
             bool wasOpen = settingsPanel.gameObject.activeSelf;
